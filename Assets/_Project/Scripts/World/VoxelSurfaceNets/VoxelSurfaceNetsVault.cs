@@ -29,6 +29,9 @@ namespace Hecton8.World.VoxelSurfaceNets
         public VaultGenerationHandle<MockVoxelDensityArray> MockDensityConfig;
         public VaultGenerationHandle<VoxelSurfacePhysicsBakeRequestDTO> PhysicsBakeRequests;
         public VaultGenerationHandle<VoxelSurfaceHzbTileDTO> HzbTiles;
+        public VaultGenerationHandle<VoxelVertexDTO> ColliderVertices;
+        public VaultGenerationHandle<uint> ColliderIndices;
+        public VaultGenerationHandle<int> ColliderCellVertexMap;
 
         public bool IsCreated()
         {
@@ -48,7 +51,10 @@ namespace Hecton8.World.VoxelSurfaceNets
                    IsHandleValid(in IndirectArgs) &&
                    IsHandleValid(in MockDensityConfig) &&
                    IsHandleValid(in PhysicsBakeRequests) &&
-                   IsHandleValid(in HzbTiles);
+                   IsHandleValid(in HzbTiles) &&
+                   IsHandleValid(in ColliderVertices) &&
+                   IsHandleValid(in ColliderIndices) &&
+                   IsHandleValid(in ColliderCellVertexMap);
         }
 
         private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -79,6 +85,9 @@ namespace Hecton8.World.VoxelSurfaceNets
         public NativeArray<MockVoxelDensityArray> MockDensityConfig => ResolveView(Vault, in Handles.MockDensityConfig);
         public NativeArray<VoxelSurfacePhysicsBakeRequestDTO> PhysicsBakeRequests => ResolveView(Vault, in Handles.PhysicsBakeRequests);
         public NativeArray<VoxelSurfaceHzbTileDTO> HzbTiles => ResolveView(Vault, in Handles.HzbTiles);
+        public NativeArray<VoxelVertexDTO> ColliderVertices => ResolveView(Vault, in Handles.ColliderVertices);
+        public NativeArray<uint> ColliderIndices => ResolveView(Vault, in Handles.ColliderIndices);
+        public NativeArray<int> ColliderCellVertexMap => ResolveView(Vault, in Handles.ColliderCellVertexMap);
 
         public bool IsCreated()
         {
@@ -98,7 +107,10 @@ namespace Hecton8.World.VoxelSurfaceNets
                    IndirectArgs.IsCreated &&
                    MockDensityConfig.IsCreated &&
                    PhysicsBakeRequests.IsCreated &&
-                   HzbTiles.IsCreated;
+                   HzbTiles.IsCreated &&
+                   ColliderVertices.IsCreated &&
+                   ColliderIndices.IsCreated &&
+                   ColliderCellVertexMap.IsCreated;
         }
 
         private static NativeArray<T> ResolveView<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
@@ -328,6 +340,21 @@ namespace Hecton8.World.VoxelSurfaceNets
                 VoxelSurfaceNetsConstants.MaxHzbTiles,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
+            handles.ColliderVertices = vault.EnsureGenerationHandle<VoxelVertexDTO>(
+                VoxelSurfaceNetsVaultBufferIds.ColliderVertices,
+                VoxelSurfaceNetsConstants.MaxColliderVertices,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.ColliderIndices = vault.EnsureGenerationHandle<uint>(
+                VoxelSurfaceNetsVaultBufferIds.ColliderIndices,
+                VoxelSurfaceNetsConstants.MaxColliderIndices,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
+            handles.ColliderCellVertexMap = vault.EnsureGenerationHandle<int>(
+                VoxelSurfaceNetsVaultBufferIds.ColliderCellVertexMap,
+                VoxelSurfaceNetsConstants.MaxColliderCells,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.UninitializedMemory);
 
             if (!handles.IsCreated())
                 return false;
@@ -360,7 +387,10 @@ namespace Hecton8.World.VoxelSurfaceNets
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.IndirectArgs, out handles.IndirectArgs) &&
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.MockDensityConfig, out handles.MockDensityConfig) &&
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.PhysicsBakeRequests, out handles.PhysicsBakeRequests) &&
-                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.HzbTiles, out handles.HzbTiles);
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.HzbTiles, out handles.HzbTiles) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.ColliderVertices, out handles.ColliderVertices) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.ColliderIndices, out handles.ColliderIndices) &&
+                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.ColliderCellVertexMap, out handles.ColliderCellVertexMap);
         }
 
         public static bool TryResolveViews(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, out VoxelSurfaceNetsVaultBuffers buffers)
@@ -601,13 +631,14 @@ namespace Hecton8.World.VoxelSurfaceNets
             in VoxelSurfaceNetsVaultBuffers buffers,
             int chunkIndex,
             uint frame,
+            bool isCanonicalCollider,
             out SurfaceNetExtractionJob job)
         {
             job = default;
             NativeArray<sbyte> densities = buffers.Density;
-            NativeArray<VoxelVertexDTO> vertices = buffers.Vertices;
-            NativeArray<uint> indices = buffers.Indices;
-            NativeArray<int> cellVertexMap = buffers.CellVertexMap;
+            NativeArray<VoxelVertexDTO> vertices = isCanonicalCollider ? buffers.ColliderVertices : buffers.Vertices;
+            NativeArray<uint> indices = isCanonicalCollider ? buffers.ColliderIndices : buffers.Indices;
+            NativeArray<int> cellVertexMap = isCanonicalCollider ? buffers.ColliderCellVertexMap : buffers.CellVertexMap;
             NativeArray<ChunkMeshingStateDTO> states = buffers.States;
             NativeArray<VoxelMeshingTuningDTO> tuning = buffers.Tuning;
             NativeArray<uint> surfaceEdgeMasks = buffers.SurfaceEdgeMasks;
@@ -641,6 +672,8 @@ namespace Hecton8.World.VoxelSurfaceNets
             job.TelemetryCursor = telemetryCursor;
             job.RawDebugVertices = rawDebugVertices;
             job.IndirectArgs = indirectArgs;
+            job.PhysicsBakeRequests = buffers.PhysicsBakeRequests;
+            job.IsCanonicalCollider = isCanonicalCollider;
             job.ChunkIndex = chunkIndex;
             job.Frame = frame;
             return true;
@@ -677,13 +710,16 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
             }
 
-            if (!TryCreateExtractionJob(in buffers, chunkIndex, frame, out SurfaceNetExtractionJob job))
+            if (!TryCreateExtractionJob(in buffers, chunkIndex, frame, false, out SurfaceNetExtractionJob visualJob) ||
+                !TryCreateExtractionJob(in buffers, chunkIndex, frame, true, out SurfaceNetExtractionJob colliderJob))
             {
                 ReleaseJobBufferLease(ref lease);
                 return false;
             }
 
-            outputDependency = job.Schedule(inputDependency);
+            JobHandle visualDependency = visualJob.Schedule(inputDependency);
+            JobHandle colliderDependency = colliderJob.Schedule(inputDependency);
+            outputDependency = JobHandle.CombineDependencies(visualDependency, colliderDependency);
             return true;
         }
 
@@ -1117,6 +1153,9 @@ namespace Hecton8.World.VoxelSurfaceNets
                 TryClearBuffer(buffers.Vault, in buffers.Handles.Priorities);
                 TryClearBuffer(buffers.Vault, in buffers.Handles.PhysicsBakeRequests);
                 TryClearBuffer(buffers.Vault, in buffers.Handles.HzbTiles);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.ColliderVertices);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.ColliderIndices);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.ColliderCellVertexMap);
                 TryWriteEmergencyMockTables(buffers.Vault, in buffers.Handles);
                 TryWriteDefaultTuning(buffers.Vault, in buffers.Handles);
             }

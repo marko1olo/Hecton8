@@ -27,6 +27,9 @@ namespace Hecton8.World.VoxelSurfaceNets
         public const int DensitySampleCount = DensityResolution * DensityResolution * DensityResolution;
         public const int MaxVertices = 65000;
         public const int MaxIndices = 196608;
+        public const int MaxColliderVertices = 65000;
+        public const int MaxColliderIndices = 196608;
+        public const int MaxColliderCells = CellCount;
         public const int MaxRawDebugVertices = 12288;
         public const int MaxTrackedChunks = 256;
         public const int MaxModifiedSignals = 256;
@@ -62,6 +65,9 @@ namespace Hecton8.World.VoxelSurfaceNets
         public const BufferID MockDensityConfig = BufferID.ShinobuFluidFrameSummary;
         public const BufferID PhysicsBakeRequests = BufferID.ShinobuFluidCsvScratch;
         public const BufferID HzbTiles = BufferID.ShinobuFluidMockBreach;
+        public const BufferID ColliderVertices = BufferID.ShinobuFluidCompartmentTelemetry;
+        public const BufferID ColliderIndices = BufferID.ShinobuFluidEdgeConductivity;
+        public const BufferID ColliderCellVertexMap = BufferID.ShinobuFluidTransferRemainders;
     }
 
     public enum VoxelMeshingStage : byte
@@ -318,9 +324,11 @@ namespace Hecton8.World.VoxelSurfaceNets
         [FieldOffset(18)]
         public ushort _pad0;
         [FieldOffset(20)]
-        public uint _pad2;
+        public int ColliderIndexCount;
         [FieldOffset(24)]
-        public ulong _pad1;
+        public int ColliderVertexCount;
+        [FieldOffset(28)]
+        public uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelSurfaceHzbTileDTOStrideBytes)]

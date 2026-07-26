@@ -66,6 +66,12 @@ namespace Hecton8.World.VoxelSurfaceNets
         public NativeArray<int> CellVertexMap;
 
         [NoAlias]
+        public NativeArray<VoxelSurfacePhysicsBakeRequestDTO> PhysicsBakeRequests;
+
+        public bool IsCanonicalCollider;
+
+        [ReadOnly]
+        [NoAlias]
         public NativeArray<ChunkMeshingStateDTO> States;
 
         [ReadOnly]
@@ -108,10 +114,10 @@ namespace Hecton8.World.VoxelSurfaceNets
             VoxelMeshingTuningDTO tuning = ResolveTuning();
             float quality = math.saturate(tuning.GlobalQualityWeight);
             float qualityCurve = Smooth01(quality);
-            int stride = ResolveSamplingStride(quality);
+            int stride = IsCanonicalCollider ? 1 : ResolveSamplingStride(quality);
             float voxelSize = math.max(tuning.VoxelSize > 0f ? tuning.VoxelSize : state.VoxelSize, VoxelSurfaceNetsConstants.Epsilon);
             float iso = tuning.IsoSurface;
-            float decimationBias = math.saturate(tuning.DecimationAggression) * (1f - qualityCurve);
+            float decimationBias = IsCanonicalCollider ? 0f : math.saturate(tuning.DecimationAggression) * (1f - qualityCurve);
             float rawCaptureGate = math.saturate(tuning.DebugRawCapture01);
 
             state.Stage = (byte)VoxelMeshingStage.Extracting;
@@ -255,38 +261,54 @@ namespace Hecton8.World.VoxelSurfaceNets
                 }
             }
 
-            if (indexCapacityClamped)
-                state.Flags = (byte)(state.Flags | VoxelMeshingFlags.CapacityClamped);
-
-            state.VertexCount = vertexCount;
-            state.IndexCount = indexCount;
-            state.RawDebugVertexCount = rawDebugCount;
-            state.BoundsCenterLocal = new float3(
-                VoxelSurfaceNetsConstants.ChunkResolution * voxelSize * 0.5f,
-                VoxelSurfaceNetsConstants.ChunkResolution * voxelSize * 0.5f,
-                VoxelSurfaceNetsConstants.ChunkResolution * voxelSize * 0.5f);
-            state.VoxelSize = voxelSize;
-            state.Stage = (byte)((state.Flags & (VoxelMeshingFlags.NonFinite | VoxelMeshingFlags.CapacityClamped)) == 0
-                ? VoxelMeshingStage.ReadyForUpload
-                : VoxelMeshingStage.Fault);
-            States[stateIndex] = state;
-
-            if (IndirectArgs.IsCreated && IndirectArgs.Length > 0)
+            if (IsCanonicalCollider)
             {
-                IndirectArgs[0] = new VoxelSurfaceIndirectArgsDTO
+                if (PhysicsBakeRequests.IsCreated)
                 {
-                    IndexCountPerInstance = (uint)math.max(indexCount, 0),
-                    InstanceCount = indexCount > 0 ? 1u : 0u,
-                    StartIndex = 0u,
-                    BaseVertex = 0u,
-                    StartInstance = 0u,
-                    _pad0 = 0u,
-                    _pad1 = 0u,
-                    _pad2 = 0u
-                };
+                    VoxelSurfacePhysicsBakeRequestDTO req = PhysicsBakeRequests[stateIndex];
+                    req.ColliderVertexCount = vertexCount;
+                    req.ColliderIndexCount = indexCount;
+                    PhysicsBakeRequests[stateIndex] = req;
+                }
+            }
+            else
+            {
+                if (indexCapacityClamped)
+                    state.Flags = (byte)(state.Flags | VoxelMeshingFlags.CapacityClamped);
+
+                state.VertexCount = vertexCount;
+                state.IndexCount = indexCount;
+                state.RawDebugVertexCount = rawDebugCount;
+                state.BoundsCenterLocal = new float3(
+                    VoxelSurfaceNetsConstants.ChunkResolution * voxelSize * 0.5f,
+                    VoxelSurfaceNetsConstants.ChunkResolution * voxelSize * 0.5f,
+                    VoxelSurfaceNetsConstants.ChunkResolution * voxelSize * 0.5f);
+                state.VoxelSize = voxelSize;
+                state.Stage = (byte)((state.Flags & (VoxelMeshingFlags.NonFinite | VoxelMeshingFlags.CapacityClamped)) == 0
+                    ? VoxelMeshingStage.ReadyForUpload
+                    : VoxelMeshingStage.Fault);
+                States[stateIndex] = state;
             }
 
-            WriteTelemetry(in state, in tuning, quality, stride, visitedCells, activeCells);
+            if (!IsCanonicalCollider)
+            {
+                if (IndirectArgs.IsCreated && IndirectArgs.Length > 0)
+                {
+                    IndirectArgs[0] = new VoxelSurfaceIndirectArgsDTO
+                    {
+                        IndexCountPerInstance = (uint)math.max(indexCount, 0),
+                        InstanceCount = indexCount > 0 ? 1u : 0u,
+                        StartIndex = 0u,
+                        BaseVertex = 0u,
+                        StartInstance = 0u,
+                        _pad0 = 0u,
+                        _pad1 = 0u,
+                        _pad2 = 0u
+                    };
+                }
+
+                WriteTelemetry(in state, in tuning, quality, stride, visitedCells, activeCells);
+            }
         }
 
         private VoxelMeshingTuningDTO ResolveTuning()
@@ -805,21 +827,19 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return;
 
             ChunkMeshingStateDTO state = States[index];
-            if (state.Stage != (byte)VoxelMeshingStage.ReadyForUpload || state.IndexCount <= 0)
+            VoxelSurfacePhysicsBakeRequestDTO req = Requests[index];
+            if (state.Stage != (byte)VoxelMeshingStage.ReadyForUpload || req.ColliderIndexCount <= 0)
                 return;
 
-            Requests[index] = new VoxelSurfacePhysicsBakeRequestDTO
-            {
-                MeshId = MeshIdBase + index,
-                ChunkIndex = index,
-                ChunkHash = state.ChunkHash,
-                Version = state.Version,
-                Pending = 1,
-                Completed = 0,
-                _pad0 = 0,
-                _pad1 = 0UL,
-                _pad2 = 0u
-            };
+            req.MeshId = MeshIdBase + index;
+            req.ChunkIndex = index;
+            req.ChunkHash = state.ChunkHash;
+            req.Version = state.Version;
+            req.Pending = 1;
+            req.Completed = 0;
+            req._pad0 = 0;
+            req._pad1 = 0UL;
+            Requests[index] = req;
         }
     }
 
