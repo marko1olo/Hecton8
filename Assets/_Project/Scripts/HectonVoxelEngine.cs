@@ -14101,71 +14101,73 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             }
         }
 
-        int stateIndex = math.clamp(data.VolumeIndex, 0, states.Length - 1);
-        ChunkMeshingStateDTO state = states[stateIndex];
-        int vertCount = state.VertexCount;
-        int indexCount = state.IndexCount;
-
-        if (vertCount <= 0 || indexCount <= 0 || vertCount > colliderVertices.Length || indexCount > colliderIndices.Length)
-        {
-            volume.DisableColliderChunksForCinematicFake();
-            return true;
-        }
-
-        int colliderChunkCount = ResolveColliderChunkCount(indexCount / 3);
         if (!volume.TryUsePrewarmedColliderChunkCapacity(colliderChunkCount))
         {
             volume.DisableColliderChunksForCinematicFake();
             return false;
         }
 
-        BoxCollider chunkProxy = volume.GetColliderChunkBakeProxy(0);
-        if (chunkProxy != null)
-        {
-            float3 boundsMin = localVolumeOrigin;
-            float3 boundsSize = new float3(data.GridDimension, data.GridDimension, data.GridDimension) * data.VoxelStep;
-            ResolveVoxelColliderChunkBakeProxyBounds(
-                0,
-                colliderChunkCount,
-                boundsMin,
-                boundsSize,
-                data.VoxelStep,
-                out Vector3 proxyCenter,
-                out Vector3 proxySize);
-            volume.ConfigureColliderChunkBakeProxy(0, proxyCenter, proxySize);
-        }
+        float3 boundsMin = localVolumeOrigin;
+        float3 boundsSize = new float3(data.GridDimension, data.GridDimension, data.GridDimension) * data.VoxelStep;
 
-        Mesh chunkBakeMesh = volume.GetOrCreateColliderChunkBakeMesh(0);
-        if (chunkBakeMesh != null)
+        for (int chunkIndex = 0; chunkIndex < colliderChunkCount; chunkIndex++)
         {
-            Vector3[] positions = new Vector3[vertCount];
-            for (int i = 0; i < vertCount; i++)
+            ChunkMeshingStateDTO state = states[chunkIndex];
+            int vertCount = state.VertexCount;
+            int indexCount = state.IndexCount;
+
+            if (vertCount <= 0 || indexCount <= 0 || vertCount > colliderVertices.Length || indexCount > colliderIndices.Length)
             {
-                positions[i] = colliderVertices[i].Position;
+                volume.DisableColliderChunkBakeProxy(chunkIndex);
+                continue;
             }
 
-            int[] indices = new int[indexCount];
-            for (int i = 0; i < indexCount; i++)
+            BoxCollider chunkProxy = volume.GetColliderChunkBakeProxy(chunkIndex);
+            if (chunkProxy != null)
             {
-                indices[i] = (int)colliderIndices[i];
+                ResolveVoxelColliderChunkBakeProxyBounds(
+                    chunkIndex,
+                    colliderChunkCount,
+                    boundsMin,
+                    boundsSize,
+                    data.VoxelStep,
+                    out Vector3 proxyCenter,
+                    out Vector3 proxySize);
+                volume.ConfigureColliderChunkBakeProxy(chunkIndex, proxyCenter, proxySize);
             }
 
-            chunkBakeMesh.Clear(false);
-            chunkBakeMesh.SetVertices(positions);
-            chunkBakeMesh.SetTriangles(indices, 0);
-
-            UnityEngine.EntityId bakeMeshEntityId = chunkBakeMesh.GetEntityId();
-            await Awaitable.BackgroundThreadAsync();
-            Physics.BakeMesh(bakeMeshEntityId, false);
-            await Awaitable.MainThreadAsync();
-
-            if (ct.IsCancellationRequested)
-                return false;
-
-            if (!volume.AssignColliderChunkBakeMesh(0, chunkBakeMesh) ||
-                !EnqueueDeferredVoxelColliderUpload(volume, 0))
+            Mesh chunkBakeMesh = volume.GetOrCreateColliderChunkBakeMesh(chunkIndex);
+            if (chunkBakeMesh != null)
             {
-                volume.ReleaseColliderChunkBakeMesh(0);
+                Vector3[] positions = new Vector3[vertCount];
+                for (int i = 0; i < vertCount; i++)
+                {
+                    positions[i] = colliderVertices[i].Position;
+                }
+
+                int[] indices = new int[indexCount];
+                for (int i = 0; i < indexCount; i++)
+                {
+                    indices[i] = (int)colliderIndices[i];
+                }
+
+                chunkBakeMesh.Clear(false);
+                chunkBakeMesh.SetVertices(positions);
+                chunkBakeMesh.SetTriangles(indices, 0);
+
+                UnityEngine.EntityId bakeMeshEntityId = chunkBakeMesh.GetEntityId();
+                await Awaitable.BackgroundThreadAsync();
+                Physics.BakeMesh(bakeMeshEntityId, false);
+                await Awaitable.MainThreadAsync();
+
+                if (ct.IsCancellationRequested)
+                    return false;
+
+                if (!volume.AssignColliderChunkBakeMesh(chunkIndex, chunkBakeMesh) ||
+                    !EnqueueDeferredVoxelColliderUpload(volume, chunkIndex))
+                {
+                    volume.ReleaseColliderChunkBakeMesh(chunkIndex);
+                }
             }
         }
 
