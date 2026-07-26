@@ -3030,7 +3030,11 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         int cubeIndex = ResolveCubeIndex(in densities);
 
 
-        int edgeBits = Hecton8.PureLogic.Systems.MarchingCubesLookupTable.Calculate((byte)cubeIndex, densities.d0, densities.d1, densities.d2, densities.d3, densities.d4, densities.d5, densities.d6, densities.d7, 0f);
+        // Burst-legal lookup: the managed MarchingCubesLookupTable statics are the init source
+        // only (line ~244 fills this native copy from them). Managed static arrays are not
+        // readable from Burst-compiled code. Length >= 256 is guaranteed by
+        // HasSafeMarchingCubesInputs; cubeIndex is 0..255 from ResolveCubeIndex.
+        int edgeBits = edgeTable[cubeIndex];
         if (edgeBits == 0) return;
 
         int vertCount = cellVertexCounts[cellIdx];
