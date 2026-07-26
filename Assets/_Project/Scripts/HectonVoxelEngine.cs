@@ -2954,20 +2954,16 @@ public struct VoxelChunkBoundsContentJob : IJob
         if (!density.IsCreated || ptsX <= 0 || ptsY <= 0 || ptsZ <= 0 || !HasCompleteDensityField())
             return;
 
-        int maxX = ptsX - 1;
-        int maxY = ptsY - 1;
-        int maxZ = ptsZ - 1;
-        bool allCornersVoid =
-            ReadDensity(0, 0, 0) < 0f &&
-            ReadDensity(maxX, 0, 0) < 0f &&
-            ReadDensity(0, maxY, 0) < 0f &&
-            ReadDensity(maxX, maxY, 0) < 0f &&
-            ReadDensity(0, 0, maxZ) < 0f &&
-            ReadDensity(maxX, 0, maxZ) < 0f &&
-            ReadDensity(0, maxY, maxZ) < 0f &&
-            ReadDensity(maxX, maxY, maxZ) < 0f;
-
-        hasContent[0] = allCornersVoid ? 0 : 1;
+        int total = ptsX * ptsY * ptsZ;
+        for (int i = 0; i < total; i++)
+        {
+            float value = density[i];
+            if (math.isfinite(value) && value >= 0f)
+            {
+                hasContent[0] = 1;
+                return;
+            }
+        }
     }
 
     float ReadDensity(int x, int y, int z)
