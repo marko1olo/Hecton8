@@ -2405,6 +2405,44 @@ public struct VoxelDensityJob : IJobParallelFor
 
     private const float Tau = 6.2831853f;
 
+    /// <summary>
+    /// AUP wrap period in meters for the procedural cave field. MUST stay byte-identical in meaning to
+    /// <c>ProceduralCaveSdfCarveJob.WrapPeriodMeters</c>. This inline copy is the LIVE cave field (the
+    /// canonical job currently has no scheduler), so any divergence between the two carves different
+    /// rock wherever the two representations meet.
+    /// </summary>
+    private const double CaveWrapPeriodMeters = 6627.0;
+
+    /// <summary>R99: quantizes a frequency (cycles per meter) to a whole number of cycles per wrap period.</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static int QuantizeCellsPerPeriod(float frequency)
+    {
+        return math.max(1, (int)math.round(frequency * (float)CaveWrapPeriodMeters));
+    }
+
+    /// <summary>R99: converts whole cycles-per-period back to a frequency in cycles per meter.</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float CellsToFrequency(int cells)
+    {
+        return (float)(cells / CaveWrapPeriodMeters);
+    }
+
+    /// <summary>
+    /// Evaluates the LIVE combined Gyroid + Cellular 3D cave SDF at wrapped AUP point p.
+    /// R99 UNIFICATION: this was a silently diverged copy of <c>ProceduralCaveSdfCarveJob</c>. Three
+    /// defect classes are fixed here:
+    /// (1) NON-PERIODIC FIELD — snoise/cellular/ridged terms were evaluated on a floor-fmod sawtooth
+    ///     domain, so the field tore on every X/Y/Z = k*6627 m plane, including the Y = 0 sea-level
+    ///     plane. Every term below is now exactly 6627 m-periodic (frequency-quantized waves plus
+    ///     wrapped integer lattices), hence continuous across every wrap boundary.
+    /// (2) FOLDED STRATA DOMAIN — y' = y + A*sin(w*y) is monotonic only while A*w &lt; 1. The old cap
+    ///     A &lt;= 0.45*thickness allowed A*w up to 2.83, producing mirrored duplicate cave bands
+    ///     (the banned kaleidoscope artifact class). Now clamped to 0.14 * quantized wavelength.
+    /// (3) CONSTANT DRIFT — rarity/gyroidBand/chamberRadius had drifted from the canonical job,
+    ///     offsetting cave walls by roughly 1.3 m at PrimaryFrequency ~= 0.01. Now constant-matched.
+    /// The depositional-floor, wall-grit and anisotropic-chamber terms are unique to this live path
+    /// (they carry the geology the bible requires) and are preserved — rebuilt on periodic primitives.
+    /// </summary>
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     private float EvaluateGyroidCellularCaveSdf(float3 p, float3 seedOffset)
     {
@@ -2412,18 +2450,23 @@ public struct VoxelDensityJob : IJobParallelFor
         float secondaryFrequency = math.max(math.abs(SecondaryFrequency), 0.0005f);
         float safeCarveStrength = math.max(CarveStrengthMeters, math.max(voxelStep, 1.0f));
 
-        float warpFrequency = math.max(primaryFrequency * 0.47f, 0.0005f);
+        int warpCells = QuantizeCellsPerPeriod(math.max(primaryFrequency * 0.47f, 0.0005f));
+        float warpFrequency = CellsToFrequency(warpCells);
         float warpAmplitude = math.clamp(safeCarveStrength * 0.35f, 2.0f, 22.0f);
-        float3 warpedPos = ApplyGyroidDomainWarp(p, seedOffset, warpFrequency, warpAmplitude);
+        float3 warpedPos = ApplyGyroidDomainWarp(p, seedOffset, warpFrequency, warpCells, warpAmplitude, WorldSeed ^ 0x5A17D2E9u);
 
         float strataThickness = math.max(4.0f, StrataLayerThicknessMeters);
-        float strataFrequency = Tau / strataThickness;
-        float strataAmplitude = math.clamp(StrataShelvingStrength * strataThickness, 0.0f, strataThickness * 0.45f);
+        int strataCycles = math.max(1, (int)math.round(CaveWrapPeriodMeters / strataThickness));
+        float strataFrequency = (float)(strataCycles * (Tau / CaveWrapPeriodMeters));
+        float strataWavelength = (float)(CaveWrapPeriodMeters / strataCycles);
+        float strataAmplitude = math.clamp(StrataShelvingStrength * strataThickness, 0.0f, strataWavelength * 0.14f);
         warpedPos.y += math.sin((warpedPos.y + seedOffset.y) * strataFrequency) * strataAmplitude;
 
-        float rarity = math.saturate(CaveThreshold * 0.86f);
+        float rarity = math.saturate(CaveThreshold);
 
-        float3 gyroidPos = (warpedPos + seedOffset * 0.37f) * primaryFrequency * Tau;
+        int gyroidCycles = QuantizeCellsPerPeriod(primaryFrequency);
+        float gyroidFrequency = CellsToFrequency(gyroidCycles);
+        float3 gyroidPos = (warpedPos + seedOffset * 0.37f) * gyroidFrequency * Tau;
         float sinX = math.sin(gyroidPos.x);
         float sinY = math.sin(gyroidPos.y);
         float sinZ = math.sin(gyroidPos.z);
@@ -2431,18 +2474,29 @@ public struct VoxelDensityJob : IJobParallelFor
         float cosY = math.cos(gyroidPos.y);
         float cosZ = math.cos(gyroidPos.z);
         float gyroid = sinX * cosY + sinY * cosZ + sinZ * cosX;
-        float gyroidBand = math.lerp(0.70f, 0.34f, rarity);
-        float gyroidMetricScale = math.max(1.0f / (primaryFrequency * Tau), voxelStep);
+        float gyroidBand = math.lerp(0.62f, 0.26f, rarity);
+        float gyroidMetricScale = math.max(1.0f / (gyroidFrequency * Tau), voxelStep);
         float gyroidSdf = (math.abs(gyroid) - gyroidBand) * gyroidMetricScale;
 
-        float chamberFrequency = math.max(secondaryFrequency * 0.55f, 0.0005f);
-        float3 chamberPos = warpedPos + seedOffset * 1.91f;
-        chamberPos.y = (chamberPos.y - seedOffset.y) * 0.58f + seedOffset.y;
-        float chamberDistance = CellularDistance(chamberPos, chamberFrequency, WorldSeed ^ 0xC0A55123u);
-        float chamberNoise = noise.snoise((chamberPos + seedOffset * 0.82f) * chamberFrequency * 1.83f);
-        float chamberRadius = math.lerp(0.48f, 0.25f, rarity) + chamberNoise * 0.055f;
-        chamberRadius = math.clamp(chamberRadius, 0.18f, 0.52f);
-        float chamberSdf = (chamberDistance - chamberRadius) / chamberFrequency;
+        // Vertical chamber elongation is now an ANISOTROPIC wrapped lattice (fewer cells per period in
+        // Y) instead of scaling the Y coordinate by 0.58 — coordinate scaling destroyed Y periodicity
+        // and was one of the two sources of the sea-level seam.
+        float chamberFrequencyXZ = math.max(secondaryFrequency * 0.55f, 0.0005f);
+        int chamberCellsXZ = QuantizeCellsPerPeriod(chamberFrequencyXZ);
+        int chamberCellsY = math.max(1, (int)math.round(chamberCellsXZ * 0.58f));
+        int3 chamberCells = new int3(chamberCellsXZ, chamberCellsY, chamberCellsXZ);
+        float3 chamberFrequency = new float3(
+            CellsToFrequency(chamberCellsXZ),
+            CellsToFrequency(chamberCellsY),
+            CellsToFrequency(chamberCellsXZ));
+        float chamberDistance = CellularDistance(warpedPos + seedOffset * 1.91f, chamberFrequency, chamberCells, WorldSeed ^ 0xC0A55123u);
+        int chamberNoiseCells = QuantizeCellsPerPeriod(chamberFrequencyXZ * 1.83f);
+        float chamberNoise = PeriodicGradientNoise((warpedPos + seedOffset * 2.73f) * CellsToFrequency(chamberNoiseCells), chamberNoiseCells, WorldSeed ^ 0x7B2E44D1u);
+        float chamberRadius = math.lerp(0.42f, 0.20f, rarity) + chamberNoise * 0.055f;
+        chamberRadius = math.clamp(chamberRadius, 0.14f, 0.48f);
+        // Cell-space distance -> meters. Dividing by the LARGEST axis frequency keeps the result a
+        // conservative (Lipschitz <= 1) distance estimate under the anisotropic lattice.
+        float chamberSdf = (chamberDistance - chamberRadius) / math.cmax(chamberFrequency);
 
         float gyroidYD = cosY * cosZ - sinX * sinY;
         float strataSlope = math.cos((warpedPos.y + seedOffset.y) * strataFrequency);
@@ -2450,27 +2504,120 @@ public struct VoxelDensityJob : IJobParallelFor
         floorProxy = floorProxy * floorProxy * (3f - floorProxy * 2f);
         float nearSurfaceMask = 1f - math.saturate(math.min(math.abs(gyroidSdf), math.abs(chamberSdf)) / math.max(safeCarveStrength * 0.45f, voxelStep));
 
-        float dunePhase = (warpedPos.x + seedOffset.x * 3.1f) * 0.055f + (warpedPos.z - seedOffset.z * 2.7f) * 0.041f;
-        float dune = (math.sin(dunePhase) * 0.62f + math.sin(dunePhase * 1.73f + 1.91f) * 0.38f) * safeCarveStrength * 0.035f;
-        float rubbleNoise = RidgedMultifractal(warpedPos * 0.075f + seedOffset * 0.13f, WorldSeed ^ 0x71C9D3A5u, 3);
+        // Sediment ripple field: two plane waves whose spatial frequencies are whole cycles per wrap
+        // period. The second wave is an INTEGER harmonic of the first (2x, was 1.73x), so it stays
+        // periodic instead of tearing at the wrap plane.
+        float duneFrequencyX = CellsToFrequency(QuantizeCellsPerPeriod(0.055f / Tau)) * Tau;
+        float duneFrequencyZ = CellsToFrequency(QuantizeCellsPerPeriod(0.041f / Tau)) * Tau;
+        float dunePhase = (warpedPos.x + seedOffset.x * 3.1f) * duneFrequencyX +
+                          (warpedPos.z - seedOffset.z * 2.7f) * duneFrequencyZ;
+        float dune = (math.sin(dunePhase) * 0.62f + math.sin(dunePhase * 2.0f + 1.91f) * 0.38f) * safeCarveStrength * 0.035f;
+        float rubbleNoise = PeriodicRidgedMultifractal(warpedPos + seedOffset * 1.733f, QuantizeCellsPerPeriod(0.075f), WorldSeed ^ 0x71C9D3A5u, 3);
         float depositionalNoise = (dune + (rubbleNoise - 0.55f) * safeCarveStrength * 0.045f) * floorProxy * nearSurfaceMask;
 
         float wallCeilingMask = (1f - floorProxy) * nearSurfaceMask;
-        float wallGrit = (RidgedMultifractal(warpedPos * 0.19f + seedOffset * 0.41f, WorldSeed ^ 0xBADC0DEu, 3) - 0.5f) *
+        float wallGrit = (PeriodicRidgedMultifractal(warpedPos + seedOffset * 2.158f, QuantizeCellsPerPeriod(0.19f), WorldSeed ^ 0xBADC0DEu, 3) - 0.5f) *
             math.min(safeCarveStrength * 0.065f, math.max(voxelStep * 0.65f, 0.35f)) * wallCeilingMask;
-        float reefNoise = noise.snoise((warpedPos + seedOffset * 4.11f) * primaryFrequency * 2.67f) * safeCarveStrength * 0.045f * wallCeilingMask;
+        int reefCells = QuantizeCellsPerPeriod(primaryFrequency * 2.67f);
+        float reefNoise = PeriodicGradientNoise((warpedPos + seedOffset * 4.11f) * CellsToFrequency(reefCells), reefCells, WorldSeed ^ 0x19C3A57Fu) *
+            safeCarveStrength * 0.045f * wallCeilingMask;
 
         return math.min(gyroidSdf, chamberSdf) + depositionalNoise + wallGrit + reefNoise;
     }
 
+    /// <summary>R99: exactly wrap-periodic 3D domain warp (replaces non-periodic snoise warp).</summary>
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    private static float3 ApplyGyroidDomainWarp(float3 p, float3 seedOffset, float frequency, float amplitude)
+    private static float3 ApplyGyroidDomainWarp(float3 p, float3 seedOffset, float frequency, int cellsPerPeriod, float amplitude, uint seed)
     {
         float3 q = (p + seedOffset) * frequency;
-        float wx = noise.snoise(q + new float3(17.31f, 41.17f, -11.73f));
-        float wy = noise.snoise(q + new float3(-29.19f, 7.83f, 53.41f));
-        float wz = noise.snoise(q + new float3(61.07f, -23.59f, 5.29f));
+        float wx = PeriodicGradientNoise(q, cellsPerPeriod, seed ^ 0x11A3F2C5u);
+        float wy = PeriodicGradientNoise(q, cellsPerPeriod, seed ^ 0x8D9B41E7u);
+        float wz = PeriodicGradientNoise(q, cellsPerPeriod, seed ^ 0x3F60AB19u);
         return p + new float3(wx, wy, wz) * amplitude;
+    }
+
+    /// <summary>
+    /// R99: wrap-periodic ridged multifractal. Lacunarity is exactly 2 and the lattice cell count
+    /// doubles with it, so every octave keeps the same wrap period as the base field.
+    /// </summary>
+    private static float PeriodicRidgedMultifractal(float3 p, int cellsPerPeriod, uint seed, int octaves)
+    {
+        float amplitude = 0.5f;
+        float sum = 0f;
+        float norm = 0f;
+        int cells = math.max(1, cellsPerPeriod);
+        for (int i = 0; i < 4; i++)
+        {
+            if (i >= octaves)
+                break;
+
+            float n = PeriodicGradientNoise(p * CellsToFrequency(cells), cells, seed + (uint)i * 0x9E3779B9u);
+            float ridge = 1f - math.abs(n);
+            sum += ridge * ridge * amplitude;
+            norm += amplitude;
+            cells *= 2;
+            amplitude *= 0.52f;
+        }
+
+        return sum / math.max(norm, 0.0001f);
+    }
+
+    /// <summary>
+    /// R99: C2-smooth (quintic-fade) trilinear gradient-lattice noise whose integer lattice wraps every
+    /// cellsPerPeriod cells. Output approximately in [-1, 1]. Deterministic, Burst-safe, exactly periodic.
+    /// </summary>
+    private static float PeriodicGradientNoise(float3 q, int cellsPerPeriod, uint seed)
+    {
+        float3 cellF = math.floor(q);
+        int3 cell = new int3((int)cellF.x, (int)cellF.y, (int)cellF.z);
+        float3 f = q - cellF;
+        float3 u = f * f * f * (f * (f * 6.0f - 15.0f) + 10.0f);
+
+        int3 period = new int3(cellsPerPeriod, cellsPerPeriod, cellsPerPeriod);
+        float n000 = CornerGradientDot(cell, new int3(0, 0, 0), f, period, seed);
+        float n100 = CornerGradientDot(cell, new int3(1, 0, 0), f, period, seed);
+        float n010 = CornerGradientDot(cell, new int3(0, 1, 0), f, period, seed);
+        float n110 = CornerGradientDot(cell, new int3(1, 1, 0), f, period, seed);
+        float n001 = CornerGradientDot(cell, new int3(0, 0, 1), f, period, seed);
+        float n101 = CornerGradientDot(cell, new int3(1, 0, 1), f, period, seed);
+        float n011 = CornerGradientDot(cell, new int3(0, 1, 1), f, period, seed);
+        float n111 = CornerGradientDot(cell, new int3(1, 1, 1), f, period, seed);
+
+        float nx00 = math.lerp(n000, n100, u.x);
+        float nx10 = math.lerp(n010, n110, u.x);
+        float nx01 = math.lerp(n001, n101, u.x);
+        float nx11 = math.lerp(n011, n111, u.x);
+        float nxy0 = math.lerp(nx00, nx10, u.y);
+        float nxy1 = math.lerp(nx01, nx11, u.y);
+        // Edge-direction gradients have |g| = sqrt(2); 1.154 rescales the interpolated result to ~[-1, 1].
+        return math.lerp(nxy0, nxy1, u.z) * 1.154f;
+    }
+
+    /// <summary>R99: dot of the wrapped-lattice corner gradient with the offset from that corner.</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float CornerGradientDot(int3 cell, int3 corner, float3 f, int3 cellsPerPeriod, uint seed)
+    {
+        int3 wrapped = WrapCell3(cell + corner, cellsPerPeriod);
+        uint h = Hash(wrapped.x, wrapped.y, wrapped.z, seed);
+        float3 g = new float3(
+            (h & 1u) != 0u ? -1.0f : 1.0f,
+            (h & 2u) != 0u ? -1.0f : 1.0f,
+            (h & 4u) != 0u ? -1.0f : 1.0f);
+        uint axis = (h >> 3) % 3u;
+        g = math.select(g, new float3(0.0f, g.y, g.z), axis == 0u);
+        g = math.select(g, new float3(g.x, 0.0f, g.z), axis == 1u);
+        g = math.select(g, new float3(g.x, g.y, 0.0f), axis == 2u);
+        float3 d = f - new float3(corner.x, corner.y, corner.z);
+        return math.dot(g, d);
+    }
+
+    /// <summary>R99: wraps integer lattice coordinates into [0, period) per axis (true modulo, negative-safe).</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static int3 WrapCell3(int3 cell, int3 cellsPerPeriod)
+    {
+        int3 period = math.max(new int3(1, 1, 1), cellsPerPeriod);
+        int3 m = cell % period;
+        return math.select(m, m + period, m < 0);
     }
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
