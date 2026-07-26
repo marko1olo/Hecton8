@@ -857,7 +857,7 @@ internal static class VoxelDensityPipelineFaultSlots
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 1: DENSITY FIELD — Multi-primitive SDF cave system (v4.0 REWRITE)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityJob : IJobParallelFor
 {
     private const byte DeltaModeAdditive = 1 << 0;
@@ -2814,7 +2814,7 @@ public struct VoxelChunkBoundsContentJob : IJob
 
 //  JOB 2: Marching Cubes exact count pass
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelMCCountJob : IJobParallelFor
 {
     private const int MarchingCubesCubeCount = 256;
@@ -2915,7 +2915,7 @@ public struct VoxelMCCountJob : IJobParallelFor
     }
 }
 
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityQuantizeJob : IJobParallelFor
 {
     private const float MaxSafeDensityEncodeInvScale = 1048576f;
@@ -2967,7 +2967,7 @@ public struct VoxelDensityQuantizeJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.1: Marching Cubes extraction (exact-offset write)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelMCExtractJob : IJobParallelFor
 {
     private const int MarchingCubesCubeCount = 256;
@@ -3214,7 +3214,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.5: Vertex Welding (UNCHANGED from v3.2)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelWeldJob : IJob
 {
     private const int InvalidVertexIndex = -1;

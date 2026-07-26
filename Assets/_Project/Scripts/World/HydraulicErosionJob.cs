@@ -558,7 +558,13 @@ namespace Hecton8.World
             float safeInitialSpeed = math.max(0.001f, InitialSpeed);
             float safeMinWater = math.max(0.000001f, MinWater);
             float flatSlopeDegrees = math.max(0f, SedimentaryFlatSlopeDegrees);
-            float2 position = ResolveSpawnPosition(dropletIndex, motionMinX, motionMinZ, motionMaxX, motionMaxZ);
+            // R98 FIX (~96% of the droplet budget was doing no work): droplets were seeded over the
+            // EXPANDED MOTION bounds instead of the WRITE window. With SubGridSize=32 the motion span is
+            // 32 + 2*64 = 160 cells per axis against a 32-cell write window, so only (32/160)^2 = 4% of
+            // droplets started where they are allowed to erode; the rest burned a full lifetime of
+            // sampling and were discarded by the write clamps. Effective erosion ran at ~1/25 of the
+            // configured rate, which invites over-tuning that then over-carves the few valid droplets.
+            float2 position = ResolveSpawnPosition(dropletIndex, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
             float2 direction = float2.zero;
             float speed = safeInitialSpeed;
             float water = safeInitialWater;
@@ -580,8 +586,25 @@ namespace Hecton8.World
                 }
 
                 float2 channelGradient = SampleAccumulationGradient(ErosionDepthMask, position);
-                float2 hydraulicForce = -gradient + channelGradient * math.max(0f, ChannelFlowBias);
-                direction = direction * safeInertia + hydraulicForce * (1f - safeInertia);
+                // R98 FIX (no dendritic branching / straight scars — terrain.md meso-scale law).
+                // `gradient` is in NORMALIZED height per cell (Heightmap is 0..1), so at a typical
+                // HeightScaleMeters=3000 / CellSizeMeters=4 a 30-degree slope yields |gradient| ~ 7.7e-4,
+                // while `direction` is renormalized to UNIT length every step. Blending a unit vector
+                // with a 1e-3 steering term froze the heading for any Inertia above ~0.01: droplets cut
+                // straight scars instead of branching down the terrain, which reads as noise mush on the
+                // 1 km slope X-Ray card. Two corrections, both scale-safe for any tuning:
+                //   1. convert the height gradient into WORLD slope units (the same conversion
+                //      ResolveSlopeDegrees already performs), so gravity and the channel-memory term
+                //      are physically comparable instead of differing by ~2 orders of magnitude;
+                //   2. normalize the combined hydraulic force before the inertia mix, so `Inertia`
+                //      is a true 0..1 directional blend (0 = pure steepest descent, 1 = ballistic).
+                // On flats the force collapses to zero and normalizesafe returns zero, so momentum
+                // carries the droplet exactly as before. Deterministic: no new randomness.
+                float worldSlopeScale = math.max(0.001f, HeightScaleMeters) / math.max(0.001f, CellSizeMeters);
+                float2 slopeVector = gradient * worldSlopeScale;
+                float2 hydraulicForce = -slopeVector + channelGradient * math.max(0f, ChannelFlowBias);
+                float2 hydraulicDirection = math.normalizesafe(hydraulicForce, float2.zero);
+                direction = direction * safeInertia + hydraulicDirection * (1f - safeInertia);
                 float directionLengthSq = math.lengthsq(direction);
                 if (directionLengthSq <= 0.0000001f)
                     direction = HashDirection(dropletIndex, step);
@@ -864,6 +887,13 @@ namespace Hecton8.World
             if (amount <= 0f)
                 return 0f;
 
+            // R98 FIX (border rims — see DepositFlatSediment): outside the write window the distance
+            // weights collapse to zero anyway (totalWeight guard), so the droplet's sediment was silently
+            // dropped at the boundary. Exiting early makes that explicit and skips 50 wasted distance
+            // evaluations per terminating droplet.
+            if (!IsInsideWriteWindow(position, writeMinX, writeMinZ, writeMaxX, writeMaxZ))
+                return 0f;
+
             int centerX = math.clamp((int)math.floor(position.x), writeMinX + 2, writeMaxX - 3);
             int centerZ = math.clamp((int)math.floor(position.y), writeMinZ + 2, writeMaxZ - 3);
             float totalWeight = 0f;
@@ -900,6 +930,14 @@ namespace Hecton8.World
         private float DepositFlatSediment(float2 position, float amount, float targetHeight, int writeMinX, int writeMinZ, int writeMaxX, int writeMaxZ)
         {
             if (amount <= 0f)
+                return 0f;
+
+            // R98 FIX (border rims): unlike the weighted deposit paths this one derives NO weight from
+            // `position`, so a droplet tens of cells outside the write window raised the clamped border
+            // cells as if it stood on them — sediment teleported onto every sub-grid/core boundary. A
+            // droplet outside the window must simply carry its sediment out; the neighbouring region
+            // owns that ground in its own pass (correct apron behaviour).
+            if (!IsInsideWriteWindow(position, writeMinX, writeMinZ, writeMaxX, writeMaxZ))
                 return 0f;
 
             int centerX = math.clamp((int)math.floor(position.x), writeMinX + 1, writeMaxX - 2);
@@ -973,15 +1011,40 @@ namespace Hecton8.World
             return amount - math.max(0f, remaining);
         }
 
+        /// <summary>
+        /// R98: true when the droplet stands inside the sub-grid region this worker may write.
+        /// Motion bounds are deliberately wider than write bounds, so every deposit path must test
+        /// membership instead of relying on an index clamp (which teleports mass to the border).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsInsideWriteWindow(float2 position, int writeMinX, int writeMinZ, int writeMaxX, int writeMaxZ)
+        {
+            return position.x >= writeMinX &&
+                   position.x < writeMaxX &&
+                   position.y >= writeMinZ &&
+                   position.y < writeMaxZ;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float DepositBilinear(float2 position, float amount, int writeMinX, int writeMinZ, int writeMaxX, int writeMaxZ)
         {
-            // Clamp to write window to prevent cross-sub-grid writes when droplets travel
-            // beyond their spawn sub-grid under the expanded motion bounds.
-            int x = math.clamp((int)math.floor(position.x), writeMinX, writeMaxX - 2);
-            int z = math.clamp((int)math.floor(position.y), writeMinZ, writeMaxZ - 2);
-            float fx = position.x - x;
-            float fz = position.y - z;
+            // R98 FIX (mass amplification -> straight max-height walls on every sub-grid border).
+            // Only the CELL INDEX was clamped; `position` was not, so a droplet travelling outside its
+            // write window under the expanded motion bounds produced fractional weights far outside
+            // [0,1] (e.g. position.x = writeMinX - 20 gave fx = -20 -> w00 = 21). DepositAtIndex drops
+            // the negative lobes with math.max(0, amount), so the positive lobes survived unbalanced and
+            // deposited 20-60x the droplet's sediment onto the boundary cell. Saturated to 1.0 that is
+            // exactly the "straight red/black line at chunk borders" failure signature in the terrain.md
+            // X-Ray Matrix Protocol. Clamping the SAMPLE POINT keeps the bilinear weights partition-of-
+            // unity (they always sum to 1) and confines the deposit to the legal window.
+            float2 clampedPosition = math.clamp(
+                position,
+                new float2(writeMinX, writeMinZ),
+                new float2(math.max(writeMinX, writeMaxX - 1.001f), math.max(writeMinZ, writeMaxZ - 1.001f)));
+            int x = math.clamp((int)math.floor(clampedPosition.x), writeMinX, writeMaxX - 2);
+            int z = math.clamp((int)math.floor(clampedPosition.y), writeMinZ, writeMaxZ - 2);
+            float fx = math.saturate(clampedPosition.x - x);
+            float fz = math.saturate(clampedPosition.y - z);
 
             float w00 = (1f - fx) * (1f - fz);
             float w10 = fx * (1f - fz);

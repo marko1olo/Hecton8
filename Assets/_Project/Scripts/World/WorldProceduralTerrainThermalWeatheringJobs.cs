@@ -39,10 +39,20 @@ namespace Hecton8.World
             float transferScale = math.saturate(Strength) * 0.25f;
             float delta = 0f;
 
-            delta += ResolveTransfer(center, InputHeights01[index - 1], talusNormalized, transferScale);
-            delta += ResolveTransfer(center, InputHeights01[index + 1], talusNormalized, transferScale);
-            delta += ResolveTransfer(center, InputHeights01[index - Width], talusNormalized, transferScale);
-            delta += ResolveTransfer(center, InputHeights01[index + Width], talusNormalized, transferScale);
+            // R98 FIX (mass conservation at the border — 1px trench/ridge ringing every chunk).
+            // The talus transfer is only conservative when BOTH cells of a pair apply their symmetric
+            // half. Border cells early-out above and copy `center` unchanged, so the x==1 / z==1 ring
+            // exchanged with partners that never reciprocated: height was destroyed where the interior
+            // was higher and created where the border was higher, etched deeper on every iteration.
+            // The sibling ThermalSlumpingJob already carries exactly these guards; this job did not.
+            if (x - 1 > 0)
+                delta += ResolveTransfer(center, InputHeights01[index - 1], talusNormalized, transferScale);
+            if (x + 1 < Width - 1)
+                delta += ResolveTransfer(center, InputHeights01[index + 1], talusNormalized, transferScale);
+            if (z - 1 > 0)
+                delta += ResolveTransfer(center, InputHeights01[index - Width], talusNormalized, transferScale);
+            if (z + 1 < Height - 1)
+                delta += ResolveTransfer(center, InputHeights01[index + Width], talusNormalized, transferScale);
 
             OutputHeights01[index] = math.saturate(center + delta);
         }
