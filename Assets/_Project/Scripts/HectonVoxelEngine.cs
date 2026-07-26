@@ -10823,6 +10823,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 CliffOverhangLateralAmplitudeMeters,
                 CliffOverhangNoiseFrequency,
                 CliffOverhangBlendStrength,
+                sdfOriginAup,
                 densityHandle);
             densityField = overhangDensityField;
         }
@@ -12253,10 +12254,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     {
         long desired = (long)math.max(1, totalCellCount) * MC_BUFFER_MULTIPLIER;
         int qualityCapacity = ResolveStreamingMeshRawScratchQualityCapacity();
-        if (desired > qualityCapacity)
-            return qualityCapacity;
-
-        return desired < 1L ? 1 : (int)desired;
+        long capacity = math.max(desired, (long)qualityCapacity);
+        capacity = math.min(capacity, (long)StreamingMeshRawVertexScratchVisualOverkillCapacity);
+        return capacity < 1L ? 1 : (int)capacity;
     }
 
     static int ResolveStreamingMeshRawScratchQualityCapacity()

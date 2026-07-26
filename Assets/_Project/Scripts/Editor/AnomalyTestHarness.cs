@@ -926,7 +926,8 @@ namespace Hecton8.Editor
                     0.5f,
                     0.73f,
                     1f,
-                    1f);
+                    1f,
+                    double3.zero);
 
                 // COLD SYNC JOB: Editor test harness must inspect deterministic SDF output immediately.
                 handle.Complete();
