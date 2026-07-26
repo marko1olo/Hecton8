@@ -534,10 +534,30 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
     // Normal for biplanar. _HectonTriplanarBlend sharpens the two surviving axes before
     // the weakest projection is dropped, so cliffs keep sidewall texture without full triplanar cost.
     float3 absNormal = pow(max(abs(worldNormal), 1e-4), max(1.0, _HectonTriplanarBlend));
-    float3 biW = absNormal;
-    if (biW.x <= biW.y && biW.x <= biW.z) biW.x = 0;
-    else if (biW.y <= biW.x && biW.y <= biW.z) biW.y = 0;
-    else biW.z = 0;
+
+    // R99 BIPLANAR SEAM FIX. The previous form picked the smallest axis with a chain of comparisons
+    // and hard-zeroed it:
+    //     if (biW.x <= biW.y && biW.x <= biW.z) biW.x = 0; else if (...) biW.y = 0; else biW.z = 0;
+    // That is DISCONTINUOUS. Where the two weaker axes cross (say |n.x| == |n.z|) the dropped axis
+    // flips between two components of EQUAL magnitude, so the surviving pair jumps from (0, y, z) to
+    // (x, y, 0) in one pixel. Those two pairs sample different projections (XZ / XY / ZY) of different
+    // textures, so the result is a hard shading seam running along every surface whose normal sweeps
+    // through that crossover — visible as a crease on cliff faces, boulders and cave mouths.
+    //
+    // Subtracting the minimum removes the weakest axis CONTINUOUSLY: its weight decays to exactly zero
+    // as it approaches being the minimum, so at the crossover both candidates are already zero and the
+    // surviving projection is the same from either side. Still exactly two live projections, so the
+    // biW.y > 0.001 early-exit below keeps its TMU saving. Same instruction cost.
+    // The only place the sharpened form degenerates is the 8 equilateral directions
+    // (|n.x| == |n.y| == |n.z|), where every axis is simultaneously the minimum and the subtraction
+    // leaves nothing to sample — black pixels. There we fade back to the plain three-axis weights,
+    // which are always well defined. The fade itself is continuous, so no seam is traded for another.
+    float minAxisWeight = min(absNormal.x, min(absNormal.y, absNormal.z));
+    float3 sharpenedW = max(absNormal - minAxisWeight, 0.0);
+    float sharpenedSum = sharpenedW.x + sharpenedW.y + sharpenedW.z;
+    float axisSum = absNormal.x + absNormal.y + absNormal.z;
+    float biplanarAuthority = saturate(sharpenedSum / max(axisSum * 0.03125, 1e-6));
+    float3 biW = lerp(absNormal, sharpenedW, biplanarAuthority);
     biW /= (biW.x + biW.y + biW.z + 1e-6);
 
     // Height blending
