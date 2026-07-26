@@ -632,8 +632,11 @@ namespace Hecton8.World
             // ADD the warp to the pristine double-precision world position
             double2 warpedPosD = posD + (double2)tectonicWarp + (double2)mesoWarp;
 
-            // Now safely cast to local floats for the rest of the geological features
-            float2 warpedPos = (float2)warpedPosD;
+            // Subtract the local chunk anchor in double precision before casting so high-frequency
+            // terrain terms retain their ULP precision at large absolute world coordinates.
+            double chunkSizeD = math.max(128.0, (double)parameters.ChunkSizeMeters);
+            double2 chunkOriginAup = math.floor(posD / chunkSizeD) * chunkSizeD;
+            float2 warpedPos = (float2)(warpedPosD - chunkOriginAup);
             float2 warpedNorm = (float2)(warpedPosD / extentD);
 
 #if UNITY_EDITOR
