@@ -5012,6 +5012,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     [Header("═══ DEFAULT CAVE PRESET ═══")]
     [Tooltip("Default preset used when GenerateVolumeAsync is called without explicit preset.")]
+    public bool UseSurfaceNets = false;
     public CavePreset defaultPreset = new CavePreset();
     [Header("═══ MAPMAGIC INTEGRATION ═══")]
     [Tooltip("MapMagic tile size in meters.\nMust match your MapMagic Tile Size setting.\nUsed to compute chunkCoord for ScavengePopulator spawn points.")]
@@ -14026,7 +14027,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
                 if (mcol != null)
                     mcol.enabled = false;
-                return await ApplyChunkedColliderMeshesAsync(volume, data, useProjectedLocalPositions, localVolumeOrigin, ct);
+                if (UseSurfaceNets)
+                {
+                    return await ApplySurfaceNetsColliderMeshesAsync(volume, data, localVolumeOrigin, ct);
+                }
+                else
+                {
+                    return await ApplyChunkedColliderMeshesAsync(volume, data, useProjectedLocalPositions, localVolumeOrigin, ct);
+                }
             }
             finally
             {
