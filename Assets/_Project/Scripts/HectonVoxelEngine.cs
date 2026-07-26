@@ -14552,10 +14552,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     if (meshUploaded)
                     {
                         // PhysX cook off the main thread; the sharedMesh assignment in the
-                        // drain then reuses the baked data by mesh instance id.
-                        int bakeMeshInstanceId = chunkBakeMesh.GetInstanceID();
+                        // drain then reuses the baked data by mesh entity id.
+                        UnityEngine.EntityId bakeMeshEntityId = chunkBakeMesh.GetEntityId();
                         await Awaitable.BackgroundThreadAsync();
-                        Physics.BakeMesh(bakeMeshInstanceId, false);
+                        Physics.BakeMesh(bakeMeshEntityId, false);
                         await Awaitable.MainThreadAsync();
                         if (ct.IsCancellationRequested)
                             return false;
