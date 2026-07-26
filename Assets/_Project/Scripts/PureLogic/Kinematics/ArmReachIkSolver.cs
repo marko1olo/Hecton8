@@ -49,10 +49,13 @@ namespace Hecton8.PureLogic.Kinematics
 
             if (distanceToTarget >= maxReach)
             {
-                // Too far: max extension
+                // Max extension. At exact equality the straight arm reaches the target, so
+                // canReach must be true there — only strictly-beyond is a failed reach.
+                // Handling equality here also keeps the cosine rule below free of the
+                // 0/0 case (upperArmLength == 0 with distance == forearmLength).
                 Vector3 elbow = shoulderPos + directionToTarget * upperArmLength;
                 Vector3 hand = shoulderPos + directionToTarget * maxReach;
-                return (elbow, hand, false);
+                return (elbow, hand, distanceToTarget <= maxReach);
             }
 
             // Cosine rule to find angle at shoulder

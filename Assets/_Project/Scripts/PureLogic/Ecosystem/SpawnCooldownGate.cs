@@ -34,8 +34,12 @@ namespace Hecton8.PureLogic.Ecosystem
 
             if (currentTime < lastSpawnTime) currentTime = lastSpawnTime;
 
+            // A cooldown that overflows to infinity means "never ready". Clamping it down to
+            // MaxValue instead would let an equally extreme elapsed time (MaxValue - 0) satisfy
+            // the gate. Elapsed time is always finite here (both timestamps are sanitized), so
+            // an infinite cooldown can simply close the gate.
             float effectiveCooldown = cooldownBase + (currentPopulationDensity * densityMultiplier);
-            if (float.IsInfinity(effectiveCooldown)) effectiveCooldown = float.MaxValue;
+            if (float.IsInfinity(effectiveCooldown)) return false;
 
             float timeSinceLastSpawn = currentTime - lastSpawnTime;
 

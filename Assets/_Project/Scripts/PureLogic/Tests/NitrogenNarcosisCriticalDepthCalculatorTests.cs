@@ -24,11 +24,21 @@ namespace Hecton8.PureLogic.Tests
         {
             float resultBelow30m = NitrogenNarcosisCriticalDepthCalculator.Compute(29.9f, 0.21f, 0.79f);
             float resultNoN2 = NitrogenNarcosisCriticalDepthCalculator.Compute(100f, 1.0f, 0.0f);
+
+            // (1.0, 1.0) must behave exactly as its normalized mix (0.5, 0.5).
             float resultExcessFractions = NitrogenNarcosisCriticalDepthCalculator.Compute(40f, 1.0f, 1.0f);
+            float resultNormalizedMix = NitrogenNarcosisCriticalDepthCalculator.Compute(40f, 0.5f, 0.5f);
+
+            // 50/50 mix at 40 m: PN2 = (1 + 40/10) * 0.5 = 2.5 atm, below the 3.16 atm onset,
+            // so zero narcosis is the physically correct result at this depth.
+            // At 70 m: PN2 = 8 * 0.5 = 4.0 atm, above onset -> intensity (4.0-3.16)/(5.53-3.16) ~ 0.354.
+            float deepExcessFractions = NitrogenNarcosisCriticalDepthCalculator.Compute(70f, 1.0f, 1.0f);
 
             Assert.AreEqual(0f, resultBelow30m, "Below 30m with standard air should have 0 narcosis.");
             Assert.AreEqual(0f, resultNoN2, "100% O2 should result in 0 nitrogen narcosis regardless of depth.");
-            Assert.IsTrue(resultExcessFractions > 0f && resultExcessFractions <= 1f, "Excess gas fractions should be normalized correctly.");
+            Assert.AreEqual(resultNormalizedMix, resultExcessFractions, "Excess gas fractions must behave as their normalized mix.");
+            Assert.AreEqual(0f, resultExcessFractions, "Normalized 50/50 mix at 40 m is below the narcosis onset partial pressure.");
+            Assert.AreEqual(0.354f, deepExcessFractions, 0.005f, "Normalized 50/50 mix at 70 m must produce narcosis above onset.");
             Assert.Pass("Verify boundary constraints clamp correctly.");
         }
 
