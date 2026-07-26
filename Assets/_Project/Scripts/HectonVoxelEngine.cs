@@ -14067,6 +14067,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         NativeArray<VoxelVertexDTO> colliderVertices = buffers.ColliderVertices;
         NativeArray<uint> colliderIndices = buffers.ColliderIndices;
         NativeArray<ChunkMeshingStateDTO> states = buffers.States;
+        NativeArray<sbyte> vaultDensity = buffers.Density;
 
         if (!colliderVertices.IsCreated || !colliderIndices.IsCreated || !states.IsCreated)
         {
@@ -14074,22 +14075,33 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return false;
         }
 
-        int stateIndex = math.clamp(data.VolumeIndex, 0, states.Length - 1);
-
-        if (VoxelSurfaceNetsVault.TryScheduleExtractionPinned(buffers, stateIndex, (uint)Time.frameCount, default, out JobHandle extractHandle, out var extractLease))
+        NativeArray<sbyte> srcDensity = data.ScratchLease.QuantizedDensityField;
+        if (srcDensity.IsCreated && vaultDensity.IsCreated && srcDensity.Length > 0)
         {
-            if (VoxelSurfaceNetsVault.TrySchedulePhysicsBakeRequestsPinned(buffers, 0, extractHandle, out JobHandle bakeHandle, out var bakeLease))
-            {
-                await AwaitForJobCompletionAsync(bakeHandle, ct, "surface nets extraction & bake");
-                VoxelSurfaceNetsVault.ReleaseJobBufferLease(ref bakeLease);
-            }
-            else
-            {
-                await AwaitForJobCompletionAsync(extractHandle, ct, "surface nets extraction");
-            }
-            VoxelSurfaceNetsVault.ReleaseJobBufferLease(ref extractLease);
+            int copyLength = math.min(srcDensity.Length, vaultDensity.Length);
+            NativeArray<sbyte>.Copy(srcDensity, vaultDensity, copyLength);
         }
 
+        int colliderChunkCount = data.TotalChunks > 0 ? math.min(data.TotalChunks, states.Length) : 1;
+
+        for (int chunkIdx = 0; chunkIdx < colliderChunkCount; chunkIdx++)
+        {
+            if (VoxelSurfaceNetsVault.TryScheduleExtractionPinned(buffers, chunkIdx, (uint)Time.frameCount, default, out JobHandle extractHandle, out var extractLease))
+            {
+                if (VoxelSurfaceNetsVault.TrySchedulePhysicsBakeRequestsPinned(buffers, 0, extractHandle, out JobHandle bakeHandle, out var bakeLease))
+                {
+                    await AwaitForJobCompletionAsync(bakeHandle, ct, "surface nets extraction & bake");
+                    VoxelSurfaceNetsVault.ReleaseJobBufferLease(ref bakeLease);
+                }
+                else
+                {
+                    await AwaitForJobCompletionAsync(extractHandle, ct, "surface nets extraction");
+                }
+                VoxelSurfaceNetsVault.ReleaseJobBufferLease(ref extractLease);
+            }
+        }
+
+        int stateIndex = math.clamp(data.VolumeIndex, 0, states.Length - 1);
         ChunkMeshingStateDTO state = states[stateIndex];
         int vertCount = state.VertexCount;
         int indexCount = state.IndexCount;
