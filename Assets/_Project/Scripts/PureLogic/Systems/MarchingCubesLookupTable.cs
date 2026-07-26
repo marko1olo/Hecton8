@@ -46,12 +46,61 @@ namespace Hecton8.PureLogic.Systems
         };
 
         /// <summary>
-        /// Computes/evaluates the mathematical model.
+        /// Burst-safe edge-flag lookup. Never throws and never allocates, so it is legal
+        /// inside a <c>[BurstCompile]</c> job — unlike the <c>Calculate</c> overloads below,
+        /// which throw on invalid input and therefore abort the process when a throw is
+        /// reached from Burst-compiled code in a player build.
         /// </summary>
-        /// <param name='caseMask'>Parameter representing the caseMask (byte).</param>
-        /// <param name='cornerDensities'>Parameter representing the cornerDensities (float[]).</param>
-        /// <param name='isoLevel'>Parameter representing the isoLevel (float).</param>
-        /// <returns>Returns edgeFlags, float[,] (interpolatedVertices) of type int.</returns>
+        /// <param name="caseMask">Corner-sign mask; bit i is set when corner i is inside.</param>
+        /// <param name="d0">Corner density 0.</param>
+        /// <param name="d1">Corner density 1.</param>
+        /// <param name="d2">Corner density 2.</param>
+        /// <param name="d3">Corner density 3.</param>
+        /// <param name="d4">Corner density 4.</param>
+        /// <param name="d5">Corner density 5.</param>
+        /// <param name="d6">Corner density 6.</param>
+        /// <param name="d7">Corner density 7.</param>
+        /// <param name="isoLevel">Iso level; must be finite.</param>
+        /// <param name="edgeFlags">
+        /// 12-bit mask of the cube edges the surface crosses. Set to <c>0</c> when any input
+        /// is non-finite, which makes the caller emit no triangles for that cell.
+        /// </param>
+        /// <returns><c>true</c> when every input was finite and <paramref name="edgeFlags"/> is usable.</returns>
+        public static bool TryCalculate(
+            byte caseMask,
+            float d0, float d1, float d2, float d3,
+            float d4, float d5, float d6, float d7,
+            float isoLevel,
+            out int edgeFlags)
+        {
+            if (!float.IsFinite(isoLevel) ||
+                !float.IsFinite(d0) || !float.IsFinite(d1) ||
+                !float.IsFinite(d2) || !float.IsFinite(d3) ||
+                !float.IsFinite(d4) || !float.IsFinite(d5) ||
+                !float.IsFinite(d6) || !float.IsFinite(d7))
+            {
+                edgeFlags = 0;
+                return false;
+            }
+
+            edgeFlags = EdgeTable[caseMask];
+            return true;
+        }
+
+        /// <summary>
+        /// Returns the 12-bit edge-crossing mask for <paramref name="caseMask"/>.
+        /// </summary>
+        /// <remarks>
+        /// This returns edge flags only. It does not interpolate vertex positions — the
+        /// caller owns that step, using the densities and iso level it already holds.
+        /// The density and iso-level arguments here serve the finiteness contract, which is
+        /// why they are validated but not otherwise read.
+        /// Throws on invalid input; use <see cref="TryCalculate"/> from Burst-compiled code.
+        /// </remarks>
+        /// <param name='caseMask'>Corner-sign mask; bit i is set when corner i is inside.</param>
+        /// <param name='cornerDensities'>The 8 corner densities; must be non-null, length >= 8, all finite.</param>
+        /// <param name='isoLevel'>Iso level; must be finite.</param>
+        /// <returns>Returns the 12-bit edge-crossing mask of type int.</returns>
         public static int Calculate(byte caseMask, float[] cornerDensities, float isoLevel)
         {
             if (cornerDensities == null)
@@ -76,6 +125,10 @@ namespace Hecton8.PureLogic.Systems
             return EdgeTable[caseMask];
         }
 
+        /// <summary>
+        /// Returns the 12-bit edge-crossing mask for <paramref name="caseMask"/>.
+        /// Throws on non-finite input; use <see cref="TryCalculate"/> from Burst-compiled code.
+        /// </summary>
         public static int Calculate(byte caseMask, float d0, float d1, float d2, float d3, float d4, float d5, float d6, float d7, float isoLevel)
         {
             if (float.IsNaN(isoLevel) || float.IsInfinity(isoLevel) ||

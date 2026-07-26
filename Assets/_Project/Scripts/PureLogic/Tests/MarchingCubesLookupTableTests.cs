@@ -127,5 +127,65 @@ namespace Hecton8.PureLogic.Tests
             }
             Assert.IsTrue(throwsException);
         }
+
+        /// <summary>
+        /// TryCalculate is the Burst-legal path: the marching-cubes extract job is
+        /// [BurstCompile], and a throw reached from Burst-compiled code aborts the process
+        /// in a player build instead of skipping the cell. It must never throw.
+        /// </summary>
+        [Test]
+        public void Test_TryCalculate_NeverThrowsOnNonFinite_Case06()
+        {
+            int flags;
+            bool ok;
+
+            Assert.DoesNotThrow(() =>
+                MarchingCubesLookupTable.TryCalculate(127, float.NaN, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, out _));
+
+            ok = MarchingCubesLookupTable.TryCalculate(127, float.NaN, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, out flags);
+            Assert.IsFalse(ok, "NaN density must be reported as unusable");
+            Assert.AreEqual(0, flags, "unusable input must emit no edges, so the cell produces no triangles");
+
+            ok = MarchingCubesLookupTable.TryCalculate(127, 0f, 0f, 0f, 0f, 0f, 0f, 0f, float.PositiveInfinity, 0f, out flags);
+            Assert.IsFalse(ok);
+            Assert.AreEqual(0, flags);
+
+            ok = MarchingCubesLookupTable.TryCalculate(127, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, float.NaN, out flags);
+            Assert.IsFalse(ok, "non-finite isoLevel must be reported as unusable");
+            Assert.AreEqual(0, flags);
+        }
+
+        /// <summary>
+        /// For every finite input the Burst-safe path must agree exactly with the throwing
+        /// path across all 256 cube cases, so switching a call site cannot change geometry.
+        /// </summary>
+        [Test]
+        public void Test_TryCalculate_MatchesCalculateForAllCases_Case07()
+        {
+            for (int mask = 0; mask < 256; mask++)
+            {
+                byte m = (byte)mask;
+                int expected = MarchingCubesLookupTable.Calculate(m, 1f, -1f, 1f, -1f, 1f, -1f, 1f, -1f, 0f);
+                bool ok = MarchingCubesLookupTable.TryCalculate(m, 1f, -1f, 1f, -1f, 1f, -1f, 1f, -1f, 0f, out int actual);
+
+                Assert.IsTrue(ok, "finite input must be usable, mask " + mask);
+                Assert.AreEqual(expected, actual, "edge flags must match, mask " + mask);
+            }
+        }
+
+        /// <summary>
+        /// Empty and full cubes cross no edges, so they must emit nothing.
+        /// </summary>
+        [Test]
+        public void Test_TryCalculate_EmptyAndFullCubesEmitNothing_Case08()
+        {
+            bool okEmpty = MarchingCubesLookupTable.TryCalculate(0, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 0f, out int empty);
+            bool okFull = MarchingCubesLookupTable.TryCalculate(255, -1f, -1f, -1f, -1f, -1f, -1f, -1f, -1f, 0f, out int full);
+
+            Assert.IsTrue(okEmpty);
+            Assert.IsTrue(okFull);
+            Assert.AreEqual(0x000, empty, "an entirely outside cube crosses no edge");
+            Assert.AreEqual(0x000, full, "an entirely inside cube crosses no edge");
+        }
     }
 }
