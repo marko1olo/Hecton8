@@ -4576,16 +4576,32 @@ public struct VoxelSanitizeTriangleIndexJob : IJobParallelFor
     [NoAlias] public NativeArray<int> triangleIndices;
     [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> densityFaultFlags;
 
-    public void Execute(int index)
+    public void Execute(int triangleIdx)
     {
-        if (!triangleIndices.IsCreated || index < 0 || index >= indexCount || index >= triangleIndices.Length)
+        if (!triangleIndices.IsCreated || triangleIdx < 0)
             return;
 
-        int value = triangleIndices[index];
-        if ((uint)value < (uint)vertexCount)
+        int triangleCount = indexCount / 3;
+        if (triangleIdx >= triangleCount)
             return;
 
-        triangleIndices[index] = 0;
+        int baseIndex = triangleIdx * 3;
+        if (baseIndex + 2 >= triangleIndices.Length)
+            return;
+
+        int i0 = triangleIndices[baseIndex];
+        int i1 = triangleIndices[baseIndex + 1];
+        int i2 = triangleIndices[baseIndex + 2];
+        bool valid =
+            (uint)i0 < (uint)vertexCount &&
+            (uint)i1 < (uint)vertexCount &&
+            (uint)i2 < (uint)vertexCount;
+        if (valid)
+            return;
+
+        triangleIndices[baseIndex] = 0;
+        triangleIndices[baseIndex + 1] = 0;
+        triangleIndices[baseIndex + 2] = 0;
         if (densityFaultFlags.IsCreated && (uint)VoxelDensityPipelineFaultSlots.WeldOutput < (uint)densityFaultFlags.Length)
             densityFaultFlags[VoxelDensityPipelineFaultSlots.WeldOutput] = 1;
     }
