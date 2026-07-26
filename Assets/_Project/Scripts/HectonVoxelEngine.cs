@@ -11067,6 +11067,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         NativeArray<int> weldedCounter = data.ScratchLease.MeshWeldedCounter;
         weldedCounter[0] = 0;
 
+        bool weldOutputFault = false;
         try
         {
             JobHandle weldHandle = new VoxelWeldJob
@@ -11088,6 +11089,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             await AwaitForJobCompletionAsync(weldHandle, ct, "vertex weld");
 
             data.WeldedCount = weldedCounter[0];
+            weldOutputFault = IsVoxelDensityFaultSlotSet(
+                densityFaultFlags,
+                VoxelDensityPipelineFaultSlots.WeldOutput);
             ReportAndClearVoxelDensityFaults(densityFaultFlags);
         }
         finally
@@ -11098,6 +11102,15 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         finally
         {
             UnlockStreamingScratchJobLifetime(ref data.ScratchLease);
+        }
+
+        // TriangleIndices is pooled scratch. A weld overflow leaves the unwritten tail holding
+        // indices from the previous chunk, so fail closed before sanitize, rendering, or collider
+        // publication can consume a partially updated buffer.
+        if (weldOutputFault)
+        {
+            data.WeldedCount = 0;
+            return false;
         }
 
         if (data.WeldedCount < 3)
