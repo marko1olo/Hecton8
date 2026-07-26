@@ -446,11 +446,9 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 [FORBID] "I do not know why it crashed" as a final answer when the system lacks a black-box route.
 
-## API Testing Safety
+## API Key Testing Safety
 
-[FORBID] Do not run rapid, parallel, or unthrottled batch-testing of API keys (including Groq, Gemini, OpenAI, etc.). Mass consecutive requests will trigger provider rate limits, account bans, or key revocation.
-
-[REQ] Any API key verification, diagnostic testing, or key rotation routine must execute sequentially and enforce a strict safety cooldown delay of at least 2 to 3 seconds between consecutive requests.
+[FORBID] Запрещено тестировать API-ключи (включая Groq, Gemini и др.) в лоб, спамя их быстрыми последовательными запросами без пауз. Массовые параллельные или мгновенные запросы приводят к блокировке (бану) ключей и аккаунтов. Тестирование ключей должно выполняться ИСКЛЮЧИТЕЛЬНО поочередно, с обязательным разнесением во времени и паузами (cooldown) не менее 2-3 секунд между запросами к одному провайдеру.
 
 ## Final Directive
 
