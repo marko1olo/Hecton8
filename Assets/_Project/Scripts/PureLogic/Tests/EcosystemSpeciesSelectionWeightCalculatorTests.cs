@@ -29,7 +29,11 @@ namespace Hecton8.PureLogic.Tests
             // Arrange
             float baseWeight = 1.0f;
             float creditCost = 10.0f;
-            float currentAvailableCredits1 = 9.9999f;
+            // The 0.0001 margin is a float-noise tolerance, so probe safely inside it
+            // (deficit ~5e-5), not exactly at its edge: 9.9999f is really 9.99989986...,
+            // making the deficit 1.00136e-4 — just past the margin purely from float
+            // representation, which is the noise the margin exists to absorb.
+            float currentAvailableCredits1 = 9.99995f;
             float currentAvailableCredits2 = 9.9998f;
 
             // Act

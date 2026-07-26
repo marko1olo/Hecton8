@@ -30,9 +30,13 @@ namespace Hecton8.PureLogic.Tests
         public void Test_Boundary_Case02()
         {
             // Arrange: Setup boundary inputs (clamping thresholds, min/max values)
+            // Distance is 10 m, not 100 m: with clarity clamped to 0.01 and wavelength to
+            // 750 the coefficient is k = 0.01 * 100 * 2 = 2, so 100 m gives e^-200 which
+            // underflows float (min denormal ~1.4e-45) to an exact 0. At 10 m the result is
+            // 100 * e^-20 ~ 2e-7 — still a rapid falloff, but representable and testable.
             float emittedIntensity = 100f;
             float wavelengthNm = 800f; // Beyond red
-            float distanceMeters = 100f;
+            float distanceMeters = 10f;
             float waterClarity = -1f; // Invalid clarity
 
             // Act

@@ -66,8 +66,11 @@ namespace Hecton8.PureLogic.Tests
             float rateInf = RepairRateMaterialCalculator.Compute(1f, float.PositiveInfinity, 100f, 1f);
             Assert.That(rateInf, Is.EqualTo(0f));
 
+            // 100 / (1e20 * 1e20) is a float denormal (~1e-38) when the backend computes the
+            // divisor in double, and an exact 0 when the float product overflows to +Inf and
+            // hits the guard. Both mean "no meaningful repair"; assert negligible, not bit-exact.
             float extremeHardness = RepairRateMaterialCalculator.Compute(1f, 1e20f, 100f, 1e20f);
-            Assert.That(extremeHardness, Is.EqualTo(0f));
+            Assert.That(extremeHardness, Is.EqualTo(0f).Within(1e-9f));
         }
     }
 }

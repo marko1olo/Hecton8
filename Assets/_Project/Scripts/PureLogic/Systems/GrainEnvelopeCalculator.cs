@@ -18,8 +18,10 @@ namespace Hecton8.PureLogic.Systems
         public static float Compute(float grainPositionNormalized, float attackFraction, float decayFraction)
         {
             if (float.IsNaN(grainPositionNormalized) || float.IsInfinity(grainPositionNormalized)) return 0f;
-            if (float.IsNaN(attackFraction) || float.IsInfinity(attackFraction)) return 0f;
-            if (float.IsNaN(decayFraction) || float.IsInfinity(decayFraction)) return 0f;
+            // NaN fractions are unordered garbage and mean silence. Infinite fractions are
+            // just out-of-range magnitudes and take the same [0,1] clamp below as any other
+            // oversized value — rejecting +Inf while clamping 5.0 to 1 was inconsistent.
+            if (float.IsNaN(attackFraction) || float.IsNaN(decayFraction)) return 0f;
 
             float position = grainPositionNormalized;
             if (position <= 0f || position >= 1f) return 0f;

@@ -104,7 +104,10 @@ namespace Hecton8.PureLogic.Tests
 
             // Extremely large numbers
             Assert.AreEqual(0.5f, CaloricDeficitPenaltyCalculator.Compute(-1e30f, 100f, maxPenalty));
-            Assert.AreEqual(0f, CaloricDeficitPenaltyCalculator.Compute(-100f, 1e30f, maxPenalty));
+            // The continuous model gives maxPenalty * (100 / 1e30) = 5e-29, not an exact 0f
+            // (and the exact bits depend on the backend's intermediate precision), so this
+            // asserts "negligible", not bit-exact zero.
+            Assert.AreEqual(0f, CaloricDeficitPenaltyCalculator.Compute(-100f, 1e30f, maxPenalty), 1e-6f);
         }
     }
 }
