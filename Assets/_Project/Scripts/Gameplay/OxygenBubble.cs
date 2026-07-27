@@ -5,8 +5,9 @@
 // ARCHITECTURE:
 //   • Standalone prop — uses ITickable via GameTickManager (no Update).
 //   • Floats upward with configurable speed.
-//   • OnTriggerEnter for player detection.
-//   • UnityEvent for oxygen restoration (decoupled from player reference).
+//   • Dispatcher-polled radius check against the cached player runtime context.
+//   • Oxygen is credited on the survival owner route (IPlayerRuntimeContext.SurvivalSystem);
+//     the UnityEvent is a presentation fan-out only and never carries survival truth.
 //
 // ZERO GC:
 //   • ITickable.Tick() — no Update(), no allocations.
@@ -17,7 +18,7 @@
 // USAGE:
 //   1. Create bubble prefab with sphere collider (trigger).
 //   2. Assign this script and configure float speed.
-//   3. Connect OnCollected event to HectonSurvivalSystem.RefillOxygen.
+//   3. Optionally bind OnCollected to local VFX/audio only — oxygen delivery needs no wiring.
 //   4. Assign to OxygenPlant.oxygenBubblePrefab.
 // ============================================================================
 
@@ -46,6 +47,9 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     public sealed class OxygenBubble : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
+        private const uint OxygenDeliveryMissWarningHash = 0x4F32424Du; // "O2BM"
+        private const uint OxygenBubbleContextHash = 0x4F324255u;       // "O2BU"
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — MOVEMENT
         // ══════════════════════════════════════════════════════════
@@ -98,7 +102,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Events ─────────────────────────────────────")]
-        [Tooltip("Invoked when player collects the bubble. Passes oxygen amount.")]
+        [Tooltip("Presentation-only fan-out fired after the oxygen was credited. Passes the delivered oxygen amount.")]
         [SerializeField] private UnityEvent<float> OnCollected;
 
         [Tooltip("Invoked when bubble expires without collection.")]
@@ -127,6 +131,7 @@ namespace Hecton8.Gameplay
         private bool _pendingCollectEffects;
         private bool _pendingDespawn;
         private Vector3 _pendingCollectPosition;
+        private bool _oxygenDeliveryMissReported;
 
         // Pre-cached player tag for CompareTag
         private const string PlayerTag = "Player";
@@ -247,8 +252,7 @@ namespace Hecton8.Gameplay
             if ((playerPosition - bubblePosition).sqrMagnitude > radius * radius)
                 return false;
 
-            Collect(playerTransform);
-            return true;
+            return TryCollect(playerTransform);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -306,16 +310,82 @@ namespace Hecton8.Gameplay
             return 1f - (4f * math.abs(phase - 0.5f));
         }
 
-        private void Collect(Transform collector)
+        /// <summary>
+        /// Credits the authored oxygen charge to the survival owner and consumes the bubble.
+        /// Returns false when the survival owner is unreachable so the charge is not destroyed
+        /// and the bubble stays collectable until it expires on its own lifetime.
+        /// </summary>
+        /// <param name="collector">Transform that entered the collection radius.</param>
+        private bool TryCollect(Transform collector)
         {
+            HectonSurvivalSystem survival = ResolveCollectorSurvivalSystem(collector);
+            if (survival == null)
+            {
+                ReportOxygenDeliveryMiss();
+                return false;
+            }
+
+            float deliveredOxygen = ResolveDeliverableOxygen(oxygenAmount);
+            if (deliveredOxygen <= 0f)
+                return false;
+
+            // Survival truth lands on the owner route before any presentation fires.
+            survival.RefillOxygen(deliveredOxygen);
+
             _state = BubbleState.Collected;
+            _oxygenDeliveryMissReported = false;
 
             QueueCollectEffects();
 
-            // Fire event with oxygen amount
-            OnCollected?.Invoke(oxygenAmount);
+            // Presentation-only fan-out; the oxygen was already credited above.
+            OnCollected?.Invoke(deliveredOxygen);
 
             _pendingDespawn = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the survival owner for the collecting transform through the cold-cached
+        /// player runtime context. No scene search, no allocation, no registry polling.
+        /// </summary>
+        /// <param name="collector">Transform that entered the collection radius.</param>
+        /// <returns>Survival owner, or null when the collector is not the live player root.</returns>
+        private HectonSurvivalSystem ResolveCollectorSurvivalSystem(Transform collector)
+        {
+            IPlayerRuntimeContext playerRuntime = _playerRuntime;
+            if (playerRuntime == null || !playerRuntime.IsInitialized)
+                return null;
+
+            if (collector != null && !ReferenceEquals(collector, playerRuntime.PlayerTransform))
+                return null;
+
+            return playerRuntime.SurvivalSystem;
+        }
+
+        /// <summary>
+        /// Guards the authored charge against NaN, infinity, and negative authoring.
+        /// </summary>
+        /// <param name="authoredAmount">Serialized oxygen charge.</param>
+        /// <returns>Finite, non-negative oxygen amount.</returns>
+        private static float ResolveDeliverableOxygen(float authoredAmount)
+        {
+            return math.isfinite(authoredAmount) ? math.max(0f, authoredAmount) : 0f;
+        }
+
+        /// <summary>
+        /// Publishes one bounded telemetry warning per bubble life when the survival owner
+        /// could not be reached, so a silently uncollectable refill source stays visible.
+        /// </summary>
+        private void ReportOxygenDeliveryMiss()
+        {
+            if (_oxygenDeliveryMissReported)
+                return;
+
+            _oxygenDeliveryMissReported = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                OxygenDeliveryMissWarningHash,
+                OxygenBubbleContextHash,
+                ResolveDeliverableOxygen(oxygenAmount));
         }
 
         private void Expire()
@@ -407,6 +477,7 @@ namespace Hecton8.Gameplay
             _pendingRuntimePosition = Vector3.zero;
             _pendingCollectEffects = false;
             _pendingDespawn = false;
+            _oxygenDeliveryMissReported = false;
         }
 
         private float ResolveDeterministicDriftPhase(uint sequence)
