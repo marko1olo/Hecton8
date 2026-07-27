@@ -2235,19 +2235,12 @@ public struct VoxelDensityJob : IJobParallelFor
 
     static float LengthApprox(float3 value)
     {
-        float3 axis = math.abs(value);
-        float maxAxis = math.cmax(axis);
-        float minAxis = math.cmin(axis);
-        float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
-        return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+        return math.length(value);
     }
 
     static float LengthApprox(float2 value)
     {
-        float2 axis = math.abs(value);
-        float maxAxis = math.max(axis.x, axis.y);
-        float minAxis = math.min(axis.x, axis.y);
-        return maxAxis + minAxis * 0.375f;
+        return math.length(value);
     }
 
     static float3 NormalizeApproxOr(float3 value, float3 fallback)
@@ -4052,11 +4045,7 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
 
     static float LengthApprox(float3 value)
     {
-        float3 axis = math.abs(value);
-        float maxAxis = math.cmax(axis);
-        float minAxis = math.cmin(axis);
-        float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
-        return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+        return math.length(value);
     }
 }
 
@@ -10474,11 +10463,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     static float LengthApprox(float3 value)
     {
-        float3 axis = math.abs(value);
-        float maxAxis = math.cmax(axis);
-        float minAxis = math.cmin(axis);
-        float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
-        return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+        return math.length(value);
     }
 
     static int ResolveBiomeSdfModifierEnabled(int lodLevel)
