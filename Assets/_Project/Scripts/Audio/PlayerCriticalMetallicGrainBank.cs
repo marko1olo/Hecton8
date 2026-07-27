@@ -16,18 +16,10 @@ namespace Hecton8.Audio
             int length = math.max(grainBank.Length, 1);
             float invLengthMinusOne = length > 1 ? math.rcp(length - 1f) : 0f;
             for (int i = 0; i < grainBank.Length; i++)
-                grainBank[i] = GenerateCheapMetallicSample(i, invLengthMinusOne);
+                grainBank[i] = GenerateGranularStressEmission(i, invLengthMinusOne);
         }
 
-        /// <summary>
-        /// Explicit emergency fallback entry point for no-file granular synth initialization.
-        /// </summary>
-        public static void GenerateEmergencyMockGrains(NativeArray<float> grainBank)
-        {
-            Generate(grainBank);
-        }
-
-        private static float GenerateCheapMetallicSample(int index, float invLengthMinusOne)
+        private static float GenerateGranularStressEmission(int index, float invLengthMinusOne)
         {
             float t = index * invLengthMinusOne;
             float strike = HashSigned((uint)index ^ 0xA91C52B1u);
@@ -40,22 +32,22 @@ namespace Hecton8.Audio
             float phaseC = t * math.lerp(508f, 2330f, sweep) * 0.029f;
             float modPhase = t * math.lerp(31f, 187f, sweep) * 0.113f;
             float envelope = math.saturate(math.abs(strike) * math.abs(strike) * 0.72f);
-            float modulator = TriOscFake(modPhase);
+            float modulator = LFO_TriangleOscillator(modPhase);
             float sample =
-                TriOscFake(phaseA) * 0.48f +
-                TriOscFake(phaseB) * 0.31f +
-                TriOscFake(phaseC) * 0.21f;
+                LFO_TriangleOscillator(phaseA) * 0.48f +
+                LFO_TriangleOscillator(phaseB) * 0.31f +
+                LFO_TriangleOscillator(phaseC) * 0.21f;
             sample = (sample + modulator * friction * 0.45f) * (0.42f + envelope * 0.58f);
-            return SoftClipFake(sample * 2.6f);
+            return SoftClipSaturation(sample * 2.6f);
         }
 
-        private static float TriOscFake(float phase)
+        private static float LFO_TriangleOscillator(float phase)
         {
             float x = math.frac(phase);
             return (math.abs(x - 0.5f) * 4f) - 1f;
         }
 
-        private static float SoftClipFake(float value)
+        private static float SoftClipSaturation(float value)
         {
             return value * math.rcp(1f + math.abs(value));
         }
