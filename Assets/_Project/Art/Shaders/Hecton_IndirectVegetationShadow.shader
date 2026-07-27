@@ -502,6 +502,22 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave * healthSwayScale);
                 animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask * healthSwayScale);
                 animatedPositionWS += flowSynchronyOffset;
+                // Far LOD replaces the position outright, so it must happen BEFORE the offsets that
+                // are meant to sit on top of it. It used to run after them, which discarded the wake
+                // trail, the interaction bend, the player bend and the state response entirely at far
+                // LOD - the lit pass resolves the billboard first and then applies all of those.
+                if (_HectonVegetationRuntimeLodParams.x >= 0.5)
+                {
+                    animatedPositionWS = ResolveBillboardPositionWS(
+                        originWS + driftOffsetWS,
+                        localPosition,
+                        instanceHeight,
+                        instanceWidth,
+                        heightMask,
+                        ResolveVegetationViewPositionWS());
+                    animatedPositionWS += flowSynchronyOffset * 0.85;
+                }
+
                 animatedPositionWS += ResolveWakeTrailOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
                 animatedPositionWS += ResolveInteractionOffset(
                     animatedPositionWS,
@@ -519,21 +535,12 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                     animatedPositionWS.y -= instanceHeight * bendMask * (0.06 * stateWeights.x + 0.18 * stateWeights.y);
                 }
 
-                // The shadow pass had no far-LOD branch at all, so past the threshold the visible
-                // flora was a camera-facing quad while its shadow still came from the detail-mesh
-                // pose. Matches DepthOnly exactly, including the 0.85 flow-synchrony weight. The
-                // view position is the CAMERA, not _WorldSpaceCameraPos - that is the light here.
-                if (_HectonVegetationRuntimeLodParams.x >= 0.5)
-                {
-                    animatedPositionWS = ResolveBillboardPositionWS(
-                        originWS + driftOffsetWS,
-                        localPosition,
-                        instanceHeight,
-                        instanceWidth,
-                        heightMask,
-                        ResolveVegetationViewPositionWS());
-                    animatedPositionWS += flowSynchronyOffset * 0.85;
-                }
+                // Unconditional in the lit pass and absent from all three: a dying plant collapses
+                // toward its own root and sags. Without them the plant folded in ForwardLit while its
+                // shadow, depth and motion vectors stood upright.
+                animatedPositionWS = lerp(animatedPositionWS, originWS + driftOffsetWS, stateWeights.y * bendMask * 0.18);
+                animatedPositionWS.y -= stateWeights.y * instanceHeight * lerp(0.03, 0.16, heightMask);
+
 
                 float seasonalDecayWeight =
                     saturate(SanitizeNonNegativeFinite(_HectonFloraLifecycleParams.y)) *
