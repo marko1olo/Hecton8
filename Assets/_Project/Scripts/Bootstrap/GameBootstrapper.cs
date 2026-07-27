@@ -597,6 +597,26 @@ namespace Hecton8.Bootstrap
         private bool _sceneActivationRunInProgress;
         private bool _sceneActivationRequested;
         private bool _sceneActivationStarted;
+
+        /// <summary>
+        /// Deadline source for scene activation, held so <see cref="SetSceneActivationStep"/> can push it
+        /// forward on every observed step.
+        ///
+        /// It used to be a single CancelAfter over the WHOLE phase, which made one wall clock bound
+        /// singleton verification, pool warmup, world generation, the scene gate and the graph guard
+        /// together. On a voxel plus MapMagic world that budget is not a hang detector, it is a coin
+        /// flip - and AGENTS.md:195 bans exactly this shape: "Time-based coroutine timeouts for loading
+        /// are banned", which is why the Kinematic Arrest Gate waits for WorldChunkPhysicsBakedSignal
+        /// instead of a clock. Measured consequence: a headless run logged "bootstrap failed and scatter
+        /// fallback was enabled. Reason: Bootstrap timed out during scene activation.", so
+        /// _isBootstrapComplete was never set, AreAllSystemsReady() stayed false, MainMenuController
+        /// disabled itself in Awake, and the game could not be entered at all.
+        ///
+        /// Now the budget is per STEP, not per phase: each of the 18 SetSceneActivationStep calls
+        /// reschedules the deadline. A genuinely stuck boot still fails, and fails at a named step. Slow
+        /// but progressing work is no longer killed for being slow.
+        /// </summary>
+        private CancellationTokenSource _sceneActivationDeadline;
         private ulong _sceneActivationSceneHandle = ulong.MaxValue;
         private bool _isLoadingSave;
         private bool _slowTickableRegistered;
@@ -7178,6 +7198,13 @@ namespace Hecton8.Bootstrap
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(
                 ownerToken,
                 destroyCancellationToken);
+
+            // bootstrapTimeout is now the NO-PROGRESS budget for a single activation step, not the total
+            // for the whole phase. SetSceneActivationStep pushes this deadline forward each time the
+            // phase reaches a new named step; see the _sceneActivationDeadline field comment for why the
+            // total-duration form was wrong. The field is cleared in the finally below, because
+            // CancelAfter on a disposed source throws.
+            _sceneActivationDeadline = cts;
             cts.CancelAfter(TimeSpan.FromSeconds(bootstrapTimeout));
             CancellationToken ct = cts.Token;
 
@@ -7276,6 +7303,12 @@ namespace Hecton8.Bootstrap
                 FailSceneActivation("Bootstrap failed during scene activation.");
                 HandleFatalBootstrapException(_debugSceneActivationStep, exception);
                 return false;
+            }
+            finally
+            {
+                // The `using` disposes cts as this scope unwinds, so the field must stop pointing at it
+                // first. A later SetSceneActivationStep would otherwise CancelAfter a disposed source.
+                _sceneActivationDeadline = null;
             }
         }
 
@@ -8037,6 +8070,24 @@ namespace Hecton8.Bootstrap
         private void SetSceneActivationStep(string step)
         {
             _debugSceneActivationStep = step;
+
+            // Reaching a new step IS the progress signal, so the no-progress deadline restarts here.
+            // CancelAfter on an already-cancelled source is a no-op, and on a DISPOSED one it throws -
+            // the field is nulled in the activation phase's finally, and the catch keeps a late call
+            // during teardown from turning into a boot failure of its own.
+            CancellationTokenSource deadline = _sceneActivationDeadline;
+            if (deadline != null)
+            {
+                try
+                {
+                    deadline.CancelAfter(TimeSpan.FromSeconds(bootstrapTimeout));
+                }
+                catch (ObjectDisposedException)
+                {
+                    _sceneActivationDeadline = null;
+                }
+            }
+
             LogSceneActivation(step);
         }
 
