@@ -2414,9 +2414,22 @@ public struct VoxelDensityJob : IJobParallelFor
 
     /// <summary>
     /// AUP wrap period in meters for the procedural cave field. MUST stay byte-identical in meaning to
-    /// <c>ProceduralCaveSdfCarveJob.WrapPeriodMeters</c>. This inline copy is the LIVE cave field (the
-    /// canonical job currently has no scheduler), so any divergence between the two carves different
-    /// rock wherever the two representations meet.
+    /// <c>ProceduralCaveSdfCarveJob.WrapPeriodMeters</c>, because any divergence between the two carves
+    /// different rock wherever the two representations meet.
+    ///
+    /// CORRECTION (supersedes the earlier R99 note that said the canonical job "currently has no
+    /// scheduler"): BOTH carvers are live. This inline copy is the main world cave field, and
+    /// <c>HectonAnomalyEngine.ScheduleTerrainSdfSnap</c> schedules <c>ProceduralCaveSdfCarveJob</c> for
+    /// anomaly SDF volumes. R99 unified the NOISE FIELD between them; the SURFACE-PROTECTION PROFILE is
+    /// still duplicated and still disagrees, and both feed on the same quantity (density == geometric
+    /// depth below the heightmap in meters, per <c>VoxelSeamDirector.ComputeTerrainDensity</c> and
+    /// <c>SnapSDFToTerrainJob</c>):
+    ///   - this path        : smoothstep*exponential ramp over [0, SurfaceProtectionMeters]; full carve AT it.
+    ///   - the anomaly job  : hard zero below SurfaceProtectionMeters, smoothstep over [P, P + 15]; full carve after.
+    /// Both satisfy the voxels.md L85 safety intent (no carve reaches the terrain surface), so neither is
+    /// unsafe, but they are NOT interchangeable: with the anomaly job's P = 50 m the two disagree over a
+    /// ~65 m band. Unifying them changes authored anomaly geology, so it needs a visual/level review
+    /// rather than a blind edit - do not "fix" one to match the other without that.
     /// </summary>
     private const double CaveWrapPeriodMeters = 6627.0;
 

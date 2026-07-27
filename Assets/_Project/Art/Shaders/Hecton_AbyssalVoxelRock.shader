@@ -12,6 +12,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _VoxelTriplanarScale ("Voxel Triplanar Scale", Float) = 0.08
         _VoxelTriplanarSharpness ("Voxel Triplanar Sharpness", Range(1, 12)) = 5
         _VoxelArrayNormalStrength ("Voxel Array Normal Strength", Range(0, 1)) = 0.85
+        _VoxelStochasticStrength ("Voxel Anti-Tiling Stochastic Strength", Range(0, 1)) = 0.55
         [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         [NoScaleOffset] _FreshRockAlbedoMap ("Fresh Rock Albedo Map", 2D) = "white" {}
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
@@ -200,6 +201,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _VoxelTriplanarScale;
             float _VoxelTriplanarSharpness;
             float _VoxelArrayNormalStrength;
+            float _VoxelStochasticStrength;
         CBUFFER_END
 
         float4 _SargassumCutMaskWorldRect;
@@ -814,14 +816,63 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return (half3)(blendWeights * rcp(max(sum, 0.0001)));
         }
 
+        // Anti-tiling for the triplanar rock/sand arrays.
+        //
+        // The lattice repeats every 1/_VoxelTriplanarScale meters (12.5 m at the 0.08 default) and the
+        // eye locks onto that as an axis-aligned grid. The obvious fix - a per-hex-cell random UV
+        // offset - is WRONG in a triplanar fragment path and was actively harmful here:
+        //   1. it is discontinuous at every cell border, so the texture tears along the whole lattice;
+        //   2. those UV jumps make the implicit ddx/ddy used by SAMPLE_TEXTURE2D_ARRAY explode, so the
+        //      hardware selects the coarsest mip on border pixels - a blurry seam grid at the CELL
+        //      size (~3.9 m), i.e. a higher-frequency artifact than the repeat it was meant to hide;
+        //   3. frac(sin(dot(cell, ...)) * 43758.5453) collapses at AUP magnitudes. World coordinates
+        //      here run to the 6627 m cave wrap period, well past where that hash keeps precision.
+        //
+        // Instead this warps the sample domain with a C1 low-frequency field. It is continuous
+        // everywhere, so derivatives stay finite and mip selection stays correct, and because the warp
+        // is a spatially varying TRANSLATION it does not rotate the tangent frame that
+        // VoxelArrayNormalToWorld assumes - albedo and normal stay in phase because both route through
+        // this same pure function of (positionWS, axis).
+        //
+        // Wavelength is deliberately a few tiles (~60 m), not hundreds of meters: a very slow warp
+        // leaves neighbouring repeats still locally aligned, which is exactly what reads as tiling.
+        // Amplitude is held so |A * frequency| stays near 0.15, keeping the Jacobian close to identity
+        // (texel density varies about +/-25% over 60 m) so the material does not visibly stretch.
+        //
+        // NOTE ON SCOPE: this curves the repeat lattice, it does not eliminate repetition. Removing it
+        // outright needs hex-tile stochastic sampling with 3 barycentric-weighted taps and explicit
+        // SAMPLE_..._GRAD derivatives, which triples the fetch count of this path. This shader already
+        // issues 12 array fetches per pixel (sand+rock albedo and normal, 3 axes each), so that change
+        // is a profiled budget decision, not a free win, and is deliberately not taken here.
+        float2 ResolveVoxelAntiTileWarp(float2 uv, float strength)
+        {
+            const float2 primaryFrequency = float2(1.31, 1.07);
+            const float2 crossFrequency = float2(0.50, 0.60);
+            const float baseAmplitude = 0.11;
+
+            float2 warp = float2(
+                sin(uv.x * primaryFrequency.x + uv.y * crossFrequency.x),
+                sin(uv.y * primaryFrequency.y - uv.x * crossFrequency.y));
+            return uv + warp * (baseAmplitude * saturate(strength));
+        }
+
         float2 ResolveVoxelTriplanarUv(float3 positionWS, int axis)
         {
             float scale = max(_VoxelTriplanarScale, 0.0001);
+            float2 uv;
             if (axis == 0)
-                return positionWS.zy * scale;
-            if (axis == 2)
-                return positionWS.xy * scale;
-            return positionWS.xz * scale;
+                uv = positionWS.zy * scale;
+            else if (axis == 2)
+                uv = positionWS.xy * scale;
+            else
+                uv = positionWS.xz * scale;
+
+            // Uniform (per-material) branch: costs nothing at runtime and lets the effect be disabled
+            // without a keyword permutation.
+            if (_VoxelStochasticStrength > 0.001)
+                uv = ResolveVoxelAntiTileWarp(uv, _VoxelStochasticStrength);
+
+            return uv;
         }
 
         half3 VoxelArrayNormalToWorld(half3 tangentNormal, int axis, half3 baseNormalWS)
