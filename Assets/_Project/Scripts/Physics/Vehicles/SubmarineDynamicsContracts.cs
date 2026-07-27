@@ -57,7 +57,13 @@ namespace Hecton8.Physics.Vehicles
     /// </summary>
     public static class MockFluidDensityGenerator
     {
-        public const float DefaultSeawaterDensityKgPerM3 = 1027f;
+        // Must match HectonPhysicsContract.WaterDensityKgPerCubicMeterConst. This is the same
+        // physical fact the ballast solver, buoyancy displacement, seaglide propulsion and hull
+        // integrity all state as 1025; this file held 1027 alone, so the system computing buoyant
+        // force disagreed with the system computing displaced water mass. Declared locally rather
+        // than referenced, matching SubmarineBallastBuoyancyContracts, BuoyancyDisplacementContracts
+        // and SeaglidePropulsionContracts, which keep these contract structs dependency-free.
+        public const float DefaultSeawaterDensityKgPerM3 = 1025f;
         private const float MinDensityKgPerM3 = 850f;
         private const float MaxDensityKgPerM3 = 1250f;
         // Two-metre stratification bands, so descending crosses discrete density layers instead of
