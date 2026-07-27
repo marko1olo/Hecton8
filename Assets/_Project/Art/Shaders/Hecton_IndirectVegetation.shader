@@ -174,7 +174,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             StructuredBuffer<uint> _HectonFloraSnapFlags;
             StructuredBuffer<float2> _MarineSnowFlowField;
             StructuredBuffer<float4> _HectonFloraSwayDisplacementField;
-            StructuredBuffer<float4> _AbyssalFlowFieldResult;
             StructuredBuffer<float4> _PredatorAUPBuffer;
             float4 _ChunkWorldOffset;
             float4 _GlobalFloatingOffset;
@@ -220,11 +219,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonSubmarineWashAupLocal;
             float4 _HectonFlowSynchronyParams;
             float4 _HectonFloraWakeParams;
-            float4 _AbyssalGridResolution;
-            float4 _AbyssalFlowCenter;
-            float4 _AbyssalFlowSpacing;
-            float4 _AbyssalFlowTextureParams;
-            float _AbyssalFlowTextureActive;
             float _HectonSeasonCycle;
             float _SeasonCycle;
             float _HectonVegetationDepth;
@@ -256,8 +250,11 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             SAMPLER(sampler_FloraAlphaMask);
             TEXTURE2D(_HectonShallowWaterFieldRT);
             SAMPLER(sampler_HectonShallowWaterFieldRT);
-            TEXTURE3D(_AbyssalFlowFieldTexture);
-            SAMPLER(sampler_AbyssalFlowFieldTexture);
+            // Declares the abyssal buffer, its five globals, its Texture3D+sampler and
+            // ResolveAbyssalFlowField. This pass is the reference for that function; it reads it from
+            // the shared include so the other three passes cannot drift from it - they used to omit
+            // the whole field because these declarations only ever existed here.
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationAbyssalFlow.hlsl"
 
             struct Attributes
             {
@@ -495,44 +492,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return flowDirection * (wave * amplitude * bend * typeScale);
             }
 
-            float3 ResolveAbyssalFlowField(float3 positionWS)
-            {
-                if (_AbyssalFlowTextureActive > 0.5 && _AbyssalFlowTextureParams.y > 0.001)
-                {
-                    float3 uvw = (positionWS - _AbyssalFlowCenter.xyz) * rcp(_AbyssalFlowTextureParams.y) + 0.5;
-                    if (all(uvw >= float3(0.0, 0.0, 0.0)) && all(uvw <= float3(1.0, 1.0, 1.0)))
-                    {
-                        float3 textureFlow = _AbyssalFlowFieldTexture.SampleLevel(sampler_AbyssalFlowFieldTexture, uvw, 0).xyz;
-                        if (dot(textureFlow, textureFlow) < 1.0e+32)
-                            return textureFlow;
-                    }
-                }
-
-                int resolutionX = (int)max(_AbyssalGridResolution.x, 0.0);
-                int resolutionY = (int)max(_AbyssalGridResolution.y, 0.0);
-                int resolutionZ = (int)max(_AbyssalGridResolution.z, 0.0);
-                int nodeCount = (int)max(_AbyssalGridResolution.w, 0.0);
-                if (resolutionX <= 1 || resolutionY <= 1 || resolutionZ <= 1 || nodeCount <= 0)
-                    return float3(0.0, 0.0, 0.0);
-
-                float horizontalCellSize = max(_AbyssalFlowSpacing.x, 0.001);
-                float verticalCellSize = max(_AbyssalFlowSpacing.y, 0.001);
-                int3 halfExtent = int3(resolutionX >> 1, resolutionY >> 1, resolutionZ >> 1);
-                float3 localPosition = positionWS - _AbyssalFlowCenter.xyz;
-                int3 coord = int3(round(float3(
-                    localPosition.x / horizontalCellSize,
-                    localPosition.y / verticalCellSize,
-                    localPosition.z / horizontalCellSize))) + halfExtent;
-                if (coord.x < 0 || coord.y < 0 || coord.z < 0 || coord.x >= resolutionX || coord.y >= resolutionY || coord.z >= resolutionZ)
-                    return float3(0.0, 0.0, 0.0);
-
-                int index = coord.y * resolutionX * resolutionZ + coord.z * resolutionX + coord.x;
-                if (index < 0 || index >= nodeCount)
-                    return float3(0.0, 0.0, 0.0);
-
-                float3 flow = _AbyssalFlowFieldResult[index].xyz;
-                return dot(flow, flow) < 1.0e+32 ? flow : float3(0.0, 0.0, 0.0);
-            }
 
             float3 SafeNormalize3(float3 value);
 

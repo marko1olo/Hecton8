@@ -201,6 +201,11 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
             // triangle where the lit pass uses a sine, so the prepass depth disagreed with forward.
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationWave.hlsl"
 
+            // This pass summed ONE flow field where the lit pass sums TWO, purely because the abyssal
+            // field's seven globals were never declared here. They are C# globals, not material
+            // properties, so declaring them costs no authoring and no material to keep in sync.
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationAbyssalFlow.hlsl"
+
             float ResolveBayer4x4(float2 pixel)
             {
                 float2 cell = fmod(pixel, 4.0);
@@ -270,15 +275,15 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 if (bendMask <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
-                float3 flowSample = ResolveMarineSnowFlowField(positionWS);
-                float flowMagnitude = ApproxMagnitude2(flowSample.xz) * max(_HectonFlowSynchronyParams.x, 1.0);
-                if (flowMagnitude <= 0.0001)
+                float3 flowSample = ResolveMarineSnowFlowField(positionWS) + ResolveAbyssalFlowField(positionWS);
+                float flowMagnitudeSq = dot(flowSample.xz, flowSample.xz);
+                if (flowMagnitudeSq <= 0.00000001)
                     return float3(0.0, 0.0, 0.0);
 
-                float3 flowDirection = SafeNormalize3(float3(flowSample.x, 0.0, flowSample.z));
                 float typeScale = instanceType < 0.5 ? 0.24 : (instanceType < 1.5 ? 0.42 : 0.18);
                 float flowWave = FastSinApprox(ResolveFlowSynchronyPhase(positionWS, instanceNoise));
-                return flowDirection * (flowWave * flowMagnitude * typeScale * bendMask);
+                float flowScale = flowWave * max(_HectonFlowSynchronyParams.x, 1.0) * typeScale * bendMask;
+                return float3(flowSample.x, 0.0, flowSample.z) * flowScale;
             }
 
             void ResolveInstanceShape(float instanceType, float heightScale, float widthScale, out float instanceHeight, out float instanceWidth)
