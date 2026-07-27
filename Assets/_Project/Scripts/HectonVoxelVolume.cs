@@ -361,6 +361,27 @@ namespace Hecton8.Caves
         private const string ColliderChunkRuntimeName = "ColliderChunk";
         private const string ColliderChunkProxyRuntimeName = "ColliderChunkProxy";
 
+        /// <summary>
+        /// The single cooking-options contract for runtime voxel collider chunks. Both the off-thread
+        /// <c>Physics.BakeMesh</c> call and the <see cref="MeshCollider.cookingOptions"/> of the collider
+        /// that receives the baked mesh must use this exact value.
+        /// </summary>
+        /// <remarks>
+        /// Unity reuses a baked mesh if, and only if, the collider's cookingOptions are exactly the same
+        /// as those passed at bake time, the transform allows mesh sharing, and the geometry is unchanged
+        /// since baking. On a mismatch PhysX discards the async bake and re-cooks on the main thread on
+        /// the frame sharedMesh is assigned - a 64^3 voxel chunk cook inside the frame budget.
+        /// This value is deliberately identical to Unity's default MeshCollider cooking set, so making it
+        /// explicit is behaviour-preserving; the point is that the invariant is now stated in one place
+        /// and greppable, instead of resting on the undocumented default of the two-argument
+        /// <c>Physics.BakeMesh(meshID, convex)</c> overload agreeing with the component default forever.
+        /// </remarks>
+        internal const MeshColliderCookingOptions VoxelColliderCookingOptions =
+            MeshColliderCookingOptions.CookForFasterSimulation |
+            MeshColliderCookingOptions.EnableMeshCleaning |
+            MeshColliderCookingOptions.WeldColocatedVertices |
+            MeshColliderCookingOptions.UseFastMidphase;
+
         // Intrusive published-SDF registry: no managed container allocation on runtime setup.
         private static HectonVoxelVolume s_activePublishedHead;
         private static int s_activePublishedVolumeCount;
@@ -1646,6 +1667,35 @@ namespace Hecton8.Caves
                 {
                     _colliderChunkColliders[i].gameObject.layer = HectonLayerMasks.VoxelCave;
                     _colliderChunkColliders[i].enabled = false;
+                    _colliderChunkColliders[i].cookingOptions = VoxelColliderCookingOptions;
+                }
+                else
+                {
+                    // R100 FIX (dead collider pipeline): this registry was allocated but never filled,
+                    // so CommitDeferredColliderChunkUpload always failed its null guard, the staged
+                    // sharedMesh assignment was unreachable, and every off-thread Physics.BakeMesh for a
+                    // collider chunk was cooked and then discarded. Voxel cave collision degraded to the
+                    // axis-aligned BoxCollider proxies alone, which cannot express carved geometry -
+                    // voxels.md requires baked voxel colliders for traversal, not primitive stand-ins.
+                    // Creation belongs here because this runs cold from PrewarmColliderChunkHierarchy;
+                    // the runtime split path must not create GameObjects or add components.
+                    GameObject colliderObject = new GameObject(ColliderChunkRuntimeName); // COLD ALLOC: GameObject[1] - pooled voxel collider chunk - owner: HectonVoxelVolume
+                    colliderObject.layer = HectonLayerMasks.VoxelCave;
+                    Transform colliderTransform = colliderObject.transform;
+                    colliderTransform.SetParent(_colliderChunkRoot, false);
+                    colliderTransform.localPosition = Vector3.zero;
+                    colliderTransform.localRotation = Quaternion.identity;
+                    // Identity scale is a hard requirement, not tidiness: a non-identity or mirrored
+                    // transform stops Unity sharing the baked mesh and forces a main-thread re-cook.
+                    colliderTransform.localScale = Vector3.one;
+                    colliderObject.SetActive(false);
+
+                    MeshCollider chunkCollider = colliderObject.AddComponent<MeshCollider>();
+                    chunkCollider.cookingOptions = VoxelColliderCookingOptions;
+                    chunkCollider.convex = false;
+                    chunkCollider.isTrigger = false;
+                    chunkCollider.enabled = false;
+                    _colliderChunkColliders[i] = chunkCollider;
                 }
 
                 if (_colliderChunkBakeProxies[i] == null)

@@ -14187,7 +14187,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
                 UnityEngine.EntityId bakeMeshEntityId = chunkBakeMesh.GetEntityId();
                 await Awaitable.BackgroundThreadAsync();
-                Physics.BakeMesh(bakeMeshEntityId, false);
+                // Explicit options, not the two-argument default overload: the collider that receives
+                // this mesh sets the identical value, which is the precondition for PhysX reusing the
+                // bake instead of re-cooking on the main thread.
+                Physics.BakeMesh(bakeMeshEntityId, false, Hecton8.Caves.HectonVoxelVolume.VoxelColliderCookingOptions);
                 await Awaitable.MainThreadAsync();
 
                 if (ct.IsCancellationRequested)
@@ -14790,7 +14793,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                         // drain then reuses the baked data by mesh entity id.
                         UnityEngine.EntityId bakeMeshEntityId = chunkBakeMesh.GetEntityId();
                         await Awaitable.BackgroundThreadAsync();
-                        Physics.BakeMesh(bakeMeshEntityId, false);
+                        // Explicit options, not the two-argument default overload: the collider that
+                        // receives this mesh sets the identical value, which is the precondition for
+                        // PhysX reusing the bake instead of re-cooking on the main thread.
+                        Physics.BakeMesh(bakeMeshEntityId, false, Hecton8.Caves.HectonVoxelVolume.VoxelColliderCookingOptions);
                         await Awaitable.MainThreadAsync();
                         if (ct.IsCancellationRequested)
                             return false;
