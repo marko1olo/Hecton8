@@ -2,6 +2,7 @@
     "name": "Hecton8.Core",
     "rootNamespace": "Hecton8.Core",
     "references": [
+        "Hecton8.World.VoxelSurfaceNets",
         "Hecton8.PureLogic",
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Database",

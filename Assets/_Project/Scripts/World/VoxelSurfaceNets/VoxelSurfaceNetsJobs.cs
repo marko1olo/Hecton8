@@ -7,7 +7,14 @@ using Unity.Mathematics;
 
 namespace Hecton8.World.VoxelSurfaceNets
 {
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    // Deterministic, not Fast: this job writes the density field that SurfaceNetExtractionJob
+    // (itself Deterministic) turns into both render AND collider geometry. Determinism is only as
+    // strong as its weakest link, so a Fast producer feeding a Deterministic consumer buys nothing.
+    // Concretely, `distSq * math.rsqrt(distSq)` below lets FloatMode.Fast select an approximate
+    // reciprocal-sqrt whose refinement differs across ISAs — the same seed would then yield
+    // different cave geometry, and therefore different colliders, on different hardware.
+    // This is a one-shot per-chunk fill, not a per-frame path, so the precision cost is not hot.
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct GenerateMockVoxelDensitySphereJob : IJobParallelFor
     {
@@ -891,7 +898,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             req.Completed = 0;
             req.Flags = 0;
             req._pad0 = 0;
-            req._pad1 = 0UL;
+            req._pad1 = 0u;
             Requests[index] = req;
         }
     }

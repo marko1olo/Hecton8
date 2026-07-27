@@ -2,7 +2,6 @@
     "name": "Hecton8.World.VoxelSurfaceNets",
     "rootNamespace": "Hecton8.World.VoxelSurfaceNets",
     "references": [
-        "Hecton8.Core",
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",
         "Unity.Burst",

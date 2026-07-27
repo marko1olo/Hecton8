@@ -2009,7 +2009,7 @@ namespace Hecton8.Caves
                 {
                     ChunkX = (int)math.floor(pos.x / chunkSizeX),
                     ChunkZ = (int)math.floor(pos.z / chunkSizeZ),
-                    TerrainEntityHash = (uint)gameObject.GetInstanceID(),
+                    TerrainEntityHash = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
                     Frame = (uint)UnityEngine.Time.frameCount,
                     TerrainPosition = minCorner,
                     TerrainSize = size,
@@ -4134,7 +4134,7 @@ namespace Hecton8.Caves
             {
                 ChunkX = (int)math.floor(pos.x / chunkSizeX),
                 ChunkZ = (int)math.floor(pos.z / chunkSizeZ),
-                TerrainEntityHash = (uint)gameObject.GetInstanceID(),
+                TerrainEntityHash = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
                 Frame = (uint)UnityEngine.Time.frameCount,
                 TerrainPosition = minCorner,
                 TerrainSize = size,
