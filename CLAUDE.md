@@ -17,7 +17,7 @@ Do not load the full HECTON-8 authority stack on every message. Use staged intak
 5. Read `TASTE.md` only for player-visible work or taste review.
 6. Read `Docs\SYSTEMS_CONTRACTS.md` only for non-asset runtime systems, architecture, signals, data vaults, or core memory.
 7. Read `Docs\QUALITY_GATES.md` only before claiming `VERIFIED`/`COMPLETE`, designing proof, or judging evidence.
-8. Mandate bodies are just-in-time only for Claude. First use `.agents-skills\README.md` as an index to identify whether a specific mandate is truly required. Read a heavy mandate file only when the task is about that exact domain or when a concrete source edit/review would violate unknown mandate details without it. Never read mandate files for chat, lookup, planning, broad orientation, typo fixes, or unrelated scoped exploration.
+8. Mandate bodies are just-in-time for every agent, per `AGENTS.md` `Mandate Intake Discipline`. First use `.agents-skills\README.md` as an index to identify whether a specific mandate is truly required; when the task does touch a mandate domain, read exactly the `2-8` matching files. Read a heavy mandate file only when the task is about that exact domain or when a concrete source edit/review would violate unknown mandate details without it. Never read mandate files for chat, lookup, planning, broad orientation, typo fixes, or unrelated scoped exploration.
 
 If staged intake leaves authority unread, final chat must say the task was handled with scoped/static intake and name any unverified authority/proof area. This is context-budget discipline, not permission to lower standards.
 
@@ -59,7 +59,7 @@ For all HECTON-8 work, read and obey the nearest live authority in this order:
 11. `Docs\QUALITY_GATES.md` before claiming `VERIFIED` or `COMPLETE`.
 12. Live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, old logs, or archives.
 
-Mandate rule for Claude agents and subagents: do not read heavy mandate bodies by default. Use `.agents-skills\README.md` as the lightweight index. Read a mandate file only when the current concrete task needs that exact domain rule for a source edit, architecture decision, rendering/gameplay/asset/data change, proof design, or technical report. If the mandate is not directly needed, leave it unread and state scoped/static intake if relevant. Subagents must not be told to read mandates unless their narrow scope specifically requires those mandate domains.
+Mandate rule (all agents and subagents, per `AGENTS.md` `Mandate Intake Discipline`): do not read heavy mandate bodies by default. Use `.agents-skills\README.md` as the lightweight index. Read a mandate file only when the current concrete task needs that exact domain rule for a source edit, architecture decision, rendering/gameplay/asset/data change, proof design, or technical report, and then read exactly the `2-8` matching files. If the mandate is not directly needed, leave it unread and state scoped/static intake if relevant. Subagents must not be told to read mandates unless their narrow scope specifically requires those mandate domains.
 
 Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip full intake, but they must not contradict the authority spine. Subagents modifying `.cs`, `.shader`, `.prefab`, or `.asset` files must not use the trivial-task bypass and must read `COMMON_SENSE.md`.
 

@@ -24,7 +24,7 @@ Every non-trivial HECTON-8 task starts with this sequence:
 6. Read `Docs\SYSTEMS_CONTRACTS.md` if the task involves non-asset runtime systems, architecture, signals, data vaults, or core memory.
 7. Read `VISION_LOCKS.md` when the user asks for product direction, ambiguity resolution, route priority, taste conflict, or scope interpretation.
 8. Read `TASTE.md` for player-visible work, plus the matching root route bible from `PROJECT_BIBLES.md`.
-9. Read `.agents-skills/README.md` and exactly `2-8` task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work.
+9. Read `.agents-skills/README.md`, then exactly the `2-8` task-relevant mandate files that match the task domain, before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work. `AGENTS.md` `Mandate Intake Discipline` governs the read order for every agent: index first, matching mandates only, never bulk-read mandate bodies for orientation.
 10. Read `Docs\QUALITY_GATES.md` before claiming a task is VERIFIED or COMPLETE to ensure all necessary proof artifacts (profiler, GC, visual parity, NativeMemory) are generated.
 11. Read live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, or stale logs.
 
