@@ -17,9 +17,17 @@ Usage:
 
 Exit code 1 when violations are found, so it can be used as a gate.
 
+GROUND TRUTH IS `Tools/PlayerConfigCompileGate.py`, not this file. That compiles the
+assembly with UNITY_EDITOR undefined and reports what the compiler actually rejects. Run it
+before believing anything here. On 2026-07-27 it found 71 errors in 13 files where this
+scanner reported 34 candidates in 9 - the gap is guarded FIELDS (this scanner only tracks
+member declarations) and partial classes split across files. This scanner is the fast
+pre-filter for a single file; the compile is the verdict.
+
 Reports candidates, not proven breaks. Each hit needs a read: this is a brace/regex model,
 not a C# parser. It does not resolve partial classes split across files, extension methods,
-or `#elif` chains carrying three or more alternate definitions.
+`#elif` chains carrying three or more alternate definitions, or references to guarded
+fields and constants.
 
 KNOWN BLIND SPOT - overload split by a guard. Members are grouped by (type, name), not by
 signature, so when one overload is guarded and another is not, the scanner treats the name

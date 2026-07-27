@@ -90,21 +90,33 @@ def compile_assembly(assembly, defines=None, unity_root=UNITY_ROOT):
     return finished.stdout + finished.stderr
 
 
-ERROR_RE = re.compile(r"^(?P<file>[A-Za-z]:\\[^(]+)\((?P<line>\d+),\d+\): (?:error|ошибка) (?P<code>CS\d+)")
+ERROR_RE = re.compile(
+    r"^(?P<file>[A-Za-z]:\\[^(]+)\((?P<line>\d+),(?P<col>\d+)\): (?:error|ошибка) (?P<code>CS\d+)"
+)
 
 
 def parse_errors(output):
-    """Return one entry per unique (file, line, code); MSBuild reports each twice."""
+    """One entry per unique (file, line, column, code).
+
+    MSBuild emits every diagnostic twice - once per target pass - so dedupe is required or
+    the count doubles. The column is part of the key: two distinct errors can share a line
+    and a code, and dropping the column silently undercounted 71 as 65.
+    """
     seen = {}
     for raw in output.splitlines():
         found = ERROR_RE.match(raw.strip())
         if not found:
             continue
-        key = (found.group("file"), found.group("line"), found.group("code"))
+        key = (
+            found.group("file"),
+            int(found.group("line")),
+            int(found.group("col")),
+            found.group("code"),
+        )
         seen.setdefault(key, raw.strip())
     return [
-        {"file": file, "line": int(line), "code": code}
-        for (file, line, code) in seen
+        {"file": file, "line": line, "column": column, "code": code}
+        for (file, line, column, code) in seen
     ]
 
 
