@@ -8086,6 +8086,11 @@ namespace Hecton8.Core
             { typeof(IAudioVirtualizationService), GlobalRegistryServiceSlot.AudioVirtualization },
             { typeof(IToolAcousticCueService), GlobalRegistryServiceSlot.AcousticZoneRuntime },
             { typeof(ISceneService), GlobalRegistryServiceSlot.Scene },
+            // RegisterSceneRuntime infers T from the concrete _sceneRuntime field, so the concrete type
+            // needs the same slot as its interface. Unmapped it resolves to Unknown, which
+            // IsSceneRuntimeHotSwapSlot rejects, so the scene publication gate cannot issue a token for a
+            // re-register that happens after LockReady. Same defect class as PlayerRuntimeContextService.
+            { typeof(SceneRuntimeService), GlobalRegistryServiceSlot.Scene },
             { typeof(ISaveService), GlobalRegistryServiceSlot.Save },
             { typeof(IAsyncPersistenceService), GlobalRegistryServiceSlot.Save },
             { typeof(IUIService), GlobalRegistryServiceSlot.UI },
@@ -8111,7 +8116,12 @@ namespace Hecton8.Core
             { typeof(IPlayerInventoryService), GlobalRegistryServiceSlot.PlayerInventory },
             { typeof(IModularEquipmentService), GlobalRegistryServiceSlot.ModularEquipment },
             { typeof(IPlayerSensoryService), GlobalRegistryServiceSlot.PlayerSensory },
+            // RegisterPlayerSensoryRuntime infers T from the concrete _playerSensoryRuntime field.
+            { typeof(PlayerSensoryManager), GlobalRegistryServiceSlot.PlayerSensory },
             { typeof(IEnvironmentRuntimeContext), GlobalRegistryServiceSlot.Environment },
+            // RegisterEnvironmentRuntimeContextRuntime infers T from the concrete backing field, and this
+            // service is scene-owned, so it re-registers on every 02_HECTON_WORLD activation after LockReady.
+            { typeof(EnvironmentRuntimeContextService), GlobalRegistryServiceSlot.Environment },
             { typeof(IChemicalInfluenceReadModel), GlobalRegistryServiceSlot.ChemicalInfluenceRuntime },
             { typeof(IOrganicToolHitService), GlobalRegistryServiceSlot.DestructibleOrganicRuntime },
             { typeof(IWeatherService), GlobalRegistryServiceSlot.Weather },
