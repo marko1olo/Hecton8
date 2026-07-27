@@ -1013,7 +1013,28 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half layerA = (half)HectonCoreLitTrianglePulse01(dot(layerAInput, float3(0.071, 0.149, 0.109)));
             half layerB = (half)HectonCoreLitTrianglePulse01(dot(layerBInput, float3(0.113, 0.083, 0.167)));
             half causticRaw = FastVoxelPower01(saturate(layerA * layerB), (half)max(safeShape.x, 1.0));
+            // caveFade was a hardcoded 1.0 sitting one line above its only use, so this local term
+            // painted at full strength everywhere - including open water, where the fullscreen
+            // Hecton_DeferredCaustics pass is already painting the same up-facing rock. That pass is
+            // ZTest Always with no stencil, so it covers this surface too, and it scales its energy by
+            // ResolveSdfCavernOcclusion. Fading this term in inversely makes the two complementary
+            // instead of additive: sun-driven caustics own open water, this local-light term owns the
+            // enclosed volumes where the deferred pass is occluded to nothing.
+            // Crossover reuses the deferred pass's own smoothstep(-0.08, 0.85) band rather than a new
+            // number, so the handover happens where that pass actually falls off.
             half caveFade = 1.0h;
+            if (_HectonCaveVoxelActive > 0.5)
+            {
+                // Sampler arrives with Hecton_CoreLit.hlsl, already included above. When the cave voxel
+                // system is inactive it returns the volume half-extent, which would read as wide-open
+                // and wrongly suppress this term, so the flag gates the whole branch and leaves the
+                // previous behaviour exactly intact.
+                float caveSignedDistance = HectonCoreLitSampleCaveVoxelSignedDistance(absolutePositionWS);
+                caveFade = (half)(1.0 - smoothstep(-0.08, 0.85, caveSignedDistance));
+                if (caveFade <= 0.0001h)
+                    return 1.0h;
+            }
+
             return lerp(1.0h, 1.0h + causticRaw * strength * caveFade, upFacingMask);
         }
 
