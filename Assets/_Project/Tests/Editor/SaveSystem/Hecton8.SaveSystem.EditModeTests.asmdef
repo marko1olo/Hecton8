@@ -22,7 +22,7 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [
-        "NEVER_COMPILE_TESTS"
+        "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [],
     "noEngineReferences": false

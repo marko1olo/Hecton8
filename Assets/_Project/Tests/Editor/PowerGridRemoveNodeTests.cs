@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 
 public sealed class PowerGridRemoveNodeTests
 {
@@ -90,9 +91,11 @@ public sealed class PowerGridRemoveNodeTests
     [Test]
     public void RemoveNode_ValidNode_RemovesOverloadServiceCache()
     {
-        // Add BaseModule to node to populate overload service cache
-        // We use a mock class to act as the base module
-        var baseModule = _nodeObject.AddComponent<MockBaseModule>();
+        // Add BaseModule to node to populate overload service cache. The concrete component is used
+        // directly: BaseModule is sealed, and the derived stub this test used to declare only existed
+        // to override a ModuleName member that BaseModule does not have. Nothing here asserts on the
+        // module's identity - the cache is keyed by reference.
+        var baseModule = _nodeObject.AddComponent<BaseModule>();
         _grid.AddNode(_node);
 
         // Force populate cache using reflection since we can't easily trigger the full flow
@@ -104,10 +107,5 @@ public sealed class PowerGridRemoveNodeTests
         _grid.RemoveNode(_node);
 
         Assert.AreEqual(0, overloadCache.Count);
-    }
-
-    private class MockBaseModule : BaseModule
-    {
-        public override string ModuleName => "MockBaseModule";
     }
 }
