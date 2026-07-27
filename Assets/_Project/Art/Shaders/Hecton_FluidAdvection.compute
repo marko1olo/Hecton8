@@ -12,6 +12,8 @@
 #define HECTON_CARVE_DEBRIS_MAX_STEP 0.20
 #define HECTON_CARVE_DEBRIS_DEFAULT_BOUNCE 0.4
 #define HECTON_CARVE_DEBRIS_DEFAULT_SLEEP_SPEED_SQ 0.0025
+// The 60 FPS frame that _FluidAdvectionBuoyancy.w was authored against. See IntegrateVelocity.
+#define HECTON_FLUID_REFERENCE_DT 0.0166666667
 
 struct Silt
 {
@@ -219,9 +221,21 @@ bool IsSolidVoxel(float3 positionWS)
     return signedDistance01 < _FluidAdvectionSdfParams.y;
 }
 
-float3 IntegrateVelocity(float3 velocity, float3 flow, float buoyancy)
+float3 IntegrateVelocity(float3 velocity, float3 flow, float buoyancy, float dt)
 {
-    float drag = saturate(_FluidAdvectionBuoyancy.w);
+    // _FluidAdvectionBuoyancy.w (FluidAdvectionVelocityBlend, 0.82) is a per-FRAME blend, not a rate.
+    // Applied raw it makes drag framerate-dependent: the same constant pulls twice as hard per second at
+    // 120 FPS as at 60, so particles lock to the flow field harder the faster the machine renders. Convert
+    // it to a rate against the 60 FPS frame it was authored on, then re-integrate for the real dt. The
+    // sibling AdvectCarveDebris kernel already does this correctly with a dt-scaled _CarveDebrisParams.w.
+    //
+    // Exactly identity at 60 FPS: -log(1 - 0.82) / (1/60) = 102.888/s, and 1 - exp(-102.888/60) = 0.82.
+    // So the authored feel is preserved and only off-60 framerates change. This also removes an anomaly at
+    // dt = 0, where the raw blend still moved velocity despite no time having passed.
+    float blendAtReferenceDt = saturate(_FluidAdvectionBuoyancy.w);
+    float retained = max(1.0 - blendAtReferenceDt, 0.000001);
+    float dragRatePerSecond = -log(retained) * rcp(HECTON_FLUID_REFERENCE_DT);
+    float drag = saturate(1.0 - exp(-dragRatePerSecond * max(dt, 0.0)));
     float3 targetVelocity = flow + float3(0.0, buoyancy, 0.0);
     return Sanitize(lerp(velocity, targetVelocity, drag));
 }
@@ -242,7 +256,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = SampleAbyssalFlow(previousPosition);
         flow = ApplyDynamicWakes(previousPosition, flow);
-        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.x);
+        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.x, dt);
         float3 nextPosition = previousPosition + velocity * dt;
 
         if (IsSolidVoxel(nextPosition))
@@ -265,7 +279,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = SampleAbyssalFlow(previousPosition) * saturate(1.0 - _FluidAdvectionParams.y);
         flow = ApplyDynamicWakes(previousPosition, flow);
-        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.y);
+        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.y, dt);
         float3 nextPosition = previousPosition + velocity * dt;
 
         if (IsSolidVoxel(nextPosition))
@@ -291,7 +305,7 @@ void AdvectFluidParticles(uint3 id : SV_DispatchThreadID)
         float3 previousPosition = particle.PositionWS + shiftDelta;
         float3 flow = SampleAbyssalFlow(previousPosition) * saturate(1.0 - _FluidAdvectionParams.y);
         flow = ApplyDynamicWakes(previousPosition, flow);
-        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.z);
+        float3 velocity = IntegrateVelocity(particle.VelocityWS, flow, _FluidAdvectionBuoyancy.z, dt);
         float3 nextPosition = previousPosition + velocity * dt;
 
         if (IsSolidVoxel(nextPosition))
