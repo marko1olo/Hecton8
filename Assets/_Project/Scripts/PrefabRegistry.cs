@@ -224,6 +224,21 @@ namespace Hecton8.Core
             if (TryAbortForUsableExistingRuntime())
                 return false;
 
+            // Ask before aborting anyone. PrefabRegistry has no GlobalRegistryServiceSlot, so its slot
+            // resolves to Unknown, which is never scene-runtime hot-swappable. Once the registry is
+            // ready-locked the registration below is guaranteed to throw, and both abort blocks between
+            // here and there would already have retired the live registry and cleared its mirrors -
+            // leaving no prefab registry at all, which strands every prefab lookup behind it.
+            //
+            // Only when a real takeover is needed: if this instance already owns the registry slot, the
+            // registration early-returns on reference equality and never reaches the guard.
+            if (!ReferenceEquals(GlobalRegistry.PrefabRegistryRuntime, this) &&
+                !GlobalRegistry.IsRuntimeServicePublicationOpen<PrefabRegistry>())
+            {
+                _runtimeOwnerAborted = true;
+                return false;
+            }
+
             PrefabRegistry runtime = s_activeRuntimeInstance;
             if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
             {

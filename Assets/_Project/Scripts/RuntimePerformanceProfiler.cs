@@ -557,6 +557,20 @@ namespace Hecton8.Dev
             if (TryAbortForUsableExistingRuntime())
                 return false;
 
+            // Ask before aborting anyone. RuntimePerformanceProfiler has no GlobalRegistryServiceSlot, so
+            // its slot resolves to Unknown, which is never scene-runtime hot-swappable. Once the registry
+            // is ready-locked the registration below is guaranteed to throw, and both abort blocks between
+            // here and there would already have retired the live profiler - leaving no owner at all.
+            //
+            // Only when a real takeover is needed: if this instance already owns the registry slot, the
+            // registration early-returns on reference equality and never reaches the guard.
+            if (!ReferenceEquals(GlobalRegistry.RuntimePerformanceProfilerRuntime, this) &&
+                !GlobalRegistry.IsRuntimeServicePublicationOpen<RuntimePerformanceProfiler>())
+            {
+                _runtimeOwnerAborted = true;
+                return false;
+            }
+
             RuntimePerformanceProfiler runtime = s_activeRuntime;
             if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
             {
