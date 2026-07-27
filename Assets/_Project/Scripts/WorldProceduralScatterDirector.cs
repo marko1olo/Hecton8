@@ -84,6 +84,23 @@ namespace Hecton8.World
             "[CandidateMap] Approaching capacity. Increase capacity or reduce candidates.";
         private const string PlacementPoolExhaustedWarning =
             "[WorldScatter] Placement pool exhausted. Candidate dropped; increase placement pool capacity.";
+
+        // Telemetry identity for a placement owner that is authored into the scene but can never
+        // register. GlobalTelemetryBus.PublishPerformanceWarning (Core/GlobalTelemetryBus.cs:365)
+        // carries no [Conditional] attribute, so this alarm survives a release player build.
+        // H8Debug does not: every overload is [Conditional("UNITY_EDITOR")] plus
+        // [Conditional("DEVELOPMENT_BUILD")] (Core/H8Debug.cs:63-77), which is exactly why this
+        // failure has been invisible outside the editor.
+        private const uint InertPlacementOwnerWarningHash = 0x53435452u; // "SCTR"
+        private const uint InertPlacementOwnerDisabledContextHash = 0x44495342u; // "DISB"
+        private const string InertPlacementOwnerMessage =
+            "[WorldScatter] Placement owner is authored into the scene but the component is DISABLED. " +
+            "Unity never calls OnEnable on a disabled component, so this director never registers as " +
+            "the world-generation owner and places nothing: no flora, no coral, no debris, no resource " +
+            "nodes, no fauna spawn windows, no technogenic scatter. Capability disabled: procedural " +
+            "world placement. Enable the WorldProceduralScatterDirector component on the " +
+            "[MANAGERS]/WorldGen object, or run the menu item " +
+            "Hecton8/Diagnostics/Enable Disabled World Placement Owners.";
         private const int ScatterLayerCount = 4;
         private const int ProxyOptimizationRefreshLowTierBudget = 8;
         private const int ProxyOptimizationRefreshUltraTierBudget = 64;
@@ -731,6 +748,8 @@ namespace Hecton8.World
             EnsureAssemblyReloadHook();
 #endif
 
+            ReportInertPlacementOwner();
+
             if (!Application.isPlaying && !ShouldDeferUntilBootstrapReady())
                 RebuildScatterPreview();
         }
@@ -869,6 +888,50 @@ namespace Hecton8.World
 
             if (ReferenceEquals(GlobalRegistry.ProceduralScatter, this))
                 GlobalRegistry.UnregisterWorldGenService(this);
+        }
+
+        /// <summary>
+        /// Placements one full scatter window would produce from this director's authored
+        /// configuration. Pure read accessor: no allocation, no scene search, no publish, no mutation.
+        /// While this owner is inert, this is the count of props the world is missing per window.
+        /// </summary>
+        internal int AuthoredScatterWindowPlacementCeiling => CalculateAuthoredScatterWindowPlacementCeiling(
+            radiusCells,
+            groundPlacementsPerCell,
+            clusterPlacementsPerCell,
+            structureCellStride,
+            structurePlacementsPerWindow,
+            spawnCellStride,
+            spawnPlacementsPerWindow);
+
+        /// <summary>
+        /// Announces a placement owner that is authored into the scene but can never register.
+        ///
+        /// Unity calls Awake on a disabled component of an ACTIVE GameObject, but never OnEnable and
+        /// never Start. Every registration this director owns is OnEnable-only:
+        /// PublishActiveRuntimeInstance (OnEnable :760 -> GlobalRegistry.RegisterWorldGenService),
+        /// TryRegisterRuntimeDirector (OnEnable :763 -> the static director bucket) and
+        /// TryRegisterHotSwapListener (OnEnable :762). So a disabled component owns nothing, and
+        /// because s_activeRuntimeInstance stays null, HasRuntimeScatterOwner is false and
+        /// RuntimeNowSeconds returns a constant 0f - which pins the 0.25 s gate in Tick shut after
+        /// the first pass even in the case where Awake managed to register the dispatcher lanes.
+        ///
+        /// Awake is therefore the only callback that can raise this alarm from inside the class.
+        /// A GameObject that is itself inactive runs no Awake at all and cannot be detected from
+        /// here; that half is covered by
+        /// Assets/_Project/Scripts/Editor/Diagnostics/H8_PlacementOwnerEnabledAudit.cs.
+        /// </summary>
+        private void ReportInertPlacementOwner()
+        {
+            if (!Application.isPlaying || enabled)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                InertPlacementOwnerWarningHash,
+                InertPlacementOwnerDisabledContextHash,
+                AuthoredScatterWindowPlacementCeiling);
+
+            UnityEngine.Debug.LogError(InertPlacementOwnerMessage, this);
         }
 
 #if UNITY_EDITOR
@@ -5053,11 +5116,84 @@ namespace Hecton8.World
             counts[key] = counts.TryGetValue(key, out int count) ? count + 1 : 1;
         }
 
-        private static int EstimateScatterWindowCapacity(int cellDiameter, int stride)
+        private static int ResolveScatterWindowsPerAxis(int cellDiameter, int stride)
         {
             int safeStride = math.max(1, stride);
-            int windowsPerAxis = (int)math.ceil(cellDiameter / (float)safeStride) + 2;
+            return (int)math.ceil(cellDiameter / (float)safeStride);
+        }
+
+        private static int EstimateScatterWindowCapacity(int cellDiameter, int stride)
+        {
+            int windowsPerAxis = ResolveScatterWindowsPerAxis(cellDiameter, stride) + 2;
             return math.max(16, windowsPerAxis * windowsPerAxis);
+        }
+
+        // These mirror the clamps the live sampling pass applies. They are declared on the main
+        // partial file so every other part of WorldProceduralScatterDirector can adopt them; the
+        // literals still in WorldProceduralScatterDirectorSamplingPipeline.cs:131-136 and in
+        // RefreshRuntimeStreamingSettings are the remaining duplicate copies.
+        private const int MinScatterRadiusCells = 2;              // RefreshRuntimeStreamingSettings: math.max(2, radiusCells)
+        private const int MaxAuditableScatterRadiusCells = 256;   // overflow guard for a corrupt authored radius
+        private const int MinScatterWindowStride = 2;             // SamplingPipeline :133 and :135
+        private const int MaxGroundPlacementsPerCell = 4;         // SamplingPipeline :131 ResolveRuntimeBudget(..., 0, 4)
+        private const int MaxClusterPlacementsPerCell = 3;        // SamplingPipeline :132 ResolveRuntimeBudget(..., 0, 3)
+        private const int MaxStructurePlacementsPerWindow = 2;    // SamplingPipeline :134 ResolveRuntimeBudget(..., 0, 2)
+        private const int MaxSpawnPlacementsPerWindow = 2;        // SamplingPipeline :136 ResolveRuntimeBudget(..., 0, 2)
+
+        /// <summary>
+        /// Placement ceiling for one full scatter window, computed from authored configuration alone.
+        ///
+        /// Mirrors the live budget resolution in the sampling pass
+        /// (WorldProceduralScatterDirectorSamplingPipeline.cs:128-144): the radius is floored the way
+        /// RefreshRuntimeStreamingSettings floors it, the per-cell and per-window budgets are clamped
+        /// into the same 0..4 / 0..3 / 0..2 / 0..2 ranges ResolveRuntimeBudget is invoked with, both
+        /// strides are floored at <see cref="MinScatterWindowStride"/>, and the window count per axis
+        /// reuses <see cref="ResolveScatterWindowsPerAxis"/> - the same ceil(diameter / stride) the
+        /// runtime capacity estimate uses.
+        ///
+        /// It deliberately omits the chunkStreamingProfile density scale applied inside
+        /// ResolveRuntimeBudget, because that scale is instance state this pure function must not
+        /// read. The result is the authored ceiling, not a runtime prediction.
+        ///
+        /// Worked example with the production authoring values written by
+        /// Assets/_Project/Scripts/Editor/WorldRuntimeBootstrapAuthoring.cs:716-722
+        /// (radius 7, ground 2, cluster 1, structure stride 2 at 1 per window, spawn stride 3 at
+        /// 1 per window):
+        ///   diameter   = 7 * 2 + 1                = 15
+        ///   cells      = 15 * 15                  = 225
+        ///   per cell   = 225 * (2 + 1)            = 675
+        ///   structure  = ceil(15/2)^2 * 1 = 8^2   = 64
+        ///   spawn      = ceil(15/3)^2 * 1 = 5^2   = 25
+        ///   total                                 = 764
+        /// </summary>
+        internal static int CalculateAuthoredScatterWindowPlacementCeiling(
+            int radiusCells,
+            int groundPlacementsPerCell,
+            int clusterPlacementsPerCell,
+            int structureCellStride,
+            int structurePlacementsPerWindow,
+            int spawnCellStride,
+            int spawnPlacementsPerWindow)
+        {
+            int safeRadiusCells = math.clamp(radiusCells, MinScatterRadiusCells, MaxAuditableScatterRadiusCells);
+            int cellDiameter = (safeRadiusCells * 2) + 1;
+            int totalCells = cellDiameter * cellDiameter;
+
+            int groundBudget = math.clamp(groundPlacementsPerCell, 0, MaxGroundPlacementsPerCell);
+            int clusterBudget = math.clamp(clusterPlacementsPerCell, 0, MaxClusterPlacementsPerCell);
+            int structureBudget = math.clamp(structurePlacementsPerWindow, 0, MaxStructurePlacementsPerWindow);
+            int spawnBudget = math.clamp(spawnPlacementsPerWindow, 0, MaxSpawnPlacementsPerWindow);
+
+            int structureWindowsPerAxis = ResolveScatterWindowsPerAxis(
+                cellDiameter,
+                math.max(MinScatterWindowStride, structureCellStride));
+            int spawnWindowsPerAxis = ResolveScatterWindowsPerAxis(
+                cellDiameter,
+                math.max(MinScatterWindowStride, spawnCellStride));
+
+            return (totalCells * (groundBudget + clusterBudget)) +
+                   (structureWindowsPerAxis * structureWindowsPerAxis * structureBudget) +
+                   (spawnWindowsPerAxis * spawnWindowsPerAxis * spawnBudget);
         }
 
         private static void EnsureScatterWindowBudgetCapacity(Dictionary<long, int> counts, int requiredCapacity)
