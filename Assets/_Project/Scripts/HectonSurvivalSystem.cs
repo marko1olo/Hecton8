@@ -3990,7 +3990,6 @@ namespace Hecton8.Gameplay
 
             return false;
         }
-#endif
 
         /// <summary>
         /// Resolves injected survival parameters for an ItemData asset via its persistent identifier.
@@ -4002,6 +4001,7 @@ namespace Hecton8.Gameplay
             parameters = default;
             return itemData != null && TryGetInjectedItemParameters(itemData.PersistentId, out parameters);
         }
+#endif
 
         public int SavePriority => 10;
         public int LoadPriority => 10;

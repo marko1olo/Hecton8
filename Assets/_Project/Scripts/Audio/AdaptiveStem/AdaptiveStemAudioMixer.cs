@@ -1845,10 +1845,15 @@ namespace Hecton8.Audio
             return _resolvedCsvPath;
         }
 
+#endif
+        // Not CSV. This is the narrative-override gate read every mixer tick from
+        // EvaluateStemRule, so it must exist in player builds; it had been swept into the
+        // editor-only CSV polling block above.
         private ulong ResolveBossMask()
         {
             return _bossNarrativeMask == 0ul ? DefaultBossNarrativeMask : _bossNarrativeMask;
         }
+#if UNITY_EDITOR
 
         private static bool IsLineBreak(byte value)
         {
