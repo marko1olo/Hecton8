@@ -74,11 +74,21 @@ namespace Hecton8.EditorTools.Diagnostics
 
             Debug.Log(string.Format(
                 CultureInfo.InvariantCulture,
-                "[H8_GEOLOGYLANES] maxTrenchMask={0:F4} (threshold {1}) maxShelfMask={2:F4} (threshold {3})",
+                "[H8_GEOLOGYLANES] maxTrenchMask={0:F4} maxShelfMask={1:F4} (informational - lanes are " +
+                "resolved from PrimaryZone, not from these masks)",
                 distribution.MaxTrenchMask,
-                EcosystemGeologyBiomeLanes.TrenchMaskThreshold,
-                distribution.MaxShelfMask,
-                EcosystemGeologyBiomeLanes.ShelfMaskThreshold));
+                distribution.MaxShelfMask));
+
+            // The zone breakdown is what makes the lane counts falsifiable. A rich share with zero
+            // contributing shelf zones would mean the mapping is picking up something else.
+            Debug.Log(string.Format(
+                CultureInfo.InvariantCulture,
+                "[H8_GEOLOGYLANES] zones behind the lanes: photicShelf={0} shelfBreak={1} (-> rich) " +
+                "brineTrench={2} hadalBasin={3} (-> scarce)",
+                distribution.PhoticShelfCount,
+                distribution.ShelfBreakCount,
+                distribution.BrineTrenchCount,
+                distribution.HadalBasinCount));
 
             bool discriminating = distribution.IsDiscriminating;
             if (!discriminating)
@@ -88,7 +98,8 @@ namespace Hecton8.EditorTools.Diagnostics
                 Debug.LogError(
                     "[H8_GEOLOGYLANES] DEGENERATE - the mapping produced a single lane over the sampled area. " +
                     "Fauna density is uniform and the geology coupling is inert here. " +
-                    "Compare maxTrenchMask/maxShelfMask against the thresholds above.");
+                    "Check the zone breakdown above: if every shelf and trench zone count is 0, the " +
+                    "geology field never produced a non-neutral zone over this area.");
             }
             else
             {

@@ -24,13 +24,8 @@ namespace Hecton8.World
         /// <summary>Scarce lane: abyssal trench, thin food column, pressure-adapted hunters. -0.05 carrying capacity.</summary>
         public const int LaneScarce = 2;
 
-        /// <summary>Trench mask above which a sector is classified as the scarce lane.</summary>
-        public const float TrenchMaskThreshold = 0.8f;
-
-        /// <summary>Shelf mask above which a sector is classified as the rich lane.</summary>
-        public const float ShelfMaskThreshold = 0.5f;
-
-        /// <summary>Counts of each lane over a sampled sector grid, plus the mask extremes that produced them.</summary>
+        /// <summary>Counts of each lane over a sampled sector grid, plus the mask extremes and the
+        /// specific zones that produced the two non-neutral lanes.</summary>
         public struct LaneDistribution
         {
             public int SampleCount;
@@ -40,6 +35,14 @@ namespace Hecton8.World
             public float MaxTrenchMask;
             public float MaxShelfMask;
             public int NonFiniteCount;
+
+            /// <summary>Zone breakdown behind the non-neutral lanes. Without this the lane counts are
+            /// unfalsifiable: a plausible-looking rich share cannot be told apart from a threshold
+            /// accident, which is exactly how the previous mask-threshold mapping went unchallenged.</summary>
+            public int PhoticShelfCount;
+            public int ShelfBreakCount;
+            public int BrineTrenchCount;
+            public int HadalBasinCount;
 
             /// <summary>
             /// True when the mapping produced more than one lane. A single-lane result means the
@@ -51,21 +54,46 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Classifies one macro geology sample. Trench wins where both masks overlap: it is the
-        /// stronger structure, and a trench cutting through a shelf is still a trench.
+        /// Classifies one macro geology sample by the zone the geology field already resolved.
+        /// <para>
+        /// This delegates to <see cref="WorldMacroGeologyFields.ResolveZone"/> via
+        /// <see cref="WorldMacroGeologySample.PrimaryZone"/> rather than testing masks itself. The
+        /// first version of this method compared <c>ShelfMask &gt; 0.5</c> and
+        /// <c>TrenchMask &gt; 0.8</c>, which looked reasonable and was wrong on two counts: the
+        /// authority requires <c>ShelfMask &gt; 0.68</c> AND <c>DepthMeters &lt; 260</c> for a photic
+        /// shelf, and it resolves a shelf break from <c>ShelfBreakMask</c> - a different field
+        /// entirely. Being depth-blind, the old test labelled 700 m abyssal terrain a rich photic
+        /// shelf and reported half the world as rich, which no compile gate could catch because the
+        /// number looked plausible.
+        /// </para>
+        /// <para>
+        /// Non-finite masks need no guard here: every comparison inside <c>ResolveZone</c> is false
+        /// for NaN, so a degenerate sample falls through to <c>AbyssalPlain</c>, and
+        /// <c>Unknown</c> (an unsanitised params bail-out) maps to the neutral lane. Both are the
+        /// safe direction - no carrying-capacity bias.
+        /// </para>
         /// </summary>
         public static int ClassifyLane(in WorldMacroGeologySample sample)
         {
-            float trenchMask = math.select(0f, sample.TrenchMask, math.isfinite(sample.TrenchMask));
-            float shelfMask = math.select(0f, sample.ShelfMask, math.isfinite(sample.ShelfMask));
+            switch (sample.PrimaryZone)
+            {
+                // Photic shelf and shelf break: sunlit or upwelling-fed, dense kelp, schooling prey.
+                case WorldMacroGeologyZone.PhoticShelf:
+                case WorldMacroGeologyZone.ShelfBreak:
+                    return LaneRich;
 
-            if (trenchMask > TrenchMaskThreshold)
-                return LaneScarce;
+                // Trench and hadal basin: thin food column, pressure-adapted hunters only.
+                case WorldMacroGeologyZone.BrineTrench:
+                case WorldMacroGeologyZone.HadalBasin:
+                    return LaneScarce;
 
-            if (shelfMask > ShelfMaskThreshold)
-                return LaneRich;
-
-            return LaneNeutral;
+                // AbyssalPlain, SedimentFan, ColdSeepField, FaultRidge and Unknown stay neutral.
+                // ColdSeepField is deliberately NOT rich: it is chemosynthetically productive in
+                // reality, but promoting it would change fauna density on ~20% of sampled world
+                // without any ecology authority asking for it. That is a design call, not a bug fix.
+                default:
+                    return LaneNeutral;
+            }
         }
 
         /// <summary>
@@ -107,6 +135,22 @@ namespace Hecton8.World
                     {
                         distribution.MaxTrenchMask = math.max(distribution.MaxTrenchMask, sample.TrenchMask);
                         distribution.MaxShelfMask = math.max(distribution.MaxShelfMask, sample.ShelfMask);
+                    }
+
+                    switch (sample.PrimaryZone)
+                    {
+                        case WorldMacroGeologyZone.PhoticShelf:
+                            distribution.PhoticShelfCount++;
+                            break;
+                        case WorldMacroGeologyZone.ShelfBreak:
+                            distribution.ShelfBreakCount++;
+                            break;
+                        case WorldMacroGeologyZone.BrineTrench:
+                            distribution.BrineTrenchCount++;
+                            break;
+                        case WorldMacroGeologyZone.HadalBasin:
+                            distribution.HadalBasinCount++;
+                            break;
                     }
 
                     switch (ClassifyLane(in sample))
