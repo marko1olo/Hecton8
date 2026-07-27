@@ -95,6 +95,31 @@ float _ActiveSonarRadius;
 float4 _ActiveSonarCentersRadius[HECTON_ACTIVE_SONAR_MAX_PINGS];
 float4 _ActiveSonarParams[HECTON_ACTIVE_SONAR_MAX_PINGS];
 float4 _ActiveSonarGeoParams; // x=count, y=max range, z=grid enabled, w=speed
+// DEAD READS - these four are ALWAYS ZERO in every shader that includes this header.
+//
+// HectonScooterVolumetricShaftsFeature does compute them (ContactShadowStrength / Steps / Bias /
+// MaxDistance, with a real per-frame quality budget), but it publishes them with
+// cmd.SetGlobalConstantBuffer into a NAMED constant buffer,
+// CBUFFER_START(HectonScooterVolumetricShaftsGlobals). A named constant buffer only reaches shaders
+// that declare that block with a byte-identical layout. Hecton_ScooterVolumetricShafts.shader does,
+// so contact shadows work there. Here they are declared as LOOSE globals, which land in the
+// compiler's implicit $Globals buffer and are only ever filled by a per-name Shader.SetGlobalFloat -
+// and nothing in the project calls SetGlobalFloat for any of these four names. Verified: the tokens
+// appear in no .cs file outside HectonScooterVolumetricShaftsFeature's own settings fields.
+//
+// Consequence today: _HectonContactShadowStrength reads 0, so all four gates below
+// (HectonCoreLitEvaluateContactShadow and its callers) take their early-out, and CoreLit contact
+// shadows are inert across every material that includes this header while the same feature is live
+// in the volumetric-shafts pass. Same story for the flashlight shadow block above: with
+// _HectonFlashlightShadowSteps at 0, clamp(round(0), 1, max) pins the raymarch to exactly 1 step.
+//
+// Deliberately NOT "fixed" by flipping it on. There are two defensible intents and choosing between
+// them is a rendering decision with real look and cost consequences across 20 shaders:
+//   1. CoreLit contact shadows are meant to be live -> publish these four as individual globals from
+//      the feature (additive, no CBUFFER layout hazard), and accept the added per-material cost.
+//   2. CoreLit's copy is superseded by the shafts pass -> delete these declarations and the
+//      HectonCoreLitEvaluateContactShadow path they gate.
+// Either is fine; silently enabling a feature that has been off for the whole project's life is not.
 float _HectonContactShadowStrength;
 float _HectonContactShadowSteps;
 float _HectonContactShadowBias;
