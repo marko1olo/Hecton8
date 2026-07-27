@@ -151,7 +151,10 @@ namespace Hecton8.EditorTools.Diagnostics
         private static List<string> ResolveRequestedPaths()
         {
             List<string> resolved = new List<string>(8);
-            string[] commandLineArguments = Environment.GetCommandLineArgs();
+            // Fully qualified: the project has its own Hecton8.Environment namespace, which wins over
+            // System inside a Hecton8.* namespace and resolves to something with no
+            // GetCommandLineArgs. Same trap caught H8_HeadlessPlayModeProbe.
+            string[] commandLineArguments = System.Environment.GetCommandLineArgs();
 
             for (int argumentIndex = 0; argumentIndex < commandLineArguments.Length - 1; argumentIndex++)
             {
