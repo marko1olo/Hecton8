@@ -43,7 +43,18 @@ namespace Hecton8.Editor.Diagnostics
             Graph graph = AssetDatabase.LoadAssetAtPath<Graph>(GraphAssetPath);
             if (graph == null) throw new Exception("Graph not found");
 
-            dynamic erosion = graph.generators.FirstOrDefault(g => g.id == ErosionNodeId);
+            // Was `dynamic`, which bought nothing: graph.generators is Generator[] and
+            // MapMagic.Nodes.Generator declares both `id` and `enabled` as plain public fields
+            // (Generator.cs:229-234). The LINQ predicate on the very next expression already reads
+            // g.id statically, so the dynamic was only ever needed for `enabled` - which is on the
+            // same class.
+            //
+            // It cost the whole Hecton8.Editor assembly its lock-free CLI buildability: a single
+            // dynamic call site pulls in Microsoft.CSharp.RuntimeBinder, which the generated csproj
+            // does not reference, so `dotnet build Hecton8.Editor.csproj` failed with CS0656 and no
+            // editor tooling could be compile-checked while another agent held the Unity lock. In a
+            // shared working tree that lock is contended constantly.
+            Generator erosion = graph.generators.FirstOrDefault(g => g.id == ErosionNodeId);
             if (erosion == null) throw new Exception("Erosion not found");
 
             erosion.enabled = true;
