@@ -1096,7 +1096,10 @@ namespace Hecton8.Crafting
             progress = Mathf.Clamp01(task.Progress);
             craftCompleted = false;
 
-            if (_fabricationJobSlot < 0 && _assemblyPreviewActive && _activeRecipe != null)
+            // The job belongs to the craft, not to the hologram. Retry while a recipe is active so
+            // a fabricator that lost its slot (vault not ready, all assembler slots busy) recovers
+            // instead of holding reserved ingredients at zero progress forever.
+            if (_fabricationJobSlot < 0 && _activeRecipe != null)
                 BeginFabricationVaultJob(_activeRecipe);
 
             if (_fabricationJobSlot < 0)
@@ -3037,7 +3040,23 @@ namespace Hecton8.Crafting
                 recipe.resultItem == null ||
                 !TryResolveAssemblySource(recipe.resultItem, out Mesh sourceMesh, out Material actualMaterial))
             {
-                FlushEndAssemblyVisual();
+                // construction.md 8A: the hologram preview is presentation. It must not own recipe
+                // completion. Tear down the preview only, then keep the fabrication job running
+                // headless so an active craft still advances and CompleteCraft() still fires.
+                FlushEndAssemblyPresentation();
+                if (!_isCrafting || recipe == null)
+                {
+                    // No craft to keep alive; match the previous full-teardown identity reset.
+                    _assemblyTargetHash = 0u;
+                    return;
+                }
+
+                // Headless assembly has no preview mesh, so drive the vault bounds from the
+                // authored padding envelope instead of a stale mesh AABB left by an earlier recipe.
+                _assemblyBaseY = 0f;
+                _assemblyTopY = Mathf.Max(0.001f, assemblyHeightPadding);
+                _assemblyCurrentHeightY = _assemblyBaseY;
+                BeginFabricationVaultJob(recipe);
                 return;
             }
 
@@ -3318,7 +3337,13 @@ namespace Hecton8.Crafting
         private void FlushCompleteAssemblyVisual()
         {
             if (!_assemblyPreviewActive)
+            {
+                // Headless craft: there is no hologram to hand over to the real material, but the
+                // assembler slot is still ours and must be released or it stays Active forever.
+                FabricationAssemblerRuntime.ClearSlot(_fabricationJobSlot);
+                _fabricationJobSlot = -1;
                 return;
+            }
 
             ApplyAssemblyVisualProgress(1f, false);
             if (assemblyPreviewRenderer != null)
@@ -3348,12 +3373,24 @@ namespace Hecton8.Crafting
 
         private void FlushEndAssemblyVisual()
         {
+            // Full teardown: the simulation job dies with the presentation only here, where the
+            // craft itself has already ended (CompleteCraft/CancelCraft) or the component is
+            // being disabled/destroyed.
             FabricationAssemblerRuntime.ClearSlot(_fabricationJobSlot);
             _fabricationJobSlot = -1;
+            _assemblyTargetHash = 0u;
+            FlushEndAssemblyPresentation();
+        }
+
+        /// <summary>
+        /// Presentation-only teardown. Leaves the fabrication job slot and its target hash intact
+        /// so a craft that cannot render a hologram still runs to completion.
+        /// </summary>
+        private void FlushEndAssemblyPresentation()
+        {
             _assemblyPreviewActive = false;
             _assemblyMaterialSwapped = false;
             _assemblyActualMaterial = null;
-            _assemblyTargetHash = 0u;
             _assemblyProgress01 = 0f;
             _assemblyCurrentHeightY = _assemblyBaseY;
 
