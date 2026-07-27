@@ -173,6 +173,16 @@ def sweep_runtime(unity_root, detail=False):
 
 
 def main():
+    # The compiler speaks the OS display language, so on a Russian-locale host the diagnostics come
+    # back as Cyrillic plus U+FFFD replacement characters from the subprocess decode, and printing
+    # them to a cp1251 console raises UnicodeEncodeError before a single error is shown. Degrade the
+    # unprintable characters instead of losing the whole report.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--assembly", default="Hecton8.Core")
     parser.add_argument("--unity-root", default=UNITY_ROOT)
