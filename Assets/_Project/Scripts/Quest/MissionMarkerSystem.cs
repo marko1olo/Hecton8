@@ -23,15 +23,16 @@ namespace Hecton8.Quest
         private const uint MarkerContextHash = 0x4D4D4354u; // MMCT
         private static readonly uint _atlasCoreMarkerTargetHash = QuestFlagHashKernel.ComputeStableHash("atlas6_core");
 
-        [StructLayout(LayoutKind.Explicit, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct QuestMarkerCache
         {
             [FieldOffset(0)] public uint TargetHash;
+            [FieldOffset(4)] private uint _pad0;
             [FieldOffset(8)] public AbsoluteUniversePosition FallbackAup;
-            [FieldOffset(56)] public Vector3 FallbackPosition;
-            [FieldOffset(68)] public float HeightOffset;
-            [FieldOffset(72)] public byte HasFallbackPosition;
-            [FieldOffset(76)] private uint _pad0;
+            [FieldOffset(56)] public float HeightOffset;
+            [FieldOffset(60)] public byte HasFallbackPosition;
+            [FieldOffset(61)] private byte _pad1;
+            [FieldOffset(62)] private ushort _pad2;
         }
 
         [Header("── Appearance ───────────────────────")]
@@ -498,7 +499,6 @@ namespace Hecton8.Quest
             if (!TryResolveMarkerCache(questManager, questHash, out QuestMarkerCache cache))
                 return false;
 
-            Vector3 resolvedPosition;
             if (cache.TargetHash == _atlasCoreMarkerTargetHash)
             {
                 IAtlasSignalReadModel atlasSignalReadModel = _atlasSignalReadModel;
@@ -509,12 +509,10 @@ namespace Hecton8.Quest
                 }
 
                 markerAup = ResolveOffsetAup(in atlasCoreAup, cache.HeightOffset);
-                float3 runtimePosition = markerAup.ToRuntimeFloat3();
-                resolvedPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             }
             else if (cache.HasFallbackPosition != 0)
             {
-                resolvedPosition = cache.FallbackPosition;
+                // The cached anchor already carries the authored height lift applied when the entry was built.
                 markerAup = cache.FallbackAup;
             }
             else
@@ -522,7 +520,40 @@ namespace Hecton8.Quest
                 return false;
             }
 
-            markerWorldPosition = resolvedPosition;
+            // Runtime space is rebased by the floating origin, so the draw position is re-derived from the
+            // absolute anchor on every rebuild. Reusing a runtime vector captured in an earlier origin epoch
+            // draws the marker offset by the accumulated rebase while the AUP range test still passes.
+            AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!TryResolveMarkerRuntimePosition(in markerAup, in runtimeOriginAup, out markerWorldPosition))
+            {
+                markerAup = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves a marker's runtime draw position from its absolute anchor against a supplied runtime origin.
+        /// </summary>
+        /// <param name="markerAup">Absolute marker anchor with the authored height lift already applied.</param>
+        /// <param name="runtimeOriginAup">Runtime origin published by the floating-origin route.</param>
+        /// <param name="markerWorldPosition">Resolved runtime-space draw position.</param>
+        /// <returns>False when either input is non-finite, so no non-finite matrix reaches the instanced batch.</returns>
+        public static bool TryResolveMarkerRuntimePosition(
+            in AbsoluteUniversePosition markerAup,
+            in AbsoluteUniversePosition runtimeOriginAup,
+            out Vector3 markerWorldPosition)
+        {
+            markerWorldPosition = default;
+            if (!markerAup.IsFinite() || !runtimeOriginAup.IsFinite())
+                return false;
+
+            float3 runtimePosition = AbsoluteUniversePosition.ToCameraRelativeFloat3(in markerAup, in runtimeOriginAup);
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            markerWorldPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             return true;
         }
 
@@ -569,16 +600,15 @@ namespace Hecton8.Quest
             }
 
             float heightOffset = math.max(0f, markerHeightOffset);
-            Vector3 resolvedFallbackPosition = markerWorldPosition + (Vector3.up * heightOffset);
+            Vector3 liftedMarkerPosition = markerWorldPosition + (Vector3.up * heightOffset);
             AbsoluteUniversePosition fallbackAup = default;
             bool hasFallbackPosition = markerWorldPosition.sqrMagnitude > 0.0001f &&
                                        TryResolveAupFromRuntimeOrigin(
-                                           resolvedFallbackPosition,
+                                           liftedMarkerPosition,
                                            out fallbackAup);
             cache = new QuestMarkerCache
             {
                 TargetHash = markerTargetHash,
-                FallbackPosition = resolvedFallbackPosition,
                 FallbackAup = hasFallbackPosition ? fallbackAup : default,
                 HeightOffset = heightOffset,
                 HasFallbackPosition = hasFallbackPosition ? (byte)1 : (byte)0
