@@ -2637,6 +2637,29 @@ namespace Hecton8.World
             return _material != null;
         }
 
+        /// <summary>
+        /// DEAD PATH - and it must not be woken up without the work described below.
+        ///
+        /// This method is the ONLY place _batchRendererGroup is ever assigned non-null, and it has
+        /// ZERO callers in the entire project. So the group is permanently null, OnPerformCulling
+        /// never fires, _batchId and every BatchMeshID/BatchMaterialID stay at 0, and all the
+        /// registration helpers below early-return. Everything actually drawn goes through
+        /// RenderIndirectPass -> Graphics.RenderMeshIndirect with matProps.
+        ///
+        /// The trap: BatchRendererGroup DOES NOT CONSUME MaterialPropertyBlock. This renderer
+        /// publishes every single binding through seven property blocks - the instance matrix and
+        /// metadata buffers, the visible-index buffers, _GlobalFloatingOffset,
+        /// _HectonVegetationRuntimeLodParams, _HectonVegetationRuntimeDrawParams,
+        /// _HectonVegetationViewPositionWS, the interaction knobs. Calling this method to "enable
+        /// BRG" would therefore not add a faster path, it would silently drop all of them: BRG
+        /// reads per-instance data from batch metadata backed by its own buffer, and the metadata
+        /// here is a single placeholder entry (BrgMetadataPlaceholderCount = 1) that maps nothing.
+        ///
+        /// Enabling it means first porting every one of those bindings to MetadataValue entries and
+        /// a batch buffer. Until that exists, leaving this uncalled is the correct state, not an
+        /// oversight - which is why it is documented rather than deleted. Deleting a whole rendering
+        /// path is an architecture decision and not one to take from a static read.
+        /// </summary>
         private void EnsureBatchRendererGroupResources()
         {
             if (_batchRendererGroup != null)
