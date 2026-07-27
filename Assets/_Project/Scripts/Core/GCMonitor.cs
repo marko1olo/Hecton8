@@ -179,6 +179,22 @@ namespace Hecton8.Core
                 return false;
 
             GCMonitor runtime = GlobalRegistry.GCMonitorRuntime;
+
+            // Ask before evicting, but only when a publish is actually required. Re-entrant OnEnable on the
+            // instance that already owns the slot never reaches the guard - RegisterServiceAllowSameInstance
+            // early-returns on reference equality - so it must keep working after LockReady.
+            //
+            // A genuine takeover is different: GCMonitor has no GlobalRegistryServiceSlot, so its slot
+            // resolves to Unknown, which is never scene-runtime hot-swappable. Once the registry is
+            // ready-locked the registration below is guaranteed to throw, and the eviction directly after
+            // this would already have cleared the live owner - leaving no GCMonitor at all. Decline instead.
+            if (!ReferenceEquals(runtime, this) &&
+                !GlobalRegistry.IsRuntimeServicePublicationOpen<GCMonitor>())
+            {
+                _runtimeOwnerRejected = true;
+                return false;
+            }
+
             if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
             {
                 GlobalRegistry.ClearGCMonitorRuntime(runtime);

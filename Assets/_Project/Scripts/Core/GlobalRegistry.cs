@@ -7172,6 +7172,23 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>
+        /// Pure predicate answering whether <typeparamref name="T"/> could be published right now, i.e.
+        /// whether <see cref="GuardServicePublication{T}"/> would let a tokenless registration through.
+        ///
+        /// Runtime owners that must evict an incumbent before republishing themselves have to ask this
+        /// FIRST. Without it they clear the live owner and only then hit the guard, so the throw leaves
+        /// the slot empty and the evicted owner permanently disabled - a partial mutation followed by a
+        /// CriticalBootException, which is strictly worse than declining ownership.
+        ///
+        /// Mirrors the guard's own conditions and must stay in sync with it. Side-effect free: no token
+        /// is issued, no slot bit is set, nothing is published.
+        /// </summary>
+        internal static bool IsRuntimeServicePublicationOpen<T>() where T : class
+        {
+            return Phase != RegistryPhase.Ready || IsSceneRuntimeHotSwapSlot(ServiceSlotCache<T>.Slot);
+        }
+
         private static void GuardServicePublication<T>(ForceOverrideToken forceOverrideToken) where T : class
         {
             if (forceOverrideToken.IsValid || Phase != RegistryPhase.Ready)
