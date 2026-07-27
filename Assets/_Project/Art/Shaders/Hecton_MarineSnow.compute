@@ -107,6 +107,12 @@ StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;
 #define _MarineSnowShellParams (_HectonMarineSnowFrame[0].ShellParams)
 #define _MarineSnowMetaParams (_HectonMarineSnowFrame[0].MetaParams)
 
+// 15 FPS floor on the integration step, matching Hecton_FluidAdvection and AbyssalBlackSmoke. Both marine
+// snow kernels integrate acceleration straight into Vel, so an unclamped hitch step displaces the whole
+// buffer in a single frame. It also bounds the error in the linear `saturate(dt * k)` velocity relaxations
+// used below, which diverge from true exponential relaxation as dt grows and reach a full snap at dt >= 1/k.
+#define MARINE_SNOW_MAX_DT 0.0666667
+
 float4 _MarineSnowDriftParams;
 float4 _MarineSnowFlowParams;
 float4 _MarineSnowMockFlowField;
@@ -1224,7 +1230,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         particle = BuildRespawnParticle(index);
     }
 
-    float dt = max(_MarineSnowCameraRight_DeltaTime.w, 0.0);
+    float dt = min(max(_MarineSnowCameraRight_DeltaTime.w, 0.0), MARINE_SNOW_MAX_DT);
     float simulationTime = _MarineSnowCameraPosition_Time.w;
     float densityScale = saturate(_MarineSnowCameraUp_Density.w);
     float3 cameraPosition = _MarineSnowCameraPosition_Time.xyz;
@@ -1451,7 +1457,7 @@ void CS_IntegrateSiltParticles(uint3 dispatchThreadID : SV_DispatchThreadID)
     if (particle.Life <= 0.0)
         particle = BuildRespawnParticle(index);
 
-    float dt = max(_MarineSnowCameraRight_DeltaTime.w, 0.0);
+    float dt = min(max(_MarineSnowCameraRight_DeltaTime.w, 0.0), MARINE_SNOW_MAX_DT);
     particle.PrevPos = particle.Pos;
     particle.Vel += ComputePropwashEventFlow(particle.Pos) * dt;
     particle.Vel = ClampParticleVelocity(particle.Vel);
