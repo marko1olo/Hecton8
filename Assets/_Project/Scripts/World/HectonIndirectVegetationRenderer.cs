@@ -2363,11 +2363,20 @@ namespace Hecton8.World
             }
 
             _cachedCullCameraPosition -= shiftOffset;
+
+            // Both of these SURVIVE an origin shift, and that is the whole point of subtracting the
+            // offset: last frame's camera position expressed in the new runtime space is exactly
+            // old - shiftOffset. This used to shift the value and then clear the flag two lines
+            // later, which made the shift dead work and forced
+            // `previousCameraPosition = currentCameraPosition` for one frame - a motion vector of
+            // ZERO camera movement. Origin shifts happen when the player has travelled far, i.e.
+            // while moving fast, so that lie landed exactly on the frames where the camera had moved
+            // most. Nulling _previousMotionCamera was unnecessary too: a shift does not change which
+            // camera it is, and the `_previousMotionCamera == renderCamera` test already rejects a
+            // stale or destroyed one.
             if (_hasPreviousMotionCameraPosition)
                 _previousMotionCameraPosition -= shiftOffset;
 
-            _hasPreviousMotionCameraPosition = false;
-            _previousMotionCamera = null;
             _hasFarCullingSnapshot = false;
             _gpuCullingFrameIndex = 0;
 
