@@ -873,7 +873,12 @@ namespace Hecton8.World.VoxelSurfaceNets
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    // Deterministic is defensive here, not a bug fix: the only arithmetic today is a double3 subtract
+    // and an integer increment, and FloatMode.Fast has no 32-bit reassociation or reciprocal
+    // approximation to apply to that, so this change alters no current codegen. It is set because this
+    // job rebases AUP floating-origin authority data (math.md section 4), and any float math added here
+    // later must not silently inherit Fast semantics on an authority coordinate path.
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelSurfaceAabbShiftJob : IJobParallelFor
     {
@@ -894,7 +899,11 @@ namespace Hecton8.World.VoxelSurfaceNets
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    // Deterministic for rule consistency on the collider-feeding path. Stated plainly: the Execute body
+    // contains no floating-point arithmetic at all - every write is int/byte/uint - so FloatMode is
+    // numerically irrelevant here and this changes no generated code. It is set so the attribute cannot
+    // be read as sanctioning Fast math on a job that gates physics bake requests.
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelSurfacePhysicsBakeRequestJob : IJobParallelFor
     {
@@ -930,7 +939,9 @@ namespace Hecton8.World.VoxelSurfaceNets
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    // Visual-only: HZB occlusion culling decides what is drawn, never what is solid, so Fast plus an
+    // explicit Performance optimisation target is the correct trade here.
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct VoxelSurfaceHzbCullJob : IJobParallelFor
     {
@@ -1053,7 +1064,9 @@ namespace Hecton8.World.VoxelSurfaceNets
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    // Bulk GPU upload copy: no float arithmetic to speak of, so FloatMode is near-irrelevant; the
+    // Performance target is the part that matters for a memory-bound copy.
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public unsafe struct VoxelSurfaceGpuUploadCopyJob : IJob
     {

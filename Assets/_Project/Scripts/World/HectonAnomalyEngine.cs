@@ -414,7 +414,15 @@ namespace Hecton8.World
                 CarveStrengthMeters = 28.0f,
                 CaveThreshold = 0.65f,
                 MaxCrustDepthMeters = 400.0f,
-                SurfaceProtectionMeters = 50.0f,
+                // R100: aligned to the voxels.md constant. The bible requires carving density to fade
+                // to zero "within 30 meters of the terrain surface (depthToTerrainSurface < 30f)", i.e.
+                // 30 m is the point where carving reaches FULL strength, not where it starts.
+                // ProceduralCaveSdfCarveJob hard-rejects at depth <= SurfaceProtectionMeters and then
+                // smoothsteps over the next 15 m, so the fade endpoint is P + 15. The previous 50.0f put
+                // that endpoint at 65 m - more than twice the mandated shell - which is why cave mouths
+                // could never reach a cliff face. 15.0f lands the endpoint exactly on 30 m while keeping
+                // a hard 15 m no-carve shield against punching through the 2D heightmap.
+                SurfaceProtectionMeters = 15.0f,
                 StrataLayerThicknessMeters = 24.0f,
                 StrataShelvingStrength = 0.4f,
 
