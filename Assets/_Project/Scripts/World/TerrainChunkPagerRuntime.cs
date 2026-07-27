@@ -379,6 +379,24 @@ namespace Hecton8.World
             if (_initialized != 0)
                 return;
 
+            // R100 FIX: never re-initialise over a teardown that could not finish. A latched deferred
+            // shutdown means Shutdown failed to fence its jobs or join its worker and DELIBERATELY kept
+            // those handles live. Proceeding past this point would:
+            //  - run ResetRuntimeStateCounters, overwriting a still-running JobHandle with default. That
+            //    orphans a job writing the vault metadata slab, which AllocateNativeState then re-Ensures
+            //    with NativeArrayOptions.ClearMemory and ReleaseNativeState can later free underneath it.
+            //    Once the handle is gone nothing on this side can ever fence that job again.
+            //  - revive the previous worker via StartWorker's Volatile.Write(_workerRunning, 1) while the
+            //    old thread is still inside ProcessWorkerRequest, and overwrite _workerWake/_workerThread
+            //    (leaking the old AutoResetEvent). The request ring is single-consumer and its dequeue is
+            //    a plain read plus Interlocked.Exchange, not a CAS, so two consumers read the same tail
+            //    and the same chunk is loaded twice.
+            // Bail out instead and let the VisualSyncTick recovery lane reclaim first; it calls
+            // TryReleaseDeferredShutdownState every tick and re-enters Initialize once the state is clean.
+            // Do NOT call TryReleaseDeferredShutdownState here: it tail-calls Initialize itself.
+            if (Volatile.Read(ref _deferredShutdown) != 0 || Volatile.Read(ref _workerThreadActive) != 0)
+                return;
+
             _disposed = 0;
             Volatile.Write(ref _deferredShutdown, 0);
             _faultFlags = 0u;
@@ -503,9 +521,16 @@ namespace Hecton8.World
             _dumpSnapshotByteLength = 0;
             Volatile.Write(ref _deferredShutdown, 0);
 
-            if (pendingRebindVault != null && isActiveAndEnabled)
+            // R100 FIX: re-initialise after ANY successful deferred release, not only a vault rebind.
+            // This used to be gated on pendingRebindVault != null, which was sufficient only because
+            // Initialize would previously barge straight through a latched deferred shutdown. Now that
+            // Initialize correctly refuses while the latch is set, the plain disable/enable path (where
+            // no rebind vault is pending) would re-enable with _initialized == 0 and never recover.
+            if (isActiveAndEnabled)
             {
-                _vault = pendingRebindVault;
+                if (pendingRebindVault != null)
+                    _vault = pendingRebindVault;
+
                 Initialize();
             }
         }
@@ -1528,6 +1553,16 @@ namespace Hecton8.World
 
         private bool StartWorker()
         {
+            // R100 FIX: refuse to start a second worker over a live one. StopWorker intentionally leaves
+            // _workerWake and _workerThread intact when its join times out, so starting again would leak
+            // that AutoResetEvent, orphan a thread still holding this instance, and - because
+            // Volatile.Write(_workerRunning, 1) below revives the old thread's loop condition - put two
+            // consumers on a single-consumer request ring whose dequeue is not a CAS. Both would read the
+            // same tail and load the same chunk twice. Initialize now guards this too; this is the
+            // invariant enforced at the owner so no future caller can bypass it.
+            if (Volatile.Read(ref _workerThreadActive) != 0)
+                return false;
+
             AutoResetEvent wake = null;
             Thread thread = null;
             try
