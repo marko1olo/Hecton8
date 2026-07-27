@@ -459,6 +459,141 @@ namespace Hecton8.EditorTools.Diagnostics
             }
         }
 
+        /// <summary>
+        /// Every UNASSIGNED serialized reference, on every component in every scene and prefab, whose field
+        /// type is a project-owned type (Hecton8.*) or a GPU asset.
+        ///
+        /// This is the generalisation of RunGpuWiringAudit. That one only looked at ComputeShader fields and
+        /// so missed the larger pattern: systems are wired to each other through serialized references too,
+        /// and a null there means one subsystem silently never finds another. Example that motivated it -
+        /// HectonUnderwaterVisuals declares `HectonMarineSnowRenderer underwaterMarineSnow`, so marine snow
+        /// has a designated owner; if that reference is null the whole 6000-line renderer never runs, and no
+        /// ComputeShader-only audit would show it.
+        ///
+        /// IMPORTANT - the count this prints is NOT a defect count, and must not be quoted as one. Many null
+        /// serialized references in this project are correct by design, because components resolve their
+        /// dependencies at runtime instead. Triage every hit against the owning C# before calling it a bug:
+        ///
+        ///   1. Runtime-resolved  -> NOT a bug. Look for `if (field == null) field = GlobalRegistry.X;` or an
+        ///      IGlobalRegistryHotSwapListener slot. Example: HectonUnderwaterVisuals.depthZoneDirector is
+        ///      null in the scene and resolves from GlobalRegistry.DepthZone. Working as intended.
+        ///   2. Self-searching    -> depends on placement. Example:
+        ///      HectonUnderwaterVisuals.underwaterMarineSnow resolves via
+        ///      mainCamera.TryGetComponent(out ...), so it only works if a HectonMarineSnowRenderer is
+        ///      actually on the main camera. It is currently on no camera in any scene or prefab, so the
+        ///      fallback finds nothing - the gap is placement, not the null field.
+        ///   3. Guarded but absent -> degraded feature, no crash. Example:
+        ///      HectonUnderwaterVisuals.atmosphereManager has no fallback at all, only `!= null` guards, so
+        ///      the atmosphere link is simply missing.
+        ///   4. Hard-blocking      -> real defect. Example: HectonWorldGenerator.voxelEngine, whose consumer
+        ///      opens with `if (voxelEngine == null) return;` so cave and rift GenerateVolumeAsync never run.
+        ///
+        /// And a null field being a real gap still does not make filling it a repair. Check whether the
+        /// assets it needs even exist first: wiring HectonMarineSnowRenderer requires a material for
+        /// Hecton_MarineSnow.shader, and no material in the project binds that shader (Snow.mat uses a
+        /// different one). Creating assets with invented values to make a reference non-null is how a facade
+        /// gets built - that is feature enablement, and it needs a decision, not a null check.
+        /// </summary>
+        public static void RunUnwiredReferenceAudit()
+        {
+            var byField = new Dictionary<string, int>(StringComparer.Ordinal);
+            var containers = new Dictionary<string, string>(StringComparer.Ordinal);
+            int total = 0;
+
+            foreach (string guid in AssetDatabase.FindAssets("t:Scene", new[] { "Assets/_Project" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                if (!scene.IsValid())
+                    continue;
+
+                foreach (GameObject root in scene.GetRootGameObjects())
+                    CollectUnwired(root, System.IO.Path.GetFileName(path), byField, containers, ref total);
+            }
+
+            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab != null)
+                    CollectUnwired(prefab, System.IO.Path.GetFileName(path), byField, containers, ref total);
+            }
+
+            Debug.Log($"{Marker} UNWIRED REFERENCE AUDIT: {total} null project-typed references, {byField.Count} distinct component.field sites");
+
+            var ordered = new List<KeyValuePair<string, int>>(byField);
+            ordered.Sort((a, b) => a.Key.CompareTo(b.Key));
+            foreach (KeyValuePair<string, int> entry in ordered)
+                Debug.Log($"{Marker}   NULL x{entry.Value} {entry.Key}  [{containers[entry.Key]}]");
+
+            Debug.Log($"{Marker} DONE");
+        }
+
+        private static void CollectUnwired(
+            GameObject root,
+            string containerName,
+            Dictionary<string, int> byField,
+            Dictionary<string, string> containers,
+            ref int total)
+        {
+            foreach (Component c in root.GetComponentsInChildren<Component>(true))
+            {
+                if (c == null)
+                    continue;
+
+                Type componentType = c.GetType();
+                if (componentType.Namespace == null ||
+                    componentType.Namespace.IndexOf("Hecton", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    // Still audit Assembly-CSharp components, which have no namespace in this project.
+                    if (componentType.Namespace != null)
+                        continue;
+                }
+
+                var so = new SerializedObject(c);
+                SerializedProperty it = so.GetIterator();
+                while (it.NextVisible(true))
+                {
+                    if (it.propertyType != SerializedPropertyType.ObjectReference ||
+                        it.objectReferenceValue != null ||
+                        it.depth > 1)
+                        continue;
+
+                    // "PPtr<$TypeName>" -> TypeName. Correct even when the reference is null, which is the point.
+                    string fieldType = it.type ?? string.Empty;
+                    int open = fieldType.IndexOf('$');
+                    int close = fieldType.LastIndexOf('>');
+                    if (open < 0 || close <= open)
+                        continue;
+
+                    string referencedType = fieldType.Substring(open + 1, close - open - 1);
+                    bool projectOwned =
+                        referencedType.StartsWith("Hecton", StringComparison.Ordinal) ||
+                        referencedType.IndexOf("Director", StringComparison.Ordinal) >= 0 ||
+                        referencedType.IndexOf("Manager", StringComparison.Ordinal) >= 0 ||
+                        referencedType.IndexOf("Runtime", StringComparison.Ordinal) >= 0 ||
+                        referencedType.IndexOf("Registry", StringComparison.Ordinal) >= 0 ||
+                        referencedType.IndexOf("Renderer", StringComparison.Ordinal) >= 0 ||
+                        referencedType == "ComputeShader";
+
+                    if (!projectOwned)
+                        continue;
+
+                    total++;
+                    string key = $"{componentType.Name}.{it.propertyPath} -> {referencedType}";
+                    byField.TryGetValue(key, out int n);
+                    byField[key] = n + 1;
+                    containers[key] = containerName;
+                }
+            }
+        }
+
         private static string GetHierarchyPath(Transform t)
         {
             string path = t.name;
