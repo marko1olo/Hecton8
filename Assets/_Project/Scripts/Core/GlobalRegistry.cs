@@ -8095,6 +8095,11 @@ namespace Hecton8.Core
             { typeof(IObjectPoolService), GlobalRegistryServiceSlot.ObjectPool },
             { typeof(ObjectPoolManager), GlobalRegistryServiceSlot.ObjectPool },
             { typeof(IPlayerRuntimeContext), GlobalRegistryServiceSlot.Player },
+            // Scene-owned services register by concrete type through RegisterPlayerRuntimeContextRuntime,
+            // so the concrete type needs the same slot as its interface. Without it the slot resolves to
+            // Unknown, which IsSceneRuntimeHotSwapSlot rejects, and the scene publication gate can never
+            // issue a token for a scene load that happens after LockReady.
+            { typeof(PlayerRuntimeContextService), GlobalRegistryServiceSlot.Player },
             { typeof(HectonPlayerMotor), GlobalRegistryServiceSlot.PlayerMotor },
             { typeof(IPlayerSeatLockMotorSink), GlobalRegistryServiceSlot.PlayerMotor },
             { typeof(IPlayerMovementContracts), GlobalRegistryServiceSlot.PlayerMovementContracts },
@@ -8112,6 +8117,9 @@ namespace Hecton8.Core
             { typeof(IWeatherService), GlobalRegistryServiceSlot.Weather },
             { typeof(ISeismicDirector), GlobalRegistryServiceSlot.SeismicDirectorRuntime },
             { typeof(IHectonOceanKinematicsService), GlobalRegistryServiceSlot.OceanKinematics },
+            // Registered by concrete type from OceanKinematicsRuntimeService.EnsureSingletonOwnership,
+            // which runs from Crest4KinematicsAdapter.OnEnable while 02_HECTON_WORLD activates.
+            { typeof(OceanKinematicsRuntimeService), GlobalRegistryServiceSlot.OceanKinematics },
             { typeof(IPowerGridService), GlobalRegistryServiceSlot.PowerGrid },
             { typeof(ISubmarineRuntimeContext), GlobalRegistryServiceSlot.Submarine },
             { typeof(ISubmarineState), GlobalRegistryServiceSlot.SubmarineState },
