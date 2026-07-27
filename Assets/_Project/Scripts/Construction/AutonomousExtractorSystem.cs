@@ -538,6 +538,7 @@ namespace Hecton8.Construction
                     continue;
 
                 _modules[i] = module;
+                ClearExtractorStateRow(i);
                 module.SetRuntimeIndex(i);
                 return i;
             }
@@ -554,6 +555,7 @@ namespace Hecton8.Construction
 
             int newIndex = _moduleCount;
             _modules[newIndex] = module;
+            ClearExtractorStateRow(newIndex);
             _moduleCount++;
             module.SetRuntimeIndex(newIndex);
             return newIndex;
@@ -673,6 +675,7 @@ namespace Hecton8.Construction
                     _modules[i] = movedModule;
                     _modules[sourceIndex] = null;
                     _moduleCount--;
+                    MoveExtractorStateRow(sourceIndex, i);
                     if (movedModule != null)
                         movedModule.SetRuntimeIndex(i);
                 }
@@ -685,6 +688,55 @@ namespace Hecton8.Construction
 
                 _moduleCount--;
             }
+        }
+
+        /// <summary>
+        /// Carries the accumulated cycle/buffer row with a module that compaction relocated to a lower slot.
+        /// The lanes are keyed by slot index, so without this the moved extractor reads the vacated slot's
+        /// zeroed row and its buffered yield is destroyed. Only reachable from the SlowTick compaction pass,
+        /// which runs after the extraction job has been completed, so the lanes carry no in-flight job alias.
+        /// </summary>
+        private void MoveExtractorStateRow(int sourceIndex, int destinationIndex)
+        {
+            if (!TryAcquireExtractorStateBuffers(
+                    out NativeArray<float> cycleTimers,
+                    out NativeArray<int> bufferedItemHashIds,
+                    out NativeArray<int> bufferedUnitCounts,
+                    out NativeArray<int> completedCycleCounts))
+            {
+                return;
+            }
+
+            ExtractorSlotLanes.TryMoveRow(
+                cycleTimers,
+                bufferedItemHashIds,
+                bufferedUnitCounts,
+                completedCycleCounts,
+                sourceIndex,
+                destinationIndex);
+        }
+
+        /// <summary>
+        /// Zeroes the accumulation row of a slot a module has just claimed so the new extractor cannot inherit
+        /// an abandoned buffer and deposit units that were never mined.
+        /// </summary>
+        private void ClearExtractorStateRow(int index)
+        {
+            if (!TryAcquireExtractorStateBuffers(
+                    out NativeArray<float> cycleTimers,
+                    out NativeArray<int> bufferedItemHashIds,
+                    out NativeArray<int> bufferedUnitCounts,
+                    out NativeArray<int> completedCycleCounts))
+            {
+                return;
+            }
+
+            ExtractorSlotLanes.TryClearRow(
+                cycleTimers,
+                bufferedItemHashIds,
+                bufferedUnitCounts,
+                completedCycleCounts,
+                index);
         }
 
         private bool TryAcquireExtractorJobBuffers(
