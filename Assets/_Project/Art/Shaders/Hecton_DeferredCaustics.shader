@@ -235,6 +235,92 @@ Shader "Hidden/Hecton8/DeferredCaustics"
             return projected * max(scale, 0.0001) + wrappedOffset * max(scale, 0.0001) + flow;
         }
 
+        // Depth deltas at or above this are treated as "no usable neighbour" (sky, or off-screen clamp).
+        #define H8_CAUSTIC_NORMAL_TAP_REJECT 1.0e9
+
+        // A fullscreen composite has no vertex normal, so the incidence term is rebuilt from the depth
+        // buffer. Four point taps rather than ddx/ddy on purpose: this runs after the early-out branches
+        // below, and implicit derivatives are undefined once lanes diverge. Per axis the nearer neighbour
+        // wins, so a silhouette cannot bend the normal across a depth cliff.
+        float3 ResolveGeometricNormalWS(float2 screenUV, float3 centerWorldPos, float centerRawDepth)
+        {
+            float2 texel = rcp(max(_ScreenParams.xy, float2(1.0, 1.0)));
+            float centerEyeDepth = LinearEyeDepth(centerRawDepth, _ZBufferParams);
+
+            float2 uvRight = screenUV + float2(texel.x, 0.0);
+            float2 uvLeft = screenUV - float2(texel.x, 0.0);
+            float2 uvUp = screenUV + float2(0.0, texel.y);
+            float2 uvDown = screenUV - float2(0.0, texel.y);
+
+            float rawRight = SampleCausticsDepth(uvRight);
+            float rawLeft = SampleCausticsDepth(uvLeft);
+            float rawUp = SampleCausticsDepth(uvUp);
+            float rawDown = SampleCausticsDepth(uvDown);
+
+            float deltaRight = ResolveDepthValid(rawRight) > 0.5
+                ? abs(LinearEyeDepth(rawRight, _ZBufferParams) - centerEyeDepth)
+                : H8_CAUSTIC_NORMAL_TAP_REJECT;
+            float deltaLeft = ResolveDepthValid(rawLeft) > 0.5
+                ? abs(LinearEyeDepth(rawLeft, _ZBufferParams) - centerEyeDepth)
+                : H8_CAUSTIC_NORMAL_TAP_REJECT;
+            float deltaUp = ResolveDepthValid(rawUp) > 0.5
+                ? abs(LinearEyeDepth(rawUp, _ZBufferParams) - centerEyeDepth)
+                : H8_CAUSTIC_NORMAL_TAP_REJECT;
+            float deltaDown = ResolveDepthValid(rawDown) > 0.5
+                ? abs(LinearEyeDepth(rawDown, _ZBufferParams) - centerEyeDepth)
+                : H8_CAUSTIC_NORMAL_TAP_REJECT;
+
+            // Both taps dead on either axis: report level ground, which leaves caustic energy as authored.
+            [branch]
+            if (min(deltaRight, deltaLeft) >= H8_CAUSTIC_NORMAL_TAP_REJECT ||
+                min(deltaUp, deltaDown) >= H8_CAUSTIC_NORMAL_TAP_REJECT)
+            {
+                return float3(0.0, 1.0, 0.0);
+            }
+
+            // Select the winning neighbour first so only one world-space reconstruction runs per axis.
+            bool useRight = deltaRight <= deltaLeft;
+            bool useUp = deltaUp <= deltaDown;
+            float2 uvX = useRight ? uvRight : uvLeft;
+            float2 uvY = useUp ? uvUp : uvDown;
+            float rawX = useRight ? rawRight : rawLeft;
+            float rawY = useUp ? rawUp : rawDown;
+            float3 alongX = (ComputeWorldSpacePosition(uvX, rawX, UNITY_MATRIX_I_VP) - centerWorldPos) *
+                (useRight ? 1.0 : -1.0);
+            float3 alongY = (ComputeWorldSpacePosition(uvY, rawY, UNITY_MATRIX_I_VP) - centerWorldPos) *
+                (useUp ? 1.0 : -1.0);
+
+            // Cross-product winding flips with UNITY_UV_STARTS_AT_TOP and with which neighbour won, so the
+            // result is oriented against the view vector instead of trusting the sign. Every pixel that
+            // survived the depth test faces the camera.
+            float3 geometric = cross(alongY, alongX);
+            float3 towardCamera = GetCameraPositionWS() - centerWorldPos;
+            geometric *= (dot(geometric, towardCamera) < 0.0) ? -1.0 : 1.0;
+            return SafeNormalize3(geometric, float3(0.0, 1.0, 0.0));
+        }
+
+        // Caustics are refracted light landing ON a surface, so the energy carries the incidence cosine of
+        // the projection. Without it the sun-aligned planar projection in ProjectCausticUv paints
+        // full-strength ribbons down vertical cliffs, and because the projected UV barely moves along a
+        // vertical face those ribbons smear into vertical streaks. This is the math of the forward path's
+        // HectonCoreLitEvaluateDirectionalCausticsWeightFromUnitNormal, which no shader had wired up.
+        //
+        // The up-mask from that same header is deliberately NOT multiplied in here: with an overhead sun it
+        // measures the same quantity as the cosine, so combining them squares the falloff and over-darkens
+        // moderate slopes. Foreshortening of a planar projection is the cosine, nothing more.
+        float ResolveCausticSlopeFade(float3 normalWS, float3 sunToSurface, float quality)
+        {
+            float incidence = saturate(dot(normalWS, -sunToSurface));
+            // Physical and linear above the terminator band; the smoothstep only removes the derivative cut
+            // at the clamp, so grazing faces fade out C1-continuously instead of stopping dead.
+            float shaped = incidence * smoothstep(0.0, 0.18, incidence);
+            // Turbid water still delivers multiply-scattered light to near-vertical rock, and a hard zero
+            // would draw a visible seam at the cliff edge. Mirrors the floored up-mask shape that
+            // Hecton_AbyssalVoxelRock.shader uses. Truer terminator as quality rises.
+            float floorEnergy = lerp(0.12, 0.04, saturate(quality));
+            return lerp(floorEnergy, 1.0, shaped);
+        }
+
         half4 Frag(Varyings input) : SV_Target
         {
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
@@ -302,9 +388,11 @@ Shader "Hidden/Hecton8/DeferredCaustics"
             depthFade *= depthFade;
             float sdfOcclusion = ResolveSdfCavernOcclusion(worldPos, sunToSurface, quality, IntensityAndDepthFalloff.w);
             float waterlineMask = ResolveBakedWaterlineMask(worldPos);
+            float3 geometricNormalWS = ResolveGeometricNormalWS(screenUV, worldPos, rawDepth);
+            float slopeFade = ResolveCausticSlopeFade(geometricNormalWS, sunToSurface, quality);
             half3 causticTint = half3(QualityAndColor.y, QualityAndColor.z, QualityAndColor.w);
             causticRgb *= causticTint;
-            half energy = (half)(intensity * depthFade * sdfOcclusion * waterlineMask);
+            half energy = (half)(intensity * depthFade * sdfOcclusion * waterlineMask * slopeFade);
             sourceColor.rgb = sourceColor.rgb + sourceColor.rgb * causticRgb * energy;
             return sourceColor;
         }
