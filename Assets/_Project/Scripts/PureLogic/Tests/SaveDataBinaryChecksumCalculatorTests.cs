@@ -52,10 +52,12 @@ namespace Hecton8.PureLogic.Tests
         public void Test_ZeroInputs_Case03()
         {
             // Arrange: Setup zero values (zero speed, zero volume, zero duration)
-            byte[]? data = null;
+            // Plain `byte[]`, not `byte[]?`: this assembly does not enable a nullable context, so the
+            // annotation was inert and only produced CS8632. The null itself is the point of the test.
+            byte[] data = null;
 
             // Act
-            uint hash = SaveDataBinaryChecksumCalculator.Compute(data!);
+            uint hash = SaveDataBinaryChecksumCalculator.Compute(data);
 
             // Assert
             Assert.That(hash, Is.EqualTo(1u));

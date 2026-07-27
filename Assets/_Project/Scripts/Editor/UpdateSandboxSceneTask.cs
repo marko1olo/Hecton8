@@ -7,10 +7,20 @@ namespace Hecton8.Editor
 {
     public static class UpdateSandboxSceneTask
     {
+        // This auto-run editor task was disabled by someone dropping a bare `return;` at the top of
+        // Run(), which left the whole body compiled but unreachable (CS0162). The intent is kept -
+        // the task stays off - but expressed as an explicit, greppable switch instead of a silent
+        // early return. Deliberately `static readonly` rather than `const`: a const would fold and
+        // reintroduce the unreachable-code warning, and this is editor-only code where the branch
+        // costs nothing. Flip to true to re-enable the sandbox scene updater.
+        private static readonly bool TaskEnabled = false;
+
         [InitializeOnLoadMethod]
         private static void Run()
         {
-            return;
+            if (!TaskEnabled)
+                return;
+
             if (SessionState.GetBool("UpdateSandboxSceneTaskRun", false)) return;
             SessionState.SetBool("UpdateSandboxSceneTaskRun", true);
 

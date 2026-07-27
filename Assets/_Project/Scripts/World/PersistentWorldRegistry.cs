@@ -3140,9 +3140,15 @@ namespace Hecton8.World
         public bool AreResidentWorldPrefabPoolsReady()
         {
 #if UNITY_EDITOR
-            // Bypass prewarm in editor because Addressables are unbuilt/empty
+            // Bypass prewarm in editor because Addressables are unbuilt/empty.
+            //
+            // This is a genuine editor/player behaviour split, not merely a warning: in the editor
+            // this method never inspects pool state at all, so a missing or unprewarmed resident
+            // world prefab pool cannot fail here and will only ever surface in a player build. The
+            // bypass itself is kept (Addressables really are unbuilt in-editor), but the remaining
+            // body is now #else rather than compiled-and-unreachable, so the split is explicit.
             return true;
-#endif
+#else
             if (!Application.isPlaying)
                 return true;
 
@@ -3179,6 +3185,7 @@ namespace Hecton8.World
 
             residentEnumerator.Dispose();
             return true;
+#endif
         }
 
         private void Awake()

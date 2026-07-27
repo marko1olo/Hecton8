@@ -10,7 +10,11 @@ using Hecton8.World;
 
 public static class HectonJobProfilerAndRenderer
 {
-    private static readonly string ArtifactsDir = @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0";
+    // Removed: an unused `ArtifactsDir` constant pointing at a hardcoded absolute path inside a
+    // specific developer's local agent scratch directory. The compiler proved it was never read
+    // (CS0414), and it also violated the project's no-hardcoded-absolute-paths rule for committed
+    // scripts while leaking a local user profile path into the repository. If this tool needs an
+    // output directory again, derive it from a project-relative path.
 
     [MenuItem("Tools/Hecton/Run Abyssal Shelf Proof")]
     public static void RunProof()

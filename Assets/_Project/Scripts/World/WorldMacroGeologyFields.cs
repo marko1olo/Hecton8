@@ -197,7 +197,23 @@ namespace Hecton8.World
         // this source. Bump the suffix every edit round.
         public static string BuildSentinel => "SENTINEL_R94_2026-07-26_PURE_GPU_NO_CPU_FAKES";
 
-#if UNITY_EDITOR
+        // Geology forensic switches (R8-R39). These are deliberately `const`, not `static readonly`:
+        // Burst and IL2CPP fold a const away completely, so a disabled probe costs zero instructions
+        // in the shipped build. A `static readonly` would survive as a real load-and-branch in the
+        // inner terrain loop and is not reliably Burst-foldable. Toggle a probe by editing the value
+        // here and recompiling.
+        //
+        // These previously existed as two byte-identical copies under `#if UNITY_EDITOR` / `#else`.
+        // The split served no purpose (verified: all 17 declarations matched exactly) and was a live
+        // divergence trap - editing one arm while investigating would silently change editor
+        // behaviour only, so a probe could "prove" something in the editor that was never true in a
+        // player build. Collapsed to a single definition so editor and player cannot disagree.
+        //
+        // Consequence, accepted knowingly: while a switch sits at its shipped value the opposite
+        // branch is provably dead and the compiler reports CS0162. That is correct and expected. It
+        // is suppressed narrowly at the three sites where the dead arm cannot be folded into an
+        // expression, never file-wide, so a genuine unreachable-code bug elsewhere still surfaces.
+
         // R17 STAGE-LOCALIZED FIXES:
         public const bool DiagRidgedAsFbmMountain = true;
         public const bool DiagFoldNonPeriodic     = true;
@@ -220,29 +236,6 @@ namespace Hecton8.World
         public const bool DiagNoiseBroadband = false;
         public const bool DiagRidgedAsFbm  = false;
         public const bool DiagFoldsDunesOff = false;
-#else
-        public const bool DiagRidgedAsFbmMountain = true;
-        public const bool DiagFoldNonPeriodic     = true;
-        public const bool DiagStrataNonPeriodic   = false;
-        public const bool DiagSoftMaskEdges       = true;
-
-        public const bool DiagStrataContourOff = false;
-        public const bool DiagPlateSeamOff = false;
-        public const bool DiagShelfBreakOff = false;
-
-        public const int DiagRawProbe = 0;
-
-        public const bool DiagTrenchOff  = false;
-        public const bool DiagVolcanoOff = false;
-        public const bool DiagFaultOff   = false;
-        public const bool DiagMesoFractureOff = false;
-        public const bool DiagTalusOff        = false;
-        public const bool DiagGeoNoiseOff     = false;
-
-        public const bool DiagNoiseBroadband = false;
-        public const bool DiagRidgedAsFbm  = false;
-        public const bool DiagFoldsDunesOff = false;
-#endif
         // R13 RAW PRIMITIVE PROBE. Pattern across R8-R12: removing any FEATURE makes zebra/seam WORSE or
         // unchanged, and zebra appears even on FLAT tiles (P5 1km slope 0.1%, hatch 4.33). Conclusion: the
         // artifact is NOT any added feature — it is intrinsic to the FOUNDATION every term shares:
@@ -641,6 +634,9 @@ namespace Hecton8.World
 
 #if UNITY_EDITOR
             // R13 RAW PRIMITIVE PROBE: bypass all geology, emit pure noise to locate the striping source.
+            // Dead while DiagRawProbe == 0 (its shipped value). The probe early-returns, so unlike the
+            // DiagPlateSeamOff/DiagTrenchOff switches it cannot be folded into an expression.
+#pragma warning disable CS0162 // Unreachable while the const probe is off - intentional, see declarations.
             if (DiagRawProbe != 0)
             {
                 masks = default;
@@ -653,6 +649,7 @@ namespace Hecton8.World
                     raw = FractalSimplexNoise01(((float2)posD) * 0.0009f, seed, 5) * 2f - 1f;  // 5-octave, UNWARPED
                 return raw * 400f;
             }
+#pragma warning restore CS0162
 #endif
 
             float2 plateSample = warpedPos / 12000f;
@@ -698,7 +695,12 @@ namespace Hecton8.World
             float jaggedBoundary = RidgedMultifractal01(warpedPos * 0.00018f + new float2(13.6f, -8.1f), seed ^ 0xD1F123BBu, 5);
             float plateRidgeMask = plateEdgeMask * ridgePolarity * math.smoothstep(0.24f, 0.78f, jaggedBoundary);
             float plateTrenchMask = plateEdgeMask * trenchPolarity * math.smoothstep(0.18f, 0.72f, 1f - jaggedBoundary * 0.55f + plateEdgeMask * 0.45f);
-            if (DiagPlateSeamOff) { plateRidgeMask = 0f; plateTrenchMask = 0f; plateEdgeMask = 0f; }
+            // Folded, not branched: a const-false `if` body is unreachable code (CS0162), whereas a
+            // conditional expression on the same const folds to the untouched value with no warning
+            // and no emitted branch. Same codegen, no suppression needed.
+            plateRidgeMask = DiagPlateSeamOff ? 0f : plateRidgeMask;
+            plateTrenchMask = DiagPlateSeamOff ? 0f : plateTrenchMask;
+            plateEdgeMask = DiagPlateSeamOff ? 0f : plateEdgeMask;
 
             // TIER 2: continent & ocean base fields (unified continentality + C2 smooth shelf break)
             float continentField = FractalSimplexNoise01(warpedNorm * 1.35f + new float2(19.2f, -7.3f), seed ^ 0x1C0A7E5Fu, 5);
@@ -815,7 +817,7 @@ namespace Hecton8.World
 
             float trenchBelt = RidgedMultifractal01(warpedNorm * 2.44f + new float2(0.4f, -0.6f), seed ^ 0x4B3A2C1Du, 4);
             float trenchMask = math.saturate(math.smoothstep(0.56f, 0.95f, trenchBelt) * (1f - shelfMask * 0.80f) + plateTrenchMask * 1.15f);
-            if (DiagTrenchOff) trenchMask = 0f;
+            trenchMask = DiagTrenchOff ? 0f : trenchMask; // folded const switch; see DiagPlateSeamOff note
             // R29 FIX: Oceanic trench depth offset (1800m) MUST be gated by (1 - continentality)
             // so oceanic trenches cannot carve 1.8km cliffs across continental landmasses!
             float oceanicTrenchGate = (1f - continentality);
@@ -844,11 +846,16 @@ namespace Hecton8.World
                 basinMask = math.saturate((1f - shelfMaskFeathered)
                     * (1f - ridgeMask * 0.78f) * (1f - trenchMask * 0.52f));
             }
+            // R17 A/B arm: the hard-edged original, kept for comparison against the feathered path
+            // above. Dead while DiagSoftMaskEdges == true (its shipped value). Multi-statement with
+            // local declarations, so it cannot be folded into an expression.
+#pragma warning disable CS0162 // Unreachable while the const switch selects the other arm.
             else
             {
                 faultMask = math.saturate(math.smoothstep(0.48f, 0.88f, faultNoise) * (1f - shelfMask * 0.45f) + plateEdgeMask * 0.34f);
                 basinMask = math.saturate((1f - shelfMask) * (1f - ridgeMask * 0.78f) * (1f - trenchMask * 0.52f));
             }
+#pragma warning restore CS0162
 
             depth += (DiagFaultOff ? 0f : faultNoise * 95f);
             // R28 FIX 2: Oceanic basin depth offset MUST be gated by (1 - continentality)
@@ -897,6 +904,10 @@ namespace Hecton8.World
                     if (!DiagFoldsDunesOff)
                         depth -= (foldAsymmetry - 0.5f) * 240f * continentality * (1f - abyssPlainMask) * foldFade;
                 }
+                // R17/R40 A/B arm: the original linear-phase fold, kept for comparison against the
+                // C2-smooth cosine path above. Dead while DiagFoldNonPeriodic == true (its shipped
+                // value). Multi-statement with local declarations, so it cannot be folded.
+#pragma warning disable CS0162 // Unreachable while the const switch selects the other arm.
                 else
                 {
                     float foldCoord = math.dot(warpedPos, foldAxis) * 0.0012f;
@@ -906,6 +917,7 @@ namespace Hecton8.World
                     if (!DiagFoldsDunesOff)
                         depth -= (foldAsymmetry - 0.5f) * 240f * continentality * foldFade;
                 }
+#pragma warning restore CS0162
             }
 
             // --- B6: VOLCANIC FIELDS (Cones, calderas, guyots) ---
