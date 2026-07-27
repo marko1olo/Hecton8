@@ -373,6 +373,92 @@ namespace Hecton8.EditorTools.Diagnostics
             Debug.Log($"{Marker} DONE");
         }
 
+        /// <summary>
+        /// Every serialized ComputeShader / Shader / Material reference on every component in every scene and
+        /// prefab, with whether it is actually assigned.
+        ///
+        /// This is the audit that matters for a project meant to work in ANY scene. A GPU system whose kernel
+        /// arrives through [SerializeField] only works where somebody remembered to drag the asset into that
+        /// particular instance; create a new scene and the system is silently inert. Counting "is the asset
+        /// referenced from some scene" hides exactly that failure, which is why this reports per-instance
+        /// assignment state instead of mere reachability.
+        /// </summary>
+        public static void RunGpuWiringAudit()
+        {
+            var rows = new List<string>();
+            int nullCount = 0;
+            int assignedCount = 0;
+
+            foreach (string guid in AssetDatabase.FindAssets("t:Scene", new[] { "Assets/_Project" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                if (!scene.IsValid())
+                    continue;
+
+                foreach (GameObject root in scene.GetRootGameObjects())
+                    AuditGpuReferences(root, System.IO.Path.GetFileName(path), rows, ref nullCount, ref assignedCount);
+            }
+
+            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab != null)
+                    AuditGpuReferences(prefab, System.IO.Path.GetFileName(path), rows, ref nullCount, ref assignedCount);
+            }
+
+            Debug.Log($"{Marker} GPU WIRING AUDIT: {assignedCount} assigned, {nullCount} NULL across scenes+prefabs");
+            rows.Sort(StringComparer.Ordinal);
+            foreach (string row in rows)
+                Debug.Log($"{Marker}   {row}");
+
+            Debug.Log($"{Marker} DONE");
+        }
+
+        private static void AuditGpuReferences(
+            GameObject root,
+            string containerName,
+            List<string> rows,
+            ref int nullCount,
+            ref int assignedCount)
+        {
+            foreach (Component c in root.GetComponentsInChildren<Component>(true))
+            {
+                if (c == null)
+                    continue;
+
+                var so = new SerializedObject(c);
+                SerializedProperty it = so.GetIterator();
+                while (it.NextVisible(true))
+                {
+                    if (it.propertyType != SerializedPropertyType.ObjectReference)
+                        continue;
+
+                    // SerializedProperty.type is "PPtr<$ComputeShader>" for a ComputeShader field, and stays
+                    // correct when the reference is null - which is the whole point of this audit.
+                    string fieldType = it.type ?? string.Empty;
+                    if (fieldType.IndexOf("ComputeShader", StringComparison.Ordinal) < 0)
+                        continue;
+
+                    bool assigned = it.objectReferenceValue != null;
+                    if (assigned)
+                        assignedCount++;
+                    else
+                        nullCount++;
+
+                    rows.Add($"{(assigned ? "OK  " : "NULL")} {c.GetType().Name}.{it.propertyPath} " +
+                             $"[{containerName}] {(assigned ? it.objectReferenceValue.name : "<unassigned>")}");
+                }
+            }
+        }
+
         private static string GetHierarchyPath(Transform t)
         {
             string path = t.name;

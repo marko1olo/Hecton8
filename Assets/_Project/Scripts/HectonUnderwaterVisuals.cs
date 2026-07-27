@@ -222,6 +222,42 @@ namespace Hecton8.Environment
         [Tooltip("Optional HUD luminance GPU readback for diagnostics/high-end tuning. Off by default; HUD owners can publish luminance directly.")]
         [SerializeField] private bool enableHudFogLuminanceGpuReadback;
         [SerializeField] private ComputeShader photophobiaFieldCompute;
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Resolves both compute kernels at AUTHOR time and persists the result.
+        ///
+        /// Both fields already had a lazy resolve from the same asset paths, but those live inside
+        /// #if UNITY_EDITOR and assign the field in memory only, so the serialized value stayed null. The
+        /// HUD fog luminance and photophobia field therefore worked in the editor and were dead in every
+        /// player build, where the repairing #if block does not exist. Marking the object dirty here means
+        /// the reference is SERIALIZED at author time, so it ships - and so a brand new scene works without
+        /// anyone remembering to drag the assets into the Inspector.
+        /// </summary>
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+                return;
+
+            bool resolvedAny = false;
+
+            if (hudFogLuminanceCompute == null)
+            {
+                hudFogLuminanceCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(HudFogLuminanceComputeAssetPath);
+                resolvedAny |= hudFogLuminanceCompute != null;
+            }
+
+            if (photophobiaFieldCompute == null)
+            {
+                photophobiaFieldCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(PhotophobiaFieldComputeAssetPath);
+                resolvedAny |= photophobiaFieldCompute != null;
+            }
+
+            if (resolvedAny)
+                EditorUtility.SetDirty(this);
+        }
+#endif
+
         [SerializeField] private Transform sunVisualTransform;
         [SerializeField] private Camera mainCamera;
         [SerializeField] private DepthZoneDirector depthZoneDirector;

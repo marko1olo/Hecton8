@@ -16,6 +16,9 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using Debug = UnityEngine.Debug;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
@@ -118,6 +121,13 @@ namespace Hecton8.UI
         private static readonly int TerminalScreenBakedProjectionWeightId = Shader.PropertyToID("_TerminalScreenBakedProjectionWeight");
         private static readonly int TerminalScreenBurnInWeightId = Shader.PropertyToID("_TerminalScreenBurnInWeight");
         private static readonly int TerminalScreenGlassWeightId = Shader.PropertyToID("_TerminalScreenGlassWeight");
+
+        /// <summary>
+        /// Canonical location of the terminal blit kernel. Unlike the other GPU owners in this project this
+        /// component had no resolve at all, so terminalBlitCompute was null in the editor AND in builds and
+        /// the compute blit path never ran anywhere - TryPrepareTerminalBlit just returned false forever.
+        /// </summary>
+        private const string TerminalBlitComputeAssetPath = "Assets/_Project/Art/Shaders/TerminalBlit.compute";
 
         [Header("GPU")]
         [SerializeField] private ComputeShader terminalBlitCompute;
@@ -1132,6 +1142,16 @@ namespace Hecton8.UI
         {
             _bakedCrtBindingDirty = true;
             _bindingsDirty = true;
+
+            // Resolve the blit kernel at AUTHOR time and persist it, so the reference is SERIALIZED and
+            // therefore ships in a player build, and so any new scene carrying this component wires itself
+            // without anyone remembering to drag the asset into the Inspector.
+            if (!Application.isPlaying && terminalBlitCompute == null)
+            {
+                terminalBlitCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(TerminalBlitComputeAssetPath);
+                if (terminalBlitCompute != null)
+                    EditorUtility.SetDirty(this);
+            }
         }
 #endif
 

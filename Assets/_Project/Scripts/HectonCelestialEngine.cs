@@ -2496,8 +2496,31 @@ namespace Hecton8.Celestial
             SceneView.RepaintAll();
         }
 
+        /// <summary>
+        /// Resolves the firmament bake kernel at AUTHOR time and persists the result.
+        ///
+        /// The lazy resolve in EnsureFirmamentKernels sits inside #if UNITY_EDITOR and assigns the field in
+        /// memory only. That is why the star and atmosphere bake worked in the editor and was dead in every
+        /// player build: the serialized value stayed null, and the #if block that repaired it does not exist
+        /// in a build. Resolving here and marking the object dirty means any scene or prefab carrying this
+        /// component ends up with a SERIALIZED reference, so a brand new scene works without anyone
+        /// remembering to drag the asset into the Inspector.
+        /// </summary>
+        private void ResolveAuthorTimeComputeReferences()
+        {
+#if UNITY_EDITOR
+            if (firmamentBakeCompute != null || Application.isPlaying)
+                return;
+
+            firmamentBakeCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(FirmamentBakeComputeAssetPath);
+            if (firmamentBakeCompute != null)
+                EditorUtility.SetDirty(this);
+#endif
+        }
+
         private void OnValidate()
         {
+            ResolveAuthorTimeComputeReferences();
             CacheCelestialOrbitReciprocals();
             MarkAtmosphereGradientSamplesDirty();
             CacheMoonRenderers();
