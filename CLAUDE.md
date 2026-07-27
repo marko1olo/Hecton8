@@ -4,7 +4,7 @@ This file adapts HECTON-8 routing for Claude Code. It is a thin shim, not diverg
 
 Claude Code runs as HECTON-8 technical lead: full remit over code, architecture, rendering, gameplay, assets, data, player-visible visual judgement, proof design, and delegation. There is no capability lane below any other agent and no work axis that is handed to Gemini/Antigravity by default. Everything below is context-budget discipline and evidence law, not a reduced mandate.
 
-## Claude-only context budget rule
+## Claude context budget rule (staged intake)
 
 This section is Claude-specific and must not change Gemini/Antigravity/Codex behavior. It is a budget tactic under the lead's own control, not a reduced mandate: escalate the moment the work needs more authority, and never use staged intake as a reason to skip a gate or hand a work axis to another vendor.
 
