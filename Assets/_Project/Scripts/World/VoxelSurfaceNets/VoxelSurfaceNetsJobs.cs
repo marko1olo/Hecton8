@@ -87,7 +87,14 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         public bool IsCanonicalCollider;
 
-        [ReadOnly]
+        // NOT [ReadOnly]: the visual pass writes this back at the end of Execute (VertexCount,
+        // IndexCount, BoundsCenterLocal, VoxelSize and the terminal Stage transition). It was
+        // previously mis-declared [ReadOnly] while still being assigned, which is a two-part defect:
+        // the write itself is illegal under job safety checks, and - because the safety system
+        // believed both extraction passes only READ this array - it also permitted the visual and
+        // canonical-collider passes to be scheduled concurrently against the same buffer. The wrong
+        // attribute was silencing the very check that would have caught that race. The two passes are
+        // now chained in TryScheduleExtractionPinned; see the ordering note there.
         [NoAlias]
         public NativeArray<ChunkMeshingStateDTO> States;
 

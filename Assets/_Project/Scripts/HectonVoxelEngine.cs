@@ -14044,8 +14044,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         NativeArray<uint> colliderIndices = buffers.ColliderIndices;
         NativeArray<ChunkMeshingStateDTO> states = buffers.States;
         NativeArray<sbyte> vaultDensity = buffers.Density;
+        // Canonical collider element counts live here, written by the IsCanonicalCollider extraction
+        // pass. ChunkMeshingStateDTO carries the VISUAL counts and must not be used to size this bake.
+        NativeArray<VoxelSurfacePhysicsBakeRequestDTO> bakeRequests = buffers.PhysicsBakeRequests;
 
-        if (!colliderVertices.IsCreated || !colliderIndices.IsCreated || !states.IsCreated)
+        if (!colliderVertices.IsCreated || !colliderIndices.IsCreated || !states.IsCreated || !bakeRequests.IsCreated)
         {
             volume.DisableColliderChunksForCinematicFake();
             return false;
@@ -14091,9 +14094,24 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         for (int chunkIndex = 0; chunkIndex < colliderChunkCount; chunkIndex++)
         {
-            ChunkMeshingStateDTO state = states[chunkIndex];
-            int vertCount = state.VertexCount;
-            int indexCount = state.IndexCount;
+            // Size this bake from the CANONICAL collider counts, never from ChunkMeshingStateDTO.
+            // ChunkMeshingStateDTO.VertexCount/IndexCount are written by the VISUAL extraction pass,
+            // which runs at ResolveSamplingStride(quality) with a decimation bias; the collider pass
+            // runs at stride = 1 with no decimation and reports its own counts here. Sizing the bake
+            // from the visual counts truncated the canonical buffers below GlobalQualityWeight 1: the
+            // surviving collider indices still referenced vertices past the end of the shortened
+            // vertex array, so Unity rejected the mesh and the chunk lost collision entirely. That
+            // made collision truth a function of a graphics setting, which voxels.md forbids
+            // ("GlobalQualityWeight ... must not change collision truth").
+            if ((uint)chunkIndex >= (uint)bakeRequests.Length)
+            {
+                volume.DisableColliderChunkBakeProxy(chunkIndex);
+                continue;
+            }
+
+            VoxelSurfacePhysicsBakeRequestDTO bakeRequest = bakeRequests[chunkIndex];
+            int vertCount = bakeRequest.ColliderVertexCount;
+            int indexCount = bakeRequest.ColliderIndexCount;
 
             if (vertCount <= 0 || indexCount <= 0 || vertCount > colliderVertices.Length || indexCount > colliderIndices.Length)
             {

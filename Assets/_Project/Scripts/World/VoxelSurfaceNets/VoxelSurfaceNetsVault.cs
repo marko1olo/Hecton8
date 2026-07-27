@@ -734,9 +734,21 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
             }
 
-            JobHandle visualDependency = visualJob.Schedule(inputDependency);
+            // The two passes MUST be chained, not fanned out from the same dependency.
+            // They write into separate vertex/index/cell-map buffers, but they still share three
+            // mutable containers: States (the visual pass writes the terminal stage transition while
+            // the collider pass reads the same element at the top of Execute - a torn read), and
+            // RawDebugVertices (both passes append through TryEmitQuad whenever DebugRawCapture01 is
+            // armed, since that gate comes from shared tuning and is not conditioned on
+            // IsCanonicalCollider). Racing them corrupts collision-adjacent state, which voxels.md
+            // forbids outright.
+            //
+            // Collider runs FIRST so the invariant holds in one direction only: by the time the visual
+            // pass publishes Stage = ReadyForUpload, ColliderVertexCount/ColliderIndexCount are already
+            // written. VoxelSurfacePhysicsBakeRequestJob gates on exactly that pair, so it can never
+            // observe a ready chunk whose collider counts are still stale.
             JobHandle colliderDependency = colliderJob.Schedule(inputDependency);
-            outputDependency = JobHandle.CombineDependencies(visualDependency, colliderDependency);
+            outputDependency = visualJob.Schedule(colliderDependency);
             return true;
         }
 
