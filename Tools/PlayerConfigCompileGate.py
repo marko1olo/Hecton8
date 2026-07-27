@@ -115,12 +115,12 @@ def parse_errors(output):
         )
         seen.setdefault(key, raw.strip())
     return [
-        {"file": file, "line": line, "column": column, "code": code}
-        for (file, line, column, code) in seen
+        {"file": file, "line": line, "column": column, "code": code, "message": message}
+        for (file, line, column, code), message in seen.items()
     ]
 
 
-def _report(errors):
+def _report(errors, detail=False):
     by_file = {}
     for entry in errors:
         by_file.setdefault(entry["file"], []).append(entry)
@@ -128,6 +128,14 @@ def _report(errors):
         short = path.split("Scripts" + os.sep, 1)[-1]
         codes = sorted({entry["code"] for entry in entries})
         print(f"  {len(entries):3d}  {short}  [{', '.join(codes)}]")
+        if not detail:
+            continue
+        # The count alone names the file but not the broken symbol, which is the one fact needed to
+        # move the guard boundary. The message was already captured in parse_errors and used to be
+        # discarded on the way out.
+        for entry in sorted(entries, key=lambda item: (item["line"], item["column"])):
+            trimmed = entry["message"].split("): ", 1)[-1]
+            print(f"        {entry['line']}:{entry['column']}  {trimmed}")
 
 
 def runtime_assemblies():
@@ -147,7 +155,7 @@ def runtime_assemblies():
     return found
 
 
-def sweep_runtime(unity_root):
+def sweep_runtime(unity_root, detail=False):
     """Compile every runtime assembly in player configuration. Returns total error count."""
     total = 0
     for assembly in runtime_assemblies():
@@ -157,7 +165,7 @@ def sweep_runtime(unity_root):
         marker = "OK  " if not errors else "FAIL"
         print(f"  [{marker}] {assembly:<32} {len(errors)} player errors")
         if errors:
-            _report(errors)
+            _report(errors, detail)
     print(f"\nALL RUNTIME ASSEMBLIES: {total} player-configuration errors")
     if total:
         print("A player build cannot be produced until these resolve.")
@@ -175,11 +183,16 @@ def main():
         action="store_true",
         help="sweep every first-party runtime assembly instead of just one",
     )
+    parser.add_argument(
+        "--detail",
+        action="store_true",
+        help="print every error's line, column and message, not just the per-file count",
+    )
     args = parser.parse_args()
 
     if args.all_runtime:
         print("PlayerConfigCompileGate: sweeping all runtime assemblies with UNITY_EDITOR undefined")
-        return 1 if sweep_runtime(args.unity_root) else 0
+        return 1 if sweep_runtime(args.unity_root, args.detail) else 0
 
     csproj = f"{args.assembly}.csproj"
     if not os.path.exists(csproj):
@@ -201,13 +214,13 @@ def main():
         print(f"PlayerConfigCompileGate: compiling {args.assembly} in editor configuration...")
         editor_errors = parse_errors(compile_assembly(args.assembly, None, args.unity_root))
         print(f"\nEDITOR configuration: {len(editor_errors)} errors")
-        _report(editor_errors)
+        _report(editor_errors, args.detail)
 
     print(f"\nPLAYER configuration: {len(player_errors)} errors")
     if not player_errors:
         print(f"{args.assembly} compiles with UNITY_EDITOR undefined.")
         return 0
-    _report(player_errors)
+    _report(player_errors, args.detail)
     print(
         "\nEach of these is a member or field referenced from code that is not inside the same\n"
         "preprocessor guard as its declaration. Fix by moving the guard boundary, not by\n"
