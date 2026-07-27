@@ -536,7 +536,20 @@ namespace Hecton8.Core
             if (_slowTickAccumulator < interval)
                 return;
 
-            _slowTickAccumulator = 0f;
+            // Carry the overshoot into the next window instead of zeroing it. Zeroing threw
+            // the remainder away, so a frame that overshot the interval by 0.2 s silently lost
+            // that time and the slow cadence became frame-rate dependent: every ISlowTickable
+            // consumer - oxygen and the rest of the survival depletion - ran slower on a loaded
+            // machine than on a fast one, which makes a gameplay-truth rate a function of frame
+            // time.
+            _slowTickAccumulator -= interval;
+
+            // Anti-spiral bound: after a long hitch the carried remainder can exceed a whole
+            // interval, which would force a catch-up SlowTick every frame until it drained.
+            // Cap the outstanding debt at one interval so recovery costs at most one extra tick.
+            if (_slowTickAccumulator > interval)
+                _slowTickAccumulator = interval;
+
             ExecuteSlowTick();
         }
 
