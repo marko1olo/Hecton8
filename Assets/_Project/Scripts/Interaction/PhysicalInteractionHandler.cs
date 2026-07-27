@@ -635,10 +635,12 @@ namespace Hecton8.Interaction
 
         private void RefreshPanelButtonLayerMask()
         {
-            int mask = panelButtonMask.value;
-            _resolvedPanelButtonLayerMask = HectonLayerMasks.IsEverythingLayerMask(mask)
-                ? _DefaultPanelButtonLayerMask
-                : mask;
+            // Same dead-query hole as PlayerInteraction.ResolveInteractableLayerMask: an
+            // inspector-cleared mask (Nothing) rejects every receiver in
+            // PhysicalHandReceiverRegistry.QuerySphere, so no panel button can ever be pressed.
+            _resolvedPanelButtonLayerMask = InteractionProbeLayerMask.Resolve(
+                panelButtonMask.value,
+                _DefaultPanelButtonLayerMask);
         }
 
         private bool TryBeginCablePlugDrag(

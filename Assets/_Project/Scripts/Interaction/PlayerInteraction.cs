@@ -207,11 +207,11 @@ namespace Hecton8.Interaction
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (interactableMask.value == 0)
             {
-                Hecton8.Core.H8Debug.LogWarning("[PlayerInteraction] interactableMask is set to Nothing.", this);
+                Hecton8.Core.H8Debug.LogWarning("[PlayerInteraction] interactableMask is set to Nothing. Probing with the Interactable route default instead.", this);
             }
             else if (HectonLayerMasks.IsEverythingLayerMask(interactableMask.value))
             {
-                Hecton8.Core.H8Debug.LogWarning("[PlayerInteraction] interactableMask is set to Everything.", this);
+                Hecton8.Core.H8Debug.LogWarning("[PlayerInteraction] interactableMask is set to Everything. Probing with the Interactable route default instead.", this);
             }
 #endif
         }
@@ -724,8 +724,11 @@ namespace Hecton8.Interaction
 
         private int ResolveInteractableLayerMask()
         {
-            int mask = interactableMask.value;
-            return HectonLayerMasks.IsEverythingLayerMask(mask) ? _DefaultInteractableLayerMask : mask;
+            // Nothing (0) is the serialized default of this field and rejects every
+            // registered collider in InteractableRegistry.LayerIncluded, which kills the
+            // whole aim -> query hop with no exception and no player-build log. Resolve
+            // both Nothing and Everything to the declared route default.
+            return InteractionProbeLayerMask.Resolve(interactableMask.value, _DefaultInteractableLayerMask);
         }
 
         // ====================================================================
