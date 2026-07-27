@@ -3,6 +3,9 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
     Properties
     {
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
+        [HideInInspector] _InteractionPushStrength ("Interaction Push Strength", Range(0, 4)) = 1.35
+        [HideInInspector] _InteractionVelocityBias ("Interaction Velocity Bias", Range(0, 1)) = 0.85
+        [HideInInspector] _InteractionDistancePower ("Interaction Distance Power", Range(1, 4)) = 2.2
     }
 
     SubShader
@@ -44,6 +47,13 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float _Opacity;
                 float4 _HectonVegetationRuntimeLodParams;
                 float4 _HectonVegetationRuntimeDrawParams;
+                // Kept per-material to match the lit pass rather than converted to globals: all three
+                // live in UnityPerMaterial there, so a global would have meant editing the CBUFFER
+                // layout and dropping authored values on four materials. HectonIndirectVegetationRenderer
+                // copies them from the lit material instead, so there is still one authored source.
+                half _InteractionPushStrength;
+                half _InteractionVelocityBias;
+                half _InteractionDistancePower;
             CBUFFER_END
 
             struct FloraInteractionPointGpuData
@@ -384,34 +394,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
 
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationWakeTrail.hlsl"
 
-            float3 ResolveInteractionOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float historyDelta)
-            {
-                float3 interactionOffset = float3(0.0, 0.0, 0.0);
-                int activeInteractionCount = min(_HectonFloraInteractionCount, HECTON_MAX_INTERACTION_POINTS);
-
-                [loop]
-                for (int i = 0; i < activeInteractionCount; i++)
-                {
-                    FloraInteractionPointGpuData interactionPoint = _HectonFloraInteractionPoints[i];
-                    float3 velocity = interactionPoint.velocitySpeed.xyz;
-                    if (!all(isfinite(velocity)) || !all(isfinite(interactionPoint.positionRadius.xyz)))
-                        continue;
-
-                    float speedFactor = saturate(SanitizeNonNegativeFinite(interactionPoint.velocitySpeed.w) * 0.18);
-                    float3 rewoundInteractionPosition = interactionPoint.positionRadius.xyz - velocity * SanitizeNonNegativeFinite(historyDelta);
-                    float3 delta = evaluationPositionWS - rewoundInteractionPosition;
-                    delta.y *= 0.22;
-                    float radius = SanitizePositiveFinite(interactionPoint.positionRadius.w, 0.05);
-                    float proximity = saturate(1.0 - dot(delta, delta) / (radius * radius));
-                    if (proximity <= 0.0001 || speedFactor <= 0.0001)
-                        continue;
-
-                    float3 planarVelocityDir = SafeNormalize3(velocity - baseNormalWS * dot(velocity, baseNormalWS));
-                    interactionOffset += planarVelocityDir * (proximity * speedFactor);
-                }
-
-                return interactionOffset * bendMask;
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationInteraction.hlsl"
 
             float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
             {
@@ -569,7 +552,12 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask * healthSwayScale);
                 animatedPositionWS += flowSynchronyOffset;
                 animatedPositionWS += ResolveWakeTrailOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
-                animatedPositionWS += ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask, historyDelta);
+                animatedPositionWS += ResolveInteractionOffset(
+                    animatedPositionWS,
+                    baseNormalWS,
+                    bendMask,
+                    ResolveVegetationViewDistanceSq(animatedPositionWS),
+                    historyDelta) * (_InteractionPushStrength * ResolveInteractionTypeScale(instanceType));
                 animatedPositionWS += ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType) * 1.1;
                 float2 stateWeights = ResolveStateBlendWeights(instanceData.RuntimeState);
                 if (stateWeights.x > 0.0001 || stateWeights.y > 0.0001)

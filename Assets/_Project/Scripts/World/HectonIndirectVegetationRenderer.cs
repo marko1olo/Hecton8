@@ -109,6 +109,19 @@ namespace Hecton8.World
         private static readonly int _ViewProjectionId = Shader.PropertyToID("_HectonViewProjection");
         private static readonly int _ViewMatrixId = Shader.PropertyToID("_HectonViewMatrix");
         private static readonly int _CameraPositionId = Shader.PropertyToID("_HectonCameraPosition");
+
+        // The vertex animation needs a camera position that does NOT change per pass. _HectonCameraPosition
+        // above only ever reaches the culling compute, and _WorldSpaceCameraPos is the LIGHT during a
+        // shadow pass - using it there would make the shadow bend flora at a different distance than
+        // ForwardLit does. w is 1 to mark the value as written; the shaders fall back when it is not.
+        private static readonly int _VegetationViewPositionId = Shader.PropertyToID("_HectonVegetationViewPositionWS");
+
+        // Authored on the lit material only (they live in its UnityPerMaterial CBUFFER). Pushed into
+        // every property block so the depth/shadow/motion passes bend identically without four
+        // materials having to be kept in sync by hand.
+        private static readonly int _InteractionPushStrengthId = Shader.PropertyToID("_InteractionPushStrength");
+        private static readonly int _InteractionVelocityBiasId = Shader.PropertyToID("_InteractionVelocityBias");
+        private static readonly int _InteractionDistancePowerId = Shader.PropertyToID("_InteractionDistancePower");
         private static readonly int _CameraForwardId = Shader.PropertyToID("_HectonCameraForward");
         private static readonly int _CameraDepthTextureId = Shader.PropertyToID("_HectonCameraDepthTexture");
         private static readonly int _DepthPyramidTextureId = Shader.PropertyToID("_HectonDepthPyramid");
@@ -2762,6 +2775,10 @@ namespace Hecton8.World
                     visibleIndicesBuffer,
                     useGpuIndirect))
             {
+                // Bindings are still valid, but the view position is not: it moves every frame.
+                // Folding it into MaterialBindingState would invalidate this cache every frame and
+                // re-bind seven property blocks for the sake of one vector.
+                PublishVegetationViewPosition(propertyBlock);
                 return;
             }
 
@@ -2784,6 +2801,8 @@ namespace Hecton8.World
             propertyBlock.SetVector(_RuntimeLodParamsId, new Vector4(passMode, runtimeNearLodDistance, runtimeFarLodDistance, runtimeLodTransitionRange));
             propertyBlock.SetVector(_RuntimeDrawParamsId, new Vector4(snapFlagsEnabled, _impostorWidth, _impostorHeight, useGpuIndirect && visibleIndicesBuffer != null ? 1f : 0f));
             propertyBlock.SetFloat(_H8GlobalQualityWeightId, globalQualityWeight);
+            PublishVegetationViewPosition(propertyBlock);
+            PublishInteractionAuthoring(propertyBlock);
 
             state = new MaterialBindingState
             {
@@ -2805,6 +2824,47 @@ namespace Hecton8.World
                 UseGpuIndirectFlag = ToBindingFlag(useGpuIndirect),
                 IsValidFlag = BindingFlagTrue
             };
+        }
+
+        /// <summary>
+        /// Publishes the culling camera position for the vertex animation. Deliberately the same
+        /// position this renderer already culls with, so what bends and what is drawn agree, and
+        /// deliberately NOT per-pass: a shadow pass reading _WorldSpaceCameraPos would read the light.
+        /// </summary>
+        private void PublishVegetationViewPosition(MaterialPropertyBlock propertyBlock)
+        {
+            Vector3 viewPosition = _cachedCullCameraPosition;
+            if (!math.all(math.isfinite(new float3(viewPosition.x, viewPosition.y, viewPosition.z))))
+            {
+                // Leave w at 0 so the shader falls back to _WorldSpaceCameraPos rather than culling
+                // every instance against a garbage origin.
+                propertyBlock.SetVector(_VegetationViewPositionId, Vector4.zero);
+                return;
+            }
+
+            propertyBlock.SetVector(
+                _VegetationViewPositionId,
+                new Vector4(viewPosition.x, viewPosition.y, viewPosition.z, 1f));
+        }
+
+        /// <summary>
+        /// Copies the three authored interaction knobs off the lit material into this property block.
+        /// They live in UnityPerMaterial, so they are per-material by construction and converting them
+        /// to globals would have meant editing the CBUFFER layout and dropping the authored values on
+        /// four separate materials. Pushing them through the property block instead keeps the lit
+        /// material as the single authored source and mutates no asset.
+        ///
+        /// Re-published only when bindings are rebuilt, which is when the material can have changed.
+        /// </summary>
+        private void PublishInteractionAuthoring(MaterialPropertyBlock propertyBlock)
+        {
+            Material authoringMaterial = _material;
+            if (authoringMaterial == null)
+                return;
+
+            propertyBlock.SetFloat(_InteractionPushStrengthId, authoringMaterial.GetFloat(_InteractionPushStrengthId));
+            propertyBlock.SetFloat(_InteractionVelocityBiasId, authoringMaterial.GetFloat(_InteractionVelocityBiasId));
+            propertyBlock.SetFloat(_InteractionDistancePowerId, authoringMaterial.GetFloat(_InteractionDistancePowerId));
         }
 
         private bool MaterialBindingStateMatches(

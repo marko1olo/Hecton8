@@ -762,17 +762,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return wakeOffset;
             }
 
-            half FastVegetationPower01(half value, half exponent)
-            {
-                half v = saturate(value);
-                half v2 = v * v;
-                half v4 = v2 * v2;
-                half v8 = v4 * v4;
-                half v16 = v8 * v8;
-                half low = lerp(v, v4, saturate((exponent - 1.0h) * 0.33333333h));
-                half high = lerp(v4, v16, saturate((exponent - 4.0h) * 0.08333333h));
-                return lerp(low, high, step(4.0h, exponent));
-            }
 
             float2 ResolvePlanarOceanFlowDirection(float2 fallbackFlow)
             {
@@ -930,10 +919,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return (half)step((half)InterleavedGradientNoise(floor(positionCS.xy)), fade);
             }
 
-            float ResolveInteractionDistance()
-            {
-                return max(12.0, min(_HectonVegetationRuntimeLodParams.y + _HectonVegetationRuntimeLodParams.w, 55.0));
-            }
 
             half EvaluateGlobalSargassumCutMask(float3 positionWS)
             {
@@ -1060,50 +1045,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return saturate(organicDensity * 1.15 + laceNoise * 0.18 - interiorBias);
             }
 
-            float3 ResolveInteractionOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float distanceToCameraSq)
-            {
-                float interactionDistance = ResolveInteractionDistance();
-                if (bendMask <= 0.0001 || distanceToCameraSq > interactionDistance * interactionDistance)
-                    return float3(0.0, 0.0, 0.0);
-
-                float3 interactionOffset = float3(0.0, 0.0, 0.0);
-                int activeInteractionCount = min(_HectonFloraInteractionCount, HECTON_MAX_INTERACTION_POINTS);
-
-                [loop]
-                for (int i = 0; i < activeInteractionCount; i++)
-                {
-                    FloraInteractionPointGpuData interactionPoint = _HectonFloraInteractionPoints[i];
-                    float3 velocity = interactionPoint.velocitySpeed.xyz;
-                    if (!all(isfinite(velocity)) || !all(isfinite(interactionPoint.positionRadius.xyz)))
-                        continue;
-
-                    float speed = SanitizeNonNegativeFinite(interactionPoint.velocitySpeed.w);
-                    float speedFactor = saturate(speed * 0.18);
-                    if (speedFactor <= 0.0001)
-                        continue;
-
-                    float3 delta = evaluationPositionWS - interactionPoint.positionRadius.xyz;
-                    delta.y *= 0.22;
-
-                    float bendRadius = SanitizePositiveFinite(interactionPoint.positionRadius.w, 0.05);
-                    float bendRadiusSq = bendRadius * bendRadius;
-                    float distSq = dot(delta, delta);
-                    float proximity = 1.0 - smoothstep(0.0, bendRadiusSq, distSq);
-                    proximity = FastVegetationPower01((half)proximity, max(_InteractionDistancePower, 1.0h));
-                    if (proximity <= 0.0001)
-                        continue;
-
-                    float3 planarVelocityDir = velocity - baseNormalWS * dot(velocity, baseNormalWS);
-                    planarVelocityDir = SafeNormalize3(planarVelocityDir);
-                    float3 radialDirection = SafeNormalize3(float3(delta.x, 0.0, delta.z));
-                    float3 bendDirection = SafeNormalize3(lerp(radialDirection, planarVelocityDir, _InteractionVelocityBias));
-                    float directionalBias = 0.65 + 0.35 * saturate(dot(-radialDirection, planarVelocityDir));
-
-                    interactionOffset += (bendDirection + baseNormalWS * 0.04) * (proximity * speedFactor * directionalBias);
-                }
-
-                return interactionOffset * bendMask;
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationInteraction.hlsl"
 
             float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
             {
@@ -1830,13 +1772,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     animatedPositionWS += farCurrentOffset * 0.65;
                 }
 
-                float3 interactionOffset = ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask, cameraDistanceSq);
+                float3 interactionOffset = ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask, ResolveVegetationViewDistanceSq(animatedPositionWS), 0.0);
                 float3 playerBendOffset = ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType);
                 float3 impactOffset = ResolveImpactOffset(animatedPositionWS, baseNormalWS, bendMask);
                 float fieldDrivenBend = saturate(_HectonFloraSwayFieldParams.y);
                 interactionOffset *= (1.0 - fieldDrivenBend);
                 playerBendOffset *= (1.0 - fieldDrivenBend);
-                float interactionTypeScale = instanceType < 0.5 ? 0.7 : (instanceType < 1.5 ? 1.15 : 0.85);
+                float interactionTypeScale = ResolveInteractionTypeScale(instanceType);
                 animatedPositionWS += impactOffset * 0.95;
                 animatedPositionWS += interactionOffset * (_InteractionPushStrength * interactionTypeScale);
                 animatedPositionWS += playerBendOffset * (_InteractionPushStrength * 1.1);

@@ -49,6 +49,7 @@ namespace Hecton8.EditorTools.Diagnostics
             "HectonIndirectVegetationWave.hlsl",
             "HectonIndirectVegetationAbyssalFlow.hlsl",
             "HectonIndirectVegetationWakeTrail.hlsl",
+            "HectonIndirectVegetationInteraction.hlsl",
         };
 
         // Functions that have been converged into a shared include. None of them may reappear as a
@@ -57,6 +58,10 @@ namespace Hecton8.EditorTools.Diagnostics
         {
             "ResolveAbyssalFlowField",
             "ResolveWakeTrailOffset",
+            "ResolveInteractionOffset",
+            "ResolveInteractionDistance",
+            "ResolveInteractionTypeScale",
+            "FastVegetationPower01",
             "FastSinApprox",
             "FastCosApprox",
             "WrapPhasePi",
