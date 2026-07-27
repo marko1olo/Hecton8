@@ -11,6 +11,30 @@
     <DefineConstants>$(DefineConstants);$(HectonUnityCliVersionDefines)</DefineConstants>
   </PropertyGroup>
 
+  <!--
+    Pin the CLI build to Unity's language level.
+
+    Unity's generated .csproj files set <LangVersion>latest</LangVersion>, but Unity itself
+    compiles this project at C# 9. That gap makes the lock-free CLI build unsound in both
+    directions and it has already cost real time:
+      * FALSE GREEN: `scoped in` compiled clean from the CLI and was a hard CS8773 error in
+        Unity, breaking the build (reverted in 249b599f9).
+      * PHANTOM WARNINGS: CS9091 is a C# 11 ref-safety diagnostic. Unpinned, the CLI reported
+        12 warnings including 10 in World/ChemicalInfluenceGrid.cs that Unity never emits.
+        An agent then "fixed" a diagnostic that does not exist on this compiler.
+
+    Directory.Build.targets is imported AFTER the project file, so this overrides the
+    generated LangVersion. Override per-invocation with -p:HectonCliLangVersion=<v> if a
+    specific project genuinely needs a different level.
+
+    Raise this when Unity's bundled Roslyn language level changes. Verify by compiling a
+    known C#-11-only construct: if it succeeds here but fails in Unity, this pin is stale.
+  -->
+  <PropertyGroup>
+    <HectonCliLangVersion Condition="'$(HectonCliLangVersion)' == ''">9</HectonCliLangVersion>
+    <LangVersion>$(HectonCliLangVersion)</LangVersion>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'BakeryRuntimeAssembly' Or '$(MSBuildProjectName)' == 'AmplifyImpostors.Runtime' Or '$(MSBuildProjectName)' == 'Den.Tools' Or $([System.String]::Copy('$(HectonVendorEditorRuntimeProjects)').Contains('|$(MSBuildProjectName)|'))">
     <DefineConstants>$(DefineConstants);UNITY_EDITOR;UNITY_EDITOR_WIN</DefineConstants>
   </PropertyGroup>
