@@ -166,6 +166,36 @@ namespace Hecton8.Ecosystem
             _serviceRegistered = false;
         }
 
+        private void TryRegisterWorldSeedProvider()
+        {
+            if (_worldSeedProviderRegistered || !Application.isPlaying || _duplicateServiceSuppressed)
+                return;
+
+            // Awake generates the seed, so a zero here means this instance was suppressed as a
+            // duplicate before it ever ran. Registering a zero seed would make IsInitialized lie.
+            if (_worldSeed == 0)
+                return;
+
+            // HectonWorldGenerator remains the preferred owner: it derives the seed from the
+            // authored noise assets that actually shape its terrain, which is strictly more
+            // informative than this persisted integer. Never displace a live one.
+            IWorldSeedProvider existing = GlobalRegistry.WorldSeedProvider;
+            if (!ReferenceEquals(existing, null) && !ReferenceEquals(existing, this) && existing.IsInitialized)
+                return;
+
+            GlobalRegistry.RegisterWorldSeedProvider(this);
+            _worldSeedProviderRegistered = ReferenceEquals(GlobalRegistry.WorldSeedProvider, this);
+        }
+
+        private void TryUnregisterWorldSeedProvider()
+        {
+            if (!_worldSeedProviderRegistered)
+                return;
+
+            GlobalRegistry.UnregisterWorldSeedProvider(this);
+            _worldSeedProviderRegistered = false;
+        }
+
         private void CacheSaveServiceCold()
         {
             _saveService = GlobalRegistry.Save;
@@ -239,6 +269,18 @@ namespace Hecton8.Ecosystem
             if (serviceSlot == GlobalRegistryServiceSlot.RunModifierRuntime)
             {
                 _runModifiers = currentService as RunModifierController;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.WorldSeedProvider)
+            {
+                // Either a HectonWorldGenerator took the slot - in which case stand down, it is the
+                // better owner - or the slot went empty and the world seed would otherwise fall back
+                // to 0 for every procedural generator in the project.
+                if (!ReferenceEquals(currentService, this))
+                    _worldSeedProviderRegistered = false;
+
+                TryRegisterWorldSeedProvider();
                 return;
             }
 

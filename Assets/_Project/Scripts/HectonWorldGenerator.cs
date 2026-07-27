@@ -487,6 +487,29 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             return true;
         }
 
+        // Seven procedural generators call this - four of them MapMagic nodes that shape the
+        // terrain that actually ships - and until now every one of them got false, because
+        // s_activeWorldSeedProvider is only set from this class's OnEnable and nothing in the
+        // project ever creates a HectonWorldGenerator at runtime. It is not in any scene, its
+        // prefab is referenced by no C#, and GameBootstrapper.StartWorldGeneration returns early
+        // whenever an ITerrainProvider exists - which MapMagicRuntimeBridge always registers.
+        // So the world seed feeding splatmaps, surface materials, the abyssal shelf, macro
+        // geology and outposts has been the constant 0, and the daily-seed run mode reseeded
+        // fauna genetics and nothing else.
+        //
+        // The registry slot is the same seed under the interface the rest of the project queries,
+        // so fall through to it rather than reporting "no seed" while one is registered.
+        IWorldSeedProvider registeredProvider = GlobalRegistry.WorldSeedProvider;
+        if (registeredProvider != null && registeredProvider.IsInitialized)
+        {
+            int registeredSeed = registeredProvider.RuntimeWorldSeed;
+            if (registeredSeed != 0)
+            {
+                runtimeWorldSeed = registeredSeed;
+                return true;
+            }
+        }
+
         runtimeWorldSeed = 0;
         return false;
     }
