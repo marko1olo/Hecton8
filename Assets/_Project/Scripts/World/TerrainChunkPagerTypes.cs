@@ -364,6 +364,37 @@ namespace Hecton8.World
             return math.clamp((int)math.round(FiniteOr(effectiveRingRadius, 1f)), 1, TerrainChunkPagerConstants.MaxEvaluatedRingRadius);
         }
 
+        /// <summary>
+        /// Cull radius, in sectors, that provably encloses everything load admission can admit.
+        /// </summary>
+        /// <remarks>
+        /// R100 FIX (stationary-camera eviction thrash): load admission is a Chebyshev square ring
+        /// over sector indices, but eviction is a Euclidean squared-distance test. The binding
+        /// constraint is therefore the ring CORNER at radius * sqrt(2), not the axis distance. The
+        /// previous form added a fixed `+ 1.0f` margin, which cannot hold the invariant in general
+        /// because the corner overhang grows as 0.4142 * radius: at hysteresis 0.5 - the Sanitize
+        /// floor, and also the tuner slider minimum - with the shipped MaxRingRadius of 2.65, the
+        /// corner sat at 4.243 sectors while the cull radius was only 4.15, so the four corner
+        /// sectors of the load ring were freed and immediately re-requested forever with a
+        /// stationary camera, costing a full chunk file read plus slab copy per corner per cycle.
+        /// Taking the max against the raw ring radius also keeps this at or beyond the soft stale
+        /// threshold (EffectiveRingRadius + EvictionHysteresisSectors), so the two bands cannot invert.
+        /// Retention footprint scales with the square of this value. At shipped defaults the admitted
+        /// ring is 49 sectors against DefaultMaxChunkSlots (256), so there is ample headroom. A tuned
+        /// MaxRingRadius of 5 with large hysteresis can still out-run slot capacity - as it could
+        /// before this change - and remains bounded by FindFreeSlot yielding no slot and the sector
+        /// retrying on a later tick.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveCullRadiusSectors(float effectiveRingRadius, float evictionHysteresisSectors)
+        {
+            const float Sqrt2 = 1.41421356f;
+            float safeRing = math.max(1f, FiniteOr(effectiveRingRadius, 1f));
+            float hysteresis = math.max(0f, FiniteOr(evictionHysteresisSectors, 1f));
+            float admittedCornerSectors = ResolveDiscreteRingRadius(effectiveRingRadius) * Sqrt2;
+            return math.max(admittedCornerSectors, safeRing) + hysteresis;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe uint HashMetadata(ChunkMetadataDTO* metadata, int count)
         {

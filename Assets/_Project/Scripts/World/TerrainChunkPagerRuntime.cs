@@ -366,7 +366,9 @@ namespace Hecton8.World
             job.CameraSectorX = _lastCameraSectorX;
             job.CameraSectorZ = _lastCameraSectorZ;
             job.SectorSizeMeters = tuning.SectorSizeMeters;
-            job.CullRadiusSectors = tuning.EffectiveRingRadius + tuning.EvictionHysteresisSectors + 1.0f;
+            job.CullRadiusSectors = TerrainChunkPagerMath.ResolveCullRadiusSectors(
+                tuning.EffectiveRingRadius,
+                tuning.EvictionHysteresisSectors);
             _pendingEvictionHandle = job.Schedule();
             _pendingEviction = 1;
             H8Memory.RegisterActiveJob(SystemID.WorldStreaming, _pendingEvictionHandle);
@@ -749,6 +751,14 @@ namespace Hecton8.World
                 }
             }
 
+            // R100 FIX (orphaned vault buffer): EnsureGenerationHandle allocates and sets RefCount=1,
+            // so Ensure can succeed while resolve/length validation still fails - the vault refuses to
+            // resolve while its compaction fence is raised. Discarding the handle here used to strand
+            // that buffer permanently, because ReleaseArray only releases when the mask bit is set and
+            // this path clears it. Release before discarding so the refcount cannot leak.
+            if (vault != null && HasVaultHandle(in handle))
+                vault.ReleaseBuffer(in handle);
+
             _vaultBackedMask &= ~bit;
             handle = default;
             _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
@@ -860,17 +870,16 @@ namespace Hecton8.World
 
         private void ReleaseArray<T>(ref VaultGenerationHandle<T> handle, ulong bit) where T : struct
         {
+            // R100 FIX: keyed on the handle, not on _vaultBackedMask. The mask is a readiness signal
+            // and can legitimately be clear while a real buffer exists (see AcquireArray's partial
+            // failure path); gating release on the mask therefore stranded buffers. Releasing on
+            // HasVaultHandle alone makes a mask/handle divergence unable to leak.
             IDataVault vault = _vault;
-            if ((_vaultBackedMask & bit) != 0UL)
-            {
-                if (vault != null && HasVaultHandle(in handle))
-                    vault.ReleaseBuffer(in handle);
-                handle = default;
-                _vaultBackedMask &= ~bit;
-                return;
-            }
+            if (vault != null && HasVaultHandle(in handle))
+                vault.ReleaseBuffer(in handle);
 
             handle = default;
+            _vaultBackedMask &= ~bit;
         }
 
         private static bool HasVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
