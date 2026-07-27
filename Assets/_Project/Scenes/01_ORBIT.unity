@@ -119,6 +119,51 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &223857193
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 223857195}
+  - component: {fileID: 223857194}
+  m_Layer: 0
+  m_Name: '[H8_MUSIC_DIRECTOR_ANCHOR]'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &223857194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223857193}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 941e71210e2f558459955e06f2b4e893, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Audio.HectonMusicDirectorAnchor
+  _config: {fileID: 11400000, guid: 3fe2e07be4fdac24cb6b2f12b438dcc3, type: 2}
+--- !u!4 &223857195
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223857193}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &871228483
 GameObject:
   m_ObjectHideFlags: 0
@@ -286,7 +331,7 @@ Light:
     m_Strength: 0.92
     m_Bias: 0.015
     m_NormalBias: 0.08
-    m_NearPlane: 0.08
+    m_NearPlane: 0.099999994
     m_CullingMatrixOverride:
       e00: 1
       e01: 0
@@ -524,6 +569,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Prologue.Space::Hecton8.Prologue.Space.PrologueOrbitSceneBootstrap
   orbitPlasmaMaterial: {fileID: 2100000, guid: 75c99b06202152b46af43611e7c9cad9, type: 2}
   orbitSkyboxMaterial: {fileID: 2100000, guid: 6a3f1601ae9165f4a001000000000002, type: 2}
+  orbitStaticReflectionProbe: {fileID: 0}
 --- !u!1 &1847269917
 GameObject:
   m_ObjectHideFlags: 0
@@ -759,3 +805,4 @@ SceneRoots:
   - {fileID: 2002936761}
   - {fileID: 1847269921}
   - {fileID: 871228486}
+  - {fileID: 223857195}

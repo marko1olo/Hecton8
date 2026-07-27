@@ -68,7 +68,13 @@ namespace Hecton8.Audio
         private static readonly int _PredatorThreatLayerMask = HectonLayerMasks.CreatureLayerMask;
 
         private static readonly string[] MenuSceneTokens = { "main_menu" };
-        private static readonly string[] PrologueSceneTokens = { "prologue" };
+        // "orbit" is load-bearing: the prologue ships as the scene named 01_ORBIT
+        // (PrologueOrbitSceneBootstrap lives in it, PrologueSequenceRegistryBridge calls it
+        // StandaloneOrbitSceneName). Matching only "prologue" matched no scene that exists, so
+        // _prologueSceneActive was permanently false - taking six behaviours in this class with it
+        // and leaving the authored MusicProfile_Prologue unreachable. "prologue" is kept so a scene
+        // actually named that still matches.
+        private static readonly string[] PrologueSceneTokens = { "prologue", "orbit" };
         private static readonly string[] BaseTokens = { "base", "service", "fabric", "power", "construction", "module", "hab" };
         private static readonly string[] CaveTokens =
         {
