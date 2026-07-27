@@ -226,9 +226,17 @@ namespace Hecton8.EditorTools.Diagnostics
                 else
                     warnings++;
 
+                // Report the message's OWN file, not the requested asset. A diagnostic raised inside an
+                // .hlsl the asset includes carries that file's line number, so printing the asset's name
+                // sends you to an unrelated line - or past the end of a shorter file. Measured: a voxel
+                // rock run blamed it for warnings on lines belonging to Hecton_CoreLit.hlsl.
+                string origin = string.IsNullOrEmpty(message.file)
+                    ? Path.GetFileName(path)
+                    : Path.GetFileName(message.file);
+
                 Debug.Log(
                     $"{Marker}   {message.severity.ToString().ToUpperInvariant()} " +
-                    $"{Path.GetFileName(path)}:{message.line} [{message.platform}] {message.message}");
+                    $"{origin}:{message.line} [{message.platform}] {message.message}");
             }
         }
 
