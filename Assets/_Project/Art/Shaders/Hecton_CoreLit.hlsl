@@ -113,13 +113,21 @@ float4 _ActiveSonarGeoParams; // x=count, y=max range, z=grid enabled, w=speed
 // in the volumetric-shafts pass. Same story for the flashlight shadow block above: with
 // _HectonFlashlightShadowSteps at 0, clamp(round(0), 1, max) pins the raymarch to exactly 1 step.
 //
-// Deliberately NOT "fixed" by flipping it on. There are two defensible intents and choosing between
-// them is a rendering decision with real look and cost consequences across 20 shaders:
-//   1. CoreLit contact shadows are meant to be live -> publish these four as individual globals from
-//      the feature (additive, no CBUFFER layout hazard), and accept the added per-material cost.
-//   2. CoreLit's copy is superseded by the shafts pass -> delete these declarations and the
-//      HectonCoreLitEvaluateContactShadow path they gate.
-// Either is fine; silently enabling a feature that has been off for the whole project's life is not.
+// CORRECTION to the first version of this comment, which suggested "publish the four globals from the
+// feature" as a valid fix: it is NOT. Publishing them would have made the game look WORSE. The
+// function they gate, HectonCoreLitEvaluateScreenSpaceContactShadowFromUnitLightDirection, never
+// sampled a depth buffer - it was a facade whose output was a function of N.L and gradient noise, so
+// a non-zero strength would have applied up to 80% bogus darkening to lit surfaces in six shaders.
+// See that function for the full analysis. It is now reduced to an honest `return 1.0`.
+//
+// So these four remain declared, unwritten, and now provably harmless. Leave them that way unless
+// somebody implements contact shadows for real, which needs a depth source this call site does not
+// have (forward opaque, before _CameraDepthTexture resolves) and is therefore a renderer-architecture
+// decision, not a shader edit.
+//
+// Whatever happens: do NOT "fix" the binding by declaring the named CBUFFER in this header. It would
+// have to match the shafts block byte-for-byte in every shader that includes this file, and a layout
+// mismatch silently lands values in the wrong slots instead of failing loudly.
 float _HectonContactShadowStrength;
 float _HectonContactShadowSteps;
 float _HectonContactShadowBias;
@@ -1686,41 +1694,36 @@ float HectonCoreLitEvaluateScreenSpaceContactShadowFromUnitLightDirection(
     float3 normalizedLightDirectionWS,
     float maxShadowDistance)
 {
-    if (_HectonContactShadowStrength <= 0.0001 || maxShadowDistance <= 0.0001)
-        return 1.0;
-
-    float noL = saturate(dot(normalWS, normalizedLightDirectionWS));
-    if (noL <= 0.0001)
-        return 1.0;
-
-    float4 surfaceCS = TransformWorldToHClip(surfacePositionWS);
-    if (surfaceCS.w <= 0.0001 || !all(isfinite(surfaceCS)))
-        return 1.0;
-
-    float3 biasedSurfacePositionWS = surfacePositionWS + normalWS * max(_HectonContactShadowBias, 0.001);
-    const int stepCount = 4;
-    float jitter = HectonCoreLitInterleavedGradientNoise(surfaceCS.xy);
-    float shadowOcclusion = 0.0;
-
-    [unroll]
-    for (int stepIndex = 0; stepIndex < 4; stepIndex++)
-    {
-        float stepT = (stepIndex + 0.5 + jitter * 0.35) * 0.25;
-        float3 raySampleWS = biasedSurfacePositionWS + normalizedLightDirectionWS * (maxShadowDistance * stepT);
-        float4 raySampleCS = TransformWorldToHClip(raySampleWS);
-        if (raySampleCS.w <= 0.0 || !all(isfinite(raySampleCS)))
-            continue;
-
-        float2 raySampleUV = raySampleCS.xy * rcp(raySampleCS.w) * 0.5 + 0.5;
-        if (raySampleUV.x <= 0.0 || raySampleUV.x >= 1.0 || raySampleUV.y <= 0.0 || raySampleUV.y >= 1.0)
-            continue;
-
-        float distanceWeight = 1.0 - stepT;
-        float occluded = distanceWeight * step(jitter * 0.25, 0.18 + noL * 0.82);
-        shadowOcclusion = max(shadowOcclusion, occluded * noL);
-    }
-
-    return lerp(1.0, 0.2, saturate(shadowOcclusion * _HectonContactShadowStrength));
+    // NOT IMPLEMENTED - returns "unoccluded" and always has, in effect.
+    //
+    // What used to be here LOOKED like a screen-space contact shadow: a 4-step [unroll] loop, world
+    // positions marched toward the light, TransformWorldToHClip per step, a reprojected UV, an
+    // interleaved-gradient jitter, a distance falloff. It sampled NOTHING. There was no
+    // _CameraDepthTexture read, no SampleSceneDepth, no texture fetch of any kind in the whole
+    // function. `raySampleUV` was computed and then used only to `continue` when it landed offscreen,
+    // and never read again. The occlusion it returned came out of `jitter` and `noL` alone:
+    //
+    //     occluded = (1 - stepT) * step(jitter * 0.25, 0.18 + noL * 0.82)
+    //
+    // jitter*0.25 lies in [0, 0.25) and 0.18 + noL*0.82 in [0.18, 1], so the step() was 1 for almost
+    // every pixel, leaving shadowOcclusion ~= 0.875 * noL. A contact shadow darkens where geometry
+    // MEETS geometry; this darkened in proportion to how squarely a surface FACED the light, which is
+    // close to the opposite. Fed a non-zero strength it would have pushed lit surfaces toward
+    // lerp(1.0, 0.2, ...) - up to 80% darker - and called it contact shadow.
+    //
+    // It never fired in practice only because _HectonContactShadowStrength is never written for this
+    // header (see the declaration comment above), so the first guard always returned 1.0. That made
+    // it a trap rather than a bug: the obvious "fix" is to publish the missing globals, and doing so
+    // would have degraded every one of the six shaders that call this - MraoAtlasLit,
+    // LeviathanOrganic, LeviathanTentacleIndirect, ScatterIndirectLit, ToolDecayLit,
+    // WreckIndirectLit - while looking like a feature had been switched on.
+    //
+    // Reduced to the honest constant. Behaviour is bit-identical to what shipped, because the guard
+    // already forced this result on every pixel. Doing it for real needs a depth source, and this
+    // function is called from the forward opaque pass where _CameraDepthTexture is not yet resolved -
+    // so a real implementation means either a depth prepass dependency or moving the effect to a
+    // screen-space pass. That is a renderer-architecture change, not an edit to this function.
+    return 1.0;
 }
 
 float HectonCoreLitEvaluateScreenSpaceContactShadow(
