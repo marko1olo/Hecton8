@@ -65,6 +65,7 @@ namespace Hecton8.Physics.Vehicles
         private const uint HashSloshSpring = 0x3466D6C8u;
         private const uint HashSloshDamping = 0x96934799u;
         private const uint CavitationSourceId = SubmarineDynamicsConstants.SourceHashAddedMass; // AM25
+        private const uint EmergencyProfileFallbackWarningHash = 0x534D4B50u; // SMKP - submarine mock profile
         private const uint SubmarineDynamicsFaultEventHash = 0x53444654u; // SDFT
         private const uint SubmarineDynamicsFaultDumpHash = 0x53444450u; // SDDP
         private const uint SubmarineGyroFaultEventHash = 0x47334654u; // G3FT
@@ -121,6 +122,7 @@ namespace Hecton8.Physics.Vehicles
         private IDataVault _simulationGuardVault;
         private ulong _simulationGuardMask;
         private bool _buffersReady;
+        private bool _reportedEmergencyProfileFallback;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredCold;
@@ -814,7 +816,10 @@ namespace Hecton8.Physics.Vehicles
             profilesLoaded = TryLoadLegacyProfiles(ref config, dragLutScratch);
 #endif
             if (!profilesLoaded)
+            {
                 GenerateEmergencyMockProfiles(ref config, dragLutScratch);
+                ReportEmergencyProfileFallbackOnce();
+            }
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
             Span<SubmarineKinematicState> stateScratch = stackalloc SubmarineKinematicState[SubmarineDynamicsConstants.MaxVehicles];
@@ -1489,6 +1494,40 @@ namespace Hecton8.Physics.Vehicles
         {
             config.SourceHash = SubmarineDynamicsConstants.SourceHashMock;
             FillDefaultDragLut(dragLut);
+        }
+
+        /// <summary>
+        /// Announces that submarine kinematics booted on the emergency fallback profile instead of an
+        /// authored one, once per runtime.
+        ///
+        /// Every real profile source is Editor-only: `TryLoadLegacyProfiles` is inside the
+        /// `#if UNITY_EDITOR` at its declaration and its call site, and `TryApplyCsvOverrides` /
+        /// `TryApplyHullProfilesCsv` sit inside the `#if UNITY_EDITOR` spanning lines 1586-2237 with
+        /// their call sites guarded too. So `SourceHashCsv` and `SourceHashLegacy` are unreachable in
+        /// a player build and this fallback is the shipped path - the drag LUT is
+        /// `FillDefaultDragLut`'s hardcoded `0.42 + 2.2*t*t` quadratic and the mass properties are
+        /// whatever `BuildDefaultConfig` hardcodes.
+        ///
+        /// Nothing read `SourceHashMock` anywhere in the project, and every consumer of
+        /// `config.SourceHash` tests only `== 0u` / `!= 0u` - presence, never provenance - so this
+        /// was silent. Physics is a critical runtime system and must not fail over to fallback data
+        /// without a telemetry route.
+        ///
+        /// This does not fix the missing data route. Authored profiles have to reach the player
+        /// through the baked binary lane the data doctrine already prescribes (CSV/SO/Editor facade
+        /// to validated `.h8bin`, no runtime CSV parsing); until that exists this at least stops the
+        /// failure being invisible.
+        /// </summary>
+        private void ReportEmergencyProfileFallbackOnce()
+        {
+            if (_reportedEmergencyProfileFallback)
+                return;
+
+            _reportedEmergencyProfileFallback = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                EmergencyProfileFallbackWarningHash,
+                SubmarineDynamicsConstants.SourceHashMock,
+                SubmarineDynamicsConstants.DragLutSamples);
         }
 
         private SubmarineKinematicConfig BuildDefaultConfig()
