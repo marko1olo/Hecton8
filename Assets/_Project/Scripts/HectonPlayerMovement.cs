@@ -11101,9 +11101,12 @@ namespace Hecton8.Gameplay
                     (_currentDepth - crushDepthStart) /
                     math.max(crushDepthFullDepth - crushDepthStart, 0.01f));
 
-                // Fetch signed depth rate so negative values can relieve stress correctly
-                float depthRate = ResolveAuthoritativeLinearVelocity(Vector3.zero).y;
-                float depthRateT = math.saturate(math.abs(depthRate) / math.max(crushDepthRateForFullStress, 0.01f));
+                // World velocity is up-positive, so descending yields a negative Y. The rate-driven
+                // stress term wants the magnitude - a fast pressure change strains the hull either
+                // way - while the predictive urgency term below wants descent-positive m/s.
+                float verticalVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero).y;
+                float descentRate = -verticalVelocity;
+                float depthRateT = math.saturate(math.abs(verticalVelocity) / math.max(crushDepthRateForFullStress, 0.01f));
 
                 float transportProtection = transportPreset != null
                     ? math.max(0.1f, transportPreset.PressureDamageScale)
@@ -11116,8 +11119,17 @@ namespace Hecton8.Gameplay
                     transportProtection
                 );
 
+                // The urgency denominator is the crush LIMIT, not the depth where stress begins.
+                // Dividing by crushDepthStart pinned this to 1.0 permanently, because this branch
+                // only runs when _currentDepth already exceeds crushDepthStart. That made
+                // targetStress a constant 1.0 and left crushDepthFullDepth,
+                // crushDepthRateForFullStress and PressureDamageScale dead. crushDepthFullDepth is
+                // the same limit already reported as CrushLimitMeters in TryPlayCrushDepthGroan,
+                // and it carries the same inversion guard the signal uses.
                 float warningUrgency = Hecton8.PureLogic.Systems.HudCrushDepthWarningUrgencyCalculator.Compute(
-                    _currentDepth, crushDepthStart, depthRate);
+                    _currentDepth,
+                    math.max(crushDepthFullDepth, crushDepthStart),
+                    descentRate);
 
                 targetStress = math.saturate(math.max(computedStress, warningUrgency));
             }
