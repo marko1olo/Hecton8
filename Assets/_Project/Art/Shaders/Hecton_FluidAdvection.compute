@@ -198,6 +198,26 @@ float3 ApplyDynamicWakes(float3 positionWS, float3 flow)
     return Sanitize(flow);
 }
 
+// Single owner of the cave SDF sampling convention. __HectonCaveVoxelSdfTex is a SIGNED DISTANCE field,
+// not a density, so LOW values are solid. Its producer, HectonCaveVoxelLightingVolume.EncodeSignedDistanceField,
+// writes byte 0 or 115 for occupied rock (normalized 0.0 / 0.451) and 140, 166 or 255 for empty water
+// (0.549 / 0.651 / 1.0). The 0.5 threshold is exactly the midpoint between the 115 and 140 shells.
+// Hecton_DeferredCaustics decodes the same texture the same way - lerp(-range, +range, encoded), where above
+// 0.5 is a positive distance, i.e. open space. Reading it as a density inverts every collision test, which is
+// the bug this single accessor exists to prevent from ever being reintroduced per-call-site.
+//
+// Outside the volume this reports 1.0 (fully open), matching IsSolidVoxel's out-of-bounds answer, so a
+// gradient taken at the volume edge degrades toward "open" instead of toward garbage.
+float SampleCaveSignedDistance01(float3 positionWS)
+{
+    float3 localPosition = mul(_VoxelSdfWorldToLocal, float4(positionWS, 1.0)).xyz;
+    float3 sampleUv = localPosition * _VoxelSdfInvDoubleHalfExtents.xyz + 0.5;
+    if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
+        return 1.0;
+
+    return _VoxelSdfTexture3D.SampleLevel(sampler_VoxelSdfTexture3D, sampleUv, 0.0);
+}
+
 bool IsSolidVoxel(float3 positionWS)
 {
     if (_FluidAdvectionParams.w <= 0.0001 || _FluidAdvectionSdfParams.x <= 0.0001)
@@ -206,19 +226,36 @@ bool IsSolidVoxel(float3 positionWS)
     if (any(_VoxelSdfInvDoubleHalfExtents.xyz <= 0.0))
         return false;
 
-    float3 localPosition = mul(_VoxelSdfWorldToLocal, float4(positionWS, 1.0)).xyz;
-    float3 sampleUv = localPosition * _VoxelSdfInvDoubleHalfExtents.xyz + 0.5;
-    if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
-        return false;
+    return SampleCaveSignedDistance01(positionWS) < _FluidAdvectionSdfParams.y;
+}
 
-    // __HectonCaveVoxelSdfTex is a SIGNED DISTANCE field, not a density, so LOW values are solid.
-    // Its producer, HectonCaveVoxelLightingVolume.EncodeSignedDistanceField, writes byte 0 or 115 for
-    // occupied rock (normalized 0.0 / 0.451) and 140, 166 or 255 for empty water (0.549 / 0.651 / 1.0).
-    // The 0.5 threshold is exactly the midpoint between the 115 and 140 shells. Hecton_DeferredCaustics
-    // decodes the same texture the same way - lerp(-range, +range, encoded), where above 0.5 is a
-    // positive distance, i.e. open space. Reading it as a density inverts every collision test.
-    float signedDistance01 = _VoxelSdfTexture3D.SampleLevel(sampler_VoxelSdfTexture3D, sampleUv, 0.0);
-    return signedDistance01 < _FluidAdvectionSdfParams.y;
+// Gradient step per axis, as a fraction of the volume span. The cave volume is authored anisotropically
+// (default half extents 18/10/18), so each axis gets its own step and the central difference is divided by
+// its own step to keep the direction undistorted.
+#define HECTON_CAVE_SDF_GRADIENT_SPAN_FRACTION 0.015625
+
+// True surface normal at a collision point, from the signed-distance gradient. The field increases toward
+// open water, so the gradient already points OUT of the rock and needs no sign flip. Six taps, central
+// difference; callers gate this behind an actual collision so the cost lands only on colliding particles.
+float3 ResolveCaveSdfNormal(float3 positionWS, float3 fallbackNormal)
+{
+    float3 volumeSpan = rcp(max(_VoxelSdfInvDoubleHalfExtents.xyz, float3(0.000001, 0.000001, 0.000001)));
+    // Not named `step`: that would shadow the HLSL step() intrinsic.
+    float3 gradientStep = max(volumeSpan * HECTON_CAVE_SDF_GRADIENT_SPAN_FRACTION, float3(0.02, 0.02, 0.02));
+
+    float rightSample = SampleCaveSignedDistance01(positionWS + float3(gradientStep.x, 0.0, 0.0));
+    float leftSample = SampleCaveSignedDistance01(positionWS - float3(gradientStep.x, 0.0, 0.0));
+    float upSample = SampleCaveSignedDistance01(positionWS + float3(0.0, gradientStep.y, 0.0));
+    float downSample = SampleCaveSignedDistance01(positionWS - float3(0.0, gradientStep.y, 0.0));
+    float frontSample = SampleCaveSignedDistance01(positionWS + float3(0.0, 0.0, gradientStep.z));
+    float backSample = SampleCaveSignedDistance01(positionWS - float3(0.0, 0.0, gradientStep.z));
+
+    float3 gradient = float3(
+        rightSample - leftSample,
+        upSample - downSample,
+        frontSample - backSample) * rcp(2.0 * gradientStep);
+
+    return SafeNormalize(gradient, fallbackNormal);
 }
 
 float3 IntegrateVelocity(float3 velocity, float3 flow, float buoyancy, float dt)
@@ -370,7 +407,16 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
     float resolvedLife = max(0.0, particle.w - lifeDecay * lerp(1.0, 2.5, collisionMask));
     float bounce = _FluidAdvectionSdfParams.z > 0.0 ? _FluidAdvectionSdfParams.z : HECTON_CARVE_DEBRIS_DEFAULT_BOUNCE;
     float sleepSpeedSq = _FluidAdvectionSdfParams.w > 0.0 ? _FluidAdvectionSdfParams.w : HECTON_CARVE_DEBRIS_DEFAULT_SLEEP_SPEED_SQ;
-    float3 bouncedVelocity = BounceCarveDebrisVelocity(velocity, float3(0.0, 1.0, 0.0), bounce);
+    // Bounce off the surface actually hit. The world up axis is correct for the planeMask fallback (a flat
+    // y=0 seabed when no SDF is bound), but it is wrong for voxel rock: with a hardcoded up normal, debris
+    // striking a cave CEILING rebounded downward-to-upward as if it had landed on the floor, and debris
+    // hitting a vertical wall slid up it. Only colliding particles pay for the gradient.
+    float3 collisionNormal = float3(0.0, 1.0, 0.0);
+    [branch]
+    if (solidMask > 0.0001)
+        collisionNormal = ResolveCaveSdfNormal(nextPosition, float3(0.0, 1.0, 0.0));
+
+    float3 bouncedVelocity = BounceCarveDebrisVelocity(velocity, collisionNormal, bounce);
     bouncedVelocity = lerp(bouncedVelocity, float3(0.0, 0.0, 0.0), step(dot(bouncedVelocity, bouncedVelocity), sleepSpeedSq));
     velocity = lerp(velocity, bouncedVelocity, collisionMask);
     particle.xyz = lerp(particle.xyz, resolvedPosition, liveMask);
