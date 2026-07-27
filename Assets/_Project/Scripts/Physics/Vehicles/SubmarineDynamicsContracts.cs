@@ -28,6 +28,14 @@ namespace Hecton8.Physics.Vehicles
         public const uint SourceHashMock = 0x4B425553u; // SUBK
         public const uint SourceHashLegacy = 0x4F485355u; // USHO
         public const uint SourceHashCsv = 0x43535653u; // SVSC
+        /// <summary>
+        /// Kinematic config came from the baked Data Monolith, section 14
+        /// <c>SubmarineHullConstants</c>. This is the only provenance that survives into a player
+        /// build: <see cref="SourceHashLegacy"/> and <see cref="SourceHashCsv"/> both come from
+        /// Editor-only routes, so before this existed every shipped submarine reported
+        /// <see cref="SourceHashMock"/>.
+        /// </summary>
+        public const uint SourceHashStaticData = 0x44534253u; // SBSD
         public const uint SourceHashAddedMass = 0x414D3235u; // AM25
         public const uint SourceHashGyro = 0x47333332u; // G332
         public const uint StateFlagInitialized = 1u << 0;

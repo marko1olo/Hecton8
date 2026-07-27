@@ -73,6 +73,12 @@ namespace Hecton8.Physics.Vehicles
         [SerializeField, Range(1, SubmarineDynamicsConstants.MaxVehicles)] private int vehicleCapacity = 1;
         [SerializeField] private Transform visualRoot;
 
+        [Header("Authored Hull Data")]
+        [Tooltip("Row id in Data/Balance/SubmarineHull.csv, baked into Data Monolith section 14. " +
+                 "Boot reads mass and drag from that record instead of the serialized fallbacks below. " +
+                 "Blank disables the static-data route and boots on the fallback profile.")]
+        [SerializeField] private string hullPartId = "starter_sub_hull";
+
         [Header("Mock Profile")]
         [SerializeField] private bool enableMockSignals;
         [SerializeField, Min(1f)] private float baseMassKg = 18000f;
@@ -809,9 +815,16 @@ namespace Hecton8.Physics.Vehicles
 
             SubmarineKinematicConfig config = BuildDefaultConfig();
             Span<float> dragLutScratch = stackalloc float[SubmarineDynamicsConstants.DragLutSamples];
-            bool profilesLoaded = false;
+
+            // The baked Data Monolith is the sanctioned route (AGENTS.md Data-Driven Configuration
+            // Rule: ScriptableObject facade -> baked .h8bin -> unmanaged DTO), and it is the only
+            // route that reaches a player build. Try it first. TryLoadLegacyProfiles below reads
+            // loose files out of Docs/Archive and is Editor-only, so it stays a fallback for
+            // projects where section 14 is empty rather than the primary source.
+            bool profilesLoaded = TryApplyStaticHullConstants(ref config, dragLutScratch);
 #if UNITY_EDITOR
-            profilesLoaded = TryLoadLegacyProfiles(ref config, dragLutScratch);
+            if (!profilesLoaded)
+                profilesLoaded = TryLoadLegacyProfiles(ref config, dragLutScratch);
 #endif
             if (!profilesLoaded)
             {
@@ -1619,11 +1632,75 @@ namespace Hecton8.Physics.Vehicles
 
         private static void FillDefaultDragLut(Span<float> dragLut)
         {
+            // 0.42 is not an arbitrary constant: it is exactly the authored DragScalar of
+            // starter_sub_hull in Data/Balance/SubmarineHull.csv. The hardcode is a frozen snapshot
+            // of authored data, same as baseMassKg = 18000f matching the authored MassKg. Kept as the
+            // fallback base for callers with no static-data record.
+            FillDragLutFromBase(dragLut, 0.42f);
+        }
+
+        /// <summary>
+        /// Fills the drag LUT with the project's quadratic ramp over a supplied base drag.
+        /// </summary>
+        private static void FillDragLutFromBase(Span<float> dragLut, float baseDrag)
+        {
+            float safeBase = math.isfinite(baseDrag) && baseDrag > 0f ? baseDrag : 0.42f;
             for (int i = 0; i < dragLut.Length; i++)
             {
                 float t = i / (float)math.max(1, dragLut.Length - 1);
-                dragLut[i] = 0.42f + (2.2f * t * t);
+                dragLut[i] = safeBase + (2.2f * t * t);
             }
+        }
+
+        /// <summary>
+        /// Applies the authored hull record from Data Monolith section 14 to the boot config.
+        /// Returns false when the arena is not resident, the id is blank, the row is absent, or the
+        /// values fail validation - in which case the caller falls through to its existing route.
+        /// </summary>
+        /// <remarks>
+        /// Only two fields are mapped, and each is justified by an exact numeric match with the
+        /// hardcode it replaces: <c>MassKg</c> -> <c>BaseMassKg</c> (serialized default is 18000f,
+        /// the authored value) and <c>DragScalar</c> -> the drag LUT base (hardcoded 0.42f, the
+        /// authored value).
+        ///
+        /// Deliberately NOT mapped:
+        /// - <c>BuoyancyScalar</c> (0.96). There is no defensible relation to <c>HullVolumeM3</c>.
+        ///   Reading it as a displaced/weight ratio implies 16.83 m3 at 1027 kg/m3, but the
+        ///   serialized <c>hullVolumeM3</c> is 22f, which implies a ratio of 1.255. The two readings
+        ///   disagree, so the field's meaning is unresolved and guessing it would change buoyancy
+        ///   truth on an inference.
+        /// - <c>CrushDepthMeters</c> (1200). <see cref="SubmarineKinematicConfig"/> has no crush
+        ///   depth; the live owner is HectonPlayerMovement's serialized band, which disagrees at
+        ///   1000/1450. Reconciling those is a design decision, not a wiring one.
+        /// - <c>IntegrityCap</c> (100). No field on this config consumes it.
+        /// </remarks>
+        private bool TryApplyStaticHullConstants(ref SubmarineKinematicConfig config, Span<float> dragLut)
+        {
+            if (string.IsNullOrWhiteSpace(hullPartId))
+                return false;
+
+            // Same hash the bake side uses (H8DataMonolithCompiler.ParseHull -> ComputeFnv1A32), so
+            // ids resolve identically. AsSpan keeps this allocation-free; boot is cold either way.
+            uint partHash = Hecton8.Data.H8DataHash.ComputeFnv1A32(hullPartId.AsSpan());
+            if (partHash == 0u)
+                return false;
+
+            if (!Hecton8.Data.H8StaticDataArena.TryFindSubmarineHullConstants(
+                    partHash, out Hecton8.Data.H8SubmarineHullConstantRecord record))
+            {
+                return false;
+            }
+
+            if (!math.isfinite(record.MassKg) || record.MassKg <= 0f ||
+                !math.isfinite(record.DragScalar) || record.DragScalar <= 0f)
+            {
+                return false;
+            }
+
+            config.BaseMassKg = math.max(1f, record.MassKg);
+            config.SourceHash = SubmarineDynamicsConstants.SourceHashStaticData;
+            FillDragLutFromBase(dragLut, record.DragScalar);
+            return true;
         }
 
         // Editor-only for a real reason, unlike the outer guard that used to wrap the whole tail of
