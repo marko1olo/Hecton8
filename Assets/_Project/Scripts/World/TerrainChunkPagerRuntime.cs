@@ -668,6 +668,14 @@ namespace Hecton8.World
             if (nextVault == null)
             {
                 _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                // R100 FIX: complete the unregister. The entry path used
+                // keepVisualSyncForDeferredShutdown: true so a recovery lane could reclaim, but this exit
+                // has already cleared _deferredShutdown, so VisualSyncTick would early-return forever and
+                // TryReleaseDeferredShutdownState would never run. VisualSync and the hot-swap listener
+                // would stay registered against _initialized == 0, leaving GlobalRegistry holding a strong
+                // reference to this MonoBehaviour for the rest of the session (COMMON_SENSE.md rule 11).
+                // The StartWorker failure path below already does this; these exits simply missed it.
+                UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
                 if (ReferenceEquals(s_active, this))
                     s_active = null;
                 _initialized = 0;
@@ -678,6 +686,11 @@ namespace Hecton8.World
             if (!AreRequiredVaultBuffersReady())
             {
                 _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                // R100 FIX: same stranded-registration leak as the null-vault exit above. Unregistered
+                // before ReleaseNativeState deliberately: streaming.md orders tick/dispatch removal ahead
+                // of handle release, and releasing buffers while a phase can still tick is the specific
+                // inversion that document rejects.
+                UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
                 ReleaseNativeState();
                 if (ReferenceEquals(s_active, this))
                     s_active = null;
