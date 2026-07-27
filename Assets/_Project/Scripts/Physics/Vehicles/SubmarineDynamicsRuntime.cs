@@ -1396,6 +1396,12 @@ namespace Hecton8.Physics.Vehicles
             vault?.ReleaseMutationGuard(guardMask);
         }
 
+        // Editor-only, and it has to be: it resolves repo-relative paths off _projectRoot, which is
+        // itself editor-only state, and reads loose files out of Docs/Archive. Its only call site
+        // (in TryInitializeBootProfiles) is guarded too. df5d5fc14 unguarded this along with the
+        // rest of the over-extended region, which was an over-correction - the boot chain below
+        // genuinely had to come out of the guard, this method did not.
+#if UNITY_EDITOR
         private bool TryLoadLegacyProfiles(ref SubmarineKinematicConfig config, Span<float> dragLut)
         {
             try
@@ -1435,6 +1441,7 @@ namespace Hecton8.Physics.Vehicles
                 return false;
             }
         }
+#endif
 
         private static bool TryReadMassProfile(string path, ref SubmarineKinematicConfig config)
         {
