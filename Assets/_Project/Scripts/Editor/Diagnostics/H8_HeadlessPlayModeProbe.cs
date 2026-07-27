@@ -504,6 +504,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 ReportBootstrapReadiness();
                 CheckWorldSeed();
                 ReportRegistryPresence();
+                ReportVegetationVertexInputs();
             }
             catch (Exception ex)
             {
@@ -627,6 +628,75 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             Debug.Log($"{Marker} REGISTRY {builder}");
+        }
+
+        /// <summary>
+        /// Reports whether the four vegetation passes are actually FED anything.
+        ///
+        /// H8_VegetationPassParityProbe proves the ForwardLit / Shadow / DepthOnly / MotionVectors
+        /// passes compute the same vertex position from the same inputs. It says nothing about
+        /// whether those inputs carry a value at runtime, and a term whose uniform is never
+        /// published contributes exactly zero in all four passes - agreement on nothing. Every
+        /// input below is a C# global (Shader.SetGlobal*), not a material property, so it is
+        /// readable from here.
+        ///
+        /// HONEST LIMIT, do not read past it: Shader.GetGlobal* returns zero for a name that was
+        /// never set AND for a name deliberately set to zero. ZERO therefore means "contributes
+        /// nothing right now", never "nobody publishes it". Only PUBLISHED is a positive result.
+        /// A single sample at one instant also cannot see a value that is only non-zero while the
+        /// player is moving through flora.
+        ///
+        /// _HectonImpactSphereCount is the known-answer case that keeps this honest. It was found
+        /// statically to have no producer anywhere in C# (GpuScatterLodManager only ever writes 0
+        /// and the _HectonImpactSpheres buffer is never bound), so it MUST read zero. If it ever
+        /// reads non-zero, that static finding was wrong and ResolveImpactOffset is live code whose
+        /// lit-vs-DepthOnly divergence has been shipping.
+        /// </summary>
+        private static void ReportVegetationVertexInputs()
+        {
+            Debug.Log(
+                $"{Marker} VEGINPUT (ZERO = contributes nothing at this instant, NOT proof of a missing publisher)");
+
+            ReportGlobalVector("_AbyssalGridResolution", "abyssal flow grid - zero disables ResolveAbyssalFlowField in all 4 passes");
+            ReportGlobalFloat("_AbyssalFlowTextureActive", "abyssal flow texture path");
+            ReportGlobalVector("_AbyssalFlowSpacing", "abyssal flow cell size");
+            ReportGlobalFloat("_HectonFloraInteractionCount", "ResolveInteractionOffset input count");
+            ReportGlobalFloat("_HectonFloraWakeCount", "ResolveWakeTrailOffset input count");
+            ReportGlobalVector("_HectonFloraWakeParams", "wake trail tuning");
+            ReportGlobalVector("_HectonPlayerFloraInteractionParams", "ResolvePlayerBendOffset input");
+            ReportGlobalVector("_HectonFloraSwayFieldParams", "sway field - couples to the fieldDrivenBend suppression");
+            ReportGlobalFloat("_HectonShallowWaterFieldActive", "shallow water field feeding the wake trail");
+            ReportGlobalVector("_HectonFlowSynchronyParams", "ResolveFlowSynchronyOffset tuning");
+            ReportGlobalFloat("_HectonFloraSnapFlagsEnabled", "flora snap subsystem");
+
+            float impactSpheres = Shader.GetGlobalFloat("_HectonImpactSphereCount");
+            if (impactSpheres > 0.5f)
+            {
+                Debug.Log(
+                    $"{Marker} VEGINPUT   CONTRADICTION _HectonImpactSphereCount={impactSpheres} - " +
+                    "ResolveImpactOffset was recorded as dead code with no producer. It is not. " +
+                    "Its lit-vs-DepthOnly divergence is live and must be converged.");
+                _failures++;
+            }
+            else
+            {
+                Debug.Log(
+                    $"{Marker} VEGINPUT   self-test ok _HectonImpactSphereCount=0 as the static audit predicted");
+            }
+        }
+
+        private static void ReportGlobalVector(string name, string meaning)
+        {
+            Vector4 value = Shader.GetGlobalVector(name);
+            string verdict = value == Vector4.zero ? "ZERO     " : "PUBLISHED";
+            Debug.Log($"{Marker} VEGINPUT   {verdict} {name,-42} {value.ToString("F3", CultureInfo.InvariantCulture)}  {meaning}");
+        }
+
+        private static void ReportGlobalFloat(string name, string meaning)
+        {
+            float value = Shader.GetGlobalFloat(name);
+            string verdict = value == 0f ? "ZERO     " : "PUBLISHED";
+            Debug.Log($"{Marker} VEGINPUT   {verdict} {name,-42} {value.ToString("F3", CultureInfo.InvariantCulture)}  {meaning}");
         }
 
         private static bool IsAlive(object service)
