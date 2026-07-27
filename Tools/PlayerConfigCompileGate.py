@@ -130,13 +130,56 @@ def _report(errors):
         print(f"  {len(entries):3d}  {short}  [{', '.join(codes)}]")
 
 
+def runtime_assemblies():
+    """Every first-party assembly that ships in a player: no .Editor, no .Tests."""
+    found = []
+    for name in sorted(os.listdir(".")):
+        if not name.startswith("Hecton8.") or not name.endswith(".csproj"):
+            continue
+        stem = name[: -len(".csproj")]
+        lowered = stem.lower()
+        if ".editor" in lowered or ".tests" in lowered:
+            continue
+        found.append(stem)
+    if "Hecton8.Core" in found:
+        found.remove("Hecton8.Core")
+        found.insert(0, "Hecton8.Core")
+    return found
+
+
+def sweep_runtime(unity_root):
+    """Compile every runtime assembly in player configuration. Returns total error count."""
+    total = 0
+    for assembly in runtime_assemblies():
+        defines = player_defines(f"{assembly}.csproj")
+        errors = parse_errors(compile_assembly(assembly, defines, unity_root))
+        total += len(errors)
+        marker = "OK  " if not errors else "FAIL"
+        print(f"  [{marker}] {assembly:<32} {len(errors)} player errors")
+        if errors:
+            _report(errors)
+    print(f"\nALL RUNTIME ASSEMBLIES: {total} player-configuration errors")
+    if total:
+        print("A player build cannot be produced until these resolve.")
+    return total
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--assembly", default="Hecton8.Core")
     parser.add_argument("--unity-root", default=UNITY_ROOT)
     parser.add_argument("--also-editor", action="store_true", help="compile both configurations")
     parser.add_argument("--print-defines", action="store_true", help="show the define set and exit")
+    parser.add_argument(
+        "--all-runtime",
+        action="store_true",
+        help="sweep every first-party runtime assembly instead of just one",
+    )
     args = parser.parse_args()
+
+    if args.all_runtime:
+        print("PlayerConfigCompileGate: sweeping all runtime assemblies with UNITY_EDITOR undefined")
+        return 1 if sweep_runtime(args.unity_root) else 0
 
     csproj = f"{args.assembly}.csproj"
     if not os.path.exists(csproj):
