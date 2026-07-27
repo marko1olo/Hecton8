@@ -32,8 +32,13 @@ namespace Hecton8.AI
         // ══════════════════════════════════════════════════════════
 
         [Header("── Biome Identity ────────────────────────────")]
-        [Tooltip("Indeks bioma v MapMagic Biomes Set (splat layer index). " +
-                 "Dolzhen sovpadat s poryadkom sloev v Terrain.")]
+        [Tooltip("HECTON biome matrix ID, 1..108 - the same number as " +
+                 "HectonBiomeMatrixProfile.matrixIndex. This is NOT the 0-based MapMagic splat " +
+                 "layer index.\n\n" +
+                 "FaunaBiomeBootstrapAuthoring writes this straight from profile.matrixIndex, and " +
+                 "the shipped assets run 1..108, one per matrix biome. The two id spaces are " +
+                 "related by matrixIndex == alphamapLayer + 1 " +
+                 "(MapMagicRuntimeBridge.TryGetMatrixBiomeId).")]
         public int biomeIndex;
 
         [Tooltip("Chelovekochitaemoe nazvanie bioma (dlya otladki).")]
