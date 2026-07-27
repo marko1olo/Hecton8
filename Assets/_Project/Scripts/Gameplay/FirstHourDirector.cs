@@ -840,6 +840,7 @@ namespace Hecton8.Gameplay
         // ----------------------------------------------------------
 
         private float _sessionTime;
+        private double _sessionClockSampleSeconds = UnsampledSessionClock;
         private int   _completedMilestones; // bitovaya maska
         private bool  _registered;
         private bool  _lateFrameRegistered;
@@ -921,6 +922,22 @@ namespace Hecton8.Gameplay
         }
 
         private const float MinEarnedOrientationTime = 75f;
+
+        // The dispatcher slow lane is NOT a fixed 2 Hz lane. ITickable.cs documents it as the 10 Hz slow
+        // cadence, and SystemDispatcher.ResolveSlowTickIntervalSeconds actually returns 0.1 s normally,
+        // 0.2 s while thermal-critical, 1.0 s during a homeostasis emergency, and a GlobalQualityWeight
+        // dependent lerp between 0.1 s and 0.2 s while the simulation bucketer idles. Counting ticks
+        // therefore cannot measure the authored first-hour curve, and it would make the persisted
+        // firstHourSessionTime a function of the player's hardware tier. Session time is sampled from the
+        // monotonic dispatcher clock instead, and each tick's contribution is capped at the lane's own
+        // worst-case interval: a larger gap means a pause, a scene load, or a hitch, and real seconds the
+        // simulation never ran are not billed to the player's hour.
+        private const float MaxSessionClockAdvanceSeconds = 1f;
+
+        // Sentinel for "the session clock has not been sampled since enable/load"; the first tick after it
+        // establishes the baseline and contributes no session time of its own.
+        private const double UnsampledSessionClock = -1d;
+
         private const string DataCopperItemId = "Data_Copper";
         private const string ShadowEventDiscoveryId = "first_hour_shadow_event";
         private const string FirstColonyModuleDiscoveryId = "first_colony_module_spotted";
@@ -995,6 +1012,10 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            // Re-baseline the session clock: the wall-clock span this director spent disabled is not
+            // first-hour playtime.
+            _sessionClockSampleSeconds = UnsampledSessionClock;
+
             if (!TryRegisterService())
                 return;
 
@@ -1026,6 +1047,7 @@ namespace Hecton8.Gameplay
             ClearCachedRuntimeServices();
             _lastObservedZone = null;
             _nextContextualGuidanceTime = 0f;
+            _sessionClockSampleSeconds = UnsampledSessionClock;
             _lastContextResourceCompleted = false;
             _lastContextDepthCompleted = false;
             _lastContextLoreContact = false;
@@ -1611,6 +1633,39 @@ namespace Hecton8.Gameplay
         //  ISlowTickable
         // ----------------------------------------------------------
 
+        /// <summary>
+        /// Advances the first-hour session clock by the real seconds elapsed between two consecutive
+        /// dispatcher slow ticks. Pure function: no Unity types, no state, no allocation.
+        /// </summary>
+        /// <param name="currentSessionSeconds">Session seconds accumulated so far.</param>
+        /// <param name="previousSampleSeconds">Previous monotonic clock sample, or a negative sentinel when unsampled.</param>
+        /// <param name="nowSeconds">Current monotonic clock reading.</param>
+        /// <param name="maxAdvanceSeconds">Largest real gap that may be billed to one tick.</param>
+        /// <returns>Updated session seconds.</returns>
+        public static float AdvanceSessionClockSeconds(
+            float currentSessionSeconds,
+            double previousSampleSeconds,
+            double nowSeconds,
+            float maxAdvanceSeconds)
+        {
+            // Unsampled baseline: the caller records nowSeconds and this tick buys no session time.
+            if (previousSampleSeconds < 0d)
+                return currentSessionSeconds;
+
+            double deltaSeconds = nowSeconds - previousSampleSeconds;
+
+            // Written as a negated comparison so a NaN clock reading falls through unchanged rather than
+            // poisoning the persisted session time. Several catch-up substeps inside one frame read the
+            // same dispatcher time snapshot, so their delta is zero and the clock advances once per frame.
+            if (!(deltaSeconds > 0d))
+                return currentSessionSeconds;
+
+            if (deltaSeconds > maxAdvanceSeconds)
+                deltaSeconds = maxAdvanceSeconds;
+
+            return currentSessionSeconds + (float)deltaSeconds;
+        }
+
         public void SlowTick()
         {
             if (_runtimeOwnerAborted)
@@ -1618,7 +1673,14 @@ namespace Hecton8.Gameplay
 
             if (IsFirstHourComplete) return;
 
-            _sessionTime += 0.5f;
+            double nowSeconds = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            _sessionTime = AdvanceSessionClockSeconds(
+                _sessionTime,
+                _sessionClockSampleSeconds,
+                nowSeconds,
+                MaxSessionClockAdvanceSeconds);
+            _sessionClockSampleSeconds = nowSeconds;
+
             ResolveSurvivalSystem();
             ResolveWorldContext();
 
@@ -2053,6 +2115,9 @@ namespace Hecton8.Gameplay
             _firstModuleHintIssued |= _sessionTime >= firstModuleTime ||
                                       IsMilestoneComplete(FirstHourMilestone.FirstModule);
             _nextContextualGuidanceTime = 0f;
+            // The restored session time is the new baseline; the real seconds spent in the menu and in the
+            // load itself belong to neither the old run nor the new one.
+            _sessionClockSampleSeconds = UnsampledSessionClock;
             _lastObservedZone = null;
             _lastContextStarterToolCompleted = false;
             _lastContextResourceCompleted = false;
