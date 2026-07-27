@@ -116,6 +116,19 @@ namespace Hecton8.EditorTools.Diagnostics
                 $"{Marker} START scene={scenePath} warmupFrames={_warmupFrames} " +
                 $"gameplayFrames={_gameplayFramesTarget} batchmode={Application.isBatchMode}");
 
+            // EnterPlaymode() silently does NOTHING when scripts have compiler errors, and says
+            // nothing about why. A broken build therefore presents as "Play Mode never starts": one
+            // run burned its whole 1300s budget in phase=WaitingForPlayMode with frames=0 because
+            // another agent had landed a CS0234 elsewhere in the project. Fail loudly instead.
+            if (EditorUtility.scriptCompilationFailed)
+            {
+                Debug.Log(
+                    $"{Marker} ABORT scripts failed to compile - Play Mode cannot start. Fix the C# " +
+                    "errors first; a timeout here reads like a game defect and is not one.");
+                Finish(1);
+                return;
+            }
+
             try
             {
                 EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
