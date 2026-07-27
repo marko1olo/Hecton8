@@ -126,15 +126,37 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 return mul(matrixValue, float4(localPosition, 1.0)).xyz;
             }
 
+            // The motion-vector pass MUST reproduce the ForwardLit vertex positions exactly, or the
+            // velocities it writes describe a plant that was never drawn. Both SafeNormalize helpers here
+            // had drifted into axis-SNAPPING versions - they returned the nearest cardinal unit vector
+            // instead of normalising - while Hecton_IndirectVegetation, ...DepthOnly and ...Shadow all kept
+            // the approximate normalise below. In this pass SafeNormalize3 feeds TransformDirection, the
+            // wake/bend/push directions and, worst of all, the billboard basis at ResolveBillboard*, so
+            // quantising it displaced vegetation vertices by up to a full billboard width relative to the
+            // lit pass. That is a large bogus velocity on every plant, which TAA and motion blur then smear.
+            // Kept bit-identical to the other three passes on purpose: this is shared math that was
+            // copy-pasted four ways, and this is the drift it produced.
+            float ApproxMagnitude2(float2 value)
+            {
+                float2 axis = abs(value);
+                float major = max(axis.x, axis.y);
+                float minor = min(axis.x, axis.y);
+                return major + minor * 0.375;
+            }
+
+            float ApproxMagnitude3(float3 value)
+            {
+                float3 axis = abs(value);
+                float major = max(max(axis.x, axis.y), axis.z);
+                float minor = min(min(axis.x, axis.y), axis.z);
+                float mid = axis.x + axis.y + axis.z - major - minor;
+                return major + mid * 0.375 + minor * 0.125;
+            }
+
             float2 SafeNormalize2(float2 value)
             {
-                float2 absValue = abs(value);
-                if (max(absValue.x, absValue.y) <= 0.0001)
-                    return float2(1.0, 0.0);
-
-                return absValue.x >= absValue.y
-                    ? float2(value.x < 0.0 ? -1.0 : 1.0, 0.0)
-                    : float2(0.0, value.y < 0.0 ? -1.0 : 1.0);
+                float approxLen = ApproxMagnitude2(value);
+                return approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
             }
 
             float SanitizeNonNegativeFinite(float value)
@@ -149,17 +171,8 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
 
             float3 SafeNormalize3(float3 value)
             {
-                float3 absValue = abs(value);
-                float maxAxis = max(max(absValue.x, absValue.y), absValue.z);
-                if (maxAxis <= 0.0001)
-                    return float3(0.0, 1.0, 0.0);
-
-                if (absValue.y >= absValue.x && absValue.y >= absValue.z)
-                    return float3(0.0, value.y < 0.0 ? -1.0 : 1.0, 0.0);
-
-                return absValue.x >= absValue.z
-                    ? float3(value.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0)
-                    : float3(0.0, 0.0, value.z < 0.0 ? -1.0 : 1.0);
+                float approxLen = ApproxMagnitude3(value);
+                return approxLen > 0.0001 ? value * rcp(approxLen) : float3(0.0, 1.0, 0.0);
             }
 
             float3 TransformDirection(float4x4 matrixValue, float3 direction)

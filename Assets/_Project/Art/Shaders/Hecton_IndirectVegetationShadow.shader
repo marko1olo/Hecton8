@@ -330,7 +330,12 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                     return 0.0h;
 
-                return SAMPLE_TEXTURE2D(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv).r;
+                // _LOD, not the implicit-derivative sample: the only caller is ResolveVegetationCutMask
+                // from ShadowVert, and implicit ddx/ddy are undefined in the vertex stage. The other three
+                // vegetation passes already use SAMPLE_TEXTURE2D_LOD here; this copy had drifted, which
+                // made cut sargassum cast shadows it should not (an undefined mask read, so the exact
+                // behaviour was compiler- and platform-dependent rather than merely wrong).
+                return SAMPLE_TEXTURE2D_LOD(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv, 0).r;
             }
 
             half ResolveVegetationCutMask(float instanceType, float3 positionWS)
