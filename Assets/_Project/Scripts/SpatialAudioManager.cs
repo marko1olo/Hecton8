@@ -7401,9 +7401,12 @@ namespace Hecton8.Audio
             if (distanceSq > traumaRangeSq)
                 return;
 
-            float invDistance = math.rcp(math.max(
-                ApproximateMagnitude3D(listenerOffsetAup),
-                0.000001f));
+            // distanceSq is already the exact squared length from math.lengthsq above, so rsqrt
+            // yields the exact inverse length in one instruction - cheaper than the octagonal
+            // approximation it replaces. That approximation undershoots by 13.4% on a body diagonal,
+            // leaving this "normalised" direction at length 1.155, which made the delivered impulse
+            // depend on the blast's bearing rather than on its distance.
+            float invDistance = math.rsqrt(math.max(distanceSq, 1e-12f));
             Vector3 traumaDirection = distanceSq > 0.000001f
                 ? listenerOffset * invDistance
                 : Vector3.up;
