@@ -92,6 +92,20 @@ namespace Hecton8.SaveSystem
         private const uint TerrainIdentityMismatchContextHash = 0x54494443u; // TIDC
         private const uint CriticalSectorCorruptionNotificationContextHash = 0x4353434Eu; // CSCN
         private const uint CriticalSectorCorruptionNotificationMissTelemetryHash = 0x43534E4Du; // CSNM
+        private const uint SaveOwnerCensusTelemetryHash = 0x534F434Eu; // SOCN
+        private const uint SaveOwnerCensusLoadContextSeedHash = 0x534F434Cu; // SOCL
+        private const uint SaveOwnerCensusSaveContextSeedHash = 0x534F4353u; // SOCS
+        private const uint DeferredOwnerHydrationTelemetryHash = 0x444F4844u; // DOHD
+        private const uint DeferredOwnerHydrationExpiredTelemetryHash = 0x444F4858u; // DOHX
+        private const uint AsyncPersistenceOwnerCensusFailureFlag = 1u << 4;
+        private const uint AsyncPersistenceDeferredHydrationAppliedFlag = 1u << 5;
+        private const uint AsyncPersistenceDeferredHydrationExpiredFlag = 1u << 6;
+        private const uint AsyncPersistenceLoadOperationFlag = 1u << 7;
+        // Deferred-hydration window. GameBootstrapper re-enables the player several scene-activation
+        // steps after Step 4: Save/Load, and Step 5/6 wait on world-ready and ground-ready gates that
+        // are themselves bounded by the bootstrap timeout. 30 s of unscaled time covers that gap with
+        // margin on a weak-tier load without pinning the loaded payload for the whole session.
+        private const double DeferredOwnerHydrationWindowSeconds = 30d;
         private const int MaxChunkDehydrationSignalsPerTick = 2;
         private const int MaxWfcSectorHydrationProbesPerTick = 4;
         private const int MaxWfcDirtySectorStackEntries = 256;
@@ -157,6 +171,33 @@ namespace Hecton8.SaveSystem
         public int LastLoadBackupGeneration { get; private set; }
         public bool LastLoadSelfRepaired { get; private set; }
         public bool LastLoadUsedLegacyCompression { get; private set; }
+
+        /// <summary>
+        /// Required contract categories that had no live registered owner when the last load
+        /// reached its apply loop. Zero means the payload reached a complete owner set.
+        /// Read-only projection: a headless probe or player-build diagnostic can assert on this
+        /// without the Inspector, which is the only place <c>_debugRegisteredCount</c> was ever visible.
+        /// </summary>
+        public uint LastLoadMissingOwnerCategories { get; private set; }
+
+        /// <summary>Required contract categories that had no live registered owner when the last save populated its payload.</summary>
+        public uint LastSaveMissingOwnerCategories { get; private set; }
+
+        /// <summary>Live registrants that actually consumed the payload in the last load apply loop.</summary>
+        public int LastLoadAppliedOwnerCount { get; private set; }
+
+        /// <summary>Live registrants present in the registry when the last load reached its apply loop.</summary>
+        public int LastLoadLiveOwnerCount { get; private set; }
+
+        /// <summary>Owners hydrated by the deferred pass after they re-registered post-load.</summary>
+        public int DeferredOwnerHydrationAppliedCount { get; private set; }
+
+        /// <summary>True while a loaded payload is retained for owners that were absent at apply time.</summary>
+        public bool HasPendingOwnerHydration => _pendingOwnerHydrationData != null;
+
+        /// <summary>Categories the retained payload is still waiting to hand to a re-registering owner.</summary>
+        public uint PendingOwnerHydrationMissingCategories => _pendingOwnerHydrationMissingCategories;
+
         public ushort PlayerDialogueChoiceFlags =>
             SaveBinaryStorage.SanitizePlayerDialogueChoiceFlags((ushort)(Volatile.Read(ref _playerDialogueChoiceFlags) & ushort.MaxValue));
 
@@ -227,6 +268,17 @@ namespace Hecton8.SaveSystem
         private bool _isBusy;
         private int _playerDialogueChoiceFlags;
         private H8BinaryWorldPager _worldPager;
+
+        // Deferred owner hydration. GameBootstrapper.DisablePlayer() runs before "Step 4: Save/Load",
+        // so every player-owned ISaveable has already fired OnDisable -> Unregister by the time the
+        // apply loop runs. The loaded payload is retained here, with the still-outstanding category
+        // mask, and handed to those owners on the frame after they re-register.
+        private SaveData _pendingOwnerHydrationData;
+        private uint _pendingOwnerHydrationMissingCategories;
+        private uint _pendingOwnerHydrationSlotHash;
+        private uint _pendingOwnerHydrationOperationId;
+        private double _pendingOwnerHydrationDeadlineSeconds;
+        private bool _pendingOwnerHydrationDrainRequested;
 
         private static readonly IComparer<ISaveable> SavePriorityComparer = new SavePriorityComparerImpl();
         private static readonly IComparer<ISaveable> LoadPriorityComparer = new LoadPriorityComparerImpl();
@@ -1124,6 +1176,7 @@ namespace Hecton8.SaveSystem
             _hotSwapRegistered = false;
             _compressionThrottleLateFrameArmed = false;
             _compressionThrottleReleaseFrame = 0;
+            ClearPendingOwnerHydration();
             try
             {
                 _worldPager?.Dispose();
@@ -1272,6 +1325,7 @@ namespace Hecton8.SaveSystem
             _saveableCapacityWarningLogged = false;
             _lastLoadPriorityConflictCount = 0;
             _lastLoadPriorityConflictFrame = 0;
+            ClearPendingOwnerHydration();
             ClearSaveNotificationDiagnostics();
 
             Exception firstDisposeException = null;
@@ -2127,6 +2181,7 @@ namespace Hecton8.SaveSystem
             DrainWfcOutpostStateChangedSignals();
             DrainWfcSectorHydratedSignals();
             DrainChunkDehydratedSignals();
+            DrainPendingOwnerHydration();
         }
 
         public bool TryRequestSave(byte slotIndex, uint sourceHash, uint operationId = 0u)
@@ -4462,6 +4517,11 @@ namespace Hecton8.SaveSystem
             _saveableCount++;
             _registryDirty = true;
             _debugRegisteredCount = _saveableCount;
+
+            // Flag only. The caller is mid-OnEnable, so the retained payload is handed over on the
+            // dispatcher's Core update lane instead of re-entering the owner's own enable path.
+            if (_pendingOwnerHydrationData != null)
+                _pendingOwnerHydrationDrainRequested = true;
         }
 
         public void Unregister(ISaveable saveable)
@@ -4608,6 +4668,325 @@ namespace Hecton8.SaveSystem
             _debugRegisteredCount = _saveableCount;
         }
 
+        // ----------------------------------------------------------
+        //  REQUIRED-OWNER CENSUS AND DEFERRED HYDRATION
+        // ----------------------------------------------------------
+
+        /// <summary>
+        /// Maps one live registrant onto the First-20 save/load contract categories it authoritatively
+        /// owns (FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md:88 - position, inventory, route state,
+        /// opened/looted/scanned flags, hazard state). Cold path: one pass per save and per load over at
+        /// most <see cref="MaxRegisteredSaveables"/> entries, never inside a tick, job, or solver loop.
+        /// </summary>
+        private static uint ClassifySaveOwnerCategories(ISaveable saveable)
+        {
+            uint categories = 0u;
+            if (saveable is HectonSurvivalSystem)
+                categories |= SaveOwnerCensus.CategoryPlayerPosition;
+
+            if (saveable is PlayerInventory)
+                categories |= SaveOwnerCensus.CategoryInventory;
+
+            if (saveable is FirstHourDirector)
+                categories |= SaveOwnerCensus.CategoryRouteState;
+
+            if (saveable is WorldStateManager ||
+                saveable is HectonDiscoveryManager ||
+                saveable is ScanLogSystem)
+            {
+                categories |= SaveOwnerCensus.CategoryWorldObjectFlags;
+            }
+
+            if (saveable is HazardZoneManager || saveable is RadiationHazardGrid)
+                categories |= SaveOwnerCensus.CategoryHazardState;
+
+            return categories;
+        }
+
+        private uint CollectRegisteredOwnerCategories(out int liveOwnerCount)
+        {
+            uint categories = 0u;
+            int liveOwners = 0;
+            for (int i = 0; i < _saveableCount; i++)
+            {
+                ISaveable saveable = _saveables[i];
+                if (!IsAlive(saveable))
+                    continue;
+
+                liveOwners++;
+                categories |= ClassifySaveOwnerCategories(saveable);
+            }
+
+            liveOwnerCount = liveOwners;
+            return categories;
+        }
+
+        /// <summary>
+        /// Runs the required-owner census and surfaces the verdict on routes that survive a RELEASE
+        /// player build: the unconditional <see cref="GlobalTelemetryBus"/>, the async-persistence
+        /// black-box ring, and the public read-only projections on this service.
+        /// <see cref="LogInfo"/>/<see cref="LogWarning"/>/<see cref="LogError"/> here are
+        /// <c>[Conditional]</c> on UNITY_EDITOR/DEVELOPMENT_BUILD, so a log line alone would leave a
+        /// shipped build exactly as silent as the defect this census exists to expose. An empty registry
+        /// counts as a failure: the apply loop over zero entries emits nothing at all.
+        /// </summary>
+        private void ReportSaveOwnerCensus(string slotName, uint operationId, bool isLoadOperation)
+        {
+            uint presentCategories = CollectRegisteredOwnerCategories(out int liveOwnerCount);
+            uint missingCategories = SaveOwnerCensus.ResolveMissingCategories(presentCategories);
+            uint slotHash = ComputeSlotHash(slotName);
+
+            if (isLoadOperation)
+            {
+                LastLoadMissingOwnerCategories = missingCategories;
+                LastLoadLiveOwnerCount = liveOwnerCount;
+            }
+            else
+            {
+                LastSaveMissingOwnerCategories = missingCategories;
+            }
+
+            if (SaveOwnerCensus.IsCensusSatisfied(presentCategories, liveOwnerCount))
+                return;
+
+            uint seedHash = isLoadOperation
+                ? SaveOwnerCensusLoadContextSeedHash
+                : SaveOwnerCensusSaveContextSeedHash;
+            uint contextHash = SaveOwnerCensus.ComputeCensusContextHash(
+                seedHash,
+                slotHash,
+                missingCategories,
+                liveOwnerCount);
+            PublishPerformanceWarningBestEffort(
+                SaveOwnerCensusTelemetryHash,
+                contextHash,
+                SaveOwnerCensus.ResolveCensusCoverage01(presentCategories));
+
+            uint blackBoxFlags = AsyncPersistenceOwnerCensusFailureFlag |
+                                 (isLoadOperation ? AsyncPersistenceLoadOperationFlag : 0u);
+            RecordSaveOwnerCensusBlackBox(
+                operationId,
+                slotHash,
+                missingCategories,
+                liveOwnerCount,
+                blackBoxFlags);
+            LogSaveOwnerCensusFailure(slotName, missingCategories, liveOwnerCount, isLoadOperation);
+        }
+
+        /// <summary>
+        /// Writes one census verdict into the existing async-persistence black-box ring so it lands in
+        /// <c>Docs/AgentLogs/Dump_SAVE_MANAGER_ASYNC_PERSISTENCE.bin</c> alongside the save timings.
+        /// The 64-byte <see cref="AsyncPersistenceTelemetryEntry"/> ABI is unchanged; the numeric slots
+        /// are re-read against the census flags as:
+        /// <c>CompressedSizeBytes</c> = outstanding category mask,
+        /// <c>RawPayloadBytes</c> = live registrant count (or owners hydrated, on a deferred entry),
+        /// <c>Reserved</c> = outstanding category count.
+        /// </summary>
+        private void RecordSaveOwnerCensusBlackBox(
+            uint operationId,
+            uint slotHash,
+            uint categoryMask,
+            int ownerCount,
+            uint flags)
+        {
+            if (!_saveTelemetryRing.IsCreated)
+                return;
+
+            int index = _saveTelemetryWriteIndex;
+            _saveTelemetryRing[index] = new AsyncPersistenceTelemetryEntry
+            {
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                OperationId = operationId,
+                SaveDurationMs = 0u,
+                CompressedSizeBytes = categoryMask & SaveOwnerCensus.RequiredCategoryMask,
+                RawPayloadBytes = ownerCount > 0 ? (uint)ownerCount : 0u,
+                Flags = flags,
+                SlotHash = slotHash,
+                Reserved = (uint)SaveOwnerCensus.CountCategories(categoryMask)
+            };
+
+            index++;
+            if (index >= SaveTelemetryCapacity)
+                index = 0;
+            _saveTelemetryWriteIndex = index;
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSaveOwnerCensusFailure(
+            string slotName,
+            uint missingCategories,
+            int liveOwnerCount,
+            bool isLoadOperation)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogErrorBestEffort(
+                "[SaveManager] Required save-owner census FAILED for '" + slotName + "' during " +
+                (isLoadOperation ? "load" : "save") + ": " + liveOwnerCount.ToString() +
+                " live registrant(s), missing categories: " + DescribeCategoryMask(missingCategories) +
+                ". Each missing category's payload section is applied to nothing.");
+#endif
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDeferredOwnerHydrationExpiry(uint outstandingCategories)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogErrorBestEffort(
+                "[SaveManager] Deferred owner hydration window expired with categories still unowned: " +
+                DescribeCategoryMask(outstandingCategories) +
+                ". The loaded payload for those categories was never applied to a runtime owner.");
+#endif
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static string DescribeCategoryMask(uint categoryMask)
+        {
+            string description = string.Empty;
+            for (int i = 0; i < SaveOwnerCensus.RequiredCategoryCount; i++)
+            {
+                uint category = SaveOwnerCensus.ResolveCategoryAtIndex(i);
+                if ((categoryMask & category) == 0u)
+                    continue;
+
+                string label = SaveOwnerCensus.DescribeCategory(category);
+                description = description.Length == 0 ? label : description + ", " + label;
+            }
+
+            return description.Length == 0 ? "none" : description;
+        }
+#endif
+
+        /// <summary>
+        /// Retains the loaded payload for the categories no live owner consumed and arms the
+        /// registration-driven drain.
+        ///
+        /// This is deliberately NOT a bootstrap reorder. GameBootstrapper Step 6
+        /// <c>WaitForGroundReadyAsync</c> reads the player transform expecting the restored value, and
+        /// <c>_isLoadingSave</c> gates <c>SpawnPlayerAsync</c>, so load must keep preceding spawn.
+        /// Reordering would invert that dependency instead of fixing it; deferring the apply to the
+        /// owners' own re-registration leaves the bootstrap order intact.
+        /// </summary>
+        private void ArmDeferredOwnerHydration(
+            SaveData data,
+            uint slotHash,
+            uint operationId,
+            uint missingCategories)
+        {
+            uint outstanding = missingCategories & SaveOwnerCensus.RequiredCategoryMask;
+            if (data == null || outstanding == 0u)
+            {
+                ClearPendingOwnerHydration();
+                return;
+            }
+
+            _pendingOwnerHydrationData = data;
+            _pendingOwnerHydrationMissingCategories = outstanding;
+            _pendingOwnerHydrationSlotHash = slotHash;
+            _pendingOwnerHydrationOperationId = operationId;
+            _pendingOwnerHydrationDeadlineSeconds =
+                Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds + DeferredOwnerHydrationWindowSeconds;
+            _pendingOwnerHydrationDrainRequested = true;
+        }
+
+        private void ClearPendingOwnerHydration()
+        {
+            _pendingOwnerHydrationData = null;
+            _pendingOwnerHydrationMissingCategories = 0u;
+            _pendingOwnerHydrationSlotHash = 0u;
+            _pendingOwnerHydrationOperationId = 0u;
+            _pendingOwnerHydrationDeadlineSeconds = 0d;
+            _pendingOwnerHydrationDrainRequested = false;
+        }
+
+        /// <summary>
+        /// Hands the retained payload to the owners that re-registered after the apply loop ran, then
+        /// releases the payload. Runs on the Core <c>IUpdatable</c> dispatcher lane this service is
+        /// already registered on - not a private <c>Update</c>. An owner is only re-applied when it
+        /// carries a category that is still outstanding, so an owner that already consumed the payload
+        /// in the apply loop is never overwritten by this pass.
+        /// </summary>
+        private void DrainPendingOwnerHydration()
+        {
+            SaveData pendingData = _pendingOwnerHydrationData;
+            if (pendingData == null || _isBusy)
+                return;
+
+            if (_pendingOwnerHydrationDrainRequested)
+            {
+                _pendingOwnerHydrationDrainRequested = false;
+                SortRegistryIfDirty(LoadPriorityComparer);
+
+                uint outstanding = _pendingOwnerHydrationMissingCategories;
+                int appliedThisPass = 0;
+                for (int i = 0; i < _saveableCount && outstanding != 0u; i++)
+                {
+                    ISaveable saveable = _saveables[i];
+                    if (!IsAlive(saveable) || saveable is VoxelDeltaProcessor)
+                        continue;
+
+                    uint satisfied = SaveOwnerCensus.ResolveSatisfiedCategories(
+                        outstanding,
+                        ClassifySaveOwnerCategories(saveable));
+                    if (satisfied == 0u)
+                        continue;
+
+                    saveable.LoadFromSaveData(pendingData);
+                    outstanding = SaveOwnerCensus.ClearSatisfiedCategories(outstanding, satisfied);
+                    appliedThisPass++;
+                }
+
+                _pendingOwnerHydrationMissingCategories = outstanding;
+                if (appliedThisPass > 0)
+                {
+                    DeferredOwnerHydrationAppliedCount += appliedThisPass;
+                    PublishPerformanceWarningBestEffort(
+                        DeferredOwnerHydrationTelemetryHash,
+                        _pendingOwnerHydrationSlotHash,
+                        appliedThisPass);
+                    RecordSaveOwnerCensusBlackBox(
+                        _pendingOwnerHydrationOperationId,
+                        _pendingOwnerHydrationSlotHash,
+                        outstanding,
+                        appliedThisPass,
+                        AsyncPersistenceDeferredHydrationAppliedFlag | AsyncPersistenceLoadOperationFlag);
+                    LogInfo(
+                        "[SaveManager] Deferred owner hydration applied the loaded payload to " +
+                        appliedThisPass.ToString() + " owner(s) that re-registered after the load apply loop.");
+                }
+
+                if (outstanding == 0u)
+                {
+                    ClearPendingOwnerHydration();
+                    return;
+                }
+            }
+
+            if (!SaveOwnerCensus.IsDeferredHydrationExpired(
+                    Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds,
+                    _pendingOwnerHydrationDeadlineSeconds))
+            {
+                return;
+            }
+
+            uint expiredCategories = _pendingOwnerHydrationMissingCategories;
+            PublishPerformanceWarningBestEffort(
+                DeferredOwnerHydrationExpiredTelemetryHash,
+                SaveOwnerCensus.ComputeCensusContextHash(
+                    SaveOwnerCensusLoadContextSeedHash,
+                    _pendingOwnerHydrationSlotHash,
+                    expiredCategories,
+                    _saveableCount),
+                SaveOwnerCensus.CountCategories(expiredCategories));
+            RecordSaveOwnerCensusBlackBox(
+                _pendingOwnerHydrationOperationId,
+                _pendingOwnerHydrationSlotHash,
+                expiredCategories,
+                _saveableCount,
+                AsyncPersistenceDeferredHydrationExpiredFlag | AsyncPersistenceLoadOperationFlag);
+            LogDeferredOwnerHydrationExpiry(expiredCategories);
+            ClearPendingOwnerHydration();
+        }
+
         private static int CompareSavePriority(ISaveable a, ISaveable b)
         {
             if (ReferenceEquals(a, b))
@@ -4752,6 +5131,7 @@ namespace Hecton8.SaveSystem
             ref bool snapshotPauseActive)
         {
             SortRegistryIfDirty(SavePriorityComparer);
+            ReportSaveOwnerCensus(slotName, operationId, isLoadOperation: false);
             for (int i = 0; i < _saveableCount; i++)
             {
                 ISaveable saveable = _saveables[i];
@@ -6071,6 +6451,8 @@ namespace Hecton8.SaveSystem
             }
 
             _isBusy = true;
+            // A new load supersedes any payload still retained for owners that never came back.
+            ClearPendingOwnerHydration();
             Exception startupException = null;
             NotifyMacroDatabasePersistenceGateBestEffort(true, ref startupException);
             if (startupException != null)
@@ -6288,6 +6670,9 @@ namespace Hecton8.SaveSystem
                     loadedPlayerDialogueChoiceFlags);
                 QuestManager.StageLoadedPackedState(loadedQuestHeader, loadedQuestStateWords);
 
+                ReportSaveOwnerCensus(slotName, operationId, isLoadOperation: true);
+                uint appliedOwnerCategories = 0u;
+                int appliedOwnerCount = 0;
                 long loadApplyDeadlineTicks = HydrationScheduler.CreateDeadlineTicks();
                 for (int i = 0; i < _saveableCount; i++)
                 {
@@ -6296,12 +6681,23 @@ namespace Hecton8.SaveSystem
                         continue;
 
                     saveable.LoadFromSaveData(data);
+                    appliedOwnerCount++;
+                    appliedOwnerCategories |= ClassifySaveOwnerCategories(saveable);
                     if (i + 1 < _saveableCount && Stopwatch.GetTimestamp() >= loadApplyDeadlineTicks)
                     {
                         await HydrationScheduler.NextFrameAsync(destroyCancellationToken);
                         loadApplyDeadlineTicks = HydrationScheduler.CreateDeadlineTicks();
                     }
                 }
+
+                // Derived from what actually consumed the payload, not from the pre-loop snapshot, so an
+                // owner that registered part-way through the awaited apply loop is not hydrated twice.
+                LastLoadAppliedOwnerCount = appliedOwnerCount;
+                ArmDeferredOwnerHydration(
+                    data,
+                    ComputeSlotHash(slotName),
+                    operationId,
+                    SaveOwnerCensus.ResolveMissingCategories(appliedOwnerCategories));
 
                 if (persistentWorldRegistryForLoad != null)
                 {
