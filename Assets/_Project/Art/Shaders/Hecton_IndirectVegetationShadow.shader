@@ -461,7 +461,11 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                     (proximity * saturate(playerSpeed * 0.16) * playerPush * typeScale * bendMask);
             }
 
-            float ResolveOrganicEntropyProgress(float encodedHeightScale, float encodedWidthScale)
+            // Reference body from the lit pass. The old local version hardcoded a 0.85 s decay and
+            // read _Time.y raw, so it knew nothing of the negative-width encoding that means a 600 s
+            // decay - for those instances the shadow computed an entropy progress off by most of the
+            // range, not by a rounding error, and scaled the blade accordingly.
+            float ResolveOrganicEntropyProgress(float encodedHeightScale, float encodedWidthScale, float timeValue)
             {
                 if (!isfinite(encodedHeightScale))
                     return 0.0;
@@ -470,7 +474,9 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                     return 0.0;
 
                 float safeWidthScale = isfinite(encodedWidthScale) ? encodedWidthScale : 0.0;
-                return saturate((_Time.y - max(0.0, safeWidthScale)) / 0.85);
+                float entropyDuration = safeWidthScale < 0.0 ? 600.0 : 0.85;
+                float entropyStartTime = safeWidthScale < 0.0 ? abs(safeWidthScale) : max(0.0, safeWidthScale);
+                return saturate((timeValue - entropyStartTime) / entropyDuration);
             }
 
             float2 ResolveStateBlendWeights(float runtimeState)
@@ -513,7 +519,11 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
                 float encodedHeightScale = instanceData.HeightScale;
                 float encodedWidthScale = instanceData.WidthScale;
-                float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale);
+                // Hoisted above the entropy call to match the lit pass, which computes the same
+                // _Time.y * max(SwaySpeed, 0.05) before using it. It was declared further down here,
+                // which is why the local entropy function had to invent its own time base.
+                float timeValue = _Time.y * max(instanceData.SwaySpeed, 0.05);
+                float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
                 float heightScale = saturate(abs(encodedHeightScale));
                 float widthScale = entropyProgress > 0.0001 ? 1.0 : max(0.2, encodedWidthScale);
                 float variation = frac(instanceData.Variation);
@@ -548,7 +558,6 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float3 baseNormalWS = TransformDirection(instanceMatrix, normalOS);
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 animatedPositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS + _GlobalFloatingOffset.xyz;
-                float timeValue = _Time.y * max(instanceData.SwaySpeed, 0.05);
                 float healthSwayScale = lerp(0.35, 1.0, saturate(instanceData.HealthNormalized));
                 float3 sampledFlowVector = ResolveMarineSnowFlowField(animatedPositionWS);
                 float2 sampledCurrentVector = sampledFlowVector.xz;

@@ -480,7 +480,9 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                     return 0.0;
 
                 float safeWidthScale = isfinite(encodedWidthScale) ? encodedWidthScale : 0.0;
-                return saturate((timeValue - max(0.0, safeWidthScale)) / 0.85);
+                float entropyDuration = safeWidthScale < 0.0 ? 600.0 : 0.85;
+                float entropyStartTime = safeWidthScale < 0.0 ? abs(safeWidthScale) : max(0.0, safeWidthScale);
+                return saturate((timeValue - entropyStartTime) / entropyDuration);
             }
 
             float2 ResolveStateBlendWeights(float runtimeState)
@@ -523,7 +525,14 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
                 float encodedHeightScale = instanceData.HeightScale;
                 float encodedWidthScale = instanceData.WidthScale;
-                float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
+                // timeValue stays a PARAMETER here and must: this pass calls AnimatePositionWS twice,
+                // with _Time.y and with previousTime, and the difference between the two results is the
+                // motion vector. What was wrong is that entropy got the raw time while the lit pass
+                // scales by authoredSwaySpeed first, so both are hoisted above the call and the scaled
+                // one is passed - same expression as the lit pass, still evaluated at two times.
+                float authoredSwaySpeed = max(instanceData.SwaySpeed, 0.05);
+                float scaledTimeValue = timeValue * authoredSwaySpeed;
+                float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, scaledTimeValue);
                 float heightScale = saturate(abs(encodedHeightScale));
                 float widthScale = entropyProgress > 0.0001 ? 1.0 : max(0.2, encodedWidthScale);
                 float variation = frac(instanceData.Variation);
@@ -531,7 +540,6 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float bendMask = heightMask * heightMask * max(instanceData.BendAmplitude, 0.0);
                 float curvatureMask = heightMask;
                 float instanceNoise = Hash21(originWS.xz + variation);
-                float authoredSwaySpeed = max(instanceData.SwaySpeed, 0.05);
                 float healthSwayScale = lerp(0.35, 1.0, saturate(instanceData.HealthNormalized));
                 float instanceHeight;
                 float instanceWidth;
@@ -568,7 +576,6 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                     ? SafeNormalize2(sampledCurrentVector)
                     : ResolvePlanarCurrentDirection();
                 float currentStrength = max(FastLength2(sampledCurrentVector), ResolvePlanarCurrentStrength());
-                float scaledTimeValue = timeValue * authoredSwaySpeed;
                 float swayWave = FastTriangleSigned(scaledTimeValue * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(basePositionWS, bendMask, instanceType, instanceNoise);
                 animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave * healthSwayScale);
