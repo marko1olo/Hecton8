@@ -96,16 +96,23 @@ namespace Hecton8.Data
         }
 
         /// <remarks>
-        /// The record reference is <c>scoped</c> because it never reaches the returned span. The
-        /// record is a pure offset/length table and is handed to the arena by value; the arena
-        /// builds the span over its own long-lived static buffer with
-        /// <c>MemoryMarshal.CreateReadOnlySpan</c>. Without the annotation the compiler
-        /// conservatively ties the out span's escape scope to this <c>in</c> reference, so every
-        /// caller that held the record in a local reported CS9091 ("returns local by reference")
-        /// even though nothing can dangle.
+        /// The record reference never reaches the returned span: the record is a pure offset/length
+        /// table and is handed to the arena by value, and the arena builds the span over its own
+        /// long-lived static buffer with <c>MemoryMarshal.CreateReadOnlySpan</c>. The compiler
+        /// cannot see that, so it conservatively ties the out span's escape scope to this
+        /// <c>in</c> reference and every caller holding the record in a local reports CS9091
+        /// ("returns local by reference") even though nothing can dangle.
+        ///
+        /// The `scoped` modifier is the right way to say so, but it is a C# 11 feature and Unity
+        /// 6000.5 compiles this project at C# 9 - it was a hard CS8773 build error, not a warning,
+        /// and it broke every assembly in the project. So CS9091 stands as a warning here until the
+        /// project moves to C# 11, at which point `scoped` should come back. It is deliberately NOT
+        /// suppressed in Assets/csc.rsp: that file is gitignored, so a suppression there would only
+        /// silence the warning on one machine and quietly make that build differ from everyone
+        /// else's.
         /// </remarks>
         public static bool TryGetUtf8(
-            scoped in H8AppliedLorePacketRecord record,
+            in H8AppliedLorePacketRecord record,
             H8AppliedLoreSurface surface,
             out ReadOnlySpan<byte> utf8Bytes)
         {
