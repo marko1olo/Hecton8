@@ -202,6 +202,21 @@ namespace Hecton8.Bootstrap
             if (TryAbortForUsableExistingRuntime())
                 return false;
 
+            // Ask before aborting anyone. SceneInstantiationGate has no GlobalRegistryServiceSlot, so its
+            // slot resolves to Unknown, which is never scene-runtime hot-swappable. Once the registry is
+            // ready-locked the RegisterSceneInstantiationGateRuntime call below is guaranteed to throw -
+            // and both AbortRuntimeOwner calls between here and there would already have torn down the
+            // live gate, leaving the scene with no instantiation gate at all. Stand down instead.
+            //
+            // Only when a real takeover is needed: if this instance already owns the registry slot, the
+            // registration early-returns on reference equality and never reaches the guard.
+            if (!ReferenceEquals(GlobalRegistry.SceneInstantiationGateRuntime, this) &&
+                !GlobalRegistry.IsRuntimeServicePublicationOpen<SceneInstantiationGate>())
+            {
+                AbortRuntimeOwner();
+                return false;
+            }
+
             SceneInstantiationGate runtime = s_activeRuntime;
             if (!ReferenceEquals(runtime, null) && !ReferenceEquals(runtime, this))
             {
