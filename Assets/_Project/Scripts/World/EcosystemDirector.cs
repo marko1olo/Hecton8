@@ -313,6 +313,10 @@ namespace Hecton8.World
         private const float BiomeGradientAmbientSpawnGain = 0.18f;
         private const float BiomeGradientPredatorSpawnGain = 0.08f;
         private const float BiomeGradientCapacityGain = 0.04f;
+        private const float TrenchBiomeMaskThreshold = 0.8f;
+        private const float ShelfBiomeMaskThreshold = 0.5f;
+        private const int GeologyBiomeCacheCapacity = 256;
+        private const uint GeologyBiomeCacheIndexMask = (uint)GeologyBiomeCacheCapacity - 1u;
         private const int PredatorSpawnValidationHitCapacity = 64;
         private const float ApexSpawnGateCapsuleRadiusMeters = 2.5f;
         private const float ApexSpawnGateCapsuleHalfHeightMeters = 3f;
@@ -1516,6 +1520,22 @@ namespace Hecton8.World
         private float _pendingBiomassOvergrowth01;
         private float _lastPublishedBiomassOvergrowth01 = -1f;
         private int _nextHibernationPopulationSyncIndex;
+
+        private struct GeologyBiomeCacheEntry
+        {
+            public int2 SectorCoord;
+            public int BiomeId;
+            public byte Occupied;
+        }
+
+        // COLD ALLOC: GeologyBiomeCacheEntry[256] - direct-mapped sector -> biome classification cache so
+        // the macro geology stack runs once per 1 km sector instead of once per 50 m biomass macro cell
+        // (400 macro cells per sector) - owner: EcosystemDirector
+        private GeologyBiomeCacheEntry[] _geologyBiomeCache;
+        private WorldMacroGeologyParams _geologyBiomeParams;
+        private bool _geologyBiomeParamsResolved;
+        private int _geologyBiomeParamsSeed;
+
         private MapMagicBridge _cachedMapMagicBridge;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
@@ -2425,7 +2445,7 @@ namespace Hecton8.World
                 if (_activeSectorCount >= _sectorFrontStates.Length)
                     continue;
 
-                int biomeId = ResolveBiomeIdForSector(saveRecord.SectorCoord);
+                int biomeId = ResolveGeologyBiomeIdForSector(saveRecord.SectorCoord);
                 UnpackPopulationCounts(saveRecord.PackedPopulations, out int preyPopulation, out int predatorPopulation);
                 UnpackAdaptationTraits(
                     saveRecord.PackedAdaptation,
@@ -7204,7 +7224,7 @@ namespace Hecton8.World
 
         private SectorPopulationState SeedSectorState(int2 sectorCoord, bool seedWithBaseline)
         {
-            int biomeId = ResolveBiomeIdForSector(sectorCoord);
+            int biomeId = ResolveGeologyBiomeIdForSector(sectorCoord);
             ResolveBucketTablePopulation(
                 sectorCoord,
                 apexSectorBucketCutoff,
@@ -7339,7 +7359,7 @@ namespace Hecton8.World
             int2 sectorCoord = new int2(
                 FloorDiv(macroCellCoord.x, (int)(SectorEdgeLengthMeters * InvBiomassMacroCellSizeMeters)),
                 FloorDiv(macroCellCoord.y, (int)(SectorEdgeLengthMeters * InvBiomassMacroCellSizeMeters)));
-            int biomeId = ResolveBiomeIdForSector(sectorCoord);
+            int biomeId = ResolveGeologyBiomeIdForSector(sectorCoord);
             float food01 = ResolveRuntimeSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f);
             float biomeCapacityBias = (math.select(0f, 0.08f, biomeId == 1)) - (math.select(0f, 0.05f, biomeId == 2));
             float gradientCapacityBias = math.saturate(_biomeGradientBlend01) * BiomeGradientCapacityGain;
@@ -8473,6 +8493,113 @@ namespace Hecton8.World
             }
         }
 
+        /// <summary>
+        /// Classifies a 1 km sector from the macro geology field that actually shapes the terrain,
+        /// so fauna density follows the seafloor the player can see instead of a coordinate hash.
+        /// Falls back to <see cref="ResolveBiomeIdForSector"/> until the runtime world seed exists.
+        /// </summary>
+        private int ResolveGeologyBiomeIdForSector(int2 sectorCoord)
+        {
+            if (!TryResolveGeologyBiomeParams(out WorldMacroGeologyParams parameters))
+                return ResolveBiomeIdForSector(sectorCoord);
+
+            GeologyBiomeCacheEntry[] cache = _geologyBiomeCache;
+            if (cache == null)
+            {
+                cache = new GeologyBiomeCacheEntry[GeologyBiomeCacheCapacity];
+                _geologyBiomeCache = cache;
+            }
+
+            int slot = (int)(MixSectorBits(sectorCoord.x, sectorCoord.y) & GeologyBiomeCacheIndexMask);
+            if (cache[slot].Occupied != 0 && cache[slot].SectorCoord.Equals(sectorCoord))
+                return cache[slot].BiomeId;
+
+            // Sector centre in absolute world metres, kept in double: at the 777 km AUP range a
+            // float32 centre loses whole-metre resolution, which would smear the trench/shelf
+            // classification across sector borders.
+            double centerX = ((double)sectorCoord.x + 0.5d) * SectorEdgeLengthMeters;
+            double centerZ = ((double)sectorCoord.y + 0.5d) * SectorEdgeLengthMeters;
+            WorldMacroGeologySample sample = WorldMacroGeologyFields.Evaluate(centerX, centerZ, in parameters);
+            int biomeId = ResolveBiomeIdFromGeologySample(in sample);
+
+            cache[slot] = new GeologyBiomeCacheEntry
+            {
+                SectorCoord = sectorCoord,
+                BiomeId = biomeId,
+                Occupied = 1
+            };
+            return biomeId;
+        }
+
+        /// <summary>
+        /// Maps a macro geology sample onto the existing three-lane biome contract. The lane
+        /// semantics are unchanged - only their derivation is. Lane 1 is the rich lane
+        /// (+0.08 carrying capacity) and lane 2 the scarce lane (-0.05), per
+        /// <see cref="ResolveBiomassCarryingCapacity01"/>.
+        /// </summary>
+        private static int ResolveBiomeIdFromGeologySample(in WorldMacroGeologySample sample)
+        {
+            float trenchMask = math.select(0f, sample.TrenchMask, math.isfinite(sample.TrenchMask));
+            float shelfMask = math.select(0f, sample.ShelfMask, math.isfinite(sample.ShelfMask));
+
+            // Abyssal trench wins where both masks overlap: it is the stronger structure. A thin food
+            // column feeding pressure-adapted hunters is the scarce lane.
+            if (trenchMask > TrenchBiomeMaskThreshold)
+                return 2;
+
+            // Photic shelf: dense kelp and schooling prey are the rich lane.
+            if (shelfMask > ShelfBiomeMaskThreshold)
+                return 1;
+
+            return 0;
+        }
+
+        private bool TryResolveGeologyBiomeParams(out WorldMacroGeologyParams parameters)
+        {
+            if (!global::HectonWorldGenerator.TryGetActiveRuntimeWorldSeed(out int runtimeWorldSeed))
+            {
+                parameters = default;
+                return false;
+            }
+
+            // Validate the fast path on the seed alone. ResolveWaterSurfaceLevel() walks the ocean
+            // service and can fall through to a MapMagic bridge resolve, which is far too expensive to
+            // run per biomass macro cell - and the classification below reads only TrenchMask and
+            // ShelfMask, neither of which is derived from WaterSurfaceY.
+            if (_geologyBiomeParamsResolved && _geologyBiomeParamsSeed == runtimeWorldSeed)
+            {
+                parameters = _geologyBiomeParams;
+                return true;
+            }
+
+            float waterSurfaceY = ResolveWaterSurfaceLevel();
+            if (!math.isfinite(waterSurfaceY))
+                waterSurfaceY = DefaultWaterSurfaceLevelY;
+
+            parameters = WorldMacroGeologyParams.CreateDefault(
+                WorldMacroGeologyFields.CombineWorldSeed(
+                    unchecked((uint)WorldMacroGeologyFields.DefaultAuthoringSeed),
+                    runtimeWorldSeed));
+            parameters.WaterSurfaceY = waterSurfaceY;
+
+            _geologyBiomeParams = parameters;
+            _geologyBiomeParamsSeed = runtimeWorldSeed;
+            _geologyBiomeParamsResolved = true;
+
+            // A reseed invalidates every cached classification.
+            if (_geologyBiomeCache != null)
+                Array.Clear(_geologyBiomeCache, 0, _geologyBiomeCache.Length);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Burst-safe coordinate-hash fallback. Retained deliberately:
+        /// <c>HeadlessThresholdMigrationJob</c> scores neighbour sectors that are not tracked yet, and
+        /// the macro geology stack is neither reachable from Burst through the managed world-seed
+        /// lookup nor cheap enough to run per migration candidate. Managed seeding, save restore and
+        /// carrying-capacity paths use <see cref="ResolveGeologyBiomeIdForSector"/> instead.
+        /// </summary>
         private static int ResolveBiomeIdForSector(int2 sectorCoord)
         {
             uint mix = MixSectorBits(sectorCoord.x, sectorCoord.y);
