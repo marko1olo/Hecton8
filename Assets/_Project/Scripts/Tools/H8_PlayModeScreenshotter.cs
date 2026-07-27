@@ -1,54 +1,253 @@
 #if UNITY_EDITOR
+using System;
+using System.Globalization;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using System.IO;
 
 namespace Hecton8.Tools
 {
+    /// <summary>
+    /// Single owner of the on-disk layout every HECTON-8 capture route writes into.
+    ///
+    /// It lives in Hecton8.Core rather than the editor assembly because both sides of the capture
+    /// route need it and only this direction of reference exists: Hecton8.Editor references
+    /// Hecton8.Core (Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef:5), never the reverse.
+    /// The play-mode component below and Hecton8.EditorTools.H8_RouteCaptureStation therefore share
+    /// one convention instead of two drifting copies.
+    ///
+    /// Every run gets its OWN directory, and the directory is proven unused before it is created.
+    /// That is deliberate and it is the reason nothing here deletes anything. AGENTS.md:481
+    /// (Atomic File Delete Rule) orders every .png and .log in the output directory removed before
+    /// a render run so that nobody grades a stale screenshot. With several agents capturing into one
+    /// shared folder that rule destroys another agent's fresh evidence instead of stale evidence.
+    /// A fresh, provably empty directory satisfies the intent of the rule - no stale artifact can be
+    /// mistaken for this run's - without the concurrent-delete hazard.
+    /// </summary>
+    public static class H8CaptureRunDirectory
+    {
+        /// <summary>Project-root-relative capture root. Never an absolute developer path: AGENTS.md:126.</summary>
+        public const string CaptureRootFolder = "Logs";
+
+        public const string CaptureRootSubFolder = "RouteCaptures";
+
+        /// <summary>
+        /// Upper bound on the collision probe. Reaching it means something is wrong with the
+        /// filesystem or the label, and the caller must fail loudly rather than reuse a directory.
+        /// </summary>
+        public const int MaxRunDirectoryAttempts = 4096;
+
+        private const string FallbackLabel = "route";
+
+        // Allocated once at type initialisation so the probe below never creates a delegate per call.
+        private static readonly Func<string, bool> DirectoryExistsProbe = Directory.Exists;
+
+        /// <summary>
+        /// Project root resolved from Application.dataPath, per AGENTS.md:126. This is the only
+        /// path anchor any capture route may use.
+        /// </summary>
+        public static string ResolveProjectRoot()
+        {
+            return Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+        }
+
+        public static string ResolveCaptureRoot()
+        {
+            return Path.Combine(ResolveProjectRoot(), CaptureRootFolder, CaptureRootSubFolder);
+        }
+
+        public static string UtcStamp()
+        {
+            return DateTime.UtcNow.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Reduces a caller-supplied label to characters that are legal in a directory name on every
+        /// target filesystem. Pure: no Unity types, no IO. Unknown input never produces an empty
+        /// name, because an empty name would collapse every run back into one shared directory.
+        /// </summary>
+        public static string SanitizeLabel(string label)
+        {
+            if (string.IsNullOrEmpty(label))
+                return FallbackLabel;
+
+            char[] buffer = new char[label.Length];
+            int written = 0;
+            for (int i = 0; i < label.Length; i++)
+            {
+                char c = label[i];
+                bool keep = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
+                            || c == '-' || c == '_';
+                buffer[written++] = keep ? c : '_';
+            }
+
+            string sanitized = new string(buffer, 0, written).Trim('_');
+            return sanitized.Length == 0 ? FallbackLabel : sanitized;
+        }
+
+        /// <summary>
+        /// Picks a run directory that does not exist yet. Pure apart from the injected existence
+        /// predicate, so it is executable and testable outside Unity.
+        ///
+        /// Returns false when no free name was found inside maxAttempts. The caller must then abort
+        /// the capture: silently reusing an existing directory is exactly the overwrite this method
+        /// exists to prevent.
+        /// </summary>
+        public static bool TryResolveUniqueRunDirectory(
+            string captureRoot,
+            string label,
+            string utcStamp,
+            Func<string, bool> directoryExists,
+            int maxAttempts,
+            out string runDirectory)
+        {
+            runDirectory = null;
+
+            if (string.IsNullOrEmpty(captureRoot) || directoryExists == null || maxAttempts < 1)
+                return false;
+
+            string baseName = SanitizeLabel(label) + "_" + SanitizeLabel(utcStamp);
+            string candidate = Path.Combine(captureRoot, baseName);
+            if (!directoryExists(candidate))
+            {
+                runDirectory = candidate;
+                return true;
+            }
+
+            for (int attempt = 2; attempt <= maxAttempts; attempt++)
+            {
+                candidate = Path.Combine(
+                    captureRoot,
+                    baseName + "_" + attempt.ToString(CultureInfo.InvariantCulture));
+
+                if (directoryExists(candidate))
+                    continue;
+
+                runDirectory = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves and physically creates this run's directory. Creates only; never deletes.
+        /// </summary>
+        public static bool TryCreateRunDirectory(string label, out string runDirectory)
+        {
+            string captureRoot = ResolveCaptureRoot();
+            Directory.CreateDirectory(captureRoot);
+
+            if (!TryResolveUniqueRunDirectory(
+                    captureRoot,
+                    label,
+                    UtcStamp(),
+                    DirectoryExistsProbe,
+                    MaxRunDirectoryAttempts,
+                    out runDirectory))
+            {
+                return false;
+            }
+
+            Directory.CreateDirectory(runDirectory);
+            return true;
+        }
+    }
+
     public class H8_PlayModeScreenshotter : MonoBehaviour
     {
-        private float _timeoutWait = 0f;
-        private int _waitFrames = 0;
-        private GameObject _cachedPlayer;
+        /// <summary>Wall-clock budget for the player to appear. Real seconds, not frames.</summary>
+        public const float PlayerWaitSeconds = 180f;
 
-        // Prevent running every frame indefinitely by spacing out the search
-        private float _searchTimer = 0f;
+        /// <summary>
+        /// Wall-clock settle budget after the player is found (or the wait expires).
+        ///
+        /// This used to be `_waitFrames > 600` with the comment "(10s)". That conversion assumed 60
+        /// game frames per second. It does not hold in this editor: the measurement recorded in
+        /// Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:61-65 is "3300
+        /// EditorApplication.update callbacks advanced the game by 19 frames in 13.7s wall - about
+        /// one game frame per second, with or without -nographics". At that rate 600 frames is about
+        /// ten MINUTES, so any external timeout shorter than that killed the run before a single
+        /// pixel was written, and the log showed no capture and no error. Wall time is the only
+        /// honest unit here.
+        /// </summary>
+        public const float SettleSeconds = 20f;
+
+        private float _playerWaitStartedAt = -1f;
+        private float _settleStartedAt = -1f;
+        private float _nextPlayerSearchAt = -1f;
+        private GameObject _cachedPlayer;
 
         void Update()
         {
-            _timeoutWait += Time.unscaledDeltaTime;
-
-            var player = _cachedPlayer;
-            if (player == null)
+            // realtimeSinceStartup, not an accumulation of unscaledDeltaTime: unscaledDeltaTime is
+            // clamped by Time.maximumDeltaTime, so on a one-frame-per-second boot the accumulator
+            // reports roughly a third of the real elapsed time and every budget here silently
+            // stretches by that factor.
+            float now = Time.realtimeSinceStartup;
+            if (_playerWaitStartedAt < 0f)
             {
-                _searchTimer -= Time.unscaledDeltaTime;
-                if (_searchTimer <= 0f)
-                {
-                    player = GameObject.FindWithTag("Player");
-                    if (player == null) player = UnityEngine.Object.FindAnyObjectByType<Hecton8.Gameplay.HectonPlayerMovement>()?.gameObject;
-                    if (player != null) _cachedPlayer = player;
-
-                    // Only check every 1 second instead of every frame
-                    _searchTimer = 1.0f;
-                }
+                _playerWaitStartedAt = now;
+                _nextPlayerSearchAt = now;
             }
 
-            // Wait up to 180s for massive scenes to boot
-            if (_cachedPlayer != null || _timeoutWait > 180f)
+            if (_cachedPlayer == null && now >= _nextPlayerSearchAt)
             {
-                _waitFrames++;
-                if (_waitFrames > 600) // wait an extra 600 frames (10s) for bootstrap and physics/water to settle
+                // Cold, once-a-second diagnostic lookup in an editor-only capture harness, and it
+                // must see DontDestroyOnLoad objects, which scene-root traversal cannot -
+                // H8_HeadlessPlayModeProbe.cs:768-771 records that blind spot. Not a hot path.
+                GameObject found = GameObject.FindWithTag("Player");
+                if (found == null)
                 {
-                    enabled = false;
-                    CaptureAndExit(_cachedPlayer);
+                    var movement = UnityEngine.Object.FindAnyObjectByType<Hecton8.Gameplay.HectonPlayerMovement>();
+                    if (movement != null)
+                        found = movement.gameObject;
                 }
+
+                if (found != null)
+                    _cachedPlayer = found;
+
+                _nextPlayerSearchAt = now + 1f;
             }
+
+            if (_cachedPlayer == null && now - _playerWaitStartedAt < PlayerWaitSeconds)
+                return;
+
+            if (_settleStartedAt < 0f)
+            {
+                _settleStartedAt = now;
+                Debug.Log(
+                    $"[H8PlayModeScreenshotter] Settling {SettleSeconds:F0}s before capture. " +
+                    $"playerFound={_cachedPlayer != null} waitedSeconds={now - _playerWaitStartedAt:F1}");
+                return;
+            }
+
+            if (now - _settleStartedAt < SettleSeconds)
+                return;
+
+            enabled = false;
+            CaptureAndExit(_cachedPlayer);
         }
 
         private void CaptureAndExit(GameObject player)
         {
             Debug.Log($"[H8PlayModeScreenshotter] Capture started. Player spawned: {player != null}");
+
+            // -nographics has no graphics device, so every render below returns nothing and the PNG
+            // would be a plausible-looking blank. Say so and fail instead of writing a file that
+            // reads like evidence. AGENTS.md:128 already bans -nographics for MapMagic/compute
+            // generation for the same reason.
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[H8PlayModeScreenshotter] NO GRAPHICS DEVICE (graphicsDeviceType=Null). This run " +
+                    "was launched with -nographics; ScreenCapture and camera rendering produce no " +
+                    "pixels. No PNG written. Re-run batchmode WITHOUT -nographics.");
+                UnityEditor.EditorApplication.isPlaying = false;
+                UnityEditor.EditorApplication.Exit(3);
+                return;
+            }
 
             Camera targetCam = null;
             if (player != null)
@@ -58,7 +257,25 @@ namespace Hecton8.Tools
 
             if (targetCam == null)
             {
-                targetCam = Camera.main;
+                // Camera.main is banned (AGENTS.md:336) and it is also wrong here: it resolves only
+                // a camera tagged MainCamera, so an untagged player rig silently fell through to the
+                // origin fallback below and captured empty water.
+                Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(
+                    FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+                float bestDepth = float.NegativeInfinity;
+                for (int i = 0; i < cameras.Length; i++)
+                {
+                    Camera candidate = cameras[i];
+                    if (candidate == null || !candidate.isActiveAndEnabled || candidate.targetTexture != null)
+                        continue;
+
+                    if (candidate.depth <= bestDepth)
+                        continue;
+
+                    bestDepth = candidate.depth;
+                    targetCam = candidate;
+                }
             }
 
             if (targetCam == null)
@@ -105,12 +322,39 @@ namespace Hecton8.Tools
             rt.Release();
             DestroyImmediate(rt);
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string outputDir = Path.Combine(projectRoot, "Logs", "Screenshots");
-            Directory.CreateDirectory(outputDir);
-            string outPath = Path.Combine(outputDir, "shot_02_PLAYMODE_ACTUAL.png");
+            // One fixed filename in one shared folder was the old behaviour: Logs/Screenshots/
+            // shot_02_PLAYMODE_ACTUAL.png. A second run, or a concurrent lane, overwrote the first
+            // run's evidence with no trace, and AGENTS.md:481 additionally orders every .png in that
+            // folder deleted before a run. A per-run directory removes both hazards.
+            if (!H8CaptureRunDirectory.TryCreateRunDirectory("playmode", out string runDir))
+            {
+                Debug.LogError(
+                    "[H8PlayModeScreenshotter] Could not reserve an unused capture directory under " +
+                    H8CaptureRunDirectory.ResolveCaptureRoot() +
+                    ". Refusing to overwrite an existing capture. No PNG written.");
+                DestroyImmediate(tex);
+                UnityEditor.EditorApplication.isPlaying = false;
+                UnityEditor.EditorApplication.Exit(5);
+                return;
+            }
+
+            string outPath = Path.Combine(runDir, "playmode_frame.png");
             File.WriteAllBytes(outPath, tex.EncodeToPNG());
             DestroyImmediate(tex);
+
+            // camera.md:57 requires every capture to state what it is. This one is a live play-mode
+            // frame off a scene camera, not a staged editor render and not gameplay footage.
+            File.WriteAllText(
+                Path.Combine(runDir, "capture_truth.txt"),
+                "captureTruth=playmode_scene_camera\n" +
+                "route=Hecton8.Tools.H8_PlayModeScreenshotter\n" +
+                "camera=" + targetCam.name + "\n" +
+                "playerFound=" + (player != null ? "true" : "false") + "\n" +
+                "resolution=" + W.ToString(CultureInfo.InvariantCulture) + "x" +
+                H_RES.ToString(CultureInfo.InvariantCulture) + "\n" +
+                "graphicsDevice=" + SystemInfo.graphicsDeviceType + "\n" +
+                "acceptance=NONE - QUALITY_GATES.md:176: a raw diagnostic capture can reject visual " +
+                "quality, never accept it.\n");
 
             Debug.Log($"[H8PlayModeScreenshotter] Saved -> {outPath}");
 

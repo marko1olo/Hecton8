@@ -1,44 +1,63 @@
-using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.SceneManagement;
-using System.Collections;
+using UnityEngine;
 
+/// <summary>
+/// Menu entry for the underwater route shot.
+///
+/// WHAT THIS USED TO DO, and why none of it survived:
+///
+/// * it wrote the PNG to `C:/Users/Admin/.gemini/antigravity/brain/7b5d06d2-.../
+///   underwater_capture.png`, a hardcoded absolute developer path banned outright by
+///   `AGENTS.md:126` - on any other machine, and on this one after that scratch folder is cleared,
+///   the capture went nowhere and the menu item still reported success;
+/// * it subscribed `EditorApplication.update += WaitAndCapture` and never unsubscribed. There was no
+///   `-=` anywhere in the file. `COMMON_SENSE.md:62` requires every `+=` to have a guaranteed `-=`;
+///   the leaked callback kept counting frames for the rest of the editor session and re-fired
+///   `EditorApplication.Exit(0)` behaviour off a static counter;
+/// * it called `EditorSceneManager.OpenScene` unconditionally, discarding whatever unsaved scene
+///   work was open, then forced Play Mode from a menu click;
+/// * it resolved the camera through `Camera.main`, which is banned by `AGENTS.md:336` and only ever
+///   finds a camera tagged `MainCamera`;
+/// * it waited on a raw frame counter (200 frames, then 400), a unit measured in this editor at
+///   roughly one game frame per wall second - see
+///   `Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:61-65`.
+///
+/// It is now a thin, honest caller of the one capture owner,
+/// `Hecton8.EditorTools.H8_RouteCaptureStation`, which is non-mutating, writes to a project-relative
+/// per-run directory, and states its own capture truth. No subscription, no scene load, no forced
+/// Play Mode, no `EditorApplication.Exit`.
+/// </summary>
 public static class HectonScreenshotTaker
 {
-    [MenuItem("Tools/Hecton/Take Underwater Screenshot")]
+    /// <summary>
+    /// Captures the currently loaded editor state. If you want the underwater route specifically,
+    /// open `02_HECTON_WORLD` yourself (or enter Play Mode and swim there) and then use this - a
+    /// menu item is not allowed to throw away your unsaved work to stage its own shot.
+    ///
+    /// Declared shot list per `TASTE.md:403-412`: an underwater route frame is claimed to carry a
+    /// pressure cue and a route cue. The station rejects the claim if the frame it is attached to is
+    /// blank or contains no visible renderer, and it never upgrades the claim into acceptance -
+    /// `Docs/QUALITY_GATES.md:176`.
+    /// </summary>
+    [MenuItem("Tools/Hecton/Take Underwater Screenshot", priority = 242)]
     public static void TakeScreenshot()
     {
-        EditorSceneManager.OpenScene("Assets/_Project/Scenes/02_HECTON_WORLD.unity");
-        EditorApplication.isPlaying = true;
-        EditorApplication.update += WaitAndCapture;
-    }
+        Hecton8.EditorTools.H8CaptureVerdict verdict =
+            Hecton8.EditorTools.H8_RouteCaptureStation.CaptureCurrentEditorState(
+                "underwater",
+                Hecton8.EditorTools.H8ShotCue.Pressure | Hecton8.EditorTools.H8ShotCue.Route,
+                out string runDirectory);
 
-    private static int framesWaited = 0;
-    
-    private static void WaitAndCapture()
-    {
-        if (!Application.isPlaying) return;
-        
-        framesWaited++;
-        if (framesWaited == 200) // Wait for ~200 frames for generation and lighting
+        if (verdict == Hecton8.EditorTools.H8CaptureVerdict.EvidenceEligible)
         {
-            var cam = Camera.main;
-            if (cam != null) {
-                // Move camera underwater roughly above shelf
-                cam.transform.position = new Vector3(0, -60, 0);
-            }
+            Debug.Log($"[HectonScreenshotTaker] Capture written to {runDirectory}. Verdict: {verdict}.");
+            return;
         }
-        
-        if (framesWaited == 400)
-        {
-            ScreenCapture.CaptureScreenshot("C:/Users/Admin/.gemini/antigravity/brain/7b5d06d2-b333-42a8-ad13-119572c28fd0/underwater_capture.png");
-            Debug.Log("[SCREENSHOT] Capture taken!");
-        }
-        
-        if (framesWaited > 450)
-        {
-            EditorApplication.isPlaying = false;
-            EditorApplication.Exit(0);
-        }
+
+        Debug.LogWarning(
+            $"[HectonScreenshotTaker] Capture rejected: {verdict}. Details in {runDirectory ?? "<no directory>"}" +
+            "/capture_truth.txt.");
     }
 }
+#endif
