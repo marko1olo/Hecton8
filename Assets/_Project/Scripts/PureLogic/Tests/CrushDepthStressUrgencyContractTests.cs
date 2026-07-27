@@ -69,6 +69,58 @@ namespace Hecton8.PureLogic.Tests
             Assert.AreEqual(1191f / 1450f, ascending, 0.001f);
         }
 
+        /// <summary>
+        /// Mirrors the band rescale in UpdateHullStress: the hull's combined pressure damage scale is
+        /// clamped to the envelope PlayerTransportPreset authorises (0.25..2) and inverted, then both
+        /// the onset depth and the crush limit are multiplied by it.
+        /// </summary>
+        private static float EffectiveCrushLimit(float pressureDamageScale)
+        {
+            float clamped = pressureDamageScale < 0.25f ? 0.25f : (pressureDamageScale > 2f ? 2f : pressureDamageScale);
+            return CrushDepthFullDepth * (1f / clamped);
+        }
+
+        [Test]
+        public void BaselineHullRatingLeavesTheAuthoredBandUntouched()
+        {
+            // A preset at the default pressureDamageScale of 1.0 must not shift the crush band at
+            // all, so the rescale cannot regress the shipped tuning.
+            Assert.AreEqual(CrushDepthFullDepth, EffectiveCrushLimit(1f), 0.001f);
+
+            float atLimit = HudCrushDepthWarningUrgencyCalculator.Compute(
+                CrushDepthFullDepth, EffectiveCrushLimit(1f), 0f);
+            Assert.AreEqual(1f, atLimit, 0.001f);
+        }
+
+        [Test]
+        public void BetterRatedHullSurvivesDepthThatImplodesBaseline()
+        {
+            // The design lock: a deep-rated hull must hold where a baseline hull is already gone.
+            const float DepthThatKillsBaseline = 2000f;
+
+            float baseline = HudCrushDepthWarningUrgencyCalculator.Compute(
+                DepthThatKillsBaseline, EffectiveCrushLimit(1f), 0f);
+            float deepRated = HudCrushDepthWarningUrgencyCalculator.Compute(
+                DepthThatKillsBaseline, EffectiveCrushLimit(0.25f), 0f);
+
+            Assert.GreaterOrEqual(baseline, CrushDepthImplosionThreshold, "Baseline hull must be lost here.");
+            Assert.Less(deepRated, CrushDepthImplosionThreshold, "Deep-rated hull must survive here.");
+
+            // Monotonic across tiers: a lower damage scale always means a deeper limit.
+            Assert.Greater(EffectiveCrushLimit(0.25f), EffectiveCrushLimit(0.5f));
+            Assert.Greater(EffectiveCrushLimit(0.5f), EffectiveCrushLimit(1f));
+            Assert.Greater(EffectiveCrushLimit(1f), EffectiveCrushLimit(2f));
+        }
+
+        [Test]
+        public void StackedUpgradesCannotPushTheLimitToAnAbsurdDepth()
+        {
+            // preset 0.25 * upgrade 0.1 = 0.025 would be a 40x band stretch without the clamp.
+            Assert.AreEqual(EffectiveCrushLimit(0.25f), EffectiveCrushLimit(0.025f), 0.001f,
+                "The clamp must cap the stretch at the authored envelope.");
+            Assert.Less(EffectiveCrushLimit(0.025f), 6000f);
+        }
+
         [Test]
         public void ImplosionIsReachedNearTheCrushLimitNotAtTheOnsetDepth()
         {

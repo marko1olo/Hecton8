@@ -11094,12 +11094,25 @@ namespace Hecton8.Gameplay
                     _hullStressGroanCooldownTimer = 0f;
             }
 
+            // The hull's pressure rating rescales the whole crush band, so a compensated hull creaks
+            // and implodes proportionally deeper instead of inheriting the baseline depths. Survival
+            // owns the combined preset x upgrade scale; falling back to the preset alone keeps the
+            // on-foot and no-survival cases behaving exactly as before. Clamped to the envelope
+            // PlayerTransportPreset itself authorises for this stat (0.25..2) so a stacked upgrade
+            // chain cannot push the crush limit to an absurd depth.
+            float pressureDamageScale = _survivalSystem != null
+                ? _survivalSystem.TransportPressureDamageScale
+                : (transportPreset != null ? transportPreset.PressureDamageScale : 1f);
+            float hullRatingScale = math.rcp(math.clamp(pressureDamageScale, 0.25f, 2f));
+            float effectiveCrushStart = crushDepthStart * hullRatingScale;
+            float effectiveCrushLimit = math.max(crushDepthFullDepth, crushDepthStart) * hullRatingScale;
+
             float targetStress = 0f;
-            if (!IsInDryInterior() && (!_isWalking || IsExosuitTransportActive()) && _currentDepth > crushDepthStart)
+            if (!IsInDryInterior() && (!_isWalking || IsExosuitTransportActive()) && _currentDepth > effectiveCrushStart)
             {
                 float depthT = math.saturate(
-                    (_currentDepth - crushDepthStart) /
-                    math.max(crushDepthFullDepth - crushDepthStart, 0.01f));
+                    (_currentDepth - effectiveCrushStart) /
+                    math.max(effectiveCrushLimit - effectiveCrushStart, 0.01f));
 
                 // World velocity is up-positive, so descending yields a negative Y. The rate-driven
                 // stress term wants the magnitude - a fast pressure change strains the hull either
@@ -11108,9 +11121,9 @@ namespace Hecton8.Gameplay
                 float descentRate = -verticalVelocity;
                 float depthRateT = math.saturate(math.abs(verticalVelocity) / math.max(crushDepthRateForFullStress, 0.01f));
 
-                float transportProtection = transportPreset != null
-                    ? math.max(0.1f, transportPreset.PressureDamageScale)
-                    : 1f;
+                // Same combined scale the band uses, so an upgrade moves the stress magnitude and the
+                // crush depth together instead of only one of them. The 0.1 floor is pre-existing.
+                float transportProtection = math.max(0.1f, pressureDamageScale);
 
                 float computedStress = Hecton8.PureLogic.Systems.PressureHullIntegrityStressCalculator.Compute(
                     depthT,
@@ -11121,14 +11134,12 @@ namespace Hecton8.Gameplay
 
                 // The urgency denominator is the crush LIMIT, not the depth where stress begins.
                 // Dividing by crushDepthStart pinned this to 1.0 permanently, because this branch
-                // only runs when _currentDepth already exceeds crushDepthStart. That made
+                // only runs once _currentDepth already exceeds the onset depth. That made
                 // targetStress a constant 1.0 and left crushDepthFullDepth,
-                // crushDepthRateForFullStress and PressureDamageScale dead. crushDepthFullDepth is
-                // the same limit already reported as CrushLimitMeters in TryPlayCrushDepthGroan,
-                // and it carries the same inversion guard the signal uses.
+                // crushDepthRateForFullStress and PressureDamageScale dead.
                 float warningUrgency = Hecton8.PureLogic.Systems.HudCrushDepthWarningUrgencyCalculator.Compute(
                     _currentDepth,
-                    math.max(crushDepthFullDepth, crushDepthStart),
+                    effectiveCrushLimit,
                     descentRate);
 
                 targetStress = math.saturate(math.max(computedStress, warningUrgency));
@@ -11152,7 +11163,7 @@ namespace Hecton8.Gameplay
                 QueueCameraEntanglementStrain(normalizedShake * 0.55f);
             }
 
-            TryPlayCrushDepthGroan();
+            TryPlayCrushDepthGroan(effectiveCrushLimit);
             RefreshFatalPressureHudCorruptionIfNeeded();
 
             if (_hullStressIntensity < crushDepthImplosionThreshold || _fatalPressureSequenceTimer > 0f || _fatalPressureRearmTimer > 0f)
@@ -11173,7 +11184,10 @@ namespace Hecton8.Gameplay
             _hullStressHudCorruptionRefreshTimer = 0.5f;
         }
 
-        private void TryPlayCrushDepthGroan()
+        // effectiveCrushLimitMeters is the hull-rating-scaled limit the stress curve actually used,
+        // so the vocal/HUD warning reports the depth this hull really fails at rather than the
+        // baseline authored value.
+        private void TryPlayCrushDepthGroan(float effectiveCrushLimitMeters)
         {
             if (_hullStressIntensity < crushDepthGroanThreshold || _hullStressGroanCooldownTimer > 0f)
                 return;
@@ -11186,7 +11200,7 @@ namespace Hecton8.Gameplay
                 WarningHash = VocalWarningHashes.CrushDepth,
                 SourceId = 0u,
                 DepthMeters = math.max(0f, _currentDepth),
-                CrushLimitMeters = math.max(crushDepthFullDepth, crushDepthStart),
+                CrushLimitMeters = math.max(effectiveCrushLimitMeters, crushDepthStart),
                 Severity01 = groanT,
                 Frame = SystemDispatcher.CurrentFrameId,
                 Priority = (byte)VocalWarningId.CrushDepth,

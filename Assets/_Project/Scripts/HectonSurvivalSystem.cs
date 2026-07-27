@@ -1994,6 +1994,15 @@ namespace Hecton8.Gameplay
                 : 1f;
         }
 
+        /// <summary>
+        /// Combined transport + upgrade pressure damage transfer scale. Lower means a better-rated
+        /// hull. Survival owns this fact because it already resolves the active preset and the
+        /// active <see cref="VehicleUpgradeModule"/> behind lifecycle-owner caching. Crush-depth
+        /// hull stress in <c>HectonPlayerMovement.UpdateHullStress</c> reads it from here rather
+        /// than resolving a second copy of the same chain.
+        /// </summary>
+        internal float TransportPressureDamageScale => ResolveTransportPressureDamageScale();
+
         private float ResolveTransportPressureDamageScale()
         {
             PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
