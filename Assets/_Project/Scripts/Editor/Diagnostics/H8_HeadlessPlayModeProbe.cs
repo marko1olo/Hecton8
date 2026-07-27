@@ -695,9 +695,15 @@ namespace Hecton8.EditorTools.Diagnostics
         /// only - the ordering fix belongs to whoever owns GlobalRegistry and the bootstrapper, and
         /// guessing at activation order is how this class of bug gets made.
         ///
-        /// Note the first rejection is the only one Unity logs as an error: GlobalRegistry gates
-        /// that on a one-shot _readyLockViolationLogged flag. Every later one arrives as an
-        /// exception log instead, so counting only LogError hits undercounts 31 down to 1.
+        /// This used to be true and is no longer: only the FIRST rejection was logged as an error,
+        /// because GlobalRegistry gated it on a single global _readyLockViolationLogged flag, so
+        /// counting LogError hits undercounted 31 down to 1. That flag is now a per-type latch stamped
+        /// with a reset generation, and each message carries a running "#N" count, so every distinct
+        /// rejected service reports itself once and the scale is visible on the first line.
+        ///
+        /// This hook is still the belt to that braces: it catches repeats of an already-logged type,
+        /// and it does not depend on GlobalRegistry's own DEVELOPMENT_BUILD-guarded logging being
+        /// compiled in at all.
         /// </summary>
         private static void InstallRegistryRejectionHook()
         {

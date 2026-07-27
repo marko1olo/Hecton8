@@ -283,7 +283,20 @@ namespace Hecton8.Core
         private static int _registryPhase = (int)RegistryPhase.Uninitialized;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool _registeringGetViolationLogged;
-        private static bool _readyLockViolationLogged;
+        // Generation-stamped instead of a plain bool so the per-type latches below can be invalidated
+        // wholesale on reset without enumerating them - a generic static cannot be iterated.
+        private static int _readyLockViolationGeneration;
+        private static int _readyLockViolationCount;
+
+        /// <summary>
+        /// Per-type log latch for ready-lock rejections. Zero allocation and no collection: the JIT
+        /// gives each T its own static, which is the same idiom <c>ServiceSlotCache&lt;T&gt;</c> uses.
+        /// Holds the generation it last logged at, so a registry reset re-arms every type at once.
+        /// </summary>
+        private static class ReadyLockViolationLatch<T> where T : class
+        {
+            internal static int LoggedGeneration = -1;
+        }
 #endif
         // COLD ALLOC: RegistryBucket<IUpdatable>[128] - global multi-instance update registry - owner: GlobalRegistry
         private static readonly RegistryBucket<IUpdatable> _updatables = new RegistryBucket<IUpdatable>(512);
@@ -2661,7 +2674,10 @@ namespace Hecton8.Core
             _threadAudioVirtualization = null;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _registeringGetViolationLogged = false;
-            _readyLockViolationLogged = false;
+            // Bump the generation rather than clearing a flag: that re-arms every ReadyLockViolationLatch<T>
+            // in one write, which matters for repeated in-editor Play sessions with no domain reload.
+            Interlocked.Increment(ref _readyLockViolationGeneration);
+            Volatile.Write(ref _readyLockViolationCount, 0);
 #endif
             _input = null;
             _inputBinding = null;
@@ -7195,10 +7211,26 @@ namespace Hecton8.Core
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!_readyLockViolationLogged)
+            // Log once PER TYPE, not once globally, and carry a running count.
+            //
+            // A single global latch made this defect effectively invisible. The one probe run that
+            // actually failed rejected 31 DISTINCT services - MapMagicBridge, HectonPlayerMotor,
+            // QuestManager, HectonCelestialEngine, DepthZoneDirector, EndingSystem, SoundscapeSystem
+            // and 24 more - and emitted exactly ONE error naming ONE of them. The run summary looked
+            // like a slow scene load, and the only way to see the real scale was grepping a 1 MB log
+            // for the exception text. An intermittent boot abort that reports 1/31 of itself is a
+            // diagnosability failure, not just a logging preference.
+            //
+            // The count is what makes it unmissable: "#31" in the message states the scale at the
+            // first line read, without a grep.
+            int violationGeneration = Volatile.Read(ref _readyLockViolationGeneration);
+            int violationCount = Interlocked.Increment(ref _readyLockViolationCount);
+            if (ReadyLockViolationLatch<T>.LoggedGeneration != violationGeneration)
             {
-                _readyLockViolationLogged = true;
-                Debug.LogError("[GlobalRegistry] Ready-locked registry rejected registration: " + typeof(T).Name);
+                ReadyLockViolationLatch<T>.LoggedGeneration = violationGeneration;
+                Debug.LogError(
+                    "[GlobalRegistry] Ready-locked registry rejected registration #" + violationCount +
+                    ": " + typeof(T).Name);
             }
 #endif
             throw new CriticalBootException("[GlobalRegistry] Ready-locked registry rejected registration: " + typeof(T).Name);
