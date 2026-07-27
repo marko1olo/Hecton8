@@ -734,6 +734,26 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
             }
 
+            // ARCHITECTURAL NOTE - read before optimising or deleting either pass.
+            // As of this writing the ONLY runtime consumer of this vault is
+            // HectonVoxelEngine.ApplySurfaceNetsColliderMeshesAsync, and it reads exactly
+            // ColliderVertices, ColliderIndices, States, Density and PhysicsBakeRequests. Nothing at
+            // runtime reads buffers.Vertices / buffers.Indices - the VISUAL half. Voxel chunks are
+            // rendered through the separate MeshFilter/MeshRenderer +
+            // Mesh.AllocateWritableMeshData route fed from VoxelPipelineData, not from here, and the
+            // GraphicsBuffer/indirect-args path that WOULD have consumed the visual half
+            // (VoxelSurfaceNetsGpuUploadDispatcher) is never instantiated by anything.
+            //
+            // So the visual pass is currently retained for its SIDE EFFECTS, not its output: it is
+            // what publishes Stage = ReadyForUpload into States, which
+            // VoxelSurfacePhysicsBakeRequestJob gates on, plus telemetry and IndirectArgs that only
+            // the editor tuner and that dormant dispatcher consume. That is an accidental coupling
+            // and the largest remaining cost in this path. Collapsing it (move the States
+            // publication into the collider pass, drop the visual pass until a GPU-driven renderer
+            // actually exists) is the right direction, but it changes which pass marks a chunk ready
+            // and would break VoxelMeshTunerWindow, so it needs a play-mode check rather than a
+            // blind edit. Do not "just delete" the visual pass on the strength of its unused output.
+
             // The two passes MUST be chained, not fanned out from the same dependency.
             // They write into separate vertex/index/cell-map buffers, but they still share three
             // mutable containers: States (the visual pass writes the terminal stage transition while

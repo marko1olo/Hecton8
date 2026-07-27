@@ -220,12 +220,32 @@ namespace Hecton8.World.VoxelSurfaceNets
                             continue;
                         }
 
-                        float3 normal = CalculateTetraNormal(vertexLocal, voxelSize, quality);
-                        uint normalPacked = PackNormalRgb10A2(normal);
-                        uint tangentPacked = PackNormalRgb10A2(ResolveTangent(normal));
-                        float ambientOcclusion = ResolveVertexAmbientOcclusion(vertexLocal, normal, voxelSize, quality, qualityCurve);
-                        uint colorPacked = VoxelSurfaceColorEncoding.ResolvePacked(normal, ambientOcclusion);
-                        float uvScale = math.lerp(0.03125f, 0.125f, qualityCurve);
+                        // Shading attributes are visual-only and are skipped entirely for the canonical
+                        // collider pass. A MeshCollider consumes positions and indices; nothing ever
+                        // reads Normal/Tangent/Color/UV off the collider buffer
+                        // (ApplySurfaceNetsColliderMeshesAsync takes .Position and nothing else, and
+                        // TryEmitQuad's degenerate test is also position-only).
+                        //
+                        // This is not a micro-saving. ResolveVertexAmbientOcclusion cone-traces the SDF
+                        // with up to five extra trilinear density samples PER VERTEX, and
+                        // CalculateTetraNormal adds four more for the gradient. The collider pass runs
+                        // at stride = 1 - the densest configuration in the system - so it was paying the
+                        // full AO+normal cost on every vertex of every chunk to fill fields that are
+                        // discarded immediately afterwards.
+                        uint normalPacked = 0u;
+                        uint tangentPacked = 0u;
+                        uint colorPacked = 0u;
+                        float2 uv = float2.zero;
+                        if (!IsCanonicalCollider)
+                        {
+                            float3 normal = CalculateTetraNormal(vertexLocal, voxelSize, quality);
+                            normalPacked = PackNormalRgb10A2(normal);
+                            tangentPacked = PackNormalRgb10A2(ResolveTangent(normal));
+                            float ambientOcclusion = ResolveVertexAmbientOcclusion(vertexLocal, normal, voxelSize, quality, qualityCurve);
+                            colorPacked = VoxelSurfaceColorEncoding.ResolvePacked(normal, ambientOcclusion);
+                            float uvScale = math.lerp(0.03125f, 0.125f, qualityCurve);
+                            uv = new float2(vertexLocal.x, vertexLocal.z) * uvScale;
+                        }
 
                         Vertices[vertexCount] = new VoxelVertexDTO
                         {
@@ -233,7 +253,7 @@ namespace Hecton8.World.VoxelSurfaceNets
                             NormalPacked = normalPacked,
                             TangentPacked = tangentPacked,
                             ColorPacked = colorPacked,
-                            UV = new float2(vertexLocal.x, vertexLocal.z) * uvScale
+                            UV = uv
                         };
 
                         int cellIndex = CellIndex(x, y, z);
