@@ -52,6 +52,16 @@ namespace Hecton8.World.VoxelSurfaceNets
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct SurfaceNetExtractionJob : IJob
     {
+        // Vertex ambient occlusion cone-trace tuning. See ResolveVertexAmbientOcclusion.
+        // Probe distances are in voxels; the density field saturates at 1 voxel, so pushing the
+        // last taps past that ceiling only widens the crevice search, it cannot add false occlusion.
+        private const float AoMinTaps = 2f;
+        private const float AoMaxTaps = 5f;
+        private const float AoFirstStepVoxels = 0.35f;
+        private const float AoStepVoxels = 0.35f;
+        private const float AoFalloff = 0.85f;
+        private const float AoStrength = 1.35f;
+
         [ReadOnly]
         [NoAlias]
         public NativeArray<sbyte> Densities;
@@ -199,7 +209,8 @@ namespace Hecton8.World.VoxelSurfaceNets
                         float3 normal = CalculateTetraNormal(vertexLocal, voxelSize, quality);
                         uint normalPacked = PackNormalRgb10A2(normal);
                         uint tangentPacked = PackNormalRgb10A2(ResolveTangent(normal));
-                        uint colorPacked = PackColor(vertexLocal, quality, tuning.BiomeBlendScale, state.ChunkHash);
+                        float ambientOcclusion = ResolveVertexAmbientOcclusion(vertexLocal, normal, voxelSize, quality, qualityCurve);
+                        uint colorPacked = VoxelSurfaceColorEncoding.ResolvePacked(normal, ambientOcclusion);
                         float uvScale = math.lerp(0.03125f, 0.125f, qualityCurve);
 
                         Vertices[vertexCount] = new VoxelVertexDTO
@@ -655,15 +666,54 @@ namespace Hecton8.World.VoxelSurfaceNets
             return tangent * math.rsqrt(math.max(math.dot(tangent, tangent), VoxelSurfaceNetsConstants.Epsilon));
         }
 
-        private static uint PackColor(float3 positionLocal, float quality, float biomeBlendScale, uint chunkHash)
+        /// <summary>
+        /// Short signed-distance cone trace along the outward surface normal, producing the ambient
+        /// occlusion term that Hecton_AbyssalVoxelRock.shader consumes as `vertexCaveAo` (contact
+        /// darkening at line ~1249 plus the bioluminescent crevice mask at ~802). Previously this
+        /// channel was a hardcoded 1.0, so caves rendered with no contact shading and the organic
+        /// glow smeared uniformly across every wall instead of pooling in crevices.
+        ///
+        /// The density grid is a voxel-scaled SDF (negative = solid rock, positive = open water)
+        /// saturated at +/-1 voxel by the sbyte quantisation. In genuinely open water a probe at
+        /// h voxels therefore reads min(h, 1); clamping the expected reading to that same ceiling is
+        /// what keeps open water at AO 1.0 instead of accumulating phantom occlusion once the field
+        /// saturates. Anything reading nearer than expected is neighbouring geometry closing in.
+        ///
+        /// Cost rides GlobalQualityWeight twice over: the tap count scales, and SampleDensityLocal
+        /// itself collapses from trilinear (8 grid fetches) to nearest (1) as the weight drops, so
+        /// compact lanes still get contact shading for a fraction of the ultra-lane cost.
+        /// </summary>
+        private float ResolveVertexAmbientOcclusion(
+            float3 vertexLocal,
+            float3 normal,
+            float voxelSize,
+            float quality,
+            float qualityCurve)
         {
-            uint h = math.hash(new uint4((uint)math.abs((int)positionLocal.x), (uint)math.abs((int)positionLocal.y), (uint)math.abs((int)positionLocal.z), chunkHash));
-            float hash01 = (h & 1023u) * (1f / 1023f);
-            float blend = math.saturate((positionLocal.y * math.max(biomeBlendScale, 0.001f) * 0.01f) + (hash01 * 0.35f));
-            uint r = (uint)math.clamp((int)math.round(hash01 * 255f), 0, 255);
-            uint g = (uint)math.clamp((int)math.round(blend * 255f), 0, 255);
-            uint b = (uint)math.clamp((int)math.round(math.saturate(quality) * 255f), 0, 255);
-            return r | (g << 8) | (b << 16) | (255u << 24);
+            int tapCount = (int)math.round(math.lerp(AoMinTaps, AoMaxTaps, qualityCurve));
+            float occlusion = 0f;
+            float weightSum = 0f;
+            float scale = 1f;
+
+            for (int i = 0; i < tapCount; i++)
+            {
+                float stepVoxels = AoFirstStepVoxels + (AoStepVoxels * i);
+                // Open-water expectation, clamped to the field's own +/-1 voxel saturation ceiling.
+                float expected = math.min(stepVoxels, 1f);
+                float sampled = SampleDensityLocal(
+                    vertexLocal + (normal * (stepVoxels * voxelSize)),
+                    voxelSize,
+                    quality);
+
+                occlusion += math.max(expected - sampled, 0f) * scale;
+                weightSum += expected * scale;
+                scale *= AoFalloff;
+            }
+
+            if (weightSum <= VoxelSurfaceNetsConstants.Epsilon)
+                return 1f;
+
+            return math.saturate(1f - (AoStrength * occlusion * math.rcp(weightSum)));
         }
 
         private static float Smooth01(float value)

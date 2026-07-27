@@ -4172,7 +4172,13 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
 /// once, and duplicated field math is exactly how the live cave SDF silently drifted away from the
 /// canonical carve job.
 /// </summary>
-internal static class VoxelSurfaceColorEncoding
+/// <summary>
+/// Single owner of the cave surface vertex-colour contract. Public rather than internal because the
+/// Burst mesher lives in its own assembly (Hecton8.World.VoxelSurfaceNets) and must encode the exact
+/// same channel layout the shader decodes; Hecton8.Core grants InternalsVisibleTo only to the editor
+/// and save-system assemblies, so an internal encoder cannot be shared with the mesher.
+/// </summary>
+public static class VoxelSurfaceColorEncoding
 {
     /// <summary>Lower edge of the floor/wall transition (n.y), ~67.9 degrees from vertical.</summary>
     private const float FloorTransitionMin = 0.375f;
@@ -4183,7 +4189,8 @@ internal static class VoxelSurfaceColorEncoding
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     public static float ResolveFloorWeight(float3 normal)
     {
-        float t = math.saturate((normal.y - FloorTransitionMin) * (1f / FloorTransitionRange));
+        float3 safeNormal = math.select(new float3(0f, 1f, 0f), math.normalize(normal), math.lengthsq(normal) > 1e-6f && math.all(math.isfinite(normal)));
+        float t = math.saturate((safeNormal.y - FloorTransitionMin) * (1f / FloorTransitionRange));
         return t * t * (3f - 2f * t);
     }
 
@@ -4192,6 +4199,24 @@ internal static class VoxelSurfaceColorEncoding
     {
         int floorByte = math.clamp((int)math.round(ResolveFloorWeight(normal) * 255f), 0, 255);
         return new Color32((byte)floorByte, (byte)(255 - floorByte), 0, aoByte);
+    }
+
+    /// <summary>
+    /// Same encoding as <see cref="Resolve"/>, packed straight into a UNorm8x4-compatible uint so
+    /// Burst mesher jobs can write <c>VoxelVertexDTO.ColorPacked</c> without a Color32 round-trip.
+    /// Byte order is R,G,B,A from the low byte up, matching VertexAttributeFormat.UNorm8 x4.
+    ///
+    /// This class is the single owner of the cave surface vertex-colour contract consumed by
+    /// Hecton_AbyssalVoxelRock.shader (`terrainSplatColor`): .rg are the normalised floor/wall
+    /// material blend weights, .a feeds `vertexCaveAo`, which drives contact darkening and the
+    /// bioluminescent crevice mask. Do not re-derive this packing at call sites.
+    /// </summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static uint ResolvePacked(float3 normal, float ambientOcclusion)
+    {
+        uint floorByte = (uint)math.clamp((int)math.round(ResolveFloorWeight(normal) * 255f), 0, 255);
+        uint aoByte = (uint)math.clamp((int)math.round(math.saturate(ambientOcclusion) * 255f), 0, 255);
+        return floorByte | ((255u - floorByte) << 8) | (aoByte << 24);
     }
 }
 

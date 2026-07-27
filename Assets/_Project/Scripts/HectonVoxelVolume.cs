@@ -2001,14 +2001,18 @@ namespace Hecton8.Caves
             if (collider.enabled)
             {
                 var pos = transform.position;
+                float chunkSizeX = _gridDimension > 0 && _voxelSize > 0f ? _gridDimension * _voxelSize : 100f;
+                float chunkSizeZ = chunkSizeX;
+                float3 size = new float3(chunkSizeX, chunkSizeX, chunkSizeZ);
+                float3 minCorner = new float3(pos.x - chunkSizeX * 0.5f, pos.y, pos.z - chunkSizeZ * 0.5f);
                 WorldChunkPhysicsBakedSignal signal = new WorldChunkPhysicsBakedSignal
                 {
-                    ChunkX = (int)math.floor(pos.x / 100f),
-                    ChunkZ = (int)math.floor(pos.z / 100f),
+                    ChunkX = (int)math.floor(pos.x / chunkSizeX),
+                    ChunkZ = (int)math.floor(pos.z / chunkSizeZ),
                     TerrainEntityHash = (uint)gameObject.GetInstanceID(),
                     Frame = (uint)UnityEngine.Time.frameCount,
-                    TerrainPosition = pos,
-                    TerrainSize = new float3(100f, 100f, 100f),
+                    TerrainPosition = minCorner,
+                    TerrainSize = size,
                     Flags = WorldChunkPhysicsBakedSignal.FlagColliderActive | WorldChunkPhysicsBakedSignal.FlagHeightmapSynced
                 };
                 WorldChunkPhysicsBakedEvents.TryPublish(in signal);
@@ -4096,6 +4100,7 @@ namespace Hecton8.Caves
             if (_rootMeshCollider != null)
                 _rootMeshCollider.enabled = collisionAllowed && _rootMeshCollider.sharedMesh != null;
 
+            bool activeColliderPresent = (_rootMeshCollider != null && _rootMeshCollider.enabled);
             int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
             for (int i = 0; i < colliderCount; i++)
             {
@@ -4104,7 +4109,38 @@ namespace Hecton8.Caves
                     continue;
 
                 collider.enabled = collisionAllowed && collider.sharedMesh != null && collider.gameObject.activeSelf;
+                if (collider.enabled)
+                    activeColliderPresent = true;
             }
+
+            if (collisionAllowed && activeColliderPresent)
+            {
+                PublishPhysicsBakedSignalsOnComplete();
+            }
+        }
+
+        private void PublishPhysicsBakedSignalsOnComplete()
+        {
+            if (_bakeState != VoxelBakeState.Complete)
+                return;
+
+            var pos = transform.position;
+            float chunkSizeX = _gridDimension > 0 && _voxelSize > 0f ? _gridDimension * _voxelSize : 100f;
+            float chunkSizeZ = chunkSizeX;
+            float3 size = new float3(chunkSizeX, chunkSizeX, chunkSizeZ);
+            float3 minCorner = new float3(pos.x - chunkSizeX * 0.5f, pos.y, pos.z - chunkSizeZ * 0.5f);
+
+            WorldChunkPhysicsBakedSignal signal = new WorldChunkPhysicsBakedSignal
+            {
+                ChunkX = (int)math.floor(pos.x / chunkSizeX),
+                ChunkZ = (int)math.floor(pos.z / chunkSizeZ),
+                TerrainEntityHash = (uint)gameObject.GetInstanceID(),
+                Frame = (uint)UnityEngine.Time.frameCount,
+                TerrainPosition = minCorner,
+                TerrainSize = size,
+                Flags = WorldChunkPhysicsBakedSignal.FlagColliderActive | WorldChunkPhysicsBakedSignal.FlagHeightmapSynced
+            };
+            WorldChunkPhysicsBakedEvents.TryPublish(in signal);
         }
 
         private void QueueRebuild()
