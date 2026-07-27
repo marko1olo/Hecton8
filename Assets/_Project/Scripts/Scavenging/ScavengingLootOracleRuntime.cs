@@ -36,6 +36,12 @@ namespace Hecton8.Scavenging
         public const int DefaultAuditCapacity = 32;
         public const int DefaultCsvScratchBytes = 64 * 1024;
         public const int SelfAuditRollCount = 10000;
+
+        /// <summary>
+        /// Number of entries in the deterministic fallback salvage table. Callers must consume the count returned by
+        /// the writer instead of assuming this value landed in the destination buffer.
+        /// </summary>
+        public const int EmergencyLootEntryCount = 4;
         public const byte ItemSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle;
         public const byte VisualSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle;
         public const string InventoryFullMessage = "SCAVENGE BLOCKED // INVENTORY FULL";
@@ -189,39 +195,52 @@ namespace Hecton8.Scavenging
             WriteEmergencyLootTable(LootEntries);
         }
 
-        internal static void WriteEmergencyLootTable(NativeArray<LootTableEntryDTO> lootEntries)
+        /// <summary>
+        /// Writes the deterministic fallback salvage table into <paramref name="lootEntries"/> and returns the number
+        /// of entries actually written. Returns 0 when the destination cannot hold the whole table, so a caller can
+        /// never claim a populated loot table over a buffer that received nothing.
+        /// </summary>
+        /// <remarks>
+        /// Item identity here MUST be the canonical <c>ItemData.PersistentId</c> hash, because
+        /// <c>ItemCatalog._hashLookup</c> is keyed only by <c>LocHash.Compute(ItemData.PersistentId)</c>. Authored
+        /// asset ids are <c>Data_TitaniumScrap</c>, <c>Data_Copper</c>, <c>Data_SulfurClumps</c> and
+        /// <c>Data_AbyssalCrystal</c>; the display-name hashes (<c>Titanium Scrap</c>, ...) resolve to no item at all.
+        /// </remarks>
+        internal static int WriteEmergencyLootTable(NativeArray<LootTableEntryDTO> lootEntries)
         {
-            if (!lootEntries.IsCreated || lootEntries.Length < 4)
-                return;
+            if (!lootEntries.IsCreated || lootEntries.Length < ScavengingLootOracleConstants.EmergencyLootEntryCount)
+                return 0;
 
             lootEntries[0] = new LootTableEntryDTO
             {
-                ItemHashID = H8Hashes.Items.TitaniumScrapHash,
+                ItemHashID = H8Hashes.Items.DataTitaniumScrapHash,
                 DropWeight = 55u,
                 ConditionMask = ScavengingLootOracleConstants.ToolMaskAny,
                 _pad0 = 0u
             };
             lootEntries[1] = new LootTableEntryDTO
             {
-                ItemHashID = H8Hashes.Items.CopperOreHash,
+                ItemHashID = H8Hashes.Items.DataCopperHash,
                 DropWeight = 82u,
                 ConditionMask = ScavengingLootOracleConstants.ToolMaskAny,
                 _pad0 = 0u
             };
             lootEntries[2] = new LootTableEntryDTO
             {
-                ItemHashID = H8Hashes.Items.SulfurClumpsHash,
+                ItemHashID = H8Hashes.Items.DataSulfurClumpsHash,
                 DropWeight = 94u,
                 ConditionMask = ScavengingLootOracleConstants.ToolMaskCutter | ScavengingLootOracleConstants.ToolMaskDrill | ScavengingLootOracleConstants.ToolMaskExtractor,
                 _pad0 = 0u
             };
             lootEntries[3] = new LootTableEntryDTO
             {
-                ItemHashID = H8Hashes.Items.AbyssalCrystalHash,
+                ItemHashID = H8Hashes.Items.DataAbyssalCrystalHash,
                 DropWeight = 100u,
                 ConditionMask = ScavengingLootOracleConstants.ToolMaskDrill | ScavengingLootOracleConstants.ToolMaskExtractor,
                 _pad0 = 0u
             };
+
+            return ScavengingLootOracleConstants.EmergencyLootEntryCount;
         }
     }
 
@@ -686,7 +705,7 @@ namespace Hecton8.Scavenging
             for (int i = 0; i < DistributionAudit.Length; i++)
                 DistributionAudit[i] = 0u;
 
-            uint requestedCount = EntryCount != 0u ? EntryCount : 4u;
+            uint requestedCount = EntryCount != 0u ? EntryCount : (uint)ScavengingLootOracleConstants.EmergencyLootEntryCount;
             uint entryCount = math.min(requestedCount, (uint)math.min(LootEntries.Length, DistributionAudit.Length));
             if (entryCount == 0u)
                 return;
@@ -924,6 +943,12 @@ namespace Hecton8.Scavenging
         private const uint SimulationSystemHash = ScavengingLootOracleConstants.LootOracleSourceHash;
         private const uint PostSimulationSystemHash = ScavengingLootOracleConstants.LootOracleSourceHash ^ 0x504F5354u; // POST
         private const uint VisualSyncSystemHash = ScavengingLootOracleConstants.LootOracleSourceHash ^ 0x5653594Eu; // VSYN
+        private const string MonolithLootSectionMissingMessage =
+            "[ScavengingLootOracle] No loot table hydrated: the baked DataMonolith carries no LootCdf section. " +
+            "Every weighted salvage roll is refused until Data/Balance/Loot.csv is baked with canonical ItemData.PersistentId ids.";
+        private const string FallbackTableRefusedMessage =
+            "[ScavengingLootOracle] Fallback salvage table refused: the loot entry buffer is smaller than the fallback table. " +
+            "Weighted salvage rolls stay disabled rather than resolving against an unwritten buffer.";
 
         private struct SimulationNativeScratch
         {
@@ -1038,6 +1063,7 @@ namespace Hecton8.Scavenging
         private bool _vaultReady;
         private bool _emergencyTableGenerated;
         private bool _lootTableHydrated;
+        private bool _lootTableUnavailableReported;
         private uint _activeLootTableHash;
         private uint _activeLootTableVersion;
         private bool _registeredSimulationDispatcher;
@@ -1095,6 +1121,14 @@ namespace Hecton8.Scavenging
 
             NativeArray<ScavengingHarvestRequestDTO> requests = host._nativeScratch.Requests;
             if (!requests.IsCreated || host._queuedCount >= requests.Length)
+                return false;
+
+            // AGENTS.md:279 - a reservation helper must fail safe when its backing collection is empty. A weighted
+            // roll needs a hydrated loot table; a forced item resolves without one (see LootResolutionJob at the
+            // ForcedItemHashID branch). Reporting success over an empty table lets ResourceNode deplete the node and
+            // hand the player nothing, which is the failure this guard exists to stop.
+            bool forcedItem = forcedItemHash != 0u;
+            if (!forcedItem && !host.HasResolvableLootTable())
                 return false;
 
             bool full = !inventoryCapacityAvailable;
@@ -2040,21 +2074,62 @@ namespace Hecton8.Scavenging
                     out NativeArray<LootTableEntryDTO> entries))
                 return dependency;
 
+            int writtenEntryCount = 0;
             try
             {
-                GenerateEmergencyMockLootTablesJob.WriteEmergencyLootTable(entries);
+                writtenEntryCount = GenerateEmergencyMockLootTablesJob.WriteEmergencyLootTable(entries);
             }
             finally
             {
                 _vault.ReleaseWriteLock(in _lootEntriesHandle, OwnerSystem);
             }
 
+            if (writtenEntryCount <= 0)
+            {
+                ReportLootTableUnavailableOnce(FallbackTableRefusedMessage);
+                return dependency;
+            }
+
             _emergencyTableGenerated = true;
             _lootTableHydrated = true;
-            _activeLootEntryCount = 4;
+            _activeLootEntryCount = writtenEntryCount;
             _activeLootTableHash = ScavengingLootOracleConstants.EmergencyTableHash;
             _activeLootTableVersion = 1u;
             return dependency;
+        }
+
+        /// <summary>
+        /// True when a hydrated loot table with at least one weighted entry is available. Pure read accessor: no
+        /// allocation, publish, scene search, job completion, or mutation.
+        /// </summary>
+        private bool HasResolvableLootTable()
+        {
+            return _lootTableHydrated &&
+                   _activeLootEntryCount > 0 &&
+                   _activeLootTableHash != 0u;
+        }
+
+        /// <summary>
+        /// Records the loot table as resolved-but-empty. The salvage route cannot grant any item in this state, so it
+        /// is reported once through the development log instead of silently answering every harvest with nothing.
+        /// </summary>
+        private void MarkLootTableUnavailable()
+        {
+            _lootTableHydrated = true;
+            _activeLootEntryCount = 0;
+            _activeLootTableHash = 0u;
+            _activeLootTableVersion = 0u;
+            ReportLootTableUnavailableOnce(MonolithLootSectionMissingMessage);
+        }
+
+        /// <summary>Emits one development-only error per session so a dead salvage chain is attributable, not silent.</summary>
+        private void ReportLootTableUnavailableOnce(string message)
+        {
+            if (_lootTableUnavailableReported)
+                return;
+
+            _lootTableUnavailableReported = true;
+            H8Debug.LogError(message);
         }
 
         private void TryPrimeMonolithLootTable()
@@ -2076,10 +2151,7 @@ namespace Hecton8.Scavenging
             JobHandle handle = EnsureEmergencyLootTableJob(default);
             ForceCompleteColdJobInPostSimulationWindow(ref handle);
 #else
-            _lootTableHydrated = true;
-            _activeLootEntryCount = 0;
-            _activeLootTableHash = 0u;
-            _activeLootTableVersion = 0u;
+            MarkLootTableUnavailable();
 #endif
         }
 
@@ -2094,10 +2166,7 @@ namespace Hecton8.Scavenging
 #if UNITY_EDITOR
             return EnsureEmergencyLootTableJob(dependency);
 #else
-            _lootTableHydrated = true;
-            _activeLootEntryCount = 0;
-            _activeLootTableHash = 0u;
-            _activeLootTableVersion = 0u;
+            MarkLootTableUnavailable();
             return dependency;
 #endif
         }
@@ -2335,6 +2404,7 @@ namespace Hecton8.Scavenging
             _vaultReady = false;
             _emergencyTableGenerated = false;
             _lootTableHydrated = false;
+            _lootTableUnavailableReported = false;
             _activeLootEntryCount = 0;
             _activeBiomeModifierCount = 0;
             _activeLootTableHash = 0u;

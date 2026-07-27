@@ -109,7 +109,43 @@ namespace Hecton8.World
             };
         }
 
+        public const int FirstStructureAccentRoleIndex = (int)WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark;
+        public const int LastStructureAccentRoleIndex = (int)WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette;
+
+        /// <summary>
+        /// Effective per-role structure accent floor.
+        /// A role the pattern solicits (authored max above zero) but leaves without an authored
+        /// floor is guaranteed one placement whenever the structure layer target can still carry
+        /// it after every authored floor is reserved. Without this, an accent the pattern wants
+        /// but does not demand is skipped outright by the structure guarantee pass
+        /// (WorldProceduralScatterDirector.cs:7091 continues on a zero required count) and has to
+        /// win the ordinary heat gate on its own - which the technogenic channels cannot do in the
+        /// shallow patterns, because their shaped ceilings sit below every authored technogenic
+        /// rule threshold (WorldProceduralFieldSampler.cs:3889/3897 and :3907/3915).
+        /// A role the pattern bans outright (authored floor and ceiling both zero) stays at zero.
+        /// </summary>
         public int GetStructureAccentMin(WorldPrefabFamilyProfile.StructureAccentRole role)
+        {
+            int authoredMin = GetAuthoredStructureAccentMin(role);
+            if (authoredMin > 0)
+                return authoredMin;
+
+            if (GetAuthoredStructureAccentMax(role) <= 0)
+                return 0;
+
+            return ResolveGuaranteedStructureAccentFloor(role);
+        }
+
+        public int GetStructureAccentMax(WorldPrefabFamilyProfile.StructureAccentRole role)
+        {
+            int authoredMax = GetAuthoredStructureAccentMax(role);
+            if (authoredMax <= 0 && GetAuthoredStructureAccentMin(role) <= 0)
+                return 0;
+
+            return Mathf.Max(GetStructureAccentMin(role), authoredMax);
+        }
+
+        private int GetAuthoredStructureAccentMin(WorldPrefabFamilyProfile.StructureAccentRole role)
         {
             return role switch
             {
@@ -121,16 +157,59 @@ namespace Hecton8.World
             };
         }
 
-        public int GetStructureAccentMax(WorldPrefabFamilyProfile.StructureAccentRole role)
+        private int GetAuthoredStructureAccentMax(WorldPrefabFamilyProfile.StructureAccentRole role)
         {
             return role switch
             {
-                WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark => Mathf.Max(naturalLandmarkMin, naturalLandmarkMax),
-                WorldPrefabFamilyProfile.StructureAccentRole.TechFragment => Mathf.Max(techFragmentMin, techFragmentMax),
-                WorldPrefabFamilyProfile.StructureAccentRole.CaveRead => Mathf.Max(caveReadMin, caveReadMax),
-                WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette => Mathf.Max(biologicalSilhouetteMin, biologicalSilhouetteMax),
+                WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark => Mathf.Max(0, naturalLandmarkMax),
+                WorldPrefabFamilyProfile.StructureAccentRole.TechFragment => Mathf.Max(0, techFragmentMax),
+                WorldPrefabFamilyProfile.StructureAccentRole.CaveRead => Mathf.Max(0, caveReadMax),
+                WorldPrefabFamilyProfile.StructureAccentRole.BiologicalSilhouette => Mathf.Max(0, biologicalSilhouetteMax),
                 _ => 0
             };
+        }
+
+        /// <summary>
+        /// Deterministic, allocation-free. Reserves every authored floor first, then walks the four
+        /// accent roles in declaration order and grants a floor of one to each solicited role that
+        /// still fits inside the structure layer target. Authored floors always win; the guarantee
+        /// only ever spends slack the pattern left unclaimed, so it can never push the summed floors
+        /// past the layer target the acceptance pass enforces.
+        /// </summary>
+        private int ResolveGuaranteedStructureAccentFloor(WorldPrefabFamilyProfile.StructureAccentRole role)
+        {
+            int layerBudget = GetTargetMax(WorldPrefabFamilyProfile.ScatterLayer.Structure);
+            if (layerBudget <= 0)
+                return 0;
+
+            int authoredTotal = 0;
+            for (int i = FirstStructureAccentRoleIndex; i <= LastStructureAccentRoleIndex; i++)
+                authoredTotal += GetAuthoredStructureAccentMin((WorldPrefabFamilyProfile.StructureAccentRole)i);
+
+            int remaining = layerBudget - authoredTotal;
+            if (remaining <= 0)
+                return 0;
+
+            for (int i = FirstStructureAccentRoleIndex; i <= LastStructureAccentRoleIndex; i++)
+            {
+                WorldPrefabFamilyProfile.StructureAccentRole candidate =
+                    (WorldPrefabFamilyProfile.StructureAccentRole)i;
+
+                if (GetAuthoredStructureAccentMin(candidate) > 0)
+                    continue;
+
+                if (GetAuthoredStructureAccentMax(candidate) <= 0)
+                    continue;
+
+                if (remaining <= 0)
+                    return 0;
+
+                remaining--;
+                if (candidate == role)
+                    return 1;
+            }
+
+            return 0;
         }
 
         public int GetClusterAccentMin(WorldPrefabFamilyProfile.ClusterAccentRole role)
