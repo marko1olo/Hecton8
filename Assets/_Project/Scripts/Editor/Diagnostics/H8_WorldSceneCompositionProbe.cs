@@ -103,6 +103,96 @@ namespace Hecton8.EditorTools.Diagnostics
 
             ReportNullMaterialRenderers(scene);
             ReportTerrains(scene);
+            ReportProceduralTerrainDrivers(scene);
+        }
+
+        /// <summary>
+        /// Reports whatever is driving the terrain procedurally (MapMagic and friends) WITHOUT taking a
+        /// compile-time dependency on its API: matched by type name, walked with SerializedObject.
+        /// The question this answers is why every Terrain tile reports layers=0 / alphamaps=0.
+        /// </summary>
+        private static void ReportProceduralTerrainDrivers(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (Component c in root.GetComponentsInChildren<Component>(true))
+                {
+                    if (c == null)
+                        continue;
+
+                    string typeName = c.GetType().FullName ?? string.Empty;
+                    if (typeName.IndexOf("MapMagic", StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+
+                    // Only the driver objects, not every per-tile helper.
+                    if (typeName.IndexOf("Tile", StringComparison.OrdinalIgnoreCase) >= 0)
+                        continue;
+
+                    Debug.Log($"{Marker}   MAPMAGIC {typeName} @ {GetHierarchyPath(c.transform)} enabled={(c is Behaviour b ? b.enabled.ToString() : "n/a")}");
+
+                    var so = new SerializedObject(c);
+                    SerializedProperty it = so.GetIterator();
+                    while (it.NextVisible(true))
+                    {
+                        if (it.depth > 1)
+                            continue;
+
+                        if (it.propertyType == SerializedPropertyType.ObjectReference)
+                        {
+                            UnityEngine.Object reference = it.objectReferenceValue;
+                            Debug.Log($"{Marker}     {it.propertyPath} = " +
+                                      (reference == null
+                                          ? "<NULL>"
+                                          : $"{reference.name} ({reference.GetType().Name}) @ {AssetDatabase.GetAssetPath(reference)}"));
+
+                            if (reference != null && it.propertyPath.IndexOf("graph", StringComparison.OrdinalIgnoreCase) >= 0)
+                                ReportGraphOutputs(reference);
+                        }
+                        else if (it.isArray && it.propertyType != SerializedPropertyType.String)
+                        {
+                            Debug.Log($"{Marker}     {it.propertyPath}[] length={it.arraySize}");
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// A MapMagic graph only produces splat/control data if it contains texture Output generators.
+        /// Reports the generator type names by reflection so a missing output node is visible.
+        /// </summary>
+        private static void ReportGraphOutputs(UnityEngine.Object graphAsset)
+        {
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            var outputs = new Dictionary<string, int>(StringComparer.Ordinal);
+
+            var so = new SerializedObject(graphAsset);
+            SerializedProperty it = so.GetIterator();
+            while (it.NextVisible(true))
+            {
+                if (it.propertyType != SerializedPropertyType.ManagedReference)
+                    continue;
+
+                string full = it.managedReferenceFullTypename;
+                if (string.IsNullOrEmpty(full))
+                    continue;
+
+                int lastDot = full.LastIndexOf('.');
+                string shortName = lastDot >= 0 && lastDot < full.Length - 1 ? full.Substring(lastDot + 1) : full;
+
+                counts.TryGetValue(shortName, out int n);
+                counts[shortName] = n + 1;
+
+                if (shortName.IndexOf("Output", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    outputs.TryGetValue(shortName, out int on);
+                    outputs[shortName] = on + 1;
+                }
+            }
+
+            Debug.Log($"{Marker}       GRAPH {graphAsset.name}: generators={counts.Count} distinct");
+            Debug.Log($"{Marker}       GRAPH OUTPUT nodes: {Summarize(outputs, 12)}");
+            Debug.Log($"{Marker}       GRAPH all nodes: {Summarize(counts, 20)}");
         }
 
         private static void ReportNullMaterialRenderers(Scene scene)
@@ -216,6 +306,71 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             Debug.Log($"{Marker}   {typeName}: count={found}{(found > 0 ? " @ " + details : string.Empty)}");
+        }
+
+        /// <summary>
+        /// Reverse-dependency audit for .compute assets, run through AssetDatabase rather than text search.
+        ///
+        /// A raw GUID grep CANNOT answer this: four project scenes are binary-serialized, so a
+        /// ComputeShader assigned to a serialized field in one of them stores its GUID as 16 raw bytes and
+        /// a text scan reports the asset as unreferenced. AssetDatabase.GetDependencies reads the real
+        /// dependency graph and sees through both serialization formats.
+        /// </summary>
+        public static void RunOrphanComputeAudit()
+        {
+            string[] computeGuids = AssetDatabase.FindAssets("t:ComputeShader", new[] { "Assets/_Project" });
+            var computePaths = new List<string>();
+            foreach (string guid in computeGuids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!string.IsNullOrEmpty(path))
+                    computePaths.Add(path);
+            }
+
+            // Everything that could hold a reference: scenes, prefabs, ScriptableObjects, materials.
+            var referrerPaths = new List<string>();
+            foreach (string filter in new[] { "t:Scene", "t:Prefab", "t:ScriptableObject", "t:Material" })
+            {
+                foreach (string guid in AssetDatabase.FindAssets(filter, new[] { "Assets" }))
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (!string.IsNullOrEmpty(path))
+                        referrerPaths.Add(path);
+                }
+            }
+
+            var referenced = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            foreach (string referrer in referrerPaths)
+            {
+                foreach (string dependency in AssetDatabase.GetDependencies(referrer, true))
+                {
+                    if (!dependency.EndsWith(".compute", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (!referenced.TryGetValue(dependency, out List<string> list))
+                    {
+                        list = new List<string>();
+                        referenced[dependency] = list;
+                    }
+
+                    if (list.Count < 4)
+                        list.Add(referrer);
+                }
+            }
+
+            Debug.Log($"{Marker} COMPUTE AUDIT: {computePaths.Count} .compute under Assets/_Project, " +
+                      $"{referenced.Count} reachable from a Scene/Prefab/ScriptableObject/Material dependency graph");
+
+            computePaths.Sort(StringComparer.Ordinal);
+            foreach (string path in computePaths)
+            {
+                if (referenced.TryGetValue(path, out List<string> referrers))
+                    Debug.Log($"{Marker}   REFERENCED {System.IO.Path.GetFileName(path)} <- {string.Join(", ", referrers)}");
+                else
+                    Debug.Log($"{Marker}   ORPHAN     {path}");
+            }
+
+            Debug.Log($"{Marker} DONE");
         }
 
         private static string GetHierarchyPath(Transform t)
