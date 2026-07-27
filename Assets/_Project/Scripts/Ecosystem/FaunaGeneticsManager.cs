@@ -16,12 +16,19 @@ namespace Hecton8.Ecosystem
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6235)]
     [AddComponentMenu("Hecton8/Ecosystem/Fauna Genetics Manager")]
-    public sealed class FaunaGeneticsManager : MonoBehaviour, ISaveable, IFaunaWorldSeedReadModel, IGlobalRegistryHotSwapListener
+    public sealed class FaunaGeneticsManager : MonoBehaviour, ISaveable, IFaunaWorldSeedReadModel, IWorldSeedProvider, IGlobalRegistryHotSwapListener
     {
         private const int FallbackWorldSeed = unchecked((int)0x51ED270B);
 
+        // This class does not generate the world, so it cannot honestly claim a world-generation
+        // algorithm version. SaveManager.ValidateRuntimeWorldSeed only compares versions when the
+        // SAVED one is > 0, so 0 means "unversioned" and stays quiet - while a save written by a
+        // real HectonWorldGenerator still warns, which is the correct thing for it to do.
+        private const int UnversionedWorldGeneration = 0;
+
         [SerializeField] private int _worldSeed;
         private bool _serviceRegistered;
+        private bool _worldSeedProviderRegistered;
         private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
         private bool _saveRegistered;
@@ -31,6 +38,26 @@ namespace Hecton8.Ecosystem
 
         /// <summary>Persisted deterministic world seed used by ecosystem systems.</summary>
         public int WorldSeed => _worldSeed;
+
+        // IWorldSeedProvider. This class was already the de-facto owner of the world seed - it
+        // generates it, persists it to ecosystemState.worldSeed and restores it on load - but it
+        // only ever published it as IFaunaWorldSeedReadModel, so fauna genetics was the single
+        // system in the project that could see it. Nothing implemented IWorldSeedProvider, which is
+        // what the procedural-generation side asks for, so the world seed reaching MapMagic and
+        // every other generator was 0. Publishing the same field under the interface that the rest
+        // of the project actually queries is what connects the two halves.
+        //
+        // Yields to a real HectonWorldGenerator if one is ever present: see
+        // TryRegisterWorldSeedProvider.
+
+        /// <inheritdoc />
+        public bool IsInitialized => _worldSeedProviderRegistered && _worldSeed != 0;
+
+        /// <inheritdoc />
+        public int RuntimeWorldSeed => _worldSeed;
+
+        /// <inheritdoc />
+        public int RuntimeWorldGenerationVersionId => UnversionedWorldGeneration;
 
         /// <inheritdoc />
         public int SavePriority => 40;
@@ -64,6 +91,7 @@ namespace Hecton8.Ecosystem
             CacheSaveServiceCold();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
+            TryRegisterWorldSeedProvider();
         }
 
         private void OnDisable()
@@ -72,6 +100,7 @@ namespace Hecton8.Ecosystem
             TryUnregisterHotSwapListener();
             _saveService = null;
             _runModifiers = null;
+            TryUnregisterWorldSeedProvider();
             TryUnregisterService();
         }
 
@@ -81,6 +110,7 @@ namespace Hecton8.Ecosystem
             TryUnregisterHotSwapListener();
             _saveService = null;
             _runModifiers = null;
+            TryUnregisterWorldSeedProvider();
             TryUnregisterService();
         }
 
