@@ -6425,12 +6425,22 @@ namespace Hecton8.World
                 resolvedAny |= fluidDecalMaterial != null;
             }
 
-            // The black smoker plume never ran. blackSmokeCompute arrived only through [SerializeField], and a
-            // GUID census found AbyssalBlackSmoke.compute referenced by no scene, prefab or asset, so the field
-            // was null everywhere and the guards early-returned. Identity is proven here by asset path rather
-            // than by kernel name: CSMain is declared by seven computes in this project and is therefore no
-            // evidence at all. The distinctive contract is the _ThermalVents / _ParticlesRead buffer pair, which
-            // only this manager binds.
+            // blackSmokeCompute arrives only through [SerializeField], so it is null in any scene or prefab
+            // where nobody performed the Inspector drag, and the dispatch guards then early-return.
+            //
+            // CORRECTION - the stronger claim originally written here was NOT PROVEN. I asserted a GUID census
+            // showed AbyssalBlackSmoke.compute referenced by no scene, prefab or asset. That census was a text
+            // ripgrep and 02_HECTON_WORLD.unity is a BINARY scene, so a text search cannot see its references.
+            // Control case: HectonHudFogLuminance.compute was persisted into the scenes by f2216825d and is
+            // equally invisible to that grep. Whether this field was already assigned is UNKNOWN, not
+            // disproven, and "the plume never ran" is retracted. Authoritative check is
+            // AssetDatabase.GetDependencies (see GpuKernelReferencePersist) or RunGpuWiringAudit; both need
+            // the editor.
+            //
+            // The resolve is still correct either way - idempotent, only assigns when null, and makes a new
+            // scene self-wire. Identity is by asset path rather than kernel name because CSMain is declared by
+            // seven computes here and is no evidence at all; the distinctive contract is the
+            // _ThermalVents / _ParticlesRead buffer pair, which only this manager binds.
             if (blackSmokeCompute == null)
             {
                 blackSmokeCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(EditorDefaultBlackSmokeComputePath);

@@ -777,11 +777,20 @@ namespace Hecton8.Environment
         /// <summary>
         /// Resolves the marine snow kernel at AUTHOR time so the reference is serialized and therefore ships.
         ///
-        /// marineSnowCompute arrived only through [SerializeField], and a GUID census found this compute asset
-        /// referenced by no scene, prefab or asset - so the field was null everywhere. IsOperational gates on
-        /// it, as do every dispatch guard, which means all marine snow paths early-returned and the densest
-        /// depth cue in the abyss never rendered at all. Commit 32c3c8a1a connected the two missing pieces
-        /// around this system but not this reference, so it stayed inert regardless.
+        /// marineSnowCompute arrives only through [SerializeField], so it is null in any scene or prefab where
+        /// nobody performed the Inspector drag, and IsOperational plus every dispatch guard then early-returns.
+        ///
+        /// CORRECTION - the stronger claim originally written here was NOT PROVEN. I asserted a GUID census
+        /// showed this asset referenced by no scene, prefab or asset. That census was a text ripgrep, and
+        /// 02_HECTON_WORLD.unity is a BINARY scene, so a text search cannot see its references at all. The
+        /// control case is decisive: HectonHudFogLuminance.compute was explicitly persisted into the scenes by
+        /// f2216825d and is equally invisible to that grep. So whether this field was already assigned in the
+        /// shipping scenes is UNKNOWN, not disproven, and "marine snow never rendered" is retracted.
+        /// The authoritative check is AssetDatabase.GetDependencies (see GpuKernelReferencePersist, which says
+        /// exactly this) or RunGpuWiringAudit for per-instance state. Both need the editor.
+        ///
+        /// This resolve is still correct and worth keeping either way: it is idempotent, only assigns when the
+        /// field is null, and makes a NEW scene or prefab self-wire rather than depending on someone's memory.
         ///
         /// The assignment is proven by kernel name rather than name similarity: CS_IntegrateSiltParticles and
         /// CS_RebaseParticles are declared in exactly one compute asset in the project.
