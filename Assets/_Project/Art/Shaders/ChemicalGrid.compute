@@ -1,3 +1,10 @@
+// UNWIRED as of 2026-07-27. Verified by census: DiffuseChemicalGrid appears nowhere outside this file, this
+// asset's GUID is referenced by no scene, prefab or asset, and no C# binds _ChemicalGridSource/Target or sets
+// a single one of the parameters below. The live chemical owner is ChemicalInfluenceGrid.cs driving the Burst
+// ToxicDiffusionJob in ToxicOutgassingChemistryRuntime.cs, so this kernel is an orphaned GPU alternative.
+// It is left in place rather than deleted because it may be staged work, but do NOT assume it runs, and if
+// you wire it, it needs a global authority route card first.
+
 #pragma kernel DiffuseChemicalGrid
 
 #define THREAD_GROUP_SIZE 64
@@ -46,7 +53,25 @@ void DiffuseChemicalGrid(uint3 dispatchThreadID : SV_DispatchThreadID)
          SampleChemicalCellClamped(cell + int3(0, 0, -1), _ChemicalGridDimensions) +
          SampleChemicalCellClamped(cell + int3(0, 0, 1), _ChemicalGridDimensions)) / 6.0;
 
-    float4 retained = selfValue * (1.0 - _ChemicalGridDecayRates);
-    float4 diffused = neighborAverage * _ChemicalGridDiffusionRates;
-    _ChemicalGridTarget[index] = min(max(retained + diffused, 0.0), _ChemicalGridMaxIntensity.xxxx);
+    // Diffusion has to be a convex blend toward the neighbourhood, not an independent addition on top of a
+    // decayed self. The previous form was
+    //     new = self * (1 - decay) + neighbourAverage * diffusion
+    // which couples nothing: a UNIFORM field, which must be a fixed point of diffusion because there is
+    // nothing to diffuse, instead became self * (1 - decay + diffusion) every step. With diffusion > decay
+    // that grows without bound until the max-intensity clamp pins the whole grid at maximum; with
+    // diffusion < decay it collapses to zero. Neither produces a plume.
+    //
+    // The blend below is mass-conserving in the interior, and because it is a convex combination of the
+    // stencil it is bounded by the stencil's own min and max, so it is unconditionally stable for rate in
+    // [0,1] - which saturate enforces. Decay is then applied as a separate multiplicative sink, which is
+    // what it actually is. Same shape as the live CPU owner, ToxicDiffusionJob in
+    // ToxicOutgassingChemistryRuntime.cs, which integrates laplacian * rate * dt.
+    float4 diffusionRate = saturate(_ChemicalGridDiffusionRates);
+    float4 diffusedValue = selfValue + diffusionRate * (neighborAverage - selfValue);
+    float4 result = diffusedValue * (1.0 - saturate(_ChemicalGridDecayRates));
+
+    // A single NaN in a diffusion grid is not a local defect: it reaches every neighbour on the next step
+    // and never leaves. Cheaper to reject it here than to debug a globally poisoned grid.
+    result = all(isfinite(result)) ? result : float4(0.0, 0.0, 0.0, 0.0);
+    _ChemicalGridTarget[index] = min(max(result, 0.0), _ChemicalGridMaxIntensity.xxxx);
 }
