@@ -95,8 +95,17 @@ namespace Hecton8.Data
                    H8StaticDataArena.TryGetAppliedLoreUtf8(record, surface, out utf8Bytes);
         }
 
+        /// <remarks>
+        /// The record reference is <c>scoped</c> because it never reaches the returned span. The
+        /// record is a pure offset/length table and is handed to the arena by value; the arena
+        /// builds the span over its own long-lived static buffer with
+        /// <c>MemoryMarshal.CreateReadOnlySpan</c>. Without the annotation the compiler
+        /// conservatively ties the out span's escape scope to this <c>in</c> reference, so every
+        /// caller that held the record in a local reported CS9091 ("returns local by reference")
+        /// even though nothing can dangle.
+        /// </remarks>
         public static bool TryGetUtf8(
-            in H8AppliedLorePacketRecord record,
+            scoped in H8AppliedLorePacketRecord record,
             H8AppliedLoreSurface surface,
             out ReadOnlySpan<byte> utf8Bytes)
         {
