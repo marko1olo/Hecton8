@@ -1,0 +1,28 @@
+{
+    "name": "Hecton8.Audio.Echolocation.Tests",
+    "rootNamespace": "Hecton8.Audio.Echolocation.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Audio.Echolocation",
+        "Hecton8.Core.Contracts",
+        "Hecton8.PureLogic",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

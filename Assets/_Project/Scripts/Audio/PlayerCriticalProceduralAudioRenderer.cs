@@ -875,6 +875,7 @@ namespace Hecton8.Audio
                 float step = math.clamp(StepMeters, 0.05f, math.max(0.05f, MaxDistanceMeters));
                 float previousDensity = 0f;
                 float3 previousPosition = PingOrigin;
+                float previousDistance = 0f;
                 bool hasPrevious = false;
 
                 for (float distance = 0f; distance <= MaxDistanceMeters; distance += step)
@@ -891,20 +892,30 @@ namespace Hecton8.Audio
                     {
                         previousDensity = density;
                         previousPosition = position;
+                        previousDistance = distance;
                         hasPrevious = true;
                         continue;
                     }
 
-                    float t = 0f;
+                    // Default to the sampled point. density and audioMaterialId were both read at
+                    // `position`, so leaving t at 0 reported the echo at `previousPosition` - one
+                    // whole `step` (sonarSdfProbeIntervalMeters, 50 m by default) short of the
+                    // surface that produced it, and at PingOrigin itself whenever no in-bounds
+                    // sample preceded the hit. Only a sign crossing has a sub-step surface to
+                    // interpolate towards.
+                    float t = 1f;
                     if (surfaceHit)
                     {
                         float denom = math.max(0.0001f, density - previousDensity);
                         t = math.saturate(-previousDensity * math.rcp(denom));
                     }
 
+                    // previousDistance instead of `distance - step` so the interpolated range stays
+                    // affine-consistent with hitPoint even when intermediate samples fell outside
+                    // the SDF volume and the real gap was wider than one step.
                     float3 hitPoint = math.lerp(previousPosition, position, t);
-                    float rayDistance = math.max(0f, distance - step + step * t);
-                    float returnDistance = LengthApprox(hitPoint - ListenerPosition);
+                    float rayDistance = math.max(0f, math.lerp(previousDistance, distance, t));
+                    float returnDistance = math.length(hitPoint - ListenerPosition);
                     float totalDistance = math.max(0.001f, rayDistance + returnDistance);
 
                     float soundSpeedMps = math.max(0.001f, math.rcp(math.max(SoundSpeedInv, 0.000001f)));
@@ -1102,15 +1113,6 @@ namespace Hecton8.Audio
 
                 float lengthSq = math.lengthsq(value);
                 return lengthSq > 0.000001f ? value * math.rsqrt(lengthSq) : fallback;
-            }
-
-            private static float LengthApprox(float3 value)
-            {
-                float3 axis = math.abs(value);
-                float maxAxis = math.cmax(axis);
-                float minAxis = math.cmin(axis);
-                float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
-                return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
             }
 
             private static float ApproxExpNeg(float value)
