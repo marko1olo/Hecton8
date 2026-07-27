@@ -193,12 +193,9 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 return max(ApproxMagnitude3(_GlobalOceanFlow.xyz), _HectonVegetationCurrentStrength);
             }
 
-            float Hash21(float2 value)
-            {
-                float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
-                hash += dot(hash, hash.yzx + 33.33);
-                return frac((hash.x + hash.y) * hash.z);
-            }
+            // Was a local float frac-hash that disagreed with the lit pass, so the depth prepass
+            // placed each plant on a different wind phase than the plant. Shared across all passes now.
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationHash.hlsl"
 
             float ResolveBayer4x4(float2 pixel)
             {

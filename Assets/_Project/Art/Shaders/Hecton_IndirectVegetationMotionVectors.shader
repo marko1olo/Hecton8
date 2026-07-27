@@ -211,12 +211,9 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 return max(FastLength3(_GlobalOceanFlow.xyz), _HectonVegetationCurrentStrength);
             }
 
-            float Hash21(float2 value)
-            {
-                value = frac(value * float2(0.1031, 0.11369));
-                value += dot(value, value.yx + 33.33);
-                return frac((value.x + value.y) * value.x);
-            }
+            // Was a third, 2D frac-hash variant - a different wind phase again, which is exactly the
+            // kind of mismatch that makes motion vectors describe a plant that was never drawn.
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationHash.hlsl"
 
             float ResolveBayer4x4(float2 pixel)
             {

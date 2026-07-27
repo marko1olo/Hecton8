@@ -313,36 +313,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return authoredBiolumColor;
             }
 
-            uint MathHashUint3(uint3 value)
-            {
-                value ^= value.yzx * uint3(0x9E3779B9u, 0x85EBCA6Bu, 0xC2B2AE35u);
-                value = (value ^ (value >> 16)) * uint3(0x85EBCA6Bu, 0xC2B2AE35u, 0x27D4EB2Fu);
-                value ^= value.zxy * uint3(0x165667B1u, 0xD3A2646Cu, 0x9E3779B9u);
-                value ^= value >> 13;
-                return value.x ^ value.y ^ value.z;
-            }
-
-            float Hash01FromUint(uint value)
-            {
-                return (float)(value & 0x00FFFFFFu) * (1.0 / 16777215.0);
-            }
-
-            uint3 QuantizeHashSeed3(float3 value)
-            {
-                int3 quantized = (int3)floor(value * 16.0);
-                return (uint3)(quantized + int3(1048576, 1048576, 1048576));
-            }
-
-            float Hash21(float2 value)
-            {
-                uint3 seed = QuantizeHashSeed3(float3(value, 0.0));
-                return Hash01FromUint(MathHashUint3(seed ^ uint3(0xA511E9B3u, 0x63D83595u, 0xB6C4A793u)));
-            }
-
-            float Hash31(float3 value)
-            {
-                return Hash01FromUint(MathHashUint3(QuantizeHashSeed3(value)));
-            }
+            // Canonical per-instance hash, now shared with the DepthOnly / MotionVectors / Shadow
+            // passes so a plant and its shadow sway on the same wind phase. See the include header.
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationHash.hlsl"
 
             float WrapPhasePi(float phase)
             {
