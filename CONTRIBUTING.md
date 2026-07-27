@@ -74,6 +74,40 @@ Roughly 35 seconds for `Hecton8.Core`. Output goes to `Temp/CodexBuild/`.
 > Unity's real compile reports neither. **For Editor-assembly code, trust only a Unity batchmode
 > run.** An agent following the gate blindly here will "fix" three bugs that do not exist.
 
+> [!CAUTION]
+> **The lock-free gate compiles in EDITOR configuration and is blind to player-build breakage.**
+> `Directory.Build.props:10` and `Directory.Build.targets:39,128` inject `UNITY_EDITOR;UNITY_EDITOR_WIN`
+> on top of Unity's generated csproj, so `dotnet build` is green while the shipped player does not
+> compile — and stays green indefinitely. **68 real defects accumulated behind this.**
+>
+> The failure shape: an `#if UNITY_EDITOR` region opened for a legitimate CSV or authoring route, then
+> not closed, swallowing runtime members that unguarded code calls. Every one is `CS0103`, and nothing
+> in an editor-configuration build can see any of them.
+>
+> Before claiming an assembly is clean, run the player configuration:
+>
+> ```bash
+> python -B Tools/PlayerConfigCompileGate.py --assembly Hecton8.Core --also-editor
+> ```
+>
+> `--also-editor` compiles both, which is what you want — the fix must not trade a player error for an
+> editor one. `--all-runtime` sweeps every first-party assembly that ships. Exit code 1 on failure.
+>
+> Fix by **moving the guard boundary**, not by guarding the call site — *unless the feature really is
+> editor-only*. Determining which requires reading what the code actually touches, not what it is
+> named. A worked example of the exception: `ShinobuFloraFaunaSymbiosisSolver
+> .TryLoadLegacyLinksIntoVault` looked like shippable data loading, and "data files ship with the
+> game" is true in general. But its path builder resolves the parent of `Application.dataPath` plus
+> `Docs/Archive/` — the repository root. That cannot exist in a player, so it is a one-time authoring
+> migration and the call site is the correct place to guard. Read the path builder before deciding.
+>
+> A useful tell for an over-wide guard: a **redundant nested `#if UNITY_EDITOR`** further down. Nesting
+> is pointless unless its author believed they were outside a guard — and they were not.
+>
+> `Tools/EditorGuardLeakScanner.py` is the fast pre-filter and prints declared-vs-called line numbers,
+> which is what makes the fix mechanical. It structurally cannot see guarded *fields* or partial
+> classes split across files, so when the two disagree, the compile gate wins.
+
 ### Runtime proof
 
 Compiling proves nothing about behaviour. The two probes in
