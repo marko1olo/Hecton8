@@ -313,8 +313,6 @@ namespace Hecton8.World
         private const float BiomeGradientAmbientSpawnGain = 0.18f;
         private const float BiomeGradientPredatorSpawnGain = 0.08f;
         private const float BiomeGradientCapacityGain = 0.04f;
-        private const float TrenchBiomeMaskThreshold = 0.8f;
-        private const float ShelfBiomeMaskThreshold = 0.5f;
         private const int GeologyBiomeCacheCapacity = 256;
         private const uint GeologyBiomeCacheIndexMask = (uint)GeologyBiomeCacheCapacity - 1u;
         private const int PredatorSpawnValidationHitCapacity = 64;
@@ -8539,19 +8537,10 @@ namespace Hecton8.World
         /// </summary>
         private static int ResolveBiomeIdFromGeologySample(in WorldMacroGeologySample sample)
         {
-            float trenchMask = math.select(0f, sample.TrenchMask, math.isfinite(sample.TrenchMask));
-            float shelfMask = math.select(0f, sample.ShelfMask, math.isfinite(sample.ShelfMask));
-
-            // Abyssal trench wins where both masks overlap: it is the stronger structure. A thin food
-            // column feeding pressure-adapted hunters is the scarce lane.
-            if (trenchMask > TrenchBiomeMaskThreshold)
-                return 2;
-
-            // Photic shelf: dense kelp and schooling prey are the rich lane.
-            if (shelfMask > ShelfBiomeMaskThreshold)
-                return 1;
-
-            return 0;
+            // Delegated rather than inlined so the runtime path and the distribution audit in
+            // EcosystemGeologyBiomeLanes cannot drift apart. A silently diverging audit would report
+            // a healthy lane spread while the runtime collapsed to one lane.
+            return EcosystemGeologyBiomeLanes.ClassifyLane(in sample);
         }
 
         private bool TryResolveGeologyBiomeParams(out WorldMacroGeologyParams parameters)
