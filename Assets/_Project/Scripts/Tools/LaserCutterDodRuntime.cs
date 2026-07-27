@@ -373,14 +373,27 @@ namespace Hecton8.Tools
             }
         }
 
+        /// <summary>
+        /// Re-arms the dispatcher late-frame drain. Deliberately NOT gated on
+        /// <c>_lateFramePumpRegistered</c>: the late-frame lane is emptied behind this owner's back by
+        /// <c>SystemDispatcher.ClearAllLanes</c>, reached from any unsuppressed scene unload
+        /// (<c>SceneRuntimeService.HandleSceneUnloaded</c> -> <c>ClearRuntimeState</c> ->
+        /// <c>GlobalRegistry.ClearRuntimeBuckets</c>), and nothing notifies this class. A latched early
+        /// return therefore made the drop permanent, the ring saturated at
+        /// <see cref="LaserCutterDodConstants.MaxRequests"/> again, and every later cut fell through to
+        /// <c>IncrementSuppressed</c>. Repeat attempts are free and cannot double-register: the lane is a
+        /// <c>RegistryBucket&lt;ILateFrameTickable&gt;</c> whose <c>TryRegister</c> rejects a duplicate via
+        /// <c>Contains</c>, which is why the flag is only ever raised on a successful insert and never
+        /// cleared by a redundant one - clearing it there would strand the live lane entry with no owner
+        /// willing to unregister it on teardown.
+        /// </summary>
         private static void TryRegisterLateFramePump()
         {
-            if (_lateFramePumpRegistered)
-                return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _lateFramePumpRegistered = GlobalRegistry.TryRegisterLateFrameTickable(_lateFramePump, PriorityLayer.Player);
+            if (GlobalRegistry.TryRegisterLateFrameTickable(_lateFramePump, PriorityLayer.Player))
+                _lateFramePumpRegistered = true;
         }
 
         private static void TryUnregisterLateFramePump()
