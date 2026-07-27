@@ -625,11 +625,28 @@ namespace Hecton8.World
             // ADD the warp to the pristine double-precision world position
             double2 warpedPosD = posD + (double2)tectonicWarp + (double2)mesoWarp;
 
-            // Subtract the local chunk anchor in double precision before casting so high-frequency
-            // terrain terms retain their ULP precision at large absolute world coordinates.
-            double chunkSizeD = math.max(128.0, (double)parameters.ChunkSizeMeters);
-            double2 chunkOriginAup = math.floor(posD / chunkSizeD) * chunkSizeD;
-            float2 warpedPos = (float2)(warpedPosD - chunkOriginAup);
+            // R100 FIX (512 m terrain cliff): the per-chunk anchor that used to be subtracted here was
+            // `floor(posD / ChunkSizeMeters) * ChunkSizeMeters`. Its stated intent was to preserve ULP
+            // precision at large absolute coordinates, which is a real problem - but every consumer of
+            // `warpedPos` below is NON-PERIODIC fBm on a global simplex lattice, so subtracting a
+            // staircase translated the entire noise domain by one chunk at every 512 m boundary and
+            // fully decorrelated the field across it. Measured on the shipped code at x = 776704
+            // (= floor(777000/512)*512): a 34.46 m height step between samples 0.25 m apart, against
+            // 0.07 m of legitimate variation mid-chunk - a 475x discontinuity, driven mainly by
+            // mountainUplift (x950) and the hill terms.
+            //
+            // The anchor is removed rather than resized: no anchor value can be correct here, because
+            // any non-zero staircase is a domain translation and the lattice has no matching period.
+            // The precision the anchor was protecting is genuinely lost by this cast - at 777 km a
+            // float2 quantises position to 0.0625 m, which after the frequency multiply is a sub-
+            // centimetre height tread. Trading a 34.46 m cliff for that is unambiguously correct.
+            // Recovering the last centimetre is a separate, larger change: route the absolute
+            // `warpedPosD` through the double-precision noise entry points that already exist in this
+            // file (RidgedMultifractal01/ErodedRidge01/BillowNoise01 all have double2 overloads;
+            // FractalSimplexNoise01's equivalent is DoubleFractalSimplexNoise01). That touches ~29 call
+            // sites and must be verified by the same numerical continuity probe, so it is deliberately
+            // not bundled with this one-line correctness fix.
+            float2 warpedPos = (float2)warpedPosD;
             float2 warpedNorm = (float2)(warpedPosD / extentD);
 
 #if UNITY_EDITOR
