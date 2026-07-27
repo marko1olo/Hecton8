@@ -78,7 +78,9 @@ float4 _AbyssalFlowTextureParams;    // x=resolution, y=world size, z=source wor
 float _AbyssalFlowTextureActive;
 float4x4 _VoxelSdfWorldToLocal;
 float4 _VoxelSdfInvDoubleHalfExtents;
-float4 _FluidAdvectionSdfParams;     // x=active, y=solid threshold, z=unused, w=unused
+// y is a signed-distance threshold: a sample BELOW it is solid rock. z/w are read by AdvectCarveDebris and
+// are supplied by CarveDebrisComputeRenderer; HectonFluidEngine passes 0 there so the kernel defaults apply.
+float4 _FluidAdvectionSdfParams;     // x=active, y=solid threshold, z=debris bounce, w=debris sleep speed sq
 
 float3 Sanitize(float3 value)
 {
@@ -207,8 +209,14 @@ bool IsSolidVoxel(float3 positionWS)
     if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
         return false;
 
-    float density = _VoxelSdfTexture3D.SampleLevel(sampler_VoxelSdfTexture3D, sampleUv, 0.0);
-    return density > _FluidAdvectionSdfParams.y;
+    // __HectonCaveVoxelSdfTex is a SIGNED DISTANCE field, not a density, so LOW values are solid.
+    // Its producer, HectonCaveVoxelLightingVolume.EncodeSignedDistanceField, writes byte 0 or 115 for
+    // occupied rock (normalized 0.0 / 0.451) and 140, 166 or 255 for empty water (0.549 / 0.651 / 1.0).
+    // The 0.5 threshold is exactly the midpoint between the 115 and 140 shells. Hecton_DeferredCaustics
+    // decodes the same texture the same way - lerp(-range, +range, encoded), where above 0.5 is a
+    // positive distance, i.e. open space. Reading it as a density inverts every collision test.
+    float signedDistance01 = _VoxelSdfTexture3D.SampleLevel(sampler_VoxelSdfTexture3D, sampleUv, 0.0);
+    return signedDistance01 < _FluidAdvectionSdfParams.y;
 }
 
 float3 IntegrateVelocity(float3 velocity, float3 flow, float buoyancy)
