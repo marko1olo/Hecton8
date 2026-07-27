@@ -12,6 +12,13 @@
 // This gate forces the reimport and reads the importer's own messages back, so a
 // broken shader reports a file, line, platform and message instead of nothing.
 //
+// .compute assets go through the same measurement. ShaderUtil has a separate entry
+// point for them (GetComputeShaderMessages), returning the identical
+// UnityEditor.ShaderMessage[] the .shader path reads, so both asset kinds contribute
+// real error and warning counts to the RESULT line. There is no compute analogue of
+// Shader.isSupported, so the kernel roster stands in for it: a kernel that fails to
+// build is dropped from the loaded asset while the asset itself still loads.
+//
 // Usage (paths are semicolon-separated, project-relative):
 //   Unity.exe -batchmode -quit -projectPath <proj> -logFile <log> \
 //     -executeMethod Hecton8.EditorTools.Diagnostics.H8_ShaderCompileGate.Run \
@@ -39,6 +46,7 @@ namespace Hecton8.EditorTools.Diagnostics
         private const string PathsArgument = "-h8ShaderPaths";
         private const int MissingRequestExitCode = 3;
         private const int CompileErrorExitCode = 2;
+        private static readonly char[] KernelTokenSeparators = { ' ', '\t' };
 
         public static void Run()
         {
@@ -89,21 +97,60 @@ namespace Hecton8.EditorTools.Diagnostics
             // means the importer never runs and no messages are ever produced.
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
 
-            // Compute assets are not Shaders and carry no ShaderUtil message list,
-            // so they are reported as imported rather than silently counted as passing.
             if (path.EndsWith(".compute", StringComparison.OrdinalIgnoreCase))
-            {
-                ComputeShader compute = AssetDatabase.LoadAssetAtPath<ComputeShader>(path);
-                if (compute == null)
-                {
-                    Debug.LogError($"{Marker} COMPUTE_LOAD_FAILED {path}");
-                    return 1;
-                }
+                return InspectComputeAsset(path, ref warnings);
 
-                Debug.Log($"{Marker} COMPUTE {Path.GetFileName(path),-46} imported (see log for compile errors)");
-                return 0;
+            return InspectShaderAsset(path, ref warnings);
+        }
+
+        private static int InspectComputeAsset(string path, ref int warnings)
+        {
+            ComputeShader compute = AssetDatabase.LoadAssetAtPath<ComputeShader>(path);
+            if (compute == null)
+            {
+                Debug.LogError($"{Marker} COMPUTE_LOAD_FAILED {path}");
+                return 1;
             }
 
+            int assetErrors = 0;
+            int assetWarnings = 0;
+
+            if (ShaderUtil.GetComputeShaderMessageCount(compute) > 0)
+            {
+                CountAndLogMessages(
+                    path, ShaderUtil.GetComputeShaderMessages(compute), ref assetErrors, ref assetWarnings);
+            }
+
+            // Stands in for the missing Shader.isSupported: a kernel the compiler rejected is
+            // absent from the built asset even though the asset still loads non-null, which
+            // would otherwise read as a clean pass.
+            List<string> declaredKernels = ReadDeclaredKernelNames(path);
+            int liveKernels = 0;
+
+            for (int kernelIndex = 0; kernelIndex < declaredKernels.Count; kernelIndex++)
+            {
+                string kernelName = declaredKernels[kernelIndex];
+                if (compute.HasKernel(kernelName))
+                {
+                    liveKernels++;
+                    continue;
+                }
+
+                Debug.LogError($"{Marker} MISSING_KERNEL {Path.GetFileName(path)}:{kernelName}");
+                assetErrors++;
+            }
+
+            warnings += assetWarnings;
+
+            Debug.Log(
+                $"{Marker} COMPUTE {Path.GetFileName(path),-46} " +
+                $"kernels={liveKernels}/{declaredKernels.Count} errors={assetErrors} warnings={assetWarnings}");
+
+            return assetErrors;
+        }
+
+        private static int InspectShaderAsset(string path, ref int warnings)
+        {
             Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(path);
             if (shader == null)
             {
@@ -116,19 +163,8 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (ShaderUtil.GetShaderMessageCount(shader) > 0)
             {
-                var messages = ShaderUtil.GetShaderMessages(shader);
-                for (int messageIndex = 0; messageIndex < messages.Length; messageIndex++)
-                {
-                    var message = messages[messageIndex];
-                    if (message.severity == ShaderCompilerMessageSeverity.Error)
-                        assetErrors++;
-                    else
-                        assetWarnings++;
-
-                    Debug.Log(
-                        $"{Marker}   {message.severity.ToString().ToUpperInvariant()} " +
-                        $"{Path.GetFileName(path)}:{message.line} [{message.platform}] {message.message}");
-                }
+                CountAndLogMessages(
+                    path, ShaderUtil.GetShaderMessages(shader), ref assetErrors, ref assetWarnings);
             }
 
             // isSupported false on the editor's own graphics API means the shader cannot
@@ -146,6 +182,98 @@ namespace Hecton8.EditorTools.Diagnostics
                 $"supported={shader.isSupported} errors={assetErrors} warnings={assetWarnings}");
 
             return assetErrors;
+        }
+
+        // Both ShaderUtil entry points return the same UnityEditor.ShaderMessage[], so the
+        // severity split lives in one place instead of drifting between the two asset kinds.
+        private static void CountAndLogMessages(
+            string path, ShaderMessage[] messages, ref int errors, ref int warnings)
+        {
+            for (int messageIndex = 0; messageIndex < messages.Length; messageIndex++)
+            {
+                ShaderMessage message = messages[messageIndex];
+                if (message.severity == ShaderCompilerMessageSeverity.Error)
+                    errors++;
+                else
+                    warnings++;
+
+                Debug.Log(
+                    $"{Marker}   {message.severity.ToString().ToUpperInvariant()} " +
+                    $"{Path.GetFileName(path)}:{message.line} [{message.platform}] {message.message}");
+            }
+        }
+
+        // ShaderUtil exposes no kernel enumeration, so the roster comes from the source text.
+        // Pragmas inside a preprocessor conditional are skipped on purpose: that branch may
+        // legitimately be off, and reporting those kernels as missing would make the gate cry wolf.
+        private static List<string> ReadDeclaredKernelNames(string path)
+        {
+            List<string> kernelNames = new List<string>(8);
+            string[] lines;
+
+            try
+            {
+                lines = File.ReadAllLines(path);
+            }
+            catch (IOException exception)
+            {
+                Debug.LogWarning($"{Marker} KERNEL_SCAN_FAILED {path} {exception.Message}");
+                return kernelNames;
+            }
+
+            int conditionalDepth = 0;
+
+            for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+            {
+                string line = lines[lineIndex];
+
+                int commentStart = line.IndexOf("//", StringComparison.Ordinal);
+                if (commentStart >= 0)
+                    line = line.Substring(0, commentStart);
+
+                line = line.Trim();
+                if (line.Length == 0 || line[0] != '#')
+                    continue;
+
+                // Tolerate `#  pragma kernel Foo`, which HLSL accepts.
+                string directive = line.Substring(1).TrimStart();
+
+                if (directive.StartsWith("if", StringComparison.Ordinal))
+                {
+                    conditionalDepth++;
+                    continue;
+                }
+
+                if (directive.StartsWith("endif", StringComparison.Ordinal))
+                {
+                    if (conditionalDepth > 0)
+                        conditionalDepth--;
+                    continue;
+                }
+
+                if (conditionalDepth > 0 || !directive.StartsWith("pragma", StringComparison.Ordinal))
+                    continue;
+
+                string pragmaBody = directive.Substring("pragma".Length);
+                if (pragmaBody.Length == 0 || !char.IsWhiteSpace(pragmaBody[0]))
+                    continue;
+
+                pragmaBody = pragmaBody.TrimStart();
+                if (!pragmaBody.StartsWith("kernel", StringComparison.Ordinal))
+                    continue;
+
+                // Whitespace guard so a future `#pragma kernelsomething` is not read as a kernel.
+                string kernelBody = pragmaBody.Substring("kernel".Length);
+                if (kernelBody.Length == 0 || !char.IsWhiteSpace(kernelBody[0]))
+                    continue;
+
+                // `#pragma kernel Name DEFINE=1` declares one kernel; trailing tokens are defines.
+                string[] tokens = kernelBody.Split(KernelTokenSeparators, StringSplitOptions.RemoveEmptyEntries);
+                if (tokens.Length > 0)
+                    kernelNames.Add(tokens[0]);
+            }
+
+            return kernelNames;
         }
 
         private static List<string> ResolveRequestedPaths()
