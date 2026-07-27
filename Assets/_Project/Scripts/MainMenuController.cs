@@ -170,10 +170,20 @@ namespace Hecton.UI.MainMenu
 
         private void Awake()
         {
-            if (!BootstrapRouteEnforcer.EnsureBootstrapRuntimeRoute(
-                    gameObject.scene.name,
-                    nameof(MainMenuController)))
+            // Bootstrap routinely reaches 01_MAIN_MENU before its ordered phases finish. That is
+            // the production route, so a still-initializing boot must not disable this menu:
+            // disabling inside Awake also skips OnEnable and Start, so input binding and tick
+            // registration never ran and nothing was left to re-enable the component. Late
+            // services are already handled here by the idempotent OnEnable/Start caching and by
+            // OnGlobalRegistryServiceReplaced.
+            BootstrapRouteStatus routeStatus = BootstrapRouteEnforcer.EvaluateBootstrapRuntimeRoute(
+                gameObject.scene.name,
+                nameof(MainMenuController));
+
+            if (routeStatus == BootstrapRouteStatus.Recovering ||
+                routeStatus == BootstrapRouteStatus.Failed)
             {
+                // No bootstrap ran at all. A recovery load owns this scene's fate.
                 enabled = false;
                 return;
             }

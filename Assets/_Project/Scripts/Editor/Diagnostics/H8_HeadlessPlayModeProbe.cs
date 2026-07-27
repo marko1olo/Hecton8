@@ -46,6 +46,7 @@ namespace Hecton8.EditorTools.Diagnostics
             LoadingMenu,
             MenuWarmup,
             StartingGame,
+            WaitingForSettle,
             GameplayWarmup,
             Reporting,
             LeavingPlayMode,
@@ -59,6 +60,11 @@ namespace Hecton8.EditorTools.Diagnostics
         // while a scene load was already in flight.
         private const int MenuWaitFrames = 900;
 
+        // After New Game the world scene load is in flight for a long time in batchmode - 2400
+        // gameplay frames were not enough for 02_HECTON_WORLD to report isLoaded. Counting frames
+        // measures the wrong thing; wait for the loads to actually finish.
+        private const int SettleWaitFrames = 6000;
+
         private static Phase _phase = Phase.Idle;
         private static double _startedAt;
         private static int _frames;
@@ -67,6 +73,7 @@ namespace Hecton8.EditorTools.Diagnostics
         private static int _gameplayFramesTarget;
         private static bool _startNewGame;
         private static int _menuFrames;
+        private static int _settleFrames;
         private static AsyncOperation _menuLoad;
         private static int _failures;
 
@@ -152,7 +159,11 @@ namespace Hecton8.EditorTools.Diagnostics
                 case Phase.StartingGame:
                     // One shot. If the menu is not there, say so and report on the menu-state
                     // runtime rather than silently pretending a game was started.
-                    _phase = TryStartNewGame() ? Phase.GameplayWarmup : Phase.Reporting;
+                    _phase = TryStartNewGame() ? Phase.WaitingForSettle : Phase.Reporting;
+                    break;
+
+                case Phase.WaitingForSettle:
+                    TickWaitingForSettle();
                     break;
 
                 case Phase.GameplayWarmup:
@@ -178,6 +189,47 @@ namespace Hecton8.EditorTools.Diagnostics
                         Finish(_failures == 0 ? 0 : 1);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Waits for every in-flight scene load to finish before starting the gameplay warmup.
+        ///
+        /// New Game does complete - 02_HECTON_WORLD appears in the scene list - but it is still
+        /// isLoaded=false after 2400 gameplay frames, because a batchmode frame is not a unit of
+        /// loading progress. Reporting at a frame count therefore measured the world scene while it
+        /// was still streaming in and concluded, wrongly, that nothing had installed.
+        /// </summary>
+        private static void TickWaitingForSettle()
+        {
+            var pending = new StringBuilder();
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            {
+                UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                if (scene.isLoaded)
+                    continue;
+
+                if (pending.Length > 0)
+                    pending.Append(", ");
+
+                pending.Append(scene.name);
+            }
+
+            if (pending.Length == 0)
+            {
+                Debug.Log($"{Marker} SETTLED after {_settleFrames} frames - no scene load in flight");
+                _phase = Phase.GameplayWarmup;
+                return;
+            }
+
+            if (++_settleFrames >= SettleWaitFrames)
+            {
+                Debug.Log($"{Marker} NOT SETTLED after {SettleWaitFrames} frames - still loading: {pending}");
+                _phase = Phase.GameplayWarmup;
+                return;
+            }
+
+            if (_settleFrames % 1500 == 0)
+                Debug.Log($"{Marker} settling... frame {_settleFrames}, loading: {pending}");
         }
 
         /// <summary>
