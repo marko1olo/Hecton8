@@ -13,6 +13,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _VoxelTriplanarSharpness ("Voxel Triplanar Sharpness", Range(1, 12)) = 5
         _VoxelArrayNormalStrength ("Voxel Array Normal Strength", Range(0, 1)) = 0.85
         _VoxelStochasticStrength ("Voxel Anti-Tiling Stochastic Strength", Range(0, 1)) = 0.55
+        _VoxelPolishPatchScale ("Voxel Polish Patch Scale", Float) = 0.2
+        _VoxelMatteSmoothnessScale ("Voxel Matte Patch Smoothness Scale", Range(0, 1)) = 0.55
+        _VoxelPolishSmoothness ("Voxel Polished Patch Smoothness", Range(0, 1)) = 0.82
+        _VoxelPolishBlend ("Voxel Polished Patch Blend", Range(0, 1)) = 0.85
         [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         [NoScaleOffset] _FreshRockAlbedoMap ("Fresh Rock Albedo Map", 2D) = "white" {}
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
@@ -202,6 +206,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _VoxelTriplanarSharpness;
             float _VoxelArrayNormalStrength;
             float _VoxelStochasticStrength;
+            float _VoxelPolishPatchScale;
+            float _VoxelMatteSmoothnessScale;
+            float _VoxelPolishSmoothness;
+            float _VoxelPolishBlend;
         CBUFFER_END
 
         float4 _SargassumCutMaskWorldRect;
@@ -1223,7 +1231,19 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half2 materialWeights = max(color.rg, half2(0.0h, 0.0h));
                 half materialWeightSum = materialWeights.x + materialWeights.y;
                 materialWeights = materialWeightSum > 0.0001h ? materialWeights * rcp(materialWeightSum) : half2(0.0h, 1.0h);
-                half vertexCaveAo = saturate(color.r * max(color.a > 0.001h ? color.a : 1.0h, input.bakedAmbientOcclusion));
+                // VoxelSurfaceColorEncoding owns this vertex layout: COLOR.r/.g are the floor/wall SPLAT
+                // WEIGHTS consumed just above, COLOR.a is ambient occlusion, and VoxelPackSurfaceVertexJob
+                // mirrors the same AO unquantised into UV1.w. This line used to read
+                // `color.r * max(color.a > 0.001 ? color.a : 1.0, uv1.w)`, folding the FLOOR WEIGHT into the
+                // occlusion term. color.r falls to 0 on every wall and ceiling, so vertexCaveAo was 0 across
+                // the whole cave interior, which both zeroed `ambientOcclusion` below (black ambient on every
+                // non-floor surface) and drove the crevice mask in ResolveOrganicBioluminescenceEmission to 1,
+                // painting the vein network over entire walls instead of only inside crevices. The
+                // `> 0.001 ? : 1.0` guard was a second defect on the same line: it flipped a genuinely
+                // fully-occluded vertex to fully unoccluded.
+                // UV1.w is the authoritative float AO and COLOR.a is that value quantised to 8 bits, so max()
+                // keeps a mesh carrying only one of the two working and degrades toward unoccluded, not black.
+                half vertexCaveAo = saturate(max((half)input.bakedAmbientOcclusion, color.a));
                 half noisyBakedAo = ResolveDepthNoiseCavityAo(samplePositionWS, vertexCaveAo);
                 half3 dominantNormalWS = SampleCinematicTwoAxisNormal(samplePositionWS, baseNormalWS);
                 half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
@@ -1292,12 +1312,24 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half metallic = decodedMask.metallic;
                 half smoothness = saturate(lerp(decodedMask.smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
                 smoothness = saturate(smoothness + bakedOreMetallic * geologyBlend * (half)_GeologyOreGlintStrength * 0.12h);
-                // PATCHY WETNESS: modulate smoothness with low-frequency 3D Simplex noise
-                // Prevents uniform plastic wrap — creates wet puddle patches (0.82) vs dry matte rock (0.12)
-                float wetNoise = HectonSimplexNoise3D(samplePositionWS * 0.2);
-                half wetMask = (half)smoothstep(0.3, 0.7, wetNoise * 0.5 + 0.5);
-                smoothness = lerp(0.12h, 0.82h, wetMask);
-                half ambientOcclusion = saturate(noisyBakedAo * vertexCaveAo * decodedMask.occlusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength));
+                // PATCHY SURFACE POLISH: low-frequency 3D Simplex noise breaks up the uniform plastic-wrap
+                // specular. This block used to end in `smoothness = lerp(0.12h, 0.82h, polishMask)`, an
+                // unconditional overwrite that discarded every smoothness contribution above it - the
+                // _Mask_Map B channel, the _Smoothness scale, the cut-scar polish and the ore glint were all
+                // dead computation, and the material inspector lied about all four. It now MODULATES the
+                // authored value: matte patches go duller, polished patches lift toward _VoxelPolishSmoothness,
+                // and an authored-glossy material stays glossier than an authored-matte one everywhere.
+                // ("Wet vs dry" was also a misnomer at abyssal depth - every surface here is saturated. What
+                // actually varies is biofilm/sediment coating versus bare exposed mineral.)
+                float polishNoise = HectonSimplexNoise3D(samplePositionWS * max(_VoxelPolishPatchScale, 0.0001));
+                half polishMask = (half)smoothstep(0.3, 0.7, polishNoise * 0.5 + 0.5);
+                half matteSmoothness = saturate(smoothness * (half)_VoxelMatteSmoothnessScale);
+                half polishedSmoothness = saturate(lerp(smoothness, (half)_VoxelPolishSmoothness, (half)_VoxelPolishBlend));
+                smoothness = lerp(matteSmoothness, polishedSmoothness, polishMask);
+                // noisyBakedAo IS vertexCaveAo with the depth ramp applied (ResolveDepthNoiseCavityAo returns
+                // `bakedAmbientOcclusion * aoNoise`), so the previous `noisyBakedAo * vertexCaveAo` squared the
+                // occlusion term and double-darkened every crevice.
+                half ambientOcclusion = saturate(noisyBakedAo * decodedMask.occlusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength));
                 half caveMouthDistanceAo = saturate(input.skirtAlpha);
                 ambientOcclusion *= 1.0h - caveMouthDistanceAo * 0.45h;
                 albedo *= 1.0h - caveMouthDistanceAo * 0.24h;
