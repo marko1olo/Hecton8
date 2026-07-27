@@ -55,6 +55,12 @@ namespace Hecton8.Core
         private static int _uploadClaimCount;
         private static int _deferredUploadPages;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // GraphicsBuffer locking is main-thread only, so a plain latch is enough to stop a
+        // device-less run from repeating the same failed-lock warning on every upload attempt.
+        private static bool _lockCapacityWarningLogged;
+#endif
+
         public static UploadBudgetSnapshot CurrentUploadBudgetSnapshot => new UploadBudgetSnapshot
         {
             FrameId = _uploadBudgetFrameId,
@@ -225,8 +231,11 @@ namespace Hecton8.Core
             {
                 mapped = destination.LockBufferForWrite<T>(0, 1);
                 bufferLocked = true;
-                mapped[0] = value;
-                uploadAccepted = true;
+                if (LockYieldedRequestedCapacity(mapped, 1))
+                {
+                    mapped[0] = value;
+                    uploadAccepted = true;
+                }
             }
             finally
             {
@@ -268,9 +277,12 @@ namespace Hecton8.Core
             {
                 mapped = destination.LockBufferForWrite<T>(0, safeCount);
                 bufferLocked = true;
-                for (int i = 0; i < safeCount; i++)
-                    mapped[i] = default;
-                uploadAccepted = true;
+                if (LockYieldedRequestedCapacity(mapped, safeCount))
+                {
+                    for (int i = 0; i < safeCount; i++)
+                        mapped[i] = default;
+                    uploadAccepted = true;
+                }
             }
             finally
             {
@@ -391,15 +403,18 @@ namespace Hecton8.Core
             {
                 mapped = destination.LockBufferForWrite<T>(0, safeCount);
                 bufferLocked = true;
-                unsafe
+                if (LockYieldedRequestedCapacity(mapped, safeCount))
                 {
-                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    long copyBytes = uploadedBytes;
-                    long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
-                    copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
-                    if (!copyAccepted)
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(CopyGuardOwnerLabel);
+                    unsafe
+                    {
+                        void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                        void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                        long copyBytes = uploadedBytes;
+                        long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+                        copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+                        if (!copyAccepted)
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(CopyGuardOwnerLabel);
+                    }
                 }
             }
             finally
@@ -442,9 +457,12 @@ namespace Hecton8.Core
             {
                 mapped = destination.LockBufferForWrite<T>(0, safeCount);
                 bufferLocked = true;
-                for (int i = 0; i < safeCount; i++)
-                    mapped[i] = source[i];
-                uploadCompleted = true;
+                if (LockYieldedRequestedCapacity(mapped, safeCount))
+                {
+                    for (int i = 0; i < safeCount; i++)
+                        mapped[i] = source[i];
+                    uploadCompleted = true;
+                }
             }
             finally
             {
@@ -492,14 +510,17 @@ namespace Hecton8.Core
             {
                 mapped = destination.LockBufferForWrite<T>(0, safeCount);
                 bufferLocked = true;
-                fixed (T* sourcePtr = source)
+                if (LockYieldedRequestedCapacity(mapped, safeCount))
                 {
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    long copyBytes = uploadedBytes;
-                    long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
-                    copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
-                    if (!copyAccepted)
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(CopyGuardOwnerLabel);
+                    fixed (T* sourcePtr = source)
+                    {
+                        void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                        long copyBytes = uploadedBytes;
+                        long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+                        copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+                        if (!copyAccepted)
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(CopyGuardOwnerLabel);
+                    }
                 }
             }
             finally
@@ -1321,16 +1342,19 @@ namespace Hecton8.Core
             {
                 mapped = destination.LockBufferForWrite<T>(destinationStartIndex, count);
                 bufferLocked = true;
-                unsafe
+                if (LockYieldedRequestedCapacity(mapped, count))
                 {
-                    int stride = UnsafeUtility.SizeOf<T>();
-                    void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + ((long)sourceStartIndex * stride);
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    long copyBytes = (long)stride * count;
-                    long destinationBytes = (long)stride * mapped.Length;
-                    copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
-                    if (!copyAccepted)
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(CopyGuardOwnerLabel);
+                    unsafe
+                    {
+                        int stride = UnsafeUtility.SizeOf<T>();
+                        void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + ((long)sourceStartIndex * stride);
+                        void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                        long copyBytes = (long)stride * count;
+                        long destinationBytes = (long)stride * mapped.Length;
+                        copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+                        if (!copyAccepted)
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(CopyGuardOwnerLabel);
+                    }
                 }
             }
             finally
@@ -1360,16 +1384,19 @@ namespace Hecton8.Core
             {
                 mapped = destination.LockBufferForWrite<T>(destinationStartIndex, count);
                 bufferLocked = true;
-                fixed (T* sourceBase = source)
+                if (LockYieldedRequestedCapacity(mapped, count))
                 {
-                    int stride = UnsafeUtility.SizeOf<T>();
-                    void* sourcePtr = (byte*)sourceBase + ((long)sourceStartIndex * stride);
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    long copyBytes = (long)stride * count;
-                    long destinationBytes = (long)stride * mapped.Length;
-                    copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
-                    if (!copyAccepted)
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(CopyGuardOwnerLabel);
+                    fixed (T* sourceBase = source)
+                    {
+                        int stride = UnsafeUtility.SizeOf<T>();
+                        void* sourcePtr = (byte*)sourceBase + ((long)sourceStartIndex * stride);
+                        void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                        long copyBytes = (long)stride * count;
+                        long destinationBytes = (long)stride * mapped.Length;
+                        copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+                        if (!copyAccepted)
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(CopyGuardOwnerLabel);
+                    }
                 }
             }
             finally
@@ -1379,6 +1406,32 @@ namespace Hecton8.Core
             }
 
             return copyAccepted;
+        }
+
+        // LockBufferForWrite can hand back no mapping at all, or a mapping shorter than the
+        // requested element count, when there is no usable GPU device (headless -nographics),
+        // when the driver refuses the map, or when the buffer went away underneath us. That is a
+        // failed upload, not memory corruption, so callers must skip UnsafeMemoryCopyGuard
+        // entirely in that case: a zero-length or short destination span is indistinguishable
+        // from a genuine oversize-copy violation once it reaches the guard, and would raise the
+        // critical FatalMemoryCorruptionException signal for a benign lock failure.
+        private static bool LockYieldedRequestedCapacity<T>(NativeArray<T> mapped, int requestedCount) where T : struct
+        {
+            if (mapped.IsCreated && mapped.Length >= requestedCount)
+                return true;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_lockCapacityWarningLogged)
+            {
+                _lockCapacityWarningLogged = true;
+                Debug.LogWarning(
+                    $"[{CopyGuardOwnerLabel}] GraphicsBuffer.LockBufferForWrite<{typeof(T).Name}> did not yield the requested capacity " +
+                    $"(requested {requestedCount}, mapped {mapped.Length}, created {mapped.IsCreated}). The upload was skipped and reported " +
+                    "as failed. This is a buffer lock failure, not memory corruption. Further occurrences are not logged.");
+            }
+#endif
+
+            return false;
         }
 
         private static int CountDirtyPagesInRange(NativeArray<byte> dirtyPages, int startPage, int pageCount)

@@ -60,13 +60,14 @@ If an agent discovers that a sibling output would be useful, the agent writes a 
 If a dependency is not already present, it is CANDIDATE/BLOCKED/PENDING, not a license to fabricate.
 
 PRIMARY AUTHORITIES
-Before generating tasks or judging reports, use:
-- Hecton8/AGENTS.md
-- Hecton8/PROJECT_BIBLES.md
-- Hecton8/TASTE.md
-- Hecton8/quality.md
-- only the matching route bibles for the current domain
+Before generating tasks or judging reports, run the full `Task Intake` sequence in `Hecton8/AGENTS.md`. This document does not carry a shorter intake list of its own. That sequence covers AGENTS.md, COMMON_SENSE.md, Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md, Docs/AGENT_AUTHORITY_ROUTING.md, PROJECT_BIBLES.md, Docs/SYSTEMS_CONTRACTS.md, VISION_LOCKS.md, TASTE.md, the matching route bibles, .agents-skills/README.md plus the 2-8 matching mandates, Docs/QUALITY_GATES.md, and live source/assets/proof.
+
+On top of that intake, orchestration adds:
+- Hecton8/quality.md for proof language when judging reports
+- only the matching route bibles for the current domain, not the whole set
 - relevant fresh agent reports/logs/screenshots/profiler artifacts
+
+`HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` inherits this same intake and must not maintain a second list.
 
 Do not bulk-read unrelated archives or old logs to pad context.
 Task prompts, old batches, and controller output do not override root authorities.
@@ -127,7 +128,7 @@ When one lane is blocked or occupied, especially Unity, the orchestrator must ke
 - new Codex GUI agents for non-conflicting task files;
 - local subagents for bounded audits and synthesis;
 - static validation and source/report review;
-- browser/Gemini asset generation when it serves a verified asset need;
+- asset generation through the existing offline/editor generation route, or any capable agent, when it serves a verified asset need;
 - proof packet review and rejection notes;
 - next-batch task generation;
 - process hygiene and workstation control.
@@ -408,7 +409,10 @@ Recommended shape:
   </LANE_CONTRACT>
 
   <AUTHORITY_DOCS>
-  AGENTS.md, PROJECT_BIBLES.md, quality.md, TASTE.md if player-facing, and 1-4 route bibles.
+  AGENTS.md, COMMON_SENSE.md (mandatory for any agent touching .cs/.shader/.prefab/.asset - no trivial-task bypass),
+  PROJECT_BIBLES.md, quality.md, TASTE.md if player-facing, 1-4 route bibles,
+  .agents-skills/README.md plus the 2-8 mandates matching this task's domain,
+  and Docs/QUALITY_GATES.md before any VERIFIED or COMPLETE claim.
   </AUTHORITY_DOCS>
 
   <OWNED_SCOPE>

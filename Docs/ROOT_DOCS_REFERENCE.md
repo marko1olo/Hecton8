@@ -9,6 +9,7 @@ Evidence class: STATIC_DOC / STATIC_FILESYSTEM
 
 The repository root may contain these active text anchors and standing route bibles:
 
+- `README.md` as the repository entry point for humans and GitHub rendering, not agent law and not a status/progress surface
 - `AGENTS.md`
 - `CLAUDE.md` as the Claude Code shim only, not divergent project law
 - `COMMON_SENSE.md` as common HECTON-8 engineering law routed by the authority spine

@@ -98,7 +98,7 @@ The orchestrator must maintain a portfolio of independent work fronts:
 - Codex GUI agents in separate chats;
 - local subagents for bounded research, audit, synthesis, and file work;
 - Unity-owner monitoring and precise steering only when evidence requires it;
-- browser/Gemini texture or image generation when assets are needed;
+- texture or image generation when assets are needed, through the existing offline/editor generation route first (`AGENTS.md`: search existing generation systems before inventing a new one) and any capable agent second;
 - static source audits while Unity is busy;
 - proof packet review and rejection;
 - task-file generation for the next wave;

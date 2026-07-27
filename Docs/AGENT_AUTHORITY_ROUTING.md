@@ -92,9 +92,11 @@ Routing sources:
 Delegated or generated surfaces:
 
 - `C:\Users\Admin\.codex\AGENTS.md` is a global router only. It must route HECTON-8 work to root `AGENTS.md` and this file, and must not carry a divergent HECTON-8 law copy. If shortened, preserve the full previous text in an explicit recovery/provenance file.
-- `.codexrules/AGENTS.md` must delegate to or stay byte-intent synced with root `AGENTS.md`.
-- `.github/agents/AGENTS.md` must delegate to or stay byte-intent synced with root `AGENTS.md`.
-- `.agent/rules/AGENTS.md` delegates to root `AGENTS.md`.
+- `.codexrules/AGENTS.md` and `.github/agents/AGENTS.md` are one-line `[DELEGATE]: C:\hades\Hecton8\AGENTS.md` stubs as of 2026-07-27. They were previously byte-identical 57 KB copies of root law; the copies were retired because a forgotten re-copy silently shipped stale law to the Codex and GitHub surfaces. Do not restore full copies. `Tools/Docs/TestAgentRuleRouting.py` accepts either form, but the stub is the intended steady state and removes the re-sync trap.
+- `.agent/rules/AGENTS.md` delegates to root `AGENTS.md`. `.agent/skills/*` is a local helper surface, not authority; it may not add, relax, or reinterpret root law.
+- `.vscode/AGENTS.md` is a thin VS Code router that delegates to root `AGENTS.md`. It is enforced by `Tools/Docs/TestAgentRuleRouting.py`.
+- `.github/agents/unity-anime-dev.agent.md` is a deprecated, non-user-invocable persona stub that delegates to root `AGENTS.md`; its full historical body is preserved under `Docs/DEPRECATED/AgentShimsHistorical_20260606/`.
+- `.codexrules/agent_memory.txt` is an operational scratch memo, not authority and not a rule surface. Verify every command in it against live source before running.
 - `.cursor/index.mdc` is a thin Cursor router only. It may be always-on only to route to root `AGENTS.md` and this document.
 - `.cursor/rules/AGENTS.md` delegates to root `AGENTS.md`.
 - Historical or generic Cursor `.mdc` rules under `.cursor/rules/*.mdc` are not HECTON-8 authority unless root `AGENTS.md`, this document, or a current route bible explicitly imports them. Their former full bodies are preserved under `Docs/DEPRECATED/CursorRulesHistorical_20260606/`.

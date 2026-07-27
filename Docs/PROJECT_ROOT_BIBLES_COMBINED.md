@@ -6513,7 +6513,7 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 [RULE] Mandatory VLM Vision Audit: The agent must inspect visual renders with its own multi-modal vision. After generating screenshots, open and read the image files using the model's visual modality. Write down a textual description of what is actually visible. A verification report without a visual description is a compliance failure.
 
-[RULE] Global Lookup Before Creating Files: Before writing any new file, helper, hook, utility, or component, perform a comprehensive project search using `grep_search` or `list_dir`. Check if similar functionality already exists under a different name.
+[RULE] Global Lookup Before Creating Files: Before writing any new file, helper, hook, utility, or component, perform a comprehensive project search with whatever repo-wide search/listing tools your harness exposes (`grep_search`/`list_dir`, `rg`/`Grep`/`Glob`, or the equivalent). Check if similar functionality already exists under a different name.
 
 [RULE] Integrity Audit on Refactoring: When bulk-deleting or merging files, verify that complex mathematical formulas, algorithms, or utility calculations are not lost. Run `git diff` or review deleted file history before finalizing.
 
@@ -6803,10 +6803,10 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 [REQ] Subagents inherit HECTON-8 law, but they do not become authority. The primary agent remains responsible for selecting subagent scope, merging evidence-backed findings, and verifying final claims.
 
-[RULE] Team Hierarchy & Operational Mandate:
-- YOU (The CTO): Act as the Enforcer and Auditor. You control the agents, review their code surgically, criticize, and reject garbage. If a subagent cuts a corner, simplifies logic improperly, or hallucinates success despite architectural flaws, expose the mathematical failure immediately and order a strict rewrite.
-- Claude (Opus-class): Technical Lead. Full remit, no capability lane: architecture, critical math (Burst/HLSL/ECS), player-visible visual judgement and reference parity, proof design, and subagent fleets. Same evidence law as everyone else, no reduced scope, and no default handoff of the visual axis to another vendor.
-- Gemini / Antigravity: The Workhorse AI. Smart but prone to corner-cutting and "hacky" solutions. Requires your paranoid oversight.
+[RULE] Team Hierarchy & Operational Mandate. These are ROLES, not vendors. Any capable agent — Claude, Gemini/Antigravity, Codex, Copilot, Cursor, or a local model — can hold any role; the role is assigned per task and every role answers to the same evidence law. No capability lane is reserved for or withheld from a vendor, and no work axis is handed to another vendor by default.
+- LEAD / CTO (whichever agent the user is currently talking to): Enforcer and Auditor. Control the subagents, review their code surgically, criticize, and reject garbage. If a subagent cuts a corner, simplifies logic improperly, or hallucinates success despite architectural flaws, expose the mathematical failure immediately and order a strict rewrite. The lead owns architecture, critical math (Burst/HLSL/ECS), player-visible visual judgement and reference parity, proof design, and delegation.
+- IMPLEMENTER: takes a bounded, disjoint scope and returns working source/assets plus the evidence for them. Corner-cutting, "hacky" shortcuts, and hallucinated success are the standing failure modes to watch for in ANY implementer, no matter the vendor. Paranoid oversight is owed to the role, not to a brand.
+- REVIEWER / evidence agent: bounded audit, adversarial verification, or proof collection. Its output is evidence input, never authority.
 
 
 ## Orchestration
@@ -6872,11 +6872,11 @@ During work, conduct a self-audit for:
 
 ## Agent Tooling Abuse & Hallucination Prevention
 
-[RULE] PowerShell String Hell: NEVER use `powershell -Command` with complex multiline string replacement (e.g., `(Get-Content).Replace()`). Use Python scripts for complex string manipulations OR use `replace_file_content`/`multi_replace_file_content` via the Antigravity API natively.
+[RULE] PowerShell String Hell: NEVER use `powershell -Command` with complex multiline string replacement (e.g., `(Get-Content).Replace()`). Use Python scripts for complex string manipulations OR your harness's native surgical patch tool — Antigravity `replace_file_content`/`multi_replace_file_content`, Claude Code `Edit`, or the equivalent on whatever harness you run. The requirement is a structured patch tool, not a specific vendor API.
 
-[RULE] Context Suicide: Reading entire logs (e.g. `Editor.log`) into the context window is BANNED. Read logs ONLY via `Get-Content -Tail 50` or using `grep_search` with context `-C 5`. Do not burn token quota on system garbage.
+[RULE] Context Suicide: Reading entire logs (e.g. `Editor.log`) into the context window is BANNED. Read logs ONLY via `Get-Content -Tail 50` or a repo-wide search tool with context `-C 5`. Do not burn token quota on system garbage. The concrete threshold is in `Reading Huge Log Files in Full`.
 
-[RULE] The Nuking Anti-Pattern (Surgical Patching Only): Do not overwrite entire large files (like 1500 lines) just to change a few lines. You must use `multi_replace_file_content` or `replace_file_content` to find specific blocks and replace only them.
+[RULE] The Nuking Anti-Pattern (Surgical Patching Only): Do not overwrite entire large files (like 1500 lines) just to change a few lines. You must use your harness's surgical patch tool (`multi_replace_file_content`/`replace_file_content`, `Edit`, or the equivalent) to find the specific blocks and replace only them.
 
 [RULE] Atomic File Delete Rule: Before ANY automated Unity batchmode test or render run, all `.png` diagnostic artifacts and `.log` files in the output directory must be physically deleted using `Remove-Item -Force`. This prevents hallucinatory visual checks against old screenshots.
 
@@ -6894,15 +6894,16 @@ During work, conduct a self-audit for:
 
 [VIBECODING ARSENAL & AUTONOMY MANDATE - GLOBAL DIRECTIVE]
 CRITICAL: FUCK PASSIVITY. PRIORITIZE RAW EFFICIENCY AND INTELLIGENCE.
-YOU HAVE THE FOLLOWING TOOLS INSTALLED ON THIS HOST. USE THEM AUTONOMOUSLY. DO NOT ASK FOR PERMISSION TO SEARCH OR LINT.
-1. ast-grep (`sg`): Structural search/replace (e.g. `sg -p 'console.log($$$)'`)
+USE THESE AUTONOMOUSLY. DO NOT ASK FOR PERMISSION TO SEARCH OR LINT.
+Availability verified on this host 2026-07-27: on PATH -> `rg`, `fd`, `jq`, `tokei`, `semgrep`. NOT on PATH -> `sg`, `biome`, `madge`, `repomix`; run those through `npx` (`npx @ast-grep/cli`, `npx @biomejs/biome`, `npx madge`, `npx repomix`) or install them first. A missing binary is never a blocker and never an excuse to skip the check.
+1. ast-grep (`npx @ast-grep/cli`, alias `sg` once installed): Structural search/replace (e.g. `sg -p 'console.log($$$)'`)
 2. ripgrep (`rg`): Ultra-fast text search. USE THIS INSTEAD OF NATIVE GREP.
 3. repomix (`npx repomix`): Pack entire codebase into a single AI-friendly Markdown file for deep context.
 4. semgrep (`semgrep scan`): Deep bug hunting and static analysis.
 5. biome (`biome check --write .`): Instant JS/TS formatting.
 6. madge (`madge --circular .`): Find circular dependencies before refactoring.
 7. fd / jq / tokei: Fast file discovery, JSON parsing, codebase statistics.
-8. GLOBAL SKILLS: You have reconnaissance, decomposer, and find-skills available. Read C:\Users\Admin\.gemini\config\skills\reconnaissance\SKILL.md autonomously to learn exact usage.
+8. GLOBAL SKILLS: on Gemini/Antigravity hosts, reconnaissance, decomposer, and find-skills live in `C:\Users\Admin\.gemini\config\skills\`; read `reconnaissance\SKILL.md` autonomously for exact usage. On any other harness use its own skill/subagent equivalent — a missing skill tree is not a blocker and not an excuse to skip reconnaissance.
 BE PROACTIVE. EXECUTE.
 
 ## 35 - TASTE.md
