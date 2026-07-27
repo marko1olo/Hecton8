@@ -3688,8 +3688,19 @@ namespace Hecton8.Physics
             }
         }
 
+        /// <summary>
+        /// Simulated seconds accumulated from the dispatcher-supplied fixed delta and drained by
+        /// LateFrameTick for the no-compute CPU fluid fallback. ILateFrameTickable intentionally
+        /// passes no delta, and ITickable states plainly that implementations must not read Unity
+        /// frame time, so the fallback sources its timestep from here instead of Time.deltaTime.
+        /// </summary>
+        private float _cpuFluidFallbackAccumulatedSeconds;
+
         public void FixedTick(float fixedDeltaTime)
         {
+            // Accumulated before any early return below so the fallback never loses a timestep.
+            _cpuFluidFallbackAccumulatedSeconds += fixedDeltaTime;
+
             using (ProfilerRegistry.PhysicsTick.Auto())
             {
             WeatherRuntimeSnapshot fixedWeatherSnapshot = ResolveWeatherSnapshot();
@@ -3947,10 +3958,15 @@ namespace Hecton8.Physics
 
             if (!_coldSupportsComputeShaders)
             {
-                RunCpuFluidSimulationFallback(Time.deltaTime);
-                if (hasAdvectionParticles)
+                float cpuFallbackDeltaSeconds = _cpuFluidFallbackAccumulatedSeconds;
+                _cpuFluidFallbackAccumulatedSeconds = 0f;
+                if (cpuFallbackDeltaSeconds > 0f)
                 {
-                    RunCpuFluidAdvectionFallback(Time.deltaTime);
+                    RunCpuFluidSimulationFallback(cpuFallbackDeltaSeconds);
+                    if (hasAdvectionParticles)
+                    {
+                        RunCpuFluidAdvectionFallback(cpuFallbackDeltaSeconds);
+                    }
                 }
             }
 

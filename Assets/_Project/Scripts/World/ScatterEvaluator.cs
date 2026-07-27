@@ -311,6 +311,13 @@ namespace Hecton8.World
                 throw new InvalidOperationException($"NativeMemorySentinel rejected scatter evaluator array registration for {label}.");
         }
 
+        // The only IJob under Assets/_Project/Scripts that was missing [BurstCompile] (1391 of
+        // 1392 had it), so this scatter evaluation ran as managed IL over every simulation cell.
+        // Deterministic rather than Fast is required here, not preferred: the job folds its own
+        // results into FNV candidate/cell hashes stored in ScatterSimulationParitySnapshot, which
+        // exists to detect desync. Fast float would let those parity hashes differ per ISA and
+        // report false desyncs on identical input.
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ScatterEvaluationJob : IJob
         {
             public ScatterSimulationConfig Config;

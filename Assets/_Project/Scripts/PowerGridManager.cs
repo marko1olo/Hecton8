@@ -108,8 +108,6 @@ namespace Hecton8.Power
         private IDataVault _jacobiVaultOwner;
         private bool _jacobiVaultReady;
         private bool _isInitialized;
-        private float _timeSinceLastSlowTick;
-        private const float SLOW_TICK_INTERVAL = 1.0f;
         private const float PowerGridColdTickSeconds = PowerGrid.LogisticsTickDeltaTimeSeconds;
         private const float SubmarineThermalGridLowCadenceSeconds = 0.2f;
         private const float SubmarineThermalGridHighCadenceSeconds = 1f / 60f;
@@ -324,12 +322,6 @@ namespace Hecton8.Power
         {
             if (!_isInitialized)
                 return;
-
-            _timeSinceLastSlowTick += Time.deltaTime;
-            if (_timeSinceLastSlowTick >= SLOW_TICK_INTERVAL)
-            {
-                _timeSinceLastSlowTick = 0f;
-            }
 
             float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
             _wfcOutpostPowerBoot?.LateFrameTick(now);
