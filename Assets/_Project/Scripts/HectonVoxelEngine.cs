@@ -11472,6 +11472,20 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         float invTerrainSizeZ = hasHeightPayload ? math.rcp(math.max(terrainSize.z, 0.001f)) : 0f;
         float fallbackTileSize = math.max(mapMagicTileSize, data.VoxelStep * math.max(data.PtsX - 1, 1));
         float fallbackInvTileSize = math.rcp(math.max(fallbackTileSize, 0.001f));
+
+        // R100 FIX (biome heatmap collapsed to one cell): the height payload's TerrainPosition is
+        // runtime/presentation space - HectonMapMagicVegetationBridge rebases it on every origin shift -
+        // while the per-sample absoluteX/absoluteZ below are AUP. Subtracting one from the other left the
+        // entire floating-origin offset in the result, so at AUP scale u/v were on the order of 10^3,
+        // math.saturate pinned them to 1.0, and every voxel in the world sampled the same heatmap corner
+        // cell. Lifting TerrainPosition into AUP once here keeps the subtraction in double, narrows only
+        // the resulting 0-1 UV, and costs nothing per voxel.
+        // Resolved once per chunk here rather than per voxel; this method does not receive the origin.
+        double3 biomeRuntimeOriginAup = default;
+        bool hasTerrainAupOrigin = hasHeightPayload &&
+            TryResolveCurrentRuntimeOriginAbsolute(out biomeRuntimeOriginAup);
+        double terrainOriginAupX = hasTerrainAupOrigin ? biomeRuntimeOriginAup.x + terrainPosition.x : 0d;
+        double terrainOriginAupZ = hasTerrainAupOrigin ? biomeRuntimeOriginAup.z + terrainPosition.z : 0d;
         bool hasCachedBiomeHash = false;
         uint cachedBiomeHash = 0u;
         float cachedBiomeModifier = 0f;
@@ -11502,11 +11516,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     if (monolithReady)
                     {
                         double absoluteX = (double)data.VolumeOrigin.x + ix * data.VoxelStep + data.AbsoluteUniverseOffsetAtStartDouble.x;
-                        float u = hasHeightPayload
-                            ? math.saturate((float)((absoluteX - terrainPosition.x) * invTerrainSizeX))
+                        float u = hasTerrainAupOrigin
+                            ? math.saturate((float)((absoluteX - terrainOriginAupX) * invTerrainSizeX))
                             : math.frac((float)(absoluteX * fallbackInvTileSize));
-                        float v = hasHeightPayload
-                            ? math.saturate((float)((absoluteZ - terrainPosition.z) * invTerrainSizeZ))
+                        float v = hasTerrainAupOrigin
+                            ? math.saturate((float)((absoluteZ - terrainOriginAupZ) * invTerrainSizeZ))
                             : math.frac((float)(absoluteZ * fallbackInvTileSize));
                         int heatmapX = math.clamp((int)(u * BiomeHeatmapMaxIndex + 0.5f), 0, BiomeHeatmapMaxIndex);
                         int heatmapY = math.clamp((int)(v * BiomeHeatmapMaxIndex + 0.5f), 0, BiomeHeatmapMaxIndex);
