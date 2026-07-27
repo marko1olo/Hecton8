@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure how far a hand-written CLI .csproj drifts from Unity's real assembly.
+r"""Measure how far a hand-written CLI .csproj drifts from Unity's real assembly.
 
 Evidence class: STATIC_SOURCE. This tool compares the file set a hand-written
 `.csproj` compiles against the file set Unity actually puts in the assembly of
@@ -28,10 +28,43 @@ INSTRUMENT SELF-TEST
     motivating example is worth nothing. `--check-dll` grounds those cases in
     Unity's own compiled output instead of in this file's assumptions.
 
+MEASURED 2026-07-27, Hecton8.Core, DLL-grounded
+    Unity compiles 1599 .cs   csproj compiles 1932 .cs
+    EXTRA   416  (Hecton8.PureLogic 199, .Tests 204, Hecton8.Tests 7,
+                  Hecton8.Core.Tests 5, CandiceGOAPStateHasStatesTests 1)
+    MISSING  83  Editor-named folders with no asmdef of their own. An asmdef
+                 overrides the Editor-folder convention, so Unity puts them in
+                 Hecton8.Core; the csproj strips them with a blanket
+                 `**\Editor\**` Remove. They are all `#if UNITY_EDITOR` bodies
+                 and the CLI does not define UNITY_EDITOR either, so nothing in
+                 them has ever been type-checked by the bypass.
+
+    THE SUPERSET IS LOAD-BEARING - do not "just fix the Compile list".
+    A/B: taking the shipped csproj and changing ONLY the Compile items to this
+    tool's output turns 0 errors into 13, because Hecton8.Core.Scheduling,
+    Hecton8.Core.Bucketing and TerrainChunkGeneratedSignal stop resolving. The
+    Remove list and the reference set were co-designed: some first-party
+    assemblies are satisfied by compiling their source in rather than by
+    referencing their DLL. Correcting the file set requires correcting the
+    reference graph in the same edit. (Caveat on that A/B: Directory.Build.props
+    keys several switches off `MSBuildProjectName == 'Hecton8.Core'`, and the
+    experiment ran under a different project name, so part of the 13 may be that
+    rather than the file set. It does not change the conclusion - the two halves
+    are coupled.)
+
+    Also load-bearing and invisible: the csproj hardcodes
+    `UnityEditorManagedDir` to Unity 6000.4.10f1, which is not the installed
+    editor (6000.5.0f1). Built without the `-p:UnityEditorManagedDir=...`
+    override every lane happens to pass, the UnityEngine reference glob matches
+    nothing and the build collapses with thousands of "MonoBehaviour not found".
+
 LIMITATION
     Ownership is resolved by nearest-ancestor `.asmdef`. `.asmref` files reassign
     ownership and are NOT modelled; there are currently none under the audited
     root, and the tool fails loudly if that changes.
+    This tool measures the FILE SET only. It says nothing about the reference
+    graph, the define set, or the language version (pinned to C# 9 in
+    Directory.Build.targets by e78b5a79e).
 
 USAGE
     python Tools/CliBuildAssemblyFidelityAudit.py
