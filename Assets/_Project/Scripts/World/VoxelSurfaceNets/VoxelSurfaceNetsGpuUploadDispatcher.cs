@@ -90,15 +90,6 @@ namespace Hecton8.World.VoxelSurfaceNets
                    IsGraphicsBufferReady(_indirectArgs);
         }
 
-        public bool TryUpload(
-            VoxelSurfaceNetsVaultBuffers buffers,
-            int chunkIndex,
-            out VoxelSurfaceGpuUploadState uploadState)
-        {
-            uploadState = default;
-            return false;
-        }
-
         public bool TryBeginUpload(
             VoxelSurfaceNetsVaultBuffers buffers,
             int chunkIndex,
