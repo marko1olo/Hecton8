@@ -2334,7 +2334,22 @@ namespace Hecton8.Core
             if (heights01.Length < cellCount || horizontalOffsetsMeters.Length < cellCount)
                 return dependency;
 
-            return dependency;
+            var job = new Hecton8.World.WorldProceduralTerrainFakeOverhangOffsetJob
+            {
+                Heights01 = heights01,
+                HorizontalOffsetsMeters = horizontalOffsetsMeters,
+                Width = width,
+                Height = height,
+                CellSizeMeters = math.max(0.001f, cellSizeMeters),
+                HeightScaleMeters = heightScaleMeters,
+                SlopeThresholdDegrees = sandboxFakeOverhangSlopeThresholdDegrees,
+                MaxOffsetMeters = sandboxFakeOverhangMaxOffsetMeters,
+                NoiseFrequency = sandboxFakeOverhangNoiseFrequency,
+                Seed = unchecked((uint)sandboxFakeOverhangSeed)
+            };
+
+            int batchCount = math.max(1, math.min(64, cellCount / 16));
+            return job.Schedule(cellCount, batchCount, dependency);
         }
 
         /// <summary>

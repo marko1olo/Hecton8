@@ -7069,6 +7069,14 @@ namespace Hecton8.Bootstrap
             if (!allowRecovery)
                 return false;
 
+            // Recovery schedules an async single-mode load of the bootstrap scene. A second
+            // non-bootstrap scene event arriving while that load is still in flight would stack
+            // another bootstrap load on top of it. This flag was already being set here and reset
+            // by the full bootstrap state reset for exactly that purpose, but nothing ever read
+            // it, so the re-entrancy guard it was written for never actually existed.
+            if (_entryRecoveryIssued)
+                return false;
+
             _entryRecoveryIssued = true;
             if (!GameStartContextHolder.TryGetPendingTargetSceneName(out _))
             {

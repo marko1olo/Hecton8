@@ -1118,14 +1118,28 @@ namespace Hecton8.Modding
 
         private static void ShutdownRuntimeForLifecycleReset()
         {
-            UninstallHooks();
-            ModCommandDispatcher.Shutdown();
-            if (!ShouldForceFutureCommandEnvelopeOnly())
-                ModResourceRegistry.Shutdown();
+            // _shutdownInvoked was already being cleared at the end of this method, i.e. it was
+            // written as an in-flight re-entrancy guard, but nothing ever set or read it so the
+            // guard did not exist. The subsystem Shutdown() calls below can raise teardown events,
+            // so a nested lifecycle reset must be a no-op rather than tearing down twice.
+            if (_shutdownInvoked)
+                return;
 
-            _bootstrapped = false;
-            _modsInitialized = false;
-            _shutdownInvoked = false;
+            _shutdownInvoked = true;
+            try
+            {
+                UninstallHooks();
+                ModCommandDispatcher.Shutdown();
+                if (!ShouldForceFutureCommandEnvelopeOnly())
+                    ModResourceRegistry.Shutdown();
+
+                _bootstrapped = false;
+                _modsInitialized = false;
+            }
+            finally
+            {
+                _shutdownInvoked = false;
+            }
         }
 
 
