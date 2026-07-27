@@ -208,13 +208,8 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 return (1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0)) * 2.0 - 1.0;
             }
 
-            float2 ResolvePlanarCurrentDirection()
-            {
-                float2 flow = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001
-                    ? _GlobalOceanFlow.xz
-                    : _HectonVegetationCurrentVector.xz;
-                return SafeNormalize2(flow);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlanarFlow.hlsl"
+
 
             float ResolvePlanarCurrentStrength()
             {
@@ -503,7 +498,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float2 sampledCurrentVector = sampledFlowVector.xz;
                 float2 currentVector = dot(sampledCurrentVector, sampledCurrentVector) > 0.0001
                     ? SafeNormalize2(sampledCurrentVector)
-                    : ResolvePlanarCurrentDirection();
+                    : ResolvePlanarOceanFlowDirection(_HectonVegetationCurrentVector.xz);
                 float currentStrength = max(FastLength2(sampledCurrentVector), ResolvePlanarCurrentStrength());
                 float swayWave = FastTriangleSigned(scaledTimeValue * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(basePositionWS, bendMask, instanceType, instanceNoise);
@@ -539,7 +534,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 if (stateWeights.x > 0.0001 || stateWeights.y > 0.0001)
                 {
                     float statePhase = FastTriangleSigned(scaledTimeValue * (1.35 + max(instanceData.PulseFrequency, 0.05)) + instanceNoise * 9.0 + heightMask * 3.2);
-                    animatedPositionWS.xz += ResolvePlanarCurrentDirection() * (statePhase * bendMask * 0.16 * stateWeights.x);
+                    animatedPositionWS.xz += ResolvePlanarOceanFlowDirection(_HectonVegetationCurrentVector.xz) * (statePhase * bendMask * 0.16 * stateWeights.x);
                     animatedPositionWS.y -= instanceHeight * bendMask * (0.06 * stateWeights.x + 0.18 * stateWeights.y);
                 }
 
@@ -548,6 +543,13 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 // shadow, depth and motion vectors stood upright.
                 animatedPositionWS = lerp(animatedPositionWS, originWS + driftOffsetWS, stateWeights.y * bendMask * 0.18);
                 animatedPositionWS.y -= stateWeights.y * instanceHeight * lerp(0.03, 0.16, heightMask);
+
+                // Unconditional in the lit pass, absent here until now: an agitated plant leans along
+                // the current. Needs the lit direction (fallback = the locally sampled flow), which is
+                // why it waited for the shared ResolvePlanarOceanFlowDirection instead of being
+                // approximated with the parameterless form.
+                animatedPositionWS.xz += ResolvePlanarOceanFlowDirection(currentVector) *
+                    (stateWeights.x * bendMask * instanceHeight * 0.035);
 
 
                 float seasonalDecayWeight =

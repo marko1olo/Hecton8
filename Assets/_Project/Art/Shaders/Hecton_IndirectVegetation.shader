@@ -763,11 +763,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             }
 
 
-            float2 ResolvePlanarOceanFlowDirection(float2 fallbackFlow)
-            {
-                float2 flow = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : fallbackFlow;
-                return SafeNormalize2(flow);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlanarFlow.hlsl"
+
 
             float ResolvePlanarOceanFlowStrength(float2 fallbackFlow, float fallbackStrength)
             {

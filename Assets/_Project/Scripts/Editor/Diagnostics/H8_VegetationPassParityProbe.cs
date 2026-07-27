@@ -52,6 +52,7 @@ namespace Hecton8.EditorTools.Diagnostics
             "HectonIndirectVegetationInteraction.hlsl",
             "HectonIndirectVegetationPlayerBend.hlsl",
             "HectonIndirectVegetationBillboard.hlsl",
+            "HectonIndirectVegetationPlanarFlow.hlsl",
         };
 
         // Functions that have been converged into a shared include. None of them may reappear as a
@@ -63,6 +64,8 @@ namespace Hecton8.EditorTools.Diagnostics
             "ResolveInteractionOffset",
             "ResolvePlayerBendOffset",
             "ResolveBillboardPositionWS",
+            "ResolvePlanarOceanFlowDirection",
+            "ResolvePlanarCurrentDirection",
             "ResolveInteractionDistance",
             "ResolveInteractionTypeScale",
             "FastVegetationPower01",
