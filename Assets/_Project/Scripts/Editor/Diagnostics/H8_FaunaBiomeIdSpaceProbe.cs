@@ -33,6 +33,19 @@ namespace Hecton8.EditorTools.Diagnostics
         private const string DefaultScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
         private const int BiomeMatrixLayerCount = 108;
 
+        /// <summary>
+        /// Swept when no explicit scene is given. FaunaDirector is never created by
+        /// <c>AddComponent</c> anywhere in the project - every resolver looks it up in a loaded
+        /// scene - so if it is absent from all of these, the spawn path has no owner to configure.
+        /// The 60 MB render sandbox is deliberately excluded; it carries no fauna wiring.
+        /// </summary>
+        private static readonly string[] CandidateScenePaths =
+        {
+            "Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+            "Assets/_Project/Scenes/010_TEST.unity",
+            "Assets/_Project/Scenes/00_BOOTSTRAP.unity",
+        };
+
         [MenuItem("Hecton8/Diagnostics/Fauna Biome Id Space")]
         public static void RunFromMenu()
         {
@@ -42,12 +55,53 @@ namespace Hecton8.EditorTools.Diagnostics
         /// <summary>Batch entry point. Exits non-zero when the two id spaces cannot agree.</summary>
         public static void Run()
         {
-            string scenePath = ReadStringArgument(SceneArgument, DefaultScenePath);
-            bool consistent = Execute(scenePath);
-            EditorApplication.Exit(consistent ? 0 : 1);
+            string explicitScene = ReadStringArgument(SceneArgument, null);
+            if (!string.IsNullOrEmpty(explicitScene))
+            {
+                EditorApplication.Exit(Execute(explicitScene) ? 0 : 1);
+                return;
+            }
+
+            // One Unity boot, several scenes: opening the editor costs minutes, opening a scene
+            // costs seconds.
+            bool anyComparisonMade = false;
+            bool allConsistent = true;
+            for (int i = 0; i < CandidateScenePaths.Length; i++)
+            {
+                ProbeOutcome outcome = ExecuteScene(CandidateScenePaths[i]);
+                if (outcome == ProbeOutcome.Inconclusive)
+                    continue;
+
+                anyComparisonMade = true;
+                if (outcome == ProbeOutcome.Mismatch)
+                    allConsistent = false;
+            }
+
+            if (!anyComparisonMade)
+            {
+                Debug.LogError(
+                    "[H8_FAUNABIOMEID] INCONCLUSIVE - no swept scene contained both a terrain bridge " +
+                    "and a FaunaDirector, so the id spaces were never compared.");
+                EditorApplication.Exit(1);
+                return;
+            }
+
+            EditorApplication.Exit(allConsistent ? 0 : 1);
+        }
+
+        private enum ProbeOutcome
+        {
+            Inconclusive,
+            Consistent,
+            Mismatch,
         }
 
         private static bool Execute(string scenePath)
+        {
+            return ExecuteScene(scenePath) == ProbeOutcome.Consistent;
+        }
+
+        private static ProbeOutcome ExecuteScene(string scenePath)
         {
             try
             {
@@ -60,7 +114,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     "[H8_FAUNABIOMEID] Could not open scene '{0}': {1}",
                     scenePath,
                     exception.Message));
-                return false;
+                return ProbeOutcome.Inconclusive;
             }
 
             Debug.Log(string.Format(
@@ -75,13 +129,13 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (bridge == null || director == null)
             {
-                Debug.LogError(string.Format(
+                Debug.Log(string.Format(
                     CultureInfo.InvariantCulture,
-                    "[H8_FAUNABIOMEID] INCONCLUSIVE - bridge={0} faunaDirector={1} in this scene. " +
+                    "[H8_FAUNABIOMEID] SKIP - bridge={0} faunaDirector={1} in this scene. " +
                     "Cannot compare id spaces without both.",
                     bridge == null ? "MISSING" : "found",
                     director == null ? "MISSING" : "found"));
-                return false;
+                return ProbeOutcome.Inconclusive;
             }
 
             // Serialized reads: maxBiomeCount and biomeDatasets are private [SerializeField] with no
@@ -132,8 +186,22 @@ namespace Hecton8.EditorTools.Diagnostics
                 Debug.LogError(
                     "[H8_FAUNABIOMEID] INCONCLUSIVE - FaunaDirector.biomeDatasets is empty in this scene, " +
                     "so no fauna can spawn regardless of id space.");
-                return false;
+                return ProbeOutcome.Inconclusive;
             }
+
+            // Decision-relevant for the repair, not just the diagnosis: BiomeMatrixDirector resolves a
+            // 1..108 matrixIndex from depth tier x region, which is the same space the fauna datasets
+            // are keyed by and can address all 108. The alphamap route can address at most
+            // maxBiomeCount. If this reference is wired, the matrix route is the cheaper correct fix.
+            SerializedObject directorObjectForRefs = new SerializedObject(director);
+            SerializedProperty matrixDirectorProperty = directorObjectForRefs.FindProperty("biomeMatrixDirector");
+            bool matrixDirectorAssigned = matrixDirectorProperty != null &&
+                                          matrixDirectorProperty.objectReferenceValue != null;
+            Debug.Log(string.Format(
+                CultureInfo.InvariantCulture,
+                "[H8_FAUNABIOMEID] FaunaDirector.biomeMatrixDirector assigned={0} " +
+                "(matrix route addresses 1..108; alphamap route addresses at most maxBiomeCount)",
+                matrixDirectorAssigned));
 
             Debug.Log(string.Format(
                 CultureInfo.InvariantCulture,
@@ -195,7 +263,7 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             Debug.Log("[H8_FAUNABIOMEID] DONE");
-            return !offByOne;
+            return offByOne ? ProbeOutcome.Mismatch : ProbeOutcome.Consistent;
         }
 
         private static int ReadAuthoredBiomeKeys(
