@@ -226,6 +226,13 @@ namespace Hecton8.World
             public float PropagationSpeedMetersPerSecond;
             public float InactiveSeed;
 
+            /// <summary>
+            /// Shared cascade epoch. Activation times are written relative to it so the shader's
+            /// half-precision <c>age = cascadeTime - cascadeSeed</c> stays resolvable. InactiveSeed
+            /// remains an absolute sentinel and is never epoch-shifted.
+            /// </summary>
+            public float EpochSeconds;
+
             [WriteOnly, NoAlias] public NativeArray<float> PhaseSeeds;
 
             public void Execute(int index)
@@ -282,7 +289,9 @@ namespace Hecton8.World
                     bool valid = radius >= 0f & math.isfinite(distanceSq) & distanceSq <= radiusSq;
 
                     float distance = distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f));
-                    float activationTime = cascadeEvent.StartTimeSeconds + (distance / safeSpeed);
+                    // Epoch-relative. Both operands are absolute simulation seconds of similar
+                    // magnitude, so the subtraction is well conditioned and the result is small.
+                    float activationTime = (cascadeEvent.StartTimeSeconds - EpochSeconds) + (distance / safeSpeed);
                     bool activationValid = valid & math.isfinite(activationTime);
                     bestSeed = math.min(bestSeed, math.select(float.MaxValue, activationTime, activationValid));
                     found |= activationValid;
@@ -875,6 +884,13 @@ namespace Hecton8.World
         private const float DefaultSubmarineWakeRadius = 3.2f;
         private const int ReactiveFloraKindMask = 1;
         private const float InactiveCascadeSeed = -100000f;
+
+        // Cascade seeds and the cascade clock are published epoch-relative because the shader carries
+        // both as half. 32 s keeps half spacing at or below 0.03125 s, fine enough for a sub-second
+        // pulse envelope; the ceiling only exists so a pathological clock cannot reach half's 65504
+        // overflow and turn the subtraction into inf.
+        private const float CascadeEpochRebaseThresholdSeconds = 32f;
+        private const float CascadeRelativeTimeCeilingSeconds = 4096f;
         private const int ToxicSporeHazardSourceId = unchecked((int)0x6B13A7F1);
         private const float ToxicSporePoisonMinimumExposure = 0.08f;
         private const float ToxicSporePoisonDurationSeconds = 5f;
@@ -1659,6 +1675,8 @@ namespace Hecton8.World
         private GraphicsBuffer _underwaterCascadePhaseSeedBuffer;
         private DefensiveSporeBurstState[] _defensiveSporeBursts;
         private int _defensiveSporeBurstCount;
+        private float _cascadeSeedEpochSeconds;
+        private bool _cascadeSeedEpochInitialized;
         private int _surfaceCascadeEventCount;
         private int _underwaterCascadeEventCount;
         private JobHandle _surfaceCascadePhaseSeedHandle;
@@ -3138,10 +3156,61 @@ namespace Hecton8.World
             Shader.SetGlobalVector(
                 _FloraCascadeParamsId,
                 new Vector4(
-                    GetCurrentSimulationTimeSeconds(),
+                    ResolveCascadeRelativeTimeSeconds(),
                     _cascadePulseDurationSeconds,
                     _cascadeEmissionBoost,
                     _cascadeReleaseDurationSeconds));
+        }
+
+        /// <summary>
+        /// Cascade clock published to the vegetation shader, expressed relative to
+        /// <see cref="_cascadeSeedEpochSeconds"/> rather than as absolute simulation time.
+        /// The shader carries this and the per-instance seed as <c>half</c> and subtracts them
+        /// (<c>age = cascadeTime - cascadeSeed</c>). A half has an 11-bit mantissa, so absolute
+        /// simulation seconds quantise to 1.0 s spacing near t=2048 and overflow to +inf at 65504 -
+        /// which would destroy a sub-second pulse envelope and eventually kill the effect outright.
+        /// Subtracting a shared epoch on both sides leaves the difference algebraically identical
+        /// while keeping both operands small enough for half to resolve.
+        /// </summary>
+        private float ResolveCascadeRelativeTimeSeconds()
+        {
+            float simulationTime = GetCurrentSimulationTimeSeconds();
+            float epoch = ResolveCascadeSeedEpochSeconds(simulationTime);
+            float relative = simulationTime - epoch;
+            if (!math.isfinite(relative))
+                return 0f;
+
+            return math.clamp(relative, 0f, CascadeRelativeTimeCeilingSeconds);
+        }
+
+        /// <summary>
+        /// Returns the shared cascade epoch, rebasing it onto the current simulation time when doing
+        /// so cannot corrupt anything. Rebasing is only safe while BOTH lanes hold zero cascade
+        /// events: the surface and underwater seed buffers are epoch-relative but there is a single
+        /// shared <c>_HectonFloraCascadeParams</c>, so shifting the epoch under live seeds in one
+        /// lane would misdate the other lane's already-uploaded seeds. With no events live, every
+        /// seed is the inactive sentinel and the shader rejects it before reading the clock at all,
+        /// so the rebase is unobservable. Cascade events are transient, so in practice this rebases
+        /// often and the relative clock stays near zero.
+        /// </summary>
+        private float ResolveCascadeSeedEpochSeconds(float simulationTime)
+        {
+            if (!math.isfinite(simulationTime))
+                return _cascadeSeedEpochInitialized ? _cascadeSeedEpochSeconds : 0f;
+
+            bool anyCascadeEventsLive = _surfaceCascadeEventCount > 0 || _underwaterCascadeEventCount > 0;
+            // Negative drift is also a rebase trigger: a world reload restarts the simulation clock
+            // below the retained epoch, and a drift-forward-only test would leave the epoch stranded
+            // in the future permanently.
+            float drift = simulationTime - _cascadeSeedEpochSeconds;
+            bool driftedTooFar = drift > CascadeEpochRebaseThresholdSeconds || drift < 0f;
+            if (!_cascadeSeedEpochInitialized || (!anyCascadeEventsLive && driftedTooFar))
+            {
+                _cascadeSeedEpochSeconds = simulationTime;
+                _cascadeSeedEpochInitialized = true;
+            }
+
+            return _cascadeSeedEpochSeconds;
         }
 
         private float GetCurrentSimulationTimeSeconds()
@@ -7598,6 +7667,7 @@ namespace Hecton8.World
                     EventCount = eventCount,
                     PropagationSpeedMetersPerSecond = _cascadePropagationSpeed,
                     InactiveSeed = InactiveCascadeSeed,
+                    EpochSeconds = ResolveCascadeSeedEpochSeconds(GetCurrentSimulationTimeSeconds()),
                     PhaseSeeds = phaseSeeds
                 };
                 ScheduleCascadePhaseSeedJob(underwater, job, safeCount);
