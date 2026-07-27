@@ -116,6 +116,49 @@ namespace Hecton8.Core
                    body != null;
         }
 
+        /// <summary>
+        /// Names the FIRST condition of <see cref="IsProductionPlayerAuthorityObject"/> that a candidate
+        /// fails, or <c>"NONE"</c> when it passes.
+        ///
+        /// This exists because the boolean above collapses five independent requirements into one bit,
+        /// and a caller that rejects the player then has nothing to report but "invalid". A headless
+        /// route probe hit exactly that wall: boot walked thirteen activation steps, reached
+        /// Step 8.9 Scene Gate Verification, and died with the generic
+        /// <c>PLAYER_INSTANTIATION_PENDING</c> - which named the gate, not the missing component. Five
+        /// candidate causes and no way to tell them apart is the silent-degeneracy shape this project's
+        /// rules single out: a system that can collapse quietly must fail loudly instead.
+        ///
+        /// Returns interned literals only - no allocation, no interpolation - so it is safe to call from
+        /// the boot path and from a diagnostic poll.
+        /// </summary>
+        /// <param name="playerObject">Candidate player authority object.</param>
+        /// <returns>A stable reason token, or <c>"NONE"</c>.</returns>
+        public static string DescribeProductionPlayerAuthorityFailure(GameObject playerObject)
+        {
+            if (playerObject == null)
+                return "PLAYER_NULL";
+
+            if (IsLegacyWorldShellOwned(playerObject))
+                return "PLAYER_OWNED_BY_LEGACY_WORLD_SHELL";
+
+            if (!playerObject.TryGetComponent(out IBootstrapProductionPlayerMovementAuthority movement) ||
+                movement == null)
+            {
+                return "PLAYER_MISSING_MOVEMENT_AUTHORITY";
+            }
+
+            if (!playerObject.TryGetComponent(out IBootstrapProductionPlayerInteractionAuthority interaction) ||
+                interaction == null)
+            {
+                return "PLAYER_MISSING_INTERACTION_AUTHORITY";
+            }
+
+            if (!playerObject.TryGetComponent(out Rigidbody body) || body == null)
+                return "PLAYER_MISSING_RIGIDBODY";
+
+            return "NONE";
+        }
+
         private static bool IsLegacyWorldShellOwned(GameObject candidate)
         {
             if (candidate == null)

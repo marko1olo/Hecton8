@@ -16,6 +16,13 @@ namespace Hecton8.Bootstrap
         private static SceneInstantiationGate s_activeRuntime;
         private bool _worldPrimed;
         private bool _playerInstantiated;
+
+        /// <summary>
+        /// Which authority condition the offered player failed, or null when none was ever offered.
+        /// Distinguishes "a player was judged and rejected, for this reason" from "no player has arrived
+        /// yet" - two states the gate used to report with the same word.
+        /// </summary>
+        private string _playerRejectionReason;
         private bool _memorySnapshotCaptured;
         private bool _gateOpen;
         private bool _hotSwapRegistered;
@@ -88,8 +95,19 @@ namespace Hecton8.Bootstrap
         internal void MarkPlayerInstantiated(GameObject playerObject)
         {
             _playerInstantiated = ProductionPlayerAuthorityUtility.IsProductionPlayerAuthorityObject(playerObject);
-            if (!_playerInstantiated)
-                LastFailureReason = playerObject == null ? "PLAYER_NULL" : "PLAYER_AUTHORITY_INVALID";
+            if (_playerInstantiated)
+            {
+                _playerRejectionReason = null;
+                return;
+            }
+
+            // Keep WHICH of the five authority conditions failed. "PLAYER_AUTHORITY_INVALID" named the
+            // check, never the cause, and the poll loop below then overwrote even that with the generic
+            // PLAYER_INSTANTIATION_PENDING every frame - so the one fact needed to fix the boot was
+            // destroyed twice before anyone could read it.
+            _playerRejectionReason =
+                ProductionPlayerAuthorityUtility.DescribeProductionPlayerAuthorityFailure(playerObject);
+            LastFailureReason = _playerRejectionReason;
         }
 
         internal void CaptureMemorySnapshot(float textureMemoryMb, float reservedMemoryMb, float totalVramMb)
@@ -149,7 +167,9 @@ namespace Hecton8.Bootstrap
 
             if (!_playerInstantiated)
             {
-                failureReason = "PLAYER_INSTANTIATION_PENDING";
+                // Report the specific rejection when MarkPlayerInstantiated already judged a candidate.
+                // Only a player that was never offered at all is genuinely still "pending".
+                failureReason = _playerRejectionReason ?? "PLAYER_INSTANTIATION_PENDING";
                 return false;
             }
 
