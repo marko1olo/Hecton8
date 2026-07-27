@@ -199,10 +199,8 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlanarFlow.hlsl"
 
 
-            float ResolvePlanarCurrentStrength()
-            {
-                return max(ApproxMagnitude3(_GlobalOceanFlow.xyz), _HectonVegetationCurrentStrength);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlanarStrength.hlsl"
+
 
             // Was a local float frac-hash that disagreed with the lit pass, so every plant's shadow
             // swayed on a different wind phase than the plant. Shared with all four passes now.
@@ -491,7 +489,11 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float2 currentVector = dot(sampledCurrentVector, sampledCurrentVector) > 0.0001
                     ? SafeNormalize2(sampledCurrentVector)
                     : ResolvePlanarOceanFlowDirection(_HectonVegetationCurrentVector.xz);
-                float currentStrength = max(ApproxMagnitude2(sampledCurrentVector), ResolvePlanarCurrentStrength());
+                // Matches the lit pass exactly: PLANAR (xz), SQUARED and SATURATED on both terms.
+                // Was an approximate 3D length on one and an approximate 2D length on the other.
+                float currentStrength = max(
+                    ResolvePlanarOceanFlowStrength(_HectonVegetationCurrentVector.xz, _HectonVegetationCurrentStrength),
+                    saturate(dot(sampledCurrentVector, sampledCurrentVector)));
                 float swayWave = TriangleSigned(timeValue * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(animatedPositionWS, bendMask, instanceType, instanceNoise);
                 animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave * healthSwayScale);

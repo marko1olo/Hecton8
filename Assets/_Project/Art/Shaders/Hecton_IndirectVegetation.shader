@@ -766,12 +766,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlanarFlow.hlsl"
 
 
-            float ResolvePlanarOceanFlowStrength(float2 fallbackFlow, float fallbackStrength)
-            {
-                float2 flow = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : fallbackFlow;
-                float flowStrengthSq = dot(flow, flow);
-                return max(saturate(flowStrengthSq), fallbackStrength);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlanarStrength.hlsl"
+
 
             float3 ResolveCausticSamplePositionWS(float3 positionWS)
             {
