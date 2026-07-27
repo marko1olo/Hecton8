@@ -60,6 +60,11 @@ namespace Hecton8.Physics.Vehicles
         public const float DefaultSeawaterDensityKgPerM3 = 1027f;
         private const float MinDensityKgPerM3 = 850f;
         private const float MaxDensityKgPerM3 = 1250f;
+        // Two-metre stratification bands, so descending crosses discrete density layers instead of
+        // resampling noise every centimetre. Amplitude matches the previous jitter so hull feel is
+        // preserved; only what seeds it changes.
+        private const float MicroLayerBandsPerMeter = 0.5f;
+        private const float MicroLayerAmplitudeKgPerM3 = 0.55f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveBaseDensityKgPerM3(float densityMultiplier)
@@ -68,18 +73,35 @@ namespace Hecton8.Physics.Vehicles
             return math.clamp(DefaultSeawaterDensityKgPerM3 * safeMultiplier, MinDensityKgPerM3, MaxDensityKgPerM3);
         }
 
+        /// <summary>
+        /// Ambient fluid density at depth: base density, depth compression, and a micro-layer
+        /// stratification bias.
+        ///
+        /// The stratification is seeded from a quantised depth band, NOT the frame counter, and its
+        /// amplitude is NOT scaled by GlobalQualityWeight. Both of those fed pseudo-random jitter
+        /// directly into `buoyancyN = hullVolume * fluidDensity * Gravity * buoyancyEase`, so the
+        /// buoyant force on the submarine varied with the frame number and differed between quality
+        /// tiers. GlobalQualityWeight must not alter gameplay truth or deterministic state ownership,
+        /// and a frame-seeded force is not replay- or rollback-safe.
+        ///
+        /// Seeding on depth keeps the intended effect - density layers the hull can feel on descent -
+        /// while making it a pure deterministic function of position, identical on every tier and on
+        /// every replay. `frame` and `globalQualityWeight` are retained so the public signature and
+        /// all call sites stay unchanged; they deliberately no longer influence physics truth.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SampleDensityKgPerM3(float depthMeters, float baseDensityKgPerM3, uint frame, float globalQualityWeight)
         {
+            _ = frame;
+            _ = globalQualityWeight;
             float depth = math.isfinite(depthMeters) ? math.clamp(depthMeters, 0f, 1200f) : 0f;
-            float quality = math.saturate(math.select(SubmarineDynamicsConstants.AuthoritativeQualityWeight, globalQualityWeight, math.isfinite(globalQualityWeight)));
             float baseDensity = math.isfinite(baseDensityKgPerM3)
                 ? math.clamp(baseDensityKgPerM3, MinDensityKgPerM3, MaxDensityKgPerM3)
                 : DefaultSeawaterDensityKgPerM3;
             float compressionBias = depth * 0.0042f;
-            uint phase = (frame * 1103515245u) + 12345u;
-            float microLayerWeight = quality;
-            float microLayerBias = (((phase >> 8) & 1023u) * (1f / 1023f) - 0.5f) * 0.55f * microLayerWeight;
+            uint depthBand = (uint)(depth * MicroLayerBandsPerMeter);
+            uint phase = (depthBand * 1103515245u) + 12345u;
+            float microLayerBias = (((phase >> 8) & 1023u) * (1f / 1023f) - 0.5f) * MicroLayerAmplitudeKgPerM3;
             return math.clamp(baseDensity + compressionBias + microLayerBias, MinDensityKgPerM3, MaxDensityKgPerM3);
         }
     }
