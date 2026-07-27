@@ -678,7 +678,13 @@ def main() -> int:
     assert_contains(errors, ROOT / "streaming.md", "World streaming decisions must evaluate")
 
     allowed_root_docs = {
+        # Standard repository / community-health files. Policy: Docs/ROOT_DOCS_REFERENCE.md Root Policy.
         "README.md",
+        "CONTRIBUTING.md",
+        "LICENSE.md",
+        "CHANGELOG.md",
+        "SECURITY.md",
+        "CODE_OF_CONDUCT.md",
         "AGENTS.md",
         "CLAUDE.md",
         "COMMON_SENSE.md",

@@ -504,6 +504,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 ReportBootstrapReadiness();
                 CheckWorldSeed();
                 ReportRegistryPresence();
+                ReportRuntimeComponentCensus();
                 ReportVegetationVertexInputs();
             }
             catch (Exception ex)
@@ -628,6 +629,85 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             Debug.Log($"{Marker} REGISTRY {builder}");
+        }
+
+        /// <summary>
+        /// Counts live instances of the runtime owners whose existence is in question.
+        ///
+        /// H8_SceneCompositionCensus answers whether a component is AUTHORED into a scene. It
+        /// found HectonIndirectVegetationRenderer, HectonFluidEngine, FloraInteractionManager,
+        /// GpuScatterLodManager and HectonVoxelEngine absent from all three boot scenes - but it
+        /// also found FaunaGeneticsManager absent, and this probe proves that one exists at
+        /// runtime because EcosystemRuntimeInstaller AddComponents it. Authoring absence is
+        /// therefore not runtime absence, and only this side of the pair can close the question.
+        ///
+        /// FindObjectsByType also fixes the blind spot in every other search here:
+        /// SceneManager.GetSceneAt does not enumerate the DontDestroyOnLoad scene, so root
+        /// traversal cannot see persistent objects. This can.
+        ///
+        /// Self-test: FaunaGeneticsManager MUST be counted, because the WORLDSEED check in this
+        /// same run resolved a live FaunaGeneticsManager through GlobalRegistry a few lines
+        /// earlier. If the census cannot find a component the same run just used, the census is
+        /// broken and every "0 instances" below is worthless.
+        /// </summary>
+        private static void ReportRuntimeComponentCensus()
+        {
+            string[] watched =
+            {
+                "HectonIndirectVegetationRenderer",
+                "HectonFluidEngine",
+                "FloraInteractionManager",
+                "GpuScatterLodManager",
+                "HectonVoxelEngine",
+                "HectonWorldGenerator",
+                "GameBootstrapper",
+                "FaunaGeneticsManager",
+            };
+
+            MonoBehaviour[] all = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            var total = new Dictionary<string, int>(StringComparer.Ordinal);
+            var enabled = new Dictionary<string, int>(StringComparer.Ordinal);
+            var where = new Dictionary<string, string>(StringComparer.Ordinal);
+            for (int i = 0; i < all.Length; i++)
+            {
+                MonoBehaviour behaviour = all[i];
+                if (behaviour == null)
+                    continue;
+
+                string typeName = behaviour.GetType().Name;
+                total.TryGetValue(typeName, out int seen);
+                total[typeName] = seen + 1;
+                if (behaviour.isActiveAndEnabled)
+                {
+                    enabled.TryGetValue(typeName, out int live);
+                    enabled[typeName] = live + 1;
+                }
+
+                if (!where.ContainsKey(typeName))
+                    where[typeName] = behaviour.gameObject.scene.name ?? "<no scene>";
+            }
+
+            Debug.Log($"{Marker} RUNTIME CENSUS {all.Length} live MonoBehaviours, {total.Count} distinct types");
+
+            if (!total.ContainsKey("FaunaGeneticsManager"))
+            {
+                Debug.Log(
+                    $"{Marker} RUNTIME CENSUS SELF-TEST FAILED - FaunaGeneticsManager was resolved through " +
+                    "GlobalRegistry in this same run and the census cannot see it. Every zero below is void.");
+                _failures++;
+                return;
+            }
+
+            foreach (string typeName in watched)
+            {
+                total.TryGetValue(typeName, out int count);
+                enabled.TryGetValue(typeName, out int live);
+                string scene = count > 0 && where.TryGetValue(typeName, out string found) ? found : "-";
+                string verdict = count == 0 ? "NONE  " : "EXISTS";
+                Debug.Log($"{Marker} RUNTIME CENSUS   {verdict} {typeName,-34} instances={count} enabled={live} firstScene={scene}");
+            }
         }
 
         /// <summary>

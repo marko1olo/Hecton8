@@ -9,7 +9,7 @@ Evidence class: STATIC_DOC / STATIC_FILESYSTEM
 
 The repository root may contain these active text anchors and standing route bibles:
 
-- `README.md` as the repository entry point for humans and GitHub rendering, not agent law and not a status/progress surface
+- the standard repository/community-health set for humans and GitHub rendering: `README.md`, `CONTRIBUTING.md`, `LICENSE.md`, `CHANGELOG.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`. These are conventional repo files, not agent law and not status/progress surfaces. They may describe the project and its workflow; they may not restate, relax, or fork agent law, which stays in `AGENTS.md` and the routing chain
 - `AGENTS.md`
 - `CLAUDE.md` as the Claude Code shim only, not divergent project law
 - `COMMON_SENSE.md` as common HECTON-8 engineering law routed by the authority spine

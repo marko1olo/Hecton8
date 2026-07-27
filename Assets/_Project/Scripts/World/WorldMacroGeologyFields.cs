@@ -1002,9 +1002,20 @@ namespace Hecton8.World
                         double cx = (neighbor.x + HashToUnitFloat(h ^ 0x87654321u)) * craterGridSizeD;
                         double cz = (neighbor.y + HashToUnitFloat(h ^ 0xA1B2C3D4u)) * craterGridSizeD;
                         float radius = math.lerp(120f, 950f, math.pow(HashToUnitFloat(h ^ 0x1A2B3C4Du), 2.2f));
-                        float dist = (float)math.length(new double2(warpedPosD.x - cx, warpedPosD.y - cz));
-                        if (dist > radius * 1.8f)
+                        // math.md section 7: cull on SQUARED distance so the sqrt is paid only by craters
+                        // that actually influence this sample. This 3x3 neighbourhood ran the sqrt before
+                        // the radius test, so every rejected candidate paid for one.
+                        // SUPPRESSION (math.sqrt below): owner WorldMacroGeologyFields, reason = the bowl,
+                        // rim and peak terms all need true metric distance; tier = all; verified by the
+                        // out-of-process height checksum recorded in the commit that introduced this.
+                        double craterDx = warpedPosD.x - cx;
+                        double craterDz = warpedPosD.y - cz;
+                        double craterDistSq = craterDx * craterDx + craterDz * craterDz;
+                        double craterCull = (double)radius * 1.8;
+                        if (craterDistSq > craterCull * craterCull)
                             continue;
+
+                        float dist = (float)math.sqrt(craterDistSq);
 
                         float normalizedDist = dist / math.max(1f, radius);
                         float bowl = math.pow(1f - math.smoothstep(0f, 1f, normalizedDist), 1.55f);
@@ -1036,8 +1047,15 @@ namespace Hecton8.World
                         double cx = (neighbor.x + HashToUnitFloat(h ^ 0x99AABBCCu)) * microGridD;
                         double cz = (neighbor.y + HashToUnitFloat(h ^ 0xDDEEFF00u)) * microGridD;
                         float radius = math.lerp(30f, 180f, math.pow(HashToUnitFloat(h ^ 0x11335577u), 2f));
-                        float dist = (float)math.length(new double2(warpedPosD.x - cx, warpedPosD.y - cz));
-                        if (dist > radius * 1.8f) continue;
+                        // Same squared-distance cull as the macro crater loop above; micro craters are
+                        // denser (600 m grid), so proportionally more candidates are rejected here.
+                        double microDx = warpedPosD.x - cx;
+                        double microDz = warpedPosD.y - cz;
+                        double microDistSq = microDx * microDx + microDz * microDz;
+                        double microCull = (double)radius * 1.8;
+                        if (microDistSq > microCull * microCull) continue;
+
+                        float dist = (float)math.sqrt(microDistSq);
                         
                         float nDist = dist / math.max(1f, radius);
                         float bowl = math.pow(1f - math.smoothstep(0f, 1f, nDist), 1.5f);
