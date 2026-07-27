@@ -292,8 +292,12 @@ namespace Hecton8.EditorTools.Diagnostics
             Hecton8.Core.ISceneService registered = Hecton8.Core.GlobalRegistry.Scene;
             string registeredLabel = registered == null ? "null" : registered.GetType().Name;
 
-            Hecton8.Core.SceneRuntimeService[] found = UnityEngine.Object.FindObjectsByType<Hecton8.Core.SceneRuntimeService>(
-                FindObjectsInactive.Include, FindObjectsSortMode.None);
+            // No FindObjectsSortMode overload: it is deprecated in 6000.5 (CS0618) and this check only
+            // enumerates, so sort order is irrelevant. The census at ReportRuntimeComponentCensus still
+            // uses the deprecated overload and still warns - pre-existing, not changed here, because
+            // dropping its explicit None could alter that census's ordering assumptions.
+            Hecton8.Core.SceneRuntimeService[] found =
+                UnityEngine.Object.FindObjectsByType<Hecton8.Core.SceneRuntimeService>(FindObjectsInactive.Include);
 
             Debug.Log($"{Marker} SCENERUNTIME registry={registeredLabel} instances={found.Length}");
 
