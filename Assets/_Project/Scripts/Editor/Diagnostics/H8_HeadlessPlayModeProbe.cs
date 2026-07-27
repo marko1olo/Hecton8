@@ -43,6 +43,8 @@ namespace Hecton8.EditorTools.Diagnostics
             Idle,
             WaitingForPlayMode,
             WarmingUp,
+            StartingGame,
+            GameplayWarmup,
             Reporting,
             LeavingPlayMode,
         }
@@ -50,7 +52,10 @@ namespace Hecton8.EditorTools.Diagnostics
         private static Phase _phase = Phase.Idle;
         private static double _startedAt;
         private static int _frames;
+        private static int _gameplayFrames;
         private static int _warmupFrames = DefaultWarmupFrames;
+        private static int _gameplayFramesTarget;
+        private static bool _startNewGame;
         private static int _failures;
 
         public static void Run()
@@ -58,7 +63,15 @@ namespace Hecton8.EditorTools.Diagnostics
             string scenePath = ReadStringArg("-h8Scene", DefaultScene);
             _warmupFrames = Math.Max(1, ReadIntArg("-h8WarmupFrames", DefaultWarmupFrames));
 
-            Debug.Log($"{Marker} START scene={scenePath} warmupFrames={_warmupFrames} batchmode={Application.isBatchMode}");
+            // A headless boot legitimately stops at 01_MAIN_MENU: gameplay systems - ecosystem,
+            // terrain, the world-seed owner - are installed only once a game is actually started.
+            // Without this the probe can only ever inspect the menu.
+            _gameplayFramesTarget = Math.Max(0, ReadIntArg("-h8GameplayFrames", 0));
+            _startNewGame = _gameplayFramesTarget > 0;
+
+            Debug.Log(
+                $"{Marker} START scene={scenePath} warmupFrames={_warmupFrames} " +
+                $"gameplayFrames={_gameplayFramesTarget} batchmode={Application.isBatchMode}");
 
             try
             {
@@ -111,6 +124,24 @@ namespace Hecton8.EditorTools.Diagnostics
                     }
 
                     if (++_frames >= _warmupFrames)
+                        _phase = _startNewGame ? Phase.StartingGame : Phase.Reporting;
+                    break;
+
+                case Phase.StartingGame:
+                    // One shot. If the menu is not there, say so and report on the menu-state
+                    // runtime rather than silently pretending a game was started.
+                    _phase = TryStartNewGame() ? Phase.GameplayWarmup : Phase.Reporting;
+                    break;
+
+                case Phase.GameplayWarmup:
+                    if (!EditorApplication.isPlaying)
+                    {
+                        Debug.Log($"{Marker} LEFT PLAY MODE during gameplay warmup at frame {_gameplayFrames}");
+                        Finish(1);
+                        return;
+                    }
+
+                    if (++_gameplayFrames >= _gameplayFramesTarget)
                         _phase = Phase.Reporting;
                     break;
 
@@ -127,12 +158,51 @@ namespace Hecton8.EditorTools.Diagnostics
             }
         }
 
+        /// <summary>
+        /// Presses "New Game" the way the menu button does. Root traversal rather than any
+        /// FindObjectOfType variant: those are banned project-wide and the ban is worth honouring
+        /// in tooling too.
+        /// </summary>
+        private static bool TryStartNewGame()
+        {
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            {
+                UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                if (!scene.isLoaded)
+                    continue;
+
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    var menu = root.GetComponentInChildren<Hecton.UI.MainMenu.MainMenuController>(true);
+                    if (menu == null)
+                        continue;
+
+                    Debug.Log($"{Marker} STARTING NEW GAME via {menu.GetType().Name} in scene '{scene.name}'");
+                    try
+                    {
+                        menu.ReadableStartNewGame();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Log($"{Marker} NEW GAME THREW {ex.GetType().Name}: {ex.Message}");
+                        _failures++;
+                        return false;
+                    }
+                }
+            }
+
+            Debug.Log($"{Marker} NO MainMenuController found in any loaded scene - reporting on the current runtime instead");
+            return false;
+        }
+
         private static void RunChecks()
         {
             Debug.Log($"{Marker} --- checks at frame {_frames} ---");
 
             try
             {
+                ReportBootstrapReadiness();
                 CheckWorldSeed();
                 ReportRegistryPresence();
             }
@@ -143,6 +213,37 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             Debug.Log($"{Marker} RESULT failures={_failures}");
+        }
+
+        /// <summary>
+        /// A headless boot reaches 01_MAIN_MENU and stops there, because gameplay systems are
+        /// installed only once a game is actually started. On arrival BootstrapRouteEnforcer finds
+        /// AreAllSystemsReady() false and tries to reload 00_BOOTSTRAP, which then fails with
+        /// "Failed to schedule async bootstrap recovery load".
+        ///
+        /// AreAllSystemsReady is `_isBootstrapComplete && Dispatcher && TickManager && Save &&
+        /// ObjectPool`, so this breaks the verdict into its parts: the aggregate says "not ready"
+        /// without saying which term failed, and the difference between "boot never completed" and
+        /// "one service is missing" decides where to look next.
+        ///
+        /// Reports only; a headless boot legitimately does not finish, so this fails nothing.
+        /// </summary>
+        private static void ReportBootstrapReadiness()
+        {
+            bool ready = global::Hecton8.Bootstrap.GameBootstrapper.AreAllSystemsReady();
+
+            Debug.Log(
+                $"{Marker} BOOTSTRAP allSystemsReady={ready} " +
+                $"Dispatcher={(IsAlive(GlobalRegistry.Dispatcher) ? "ok" : "null")} " +
+                $"TickManager={(IsAlive(GlobalRegistry.TickManager) ? "ok" : "null")} " +
+                $"Save={(IsAlive(GlobalRegistry.Save) ? "ok" : "null")} " +
+                $"ObjectPool={(IsAlive(GlobalRegistry.ObjectPool) ? "ok" : "null")}");
+
+            // Whatever the game ended up in. The interesting answer is 01_MAIN_MENU.
+            UnityEngine.SceneManagement.Scene active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            Debug.Log(
+                $"{Marker} SCENE active='{active.name}' loaded={active.isLoaded} " +
+                $"sceneCount={UnityEngine.SceneManagement.SceneManager.sceneCount}");
         }
 
         /// <summary>
