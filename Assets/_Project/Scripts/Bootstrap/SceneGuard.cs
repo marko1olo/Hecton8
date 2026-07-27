@@ -1,37 +1,37 @@
 // ============================================================================
 // HECTON-8 — SceneGuard.cs
-// Protect non-bootstrap scenes from being loaded directly.
+// Protect non-bootstrap scenes from executing without a live bootstrap owner.
 //
-// PRAVILO:
-// ✗ Zapusk 01_MAIN_MENU bez 00_BOOTSTRAP = ZAPRESchENO
-// ✗ Zapusk 02_HECTON_WORLD bez 00_BOOTSTRAP = ZAPRESchENO
-// ✓ Zapusk 00_BOOTSTRAP = RAZREShENO
+// Route classification is NOT owned here. BootstrapRouteEnforcer is the single
+// owner of "did this scene reach me through 00_BOOTSTRAP", of the recovery load,
+// and of the start-context reset that goes with it. This component only reacts
+// to the status it is handed, exactly as MainMenuController does.
 //
-// Esli eto narushenie obnaruzheno:
-//   1. Logiruem oshibku
-//   2. Perezagruzhaem 00_BOOTSTRAP
-//   3. Zatem zagruzhaem nuzhnuyu stsenu cherez GameStartContext
+// This file used to carry its own copy of that decision: a raw
+// AreAllSystemsReady() test followed by GameStartContextHolder.Reset() and a
+// LoadSceneMode.Single reload of 00_BOOTSTRAP. Because it runs at
+// DefaultExecutionOrder(-29000) it fired before almost everything else in its
+// scene, so a boot that had merely not finished its ordered phases yet was
+// treated as an illegal entry: the Single reload tore down the in-flight
+// bootstrapper along with the services it was registering, and the Reset() wiped
+// the pending target scene the main menu had just written.
 //
 // ============================================================================
 
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using Hecton8.Core;
 using Hecton8.Bootstrap;
 using Hecton8.World;
 
 namespace Hecton8.Guardian
 {
     /// <summary>
-    /// Guard dlya stsen. Proveryaet chto bootstrap byl zagruzhen.
-    /// Pri narushenii — perezagruzhaet bootstrap i perehodit v nuzhnuyu stsenu.
+    /// Scene guard. Confirms the scene it lives in was reached through bootstrap
+    /// and stands down while the route enforcer recovers a session that was not.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-29000)] // Posle BootstrapController, no do ostalnogo
     public sealed class SceneGuard : MonoBehaviour
     {
-        private const string BootstrapSceneName = "00_BOOTSTRAP";
-
         [SerializeField] private bool _enforceBootstrap = true;
 
         private void Awake()
@@ -41,40 +41,23 @@ namespace Hecton8.Guardian
             if (!_enforceBootstrap)
                 return;
 
-            // ── Proverka chto bootstrap byl zagruzhen ──
-            if (!GameBootstrapper.AreAllSystemsReady())
+            BootstrapRouteStatus routeStatus = BootstrapRouteEnforcer.EvaluateBootstrapRuntimeRoute(
+                gameObject.scene.name,
+                nameof(SceneGuard));
+
+            // Ready: bootstrap finished, nothing to guard against.
+            // Initializing: bootstrap started and owns this route, it is only mid-phase.
+            // Either way this guard must not touch the scene or the start context.
+            if (routeStatus != BootstrapRouteStatus.Recovering &&
+                routeStatus != BootstrapRouteStatus.Failed)
             {
-                Scene currentScene = gameObject.scene;
-
-                Hecton8.Core.H8Debug.LogError(
-                    $"[SceneGuard] Scene '{currentScene.name}' loaded WITHOUT bootstrap! " +
-                    $"This violates the architecture. Reloading {BootstrapSceneName}...");
-
-                // ── Perehod: 00_BOOTSTRAP → nuzhnaya stsena ──
-                string targetScene = currentScene.name;
-                LoadBootstrapThenTarget(targetScene);
-            }
-        }
-
-        private static void LoadBootstrapThenTarget(string targetSceneName)
-        {
-            // ── Ustanavlivaem kontekst ──
-            // Posle zagruzki bootstrap i menu user vyberet stsenu vruchnuyu
-            GameStartContextHolder.Reset();
-
-            // ── Zagruzhaem bootstrap ──
-            AsyncOperation operation = SceneManager.LoadSceneAsync(
-                BootstrapSceneName,
-                LoadSceneMode.Single);
-            if (operation == null)
-            {
-                Hecton8.Core.H8Debug.LogError(
-                    $"[SceneGuard] Failed to schedule async bootstrap recovery load for '{targetSceneName}'.");
+                return;
             }
 
-            // Primechanie: Pravilnyy perehod (bootstrap → menu → world) budet
-            // kogda user nazhimaet knopki v UI. Etot guard prosto vosstanavlivaet
-            // sostoyanie posle nepravilnoy zagruzki stseny.
+            // No bootstrap ran at all. The enforcer owns the recovery load and has
+            // already reset the start context; this scene is being torn down, so the
+            // guard stops rather than acting on state that is about to disappear.
+            enabled = false;
         }
     }
 }

@@ -1487,17 +1487,53 @@ namespace Hecton.UI.MainMenu
             sceneService.LoadScene(sceneName);
         }
 
+        /// <summary>
+        /// True only when this play session has no bootstrap owner at all, so a start
+        /// request cannot be served by the scene service and has to recover through
+        /// 00_BOOTSTRAP first.
+        /// </summary>
+        /// <remarks>
+        /// This predicate previously returned true for 02_HECTON_WORLD and 01_ORBIT
+        /// whenever the active scene was not 00_BOOTSTRAP - which is unconditionally the
+        /// case while the player is standing in 01_MAIN_MENU. Every New Game and every
+        /// Load Game therefore returned early into <see cref="TryRouteStartThroughBootstrap"/>
+        /// and never reached <see cref="SceneRuntimeService"/>: no world residency gate,
+        /// no floating-origin or GPU residency gate, no menu cinematic handoff, no loading
+        /// screen, and scene activation left unconditionally enabled, which
+        /// AGENTS.md Streaming/import defaults forbid.
+        ///
+        /// SceneRuntimeService owns the production menu route. The bootstrap reload is a
+        /// recovery route only, and the caller keeps its own fallback into that route when
+        /// the scene service reports it cannot load.
+        ///
+        /// The three facts read below are exactly the ones
+        /// <see cref="BootstrapRouteEnforcer.EvaluateBootstrapRuntimeRoute"/> classifies
+        /// on, read here without its side effects: that method calls
+        /// GameStartContextHolder.Reset() and schedules its own Single load, which would
+        /// wipe the pending target scene StartGameWithScene just wrote and double-load
+        /// bootstrap.
+        /// </remarks>
+        /// <param name="sceneName">Requested start scene.</param>
+        /// <returns>True only when bootstrap recovery must run before the start request.</returns>
         private static bool ShouldUseBootstrapHandoffForStart(string sceneName)
         {
             if (!Application.isPlaying || string.IsNullOrWhiteSpace(sceneName))
                 return false;
 
-            string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-            if (string.Equals(activeSceneName, BootstrapSceneName, StringComparison.Ordinal))
+            // Bootstrap finished its ordered phases. The scene service owns this route.
+            if (GameBootstrapper.AreAllSystemsReady())
                 return false;
 
-            return string.Equals(sceneName, DefaultGameplaySceneName, StringComparison.Ordinal) ||
-                   string.Equals(sceneName, "01_ORBIT", StringComparison.Ordinal);
+            // A boot that already started still owns this session and is only mid-phase.
+            // Reloading 00_BOOTSTRAP as LoadSceneMode.Single here would tear down the
+            // in-flight bootstrapper along with the services it is registering.
+            if (BootstrapStatus.BootStarted || BootstrapState.HasActiveInstance)
+                return false;
+
+            // No bootstrap ran at all. Recovery only makes sense from a scene that is not
+            // already 00_BOOTSTRAP, otherwise the reload loops on itself.
+            string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            return !string.Equals(activeSceneName, BootstrapSceneName, StringComparison.Ordinal);
         }
 
         private string ResolveStartSceneName(bool isNewGame)
