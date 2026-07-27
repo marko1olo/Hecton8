@@ -697,14 +697,22 @@ namespace Hecton8.EditorTools.Diagnostics
 
             Debug.Log($"{Marker} RUNTIME CENSUS {all.Length} live MonoBehaviours, {total.Count} distinct types");
 
-            if (!total.ContainsKey("FaunaGeneticsManager"))
+            object registryFauna = GlobalRegistry.FaunaGenetics;
+            bool registryHasFauna = IsAlive(registryFauna);
+            if (registryHasFauna && !total.ContainsKey("FaunaGeneticsManager"))
             {
                 Debug.Log(
-                    $"{Marker} RUNTIME CENSUS SELF-TEST FAILED - FaunaGeneticsManager was resolved through " +
-                    "GlobalRegistry in this same run and the census cannot see it. Every zero below is void.");
+                    $"{Marker} RUNTIME CENSUS SELF-TEST FAILED - GlobalRegistry holds a live " +
+                    "FaunaGeneticsManager in this run and the census cannot see it. Every zero below is void.");
                 _failures++;
                 return;
             }
+
+            Debug.Log(
+                registryHasFauna
+                    ? $"{Marker} RUNTIME CENSUS   self-test ok - census agrees with GlobalRegistry on FaunaGeneticsManager"
+                    : $"{Marker} RUNTIME CENSUS   self-test SKIPPED - GlobalRegistry has no FaunaGenetics this run, " +
+                      "so there is no positive case to check the census against. Zeros below are UNVALIDATED.");
 
             foreach (string typeName in watched)
             {
