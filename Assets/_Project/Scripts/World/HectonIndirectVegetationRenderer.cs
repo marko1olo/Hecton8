@@ -425,6 +425,12 @@ namespace Hecton8.World
         private Camera _previousMotionCamera;
         private bool _hasPreviousMotionCameraPosition;
         private Vector3 _cachedCullCameraPosition;
+
+        // Zero is a perfectly finite Vector3, so "is it finite" cannot distinguish "the camera is at
+        // the origin" from "no camera has ever been resolved". Publishing the second as valid would
+        // make the shader cull interaction against distance-to-origin and silently kill player bend
+        // for every plant more than ResolveInteractionDistance() from world zero.
+        private bool _hasCullCameraPosition;
         private Vector3 _cachedCullCameraForward = Vector3.forward;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private PlayerToolManager _playerToolManager;
@@ -2411,6 +2417,7 @@ namespace Hecton8.World
                 Transform cullTransform = cullCamera.transform;
                 ResolveCullCameraPose(cullTransform, out cullCameraPosition, out cullCameraForward);
                 _cachedCullCameraPosition = cullCameraPosition;
+                _hasCullCameraPosition = true;
                 _cachedCullCameraForward = cullCameraForward;
             }
 
@@ -2834,7 +2841,8 @@ namespace Hecton8.World
         private void PublishVegetationViewPosition(MaterialPropertyBlock propertyBlock)
         {
             Vector3 viewPosition = _cachedCullCameraPosition;
-            if (!math.all(math.isfinite(new float3(viewPosition.x, viewPosition.y, viewPosition.z))))
+            if (!_hasCullCameraPosition ||
+                !math.all(math.isfinite(new float3(viewPosition.x, viewPosition.y, viewPosition.z))))
             {
                 // Leave w at 0 so the shader falls back to _WorldSpaceCameraPos rather than culling
                 // every instance against a garbage origin.
