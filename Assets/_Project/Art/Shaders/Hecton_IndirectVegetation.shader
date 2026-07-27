@@ -317,24 +317,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             // passes so a plant and its shadow sway on the same wind phase. See the include header.
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationHash.hlsl"
 
-            float WrapPhasePi(float phase)
-            {
-                const float twoPi = 6.28318530718;
-                const float invTwoPi = 0.15915494309;
-                return phase - floor((phase + 3.14159265359) * invTwoPi) * twoPi;
-            }
-
-            float FastSinApprox(float phase)
-            {
-                float x = WrapPhasePi(phase);
-                float x2 = x * x;
-                return x * (1.0 - x2 * (0.1666666716 - x2 * (0.0083333310 - x2 * 0.0001984127)));
-            }
-
-            float FastCosApprox(float phase)
-            {
-                return FastSinApprox(phase + 1.57079632679);
-            }
+            // This pass is the reference for the sway wave; it now reads it from the shared include
+            // instead of owning a private copy, so the other three passes cannot drift from it again.
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationWave.hlsl"
 
             float ValueNoise3D(float3 samplePosition)
             {

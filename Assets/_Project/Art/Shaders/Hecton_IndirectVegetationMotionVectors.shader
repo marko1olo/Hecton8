@@ -215,6 +215,10 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
             // kind of mismatch that makes motion vectors describe a plant that was never drawn.
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationHash.hlsl"
 
+            // Same story for the sway wave: the local FastTriangleSigned below displaced vertices on a
+            // triangle where the lit pass uses a sine, so the reported velocity was never the truth.
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationWave.hlsl"
+
             float ResolveBayer4x4(float2 pixel)
             {
                 float2 cell = fmod(pixel, 4.0);
@@ -291,7 +295,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
 
                 float3 flowDirection = SafeNormalize3(float3(flowSample.x, 0.0, flowSample.z));
                 float typeScale = instanceType < 0.5 ? 0.24 : (instanceType < 1.5 ? 0.42 : 0.18);
-                float flowWave = FastTriangleSigned(ResolveFlowSynchronyPhase(positionWS, instanceNoise));
+                float flowWave = FastSinApprox(ResolveFlowSynchronyPhase(positionWS, instanceNoise));
                 return flowDirection * (flowWave * flowMagnitude * typeScale * bendMask);
             }
 
@@ -361,7 +365,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float2 sample = worldXZ * 0.024 + _SargassumGlobalDriftOffset.xz * 0.014;
                 float coarse = Hash21(floor(sample));
                 float fine = Hash21(floor(sample * 1.87 + 21.0));
-                float wave = FastTriangleSigned(sample.x * 1.18 + sample.y * 0.86 + _Time.y * 0.12) * 0.5 + 0.5;
+                float wave = FastSinApprox(sample.x * 1.18 + sample.y * 0.86 + _Time.y * 0.12) * 0.5 + 0.5;
                 return saturate(coarse * 0.44 + fine * 0.34 + wave * 0.22);
             }
 
