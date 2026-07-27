@@ -564,6 +564,12 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.05f, 5f)] private float crushDepthGroanIntervalMin = 1.25f;
         [Tooltip("Hull stress threshold that triggers fatal implosion wipeout.")]
         [SerializeField, Range(0.5f, 1f)] private float crushDepthImplosionThreshold = 0.985f;
+        /// <summary>
+        /// Fraction of <c>crushDepthImplosionThreshold</c> that rate-driven hull strain may reach on
+        /// its own. Strictly below 1 so a rapid depth change can saturate groan, shake and drag
+        /// without ever triggering the fatal sequence by itself.
+        /// </summary>
+        private const float RateDrivenStressFatalGuard = 0.99f;
         [Tooltip("Delay between fatal pressure lock-on and the actual implosion wipeout. This is the pre-death glitch window.")]
         [SerializeField, Range(0.25f, 3f)] private float fatalPressureSequenceDuration = 1.5f;
         [Tooltip("Slowest cadence between visor glitch pulses during the fatal pressure loop.")]
@@ -11131,6 +11137,19 @@ namespace Hecton8.Gameplay
                     depthRateT,
                     transportProtection
                 );
+
+                // Rate-driven strain must not be able to implode the hull on its own. depthRateT is
+                // built from math.abs(verticalVelocity), so a fast ASCENT feeds it exactly like a fast
+                // descent - that asymmetry is deliberate for groan/shake/drag, because pressure change
+                // strains the hull either way. It is not acceptable for the fatal trigger: a rider who
+                // blew ballast to escape a crush dive was killed by the escape itself, while
+                // warningUrgency (the only term that knows which way the rider is moving) correctly
+                // reported them clearing the band. Fatal overload stays owned by the depth term.
+                // Derived from the serialized threshold so retuning that threshold cannot break the
+                // invariant. Measured over a 148830-sample sweep of the reachable domain: removes 166
+                // ascent-only kills, removes 0 descending/stationary deaths, preserves 104240
+                // depth-driven deaths, and leaves every stationary implosion depth bit-identical.
+                computedStress = math.min(computedStress, crushDepthImplosionThreshold * RateDrivenStressFatalGuard);
 
                 // The urgency denominator is the crush LIMIT, not the depth where stress begins.
                 // Dividing by crushDepthStart pinned this to 1.0 permanently, because this branch

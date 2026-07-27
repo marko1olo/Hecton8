@@ -239,9 +239,7 @@ namespace Hecton8.EditorTools.Diagnostics
 
         private static int ResolveMinTerrainAlphamapLayers(out int terrainCount)
         {
-            Terrain[] terrains = UnityEngine.Object.FindObjectsByType<Terrain>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+            Terrain[] terrains = UnityEngine.Object.FindObjectsByType<Terrain>(FindObjectsInactive.Include);
 
             terrainCount = terrains != null ? terrains.Length : 0;
             if (terrainCount == 0)
