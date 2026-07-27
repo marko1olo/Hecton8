@@ -26,6 +26,9 @@ namespace Hecton8.Ecosystem
         // real HectonWorldGenerator still warns, which is the correct thing for it to do.
         private const int UnversionedWorldGeneration = 0;
 
+        /// <summary>Spawn-cell resolution for the non-AUP variation fallback. 2 = half-metre cells.</summary>
+        private const float FallbackVariationCellsPerMeter = 2f;
+
         [SerializeField] private int _worldSeed;
         private bool _serviceRegistered;
         private bool _worldSeedProviderRegistered;
@@ -392,10 +395,39 @@ namespace Hecton8.Ecosystem
                         (uint)biomeIndex);
                 }
 
+                // The AUP branch above folds the spawn point in through BuildAupSeed. This fallback
+                // used only the world seed, biome and species, so every creature of one species in
+                // one biome received the SAME variation hash - identical scale, speed and health for
+                // the whole population. Fold the spawn point in here too.
                 uint hash = Mix((uint)_worldSeed);
                 hash = Mix(hash ^ (uint)biomeIndex * 0x85EBCA6Bu);
                 hash = Mix(hash ^ speciesHash);
+                hash = Mix(hash ^ HashFallbackSpawnCell(spawnPosition));
                 return hash;
+            }
+        }
+
+        /// <summary>
+        /// Quantised spawn-cell hash for the non-AUP fallback path. Quantising means float jitter
+        /// between two spawns at the same spot cannot yield two different genomes, while spawns a
+        /// half metre apart still diverge. Runs only when the runtime origin is unresolved, so the
+        /// incoming position is runtime-local and the int3 cast cannot realistically overflow.
+        /// </summary>
+        private static uint HashFallbackSpawnCell(Vector3 spawnPosition)
+        {
+            float3 position = new float3(spawnPosition.x, spawnPosition.y, spawnPosition.z);
+            if (!math.all(math.isfinite(position)))
+                return 0x9E3779B9u;
+
+            // math.floor collapses -0.0f and +0.0f to the same cell index, so a sign bit on a zero
+            // coordinate cannot split one spawn point into two genomes.
+            int3 cell = (int3)math.floor(position * FallbackVariationCellsPerMeter);
+            unchecked
+            {
+                uint hash = (uint)cell.x * 0x8DA6B343u;
+                hash ^= (uint)cell.y * 0xD8163841u;
+                hash ^= (uint)cell.z * 0xCB1AB31Fu;
+                return Mix(hash);
             }
         }
 
