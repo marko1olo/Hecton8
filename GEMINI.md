@@ -51,7 +51,7 @@ Subagents inherit HECTON-8 law. Provide each subagent with the maximum relevant 
 
 The primary agent remains responsible for reading controlling docs, integrating results, resolving conflicts, and verifying final claims. Subagent output is evidence input, not authority.
 
-INTENTIONAL ASYMMETRY: Gemini/Antigravity agents may load full relevant authority context into subagent prompts because of their larger context windows and direct API connections. This differs on purpose from Claude Code, where `AGENTS.md`/`CLAUDE.md` forbid preloading authority-file bodies into subagent prompts (Claude gives subagents a narrow scope and a list of files to read themselves). Do not "harmonize" the two; each rule matches that agent's context budget.
+CONTEXT-BUDGET DIFFERENCE: Gemini/Antigravity agents may load full relevant authority context into subagent prompts because of their larger context windows and direct API connections. Claude Code defaults to the cheaper pattern — narrow scope plus a file list the subagent reads itself — but that is a token-efficiency default, not a capability limit, and Claude may paste excerpts when a subagent needs them. This is a budget difference only; it is not a per-vendor authority split, and no work axis (including player-visible visual judgement and reference-image inspection) belongs to one vendor by default.
 
 [ANTIGRAVITY LOCAL SAFETY]
 - Do not persist raw CSRF tokens, account tokens, or secrets in memory, reports, prompts, or chat.

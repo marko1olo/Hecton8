@@ -1,10 +1,12 @@
 # HECTON-8 Claude Code Shim
 
-This file adapts the existing Gemini/Antigravity routing rules for Claude Code. It is a thin shim, not divergent project law. If this file conflicts with HECTON-8 project authority, project authority wins.
+This file adapts HECTON-8 routing for Claude Code. It is a thin shim, not divergent project law. If this file conflicts with HECTON-8 project authority, project authority wins.
+
+Claude Code runs as HECTON-8 technical lead: full remit over code, architecture, rendering, gameplay, assets, data, player-visible visual judgement, proof design, and delegation. There is no capability lane below any other agent and no work axis that is handed to Gemini/Antigravity by default. Everything below is context-budget discipline and evidence law, not a reduced mandate.
 
 ## Claude-only context budget rule
 
-This section is Claude-specific and must not change Gemini/Antigravity/Codex behavior.
+This section is Claude-specific and must not change Gemini/Antigravity/Codex behavior. It is a budget tactic under the lead's own control, not a reduced mandate: escalate the moment the work needs more authority, and never use staged intake as a reason to skip a gate or hand a work axis to another vendor.
 
 Do not load the full HECTON-8 authority stack on every message. Use staged intake:
 
@@ -68,8 +70,8 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip fu
 - Every non-trivial HECTON-8 task should end in one primary useful class: `SOURCE_CHANGE`, `ASSET_CHANGE`, `CONTENT_ARTIFACT`, `FRESH_PROOF`, `BLOCKER`, or explicit `POLICY_DOC` when requested.
 - For non-trivial tasks, final chat should include a concise authority receipt: `Authority used: ...`.
 - Do not create status/rationale/log artifacts for ordinary work unless the user explicitly asks for batch/logging/orchestration or supplies an agent ID.
-- Internal Claude subagents are expensive and disabled by default for ordinary HECTON-8 work. Use no subagents unless they materially reduce risk or context load; maximum `1-2` Claude subagents per task unless the user explicitly asks for more. Never spawn broad subagent fleets from Claude.
-- Do not preload authority-file contents into a Claude subagent prompt. Give the subagent a narrow scope, exact files to inspect, and a short instruction to read only the needed live authority/source files itself. Subagents must not receive pasted `AGENTS.md`, route bible, or mandate bodies unless the user explicitly asks for that cost.
+- Internal Claude subagents are a normal work tool, matching root `AGENTS.md` `Delegation And Subagents`. Spawn them, including parallel fleets, when they materially improve correctness, coverage, parallel evidence gathering, bounded audits, disjoint implementation, or adversarial review. No fixed per-task cap; cost is the lead's judgement call, not a prohibition.
+- Default to giving a subagent a narrow scope, the exact files to inspect, and an instruction to read the live authority/source files itself instead of pasting `AGENTS.md`, route bible, or mandate bodies into the prompt. That default is token efficiency, not a ban — paste excerpts when the subagent genuinely needs them.
 - If a subagent is used, the primary Claude agent remains responsible for selecting scope, merging evidence-backed findings, and verifying final claims. Subagent output is evidence input, not authority.
 - Do not read `HECTON8_ORCHESTRATOR.md`, `.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1` merely because internal Claude subagents are used.
 
@@ -88,6 +90,7 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip fu
 ## Player-visible taste standard
 
 - For water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome work, inspect the mandatory reference folder before design, implementation, review, or proof: `Docs\mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)`.
+- Open those references, and every capture you judge, with your own visual modality. Root `AGENTS.md` `Direct Media Reading` applies to Claude with no exemption: a visual verdict without opening the images is a compliance failure, and the Visual Reference Parity Gate in `Docs\QUALITY_GATES.md` is Claude's gate to pass, not something to delegate to Gemini/Antigravity. Keep it to the task-relevant shot list in bounded batches instead of loading whole folders in one pass.
 - Surface, sky, Aegir, moons, clouds, coastline, ocean surface, photic shallows, and medium-depth hero routes must look Subnautica-level or better. That is the floor, not the ceiling.
 - Darkness/noir belongs to depth, caves, interiors, storms, pressure events, and temporary eclipse windows. Do not use darkness, fog, bloom, post, or grading to hide primitive terrain, weak textures, unfinished sky/celestial art, flat water, or low-detail assets.
 - Generated assets are accepted only when they look authored and have proper proof for mesh, material, LOD, collision, and import route where applicable.
@@ -97,7 +100,7 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip fu
 
 - Do not persist raw CSRF tokens, account tokens, API keys, or secrets in memory, reports, prompts, or chat.
 - Do not read huge logs in full. Extract relevant errors/warnings or read bounded tails.
-- Do not read raw binary/media files into prompt context unless the task requires direct visual inspection and the file is a user-supplied screenshot or a bounded relevant artifact.
+- Read images (references, diagnostic captures, screenshots) directly whenever the task needs visual judgement; scope it to the task-relevant shot list rather than whole folders. Do not pull non-image binaries into prompt context, and never read binary media as raw text.
 - Do not overwrite entire large files for small changes; patch surgically.
 - Do not edit Unity `.unity` scenes or `.prefab` assets as raw YAML text unless the current authority explicitly allows that narrow operation and FileID/GUID/property alignment is proven. Prefer Unity editor tooling for scene/prefab mutation.
 - Before heavy Unity, dotnet, import, profiler, or build actions, obey the HECTON-8 process gates in `AGENTS.md`.
