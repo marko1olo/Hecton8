@@ -6405,19 +6405,48 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private const string EditorDefaultBioCableMaterialPath = "Assets/_Project/Art/Materials/Nature/ProceduralOrganicMisc/Mat_Organic_PlantStem.mat";
         private const string EditorDefaultFluidDecalMaterialPath = "Assets/_Project/Art/Materials/VFX/MAT_AbyssalFluidDecal.mat";
+        private const string EditorDefaultBlackSmokeComputePath = "Assets/_Project/Art/Shaders/AbyssalBlackSmoke.compute";
 
         private void OnValidate()
         {
             SanitizeSettings();
 
+            bool resolvedAny = false;
+
             if (bioCableMaterial == null)
+            {
                 bioCableMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(EditorDefaultBioCableMaterialPath);
+                resolvedAny |= bioCableMaterial != null;
+            }
 
             if (fluidDecalMaterial == null)
+            {
                 fluidDecalMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(EditorDefaultFluidDecalMaterialPath);
+                resolvedAny |= fluidDecalMaterial != null;
+            }
+
+            // The black smoker plume never ran. blackSmokeCompute arrived only through [SerializeField], and a
+            // GUID census found AbyssalBlackSmoke.compute referenced by no scene, prefab or asset, so the field
+            // was null everywhere and the guards early-returned. Identity is proven here by asset path rather
+            // than by kernel name: CSMain is declared by seven computes in this project and is therefore no
+            // evidence at all. The distinctive contract is the _ThermalVents / _ParticlesRead buffer pair, which
+            // only this manager binds.
+            if (blackSmokeCompute == null)
+            {
+                blackSmokeCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(EditorDefaultBlackSmokeComputePath);
+                resolvedAny |= blackSmokeCompute != null;
+            }
 
             if (fluidDecalManager == null)
                 TryGetComponent(out fluidDecalManager);
+
+            // SetDirty is what makes any of these resolves survive. Without it the assignments exist in memory
+            // only, so the editor repairs them on every load while the serialized value stays null - and null is
+            // what ships. That is the failure mode 30deb1fe9 documents, where the editor always looks correct and
+            // the player build is dead. It was already true of both material fields above; one dirty call covers
+            // all three, and it makes a new scene carrying this component wire itself.
+            if (resolvedAny)
+                UnityEditor.EditorUtility.SetDirty(this);
         }
 #endif
     }
