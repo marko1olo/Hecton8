@@ -126,6 +126,15 @@ namespace Hecton8.EditorTools.Diagnostics
         private const string MenuSceneName = "01_MAIN_MENU";
         private const int MenuWarmupFrames = 120;
 
+        /// <summary>
+        /// How long a DISABLED <c>MainMenuController</c> is tolerated before the probe stops waiting for
+        /// it to enable itself. Not a timeout in the usual sense - the condition is decided in the first
+        /// second and this grace only covers the window where the controller may not have run
+        /// <c>Awake</c> yet. Kept short because the alternative, measured, was 201 wall seconds and
+        /// 11490 game frames spent waiting for a flag that cannot flip.
+        /// </summary>
+        private const double DisabledMenuGraceSeconds = 12.0d;
+
         // How long to let the game bring up its OWN menu. Default is generous on purpose: the
         // bootstrap -> menu handoff is a Single load with an activation gate, and rushing it is how
         // the earlier versions of this probe went wrong twice.
@@ -641,6 +650,32 @@ namespace Hecton8.EditorTools.Diagnostics
                 }
 
                 double waited = EditorApplication.timeSinceStartup - _phaseStartedAt;
+
+                // A menu that EXISTS but is DISABLED is not a menu that has not loaded yet, and waiting
+                // the full window for it is waiting for something that cannot happen.
+                // MainMenuController.Awake disables itself when GameBootstrapper.AreAllSystemsReady() is
+                // false, and that gate (GameBootstrapper.cs:675-681) is
+                // _isBootstrapComplete && Dispatcher != null && TickManager != null && Save != null &&
+                // ObjectPool != null. _isBootstrapComplete is written true at exactly one place
+                // (:2373), reached only after all six boot phases succeed. So a disabled menu means boot
+                // did not finish, the enabled flag will never flip, and the remaining wait is dead time.
+                // Measured before this branch existed: 201 wall seconds and 11490 game frames burned on
+                // a condition that was decided in the first second, and the run was killed externally
+                // before any terminal phase - so it also left no artifact.
+                if (waited >= DisabledMenuGraceSeconds &&
+                    !IsAnySceneLoadInFlight() &&
+                    TryFindMainMenu(out Hecton.UI.MainMenu.MainMenuController inertMenu) &&
+                    !inertMenu.enabled)
+                {
+                    Debug.Log(
+                        $"{Marker} MENU EXISTS BUT IS DISABLED in scene '{inertMenu.gameObject.scene.name}' " +
+                        $"after {waited:F0}s - boot did not complete, so the enabled flag will never flip. " +
+                        "Advancing to the New Game attempt, which reports the disabled controller precisely, " +
+                        "instead of burning the rest of the window on a condition already decided.");
+                    SetPhase(Phase.StartingGame);
+                    return;
+                }
+
                 if (waited < _menuWaitSeconds)
                 {
                     if (++_menuFrames % 400 == 0)
