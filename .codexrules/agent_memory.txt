@@ -1,6 +1,16 @@
+[STATUS] NOT_PROJECT_LAW / OPERATIONAL SCRATCH MEMO. Not authority, not a rule surface. Registered in
+Docs/AGENT_AUTHORITY_ROUTING.md under delegated surfaces. Verify every command below against live source
+before running it; if it disagrees with root AGENTS.md or a current route bible, they win.
+[DATE] Written 2026-06-09. Treat as stale until re-verified.
+
 [Jules][2026-06-09] Learned that when `VerifyCraftingCosts`, `VerifyOreLcgBaker`, `VerifyPdaTechnicalLogs`, `VerifyOpticsBaker`, `VerifySabineBaker`, `VerifyUpgradeCurveBaker` fail on `Tools/RunFullVerifySweep.py`, we should first make sure that pip dependency `numpy` is installed, and then re-bake missing artifacts and JSON manifest signatures by running:
 1. `python Tools/CraftingCostsBaker.py`
 2. `python Tools/OreLcgBaker.py`
 3. `python Tools/CalculateHPhi.py --workers 2 --json-output Docs/AgentLogs/HPhi_RESOURCE_SPAWN_LCG_TABLES.json`
 4. `python Tools/PackPdaTechnicalLogs.py`
 This regenerates and updates all dependent binary and metadata tables that the verify sweep expects.
+
+[GAP][2026-07-27] The four commands above cover six named verifiers. `VerifyOpticsBaker`,
+`VerifySabineBaker`, and `VerifyUpgradeCurveBaker` have no documented re-bake command here. If one of
+those fails, find its owning baker in `Tools/` and read that script before guessing a command — do not
+assume one of the four listed bakers regenerates it.

@@ -8551,10 +8551,18 @@ namespace Hecton8.World
                 return false;
             }
 
-            // Validate the fast path on the seed alone. ResolveWaterSurfaceLevel() walks the ocean
-            // service and can fall through to a MapMagic bridge resolve, which is far too expensive to
-            // run per biomass macro cell - and the classification below reads only TrenchMask and
-            // ShelfMask, neither of which is derived from WaterSurfaceY.
+            // Validate the fast path on the seed alone: ResolveWaterSurfaceLevel() walks the ocean
+            // service and can fall through to a MapMagic bridge resolve, far too expensive to run per
+            // biomass macro cell. The fast path returns params that ALREADY carry the resolved
+            // WaterSurfaceY, so it skips re-resolving, not resolving.
+            //
+            // DO NOT "optimise" the ResolveWaterSurfaceLevel() call below away. It is load-bearing as
+            // of the switch to zone-based lane classification: ClassifyLane now reads
+            // sample.PrimaryZone, ResolveZone gates on DepthMeters, and DepthMeters is
+            // max(0, WaterSurfaceY - heightMeters). A wrong water level silently shifts every sector
+            // across the 260 m / 500 m zone boundaries and mislabels the lanes with no error.
+            // The older justification here - "the classification reads only TrenchMask and ShelfMask,
+            // neither derived from WaterSurfaceY" - was true then and is FALSE now.
             if (_geologyBiomeParamsResolved && _geologyBiomeParamsSeed == runtimeWorldSeed)
             {
                 parameters = _geologyBiomeParams;

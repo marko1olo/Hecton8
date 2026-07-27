@@ -22,6 +22,13 @@ namespace Hecton8.EditorTools.Diagnostics
         private const float EcosystemSectorEdgeMeters = 1000f;
         private const int DefaultSectorRadius = 16;
 
+        /// <summary>
+        /// Mirrors <c>EcosystemDirector.DefaultWaterSurfaceLevelY</c> (14.02f). The runtime prefers a
+        /// live <c>ResolveWaterSurfaceLevel()</c> and only falls back to this, so the audit is exact
+        /// only when the ocean service agrees with the fallback. Logged so the reader can tell.
+        /// </summary>
+        private const float DefaultWaterSurfaceLevelY = 14.02f;
+
         [MenuItem("Hecton8/Diagnostics/Geology Biome Lane Distribution")]
         public static void RunFromMenu()
         {
@@ -39,14 +46,23 @@ namespace Hecton8.EditorTools.Diagnostics
 
         private static bool Execute(int runtimeWorldSeed, int sectorRadius)
         {
+            float waterSurfaceY = DefaultWaterSurfaceLevelY;
+
             // Params built the same way the runtime builds them in
             // EcosystemDirector.TryResolveGeologyBiomeParams, so the audit sees the same field the
-            // ecosystem will. WaterSurfaceY is left at its default: neither TrenchMask nor ShelfMask
-            // is derived from it.
+            // ecosystem will.
+            //
+            // WaterSurfaceY must be set explicitly and must NOT be left at CreateDefault's 0. Lanes
+            // are now resolved from PrimaryZone, ResolveZone gates on DepthMeters, and DepthMeters is
+            // max(0, WaterSurfaceY - heightMeters). Leaving it at 0 would audit a world sitting
+            // 14.02 m below the one the runtime classifies and quietly report lane counts for terrain
+            // that does not exist - the audit/runtime drift the delegation to ClassifyLane exists to
+            // prevent.
             WorldMacroGeologyParams parameters = WorldMacroGeologyParams.CreateDefault(
                 WorldMacroGeologyFields.CombineWorldSeed(
                     unchecked((uint)WorldMacroGeologyFields.DefaultAuthoringSeed),
                     runtimeWorldSeed));
+            parameters.WaterSurfaceY = waterSurfaceY;
 
             EcosystemGeologyBiomeLanes.LaneDistribution distribution =
                 EcosystemGeologyBiomeLanes.SampleLaneDistribution(
@@ -57,11 +73,14 @@ namespace Hecton8.EditorTools.Diagnostics
             int edge = (sectorRadius * 2) + 1;
             Debug.Log(string.Format(
                 CultureInfo.InvariantCulture,
-                "[H8_GEOLOGYLANES] grid={0}x{0} sectors edge={1}m runtimeWorldSeed={2} resolvedSeed={3}",
+                "[H8_GEOLOGYLANES] grid={0}x{0} sectors edge={1}m runtimeWorldSeed={2} resolvedSeed={3} " +
+                "waterSurfaceY={4} (lanes are depth-sensitive via PrimaryZone; this must match the " +
+                "runtime ocean level for the counts to be exact)",
                 edge,
                 EcosystemSectorEdgeMeters,
                 runtimeWorldSeed,
-                parameters.Seed));
+                parameters.Seed,
+                waterSurfaceY));
 
             Debug.Log(string.Format(
                 CultureInfo.InvariantCulture,

@@ -17,7 +17,9 @@ Tone: direct, factual, technically demanding. Criticize bad ideas with reasoning
 
 [RULE] `Docs\PROJECT_ROOT_BIBLES_COMBINED.md` is generated. Do not hand-edit it. After root bible or rule-source edits, run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`, then `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`. After agent rule-surface edits, also run `python -B Tools/Docs/TestAgentRuleRouting.py`. After mandate edits, also run `python -B Tools/Docs/TestMandateRegistry.py`.
 
-[RULE] Detailed rules archive: `Docs\AGENTS_RULE_DETAIL_LEDGER.md`.
+[RULE] Detailed rules archive: `Docs\AGENTS_RULE_DETAIL_LEDGER.md`. Its body is protected by a SHA gate in `Tools/Docs/TestAgentRuleRouting.py`; editing its text breaks the check. Leave it alone.
+
+[RULE] Two of the traps above are machine-enforced on the Claude side, not just written down: `C:\hades\.claude\settings.local.json` denies `Edit` on `Docs/PROJECT_ROOT_BIBLES_COMBINED.md`, `Docs/AGENTS_RULE_DETAIL_LEDGER.md`, `Hecton8/**/*.prefab`, and `Hecton8/**/*.unity`. A denied edit is the gate working, not a tooling fault — regenerate through the builder script, or mutate scenes and prefabs through C# Editor scripting.
 
 [RULE] No rule, constraint, rejection gate, product vision lock, proof requirement, or workflow exception may be deleted because it is noisy. Rule splitting must follow `Docs\AGENT_AUTHORITY_ROUTING.md` no-loss protocol.
 
@@ -36,13 +38,13 @@ For non-trivial HECTON-8 work:
 7. Read `Docs\SYSTEMS_CONTRACTS.md` if the task involves non-asset runtime systems, architecture, signals, data vaults, or core memory.
 8. Read `VISION_LOCKS.md` for product direction, ambiguity, route priority, taste conflict, or scope interpretation.
 9. Read `TASTE.md` for player-visible work, plus the matching route bible from `PROJECT_BIBLES.md`.
-10. Read `.agents-skills\README.md`, then exactly the `2-8` mandate files that match the task domain, before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work. Follow `Mandate Intake Discipline`: index first, matching mandates only, no bulk-reading bodies for orientation.
+10. Read `.agents-skills\README.md`, then every mandate file the task domain touches, before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work. The `2-8` the router points at is a floor, not a cap — read more, and read them in full, when the work reaches further. See `Mandate Intake`.
 11. Read `Docs\QUALITY_GATES.md` before claiming a task is VERIFIED or COMPLETE to ensure all necessary proof artifacts (profiler, GC, visual parity, NativeMemory) are generated.
 12. Read live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, old logs, or archives.
 
 Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip full intake, but they must not contradict the authority spine. **CRITICAL SUBAGENT RULE:** Subagents modifying any `.cs`, `.shader`, `.prefab`, or `.asset` files are strictly forbidden from using this "trivial task" bypass. They MUST read `COMMON_SENSE.md`.
 
-[RULE] Mandate Intake Discipline (ALL AGENTS): `.agents-skills\README.md` is the index and is read first. Never read heavy mandate bodies (`.agents-skills/*.txt`) or deep bibles cover-to-cover at startup, for orientation, chat, narrow lookup, or typo fixes. When the concrete task actually touches a mandate domain — source edit, architecture decision, rendering/gameplay/asset/data change, proof design, or technical report — read exactly the `2-8` mandate files that match that domain and no more. When it does not, leave them unread and say the task was handled with scoped intake. This is read-order discipline for every agent, not a per-vendor exemption: the mandate count is driven by what the task touches, never by ritual bulk-reading.
+[RULE] Mandate Intake (ALL AGENTS): `.agents-skills\README.md` is the index — use it to find what applies. There is NO ceiling on how much authority any agent may read. Read every mandate, route bible, and contract the task actually touches, in full, cover to cover, as many as the work needs. The `2-8` figure in Task Intake is a FLOOR the router points at, never a quota. Superseded 2026-07-27 by owner instruction: the former reading caps — "never read heavy mandate bodies", "exactly 2-8 and no more", and the Claude-only startup exemption behind them — are retired and not migrated elsewhere. The one surviving discipline is RELEVANCE, not volume: reading the whole applicable rule set is correct; dredging unrelated dated reports, old prompts, and archives INSTEAD of the live rule set is not. Under-reading authority and then guessing at rule contents remains a critical compliance failure.
 
 Technical report means an audit, policy review, architecture review, proof review, route review, or durable technical artifact. It does not mean the ordinary final chat summary after a code, asset, content, or docs task.
 
@@ -137,7 +139,7 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 [REQ] Direct Media Reading (ALL AGENTS, no per-vendor exemption): every agent, Claude Code included, must open reference images, diagnostic captures, and screenshots with its own visual modality whenever the task is player-visible visual work, Visual Reference Parity Gate acceptance, or capture review. A visual verdict without direct image inspection is a compliance failure, and tool/context cost is not a valid reason to hand the visual axis to another vendor or to report it as `PENDING VERIFICATION`. Discipline instead of exemption: read the images the current shot list and route class actually need, prefer bounded batches over loading a whole reference folder in one pass, and never read binary media as raw text. Supersedes the former Claude-only `.png` read ban from the proxy 502/504 era; that ban is retired, not migrated elsewhere.
 
-[FORBID] Reading Huge Log Files in Full (ALL AGENTS): no agent may read raw text log files (`.log`, `.txt`, compiler or test-runner output) in full once they exceed 10 KB or 100 lines. Extract compiler errors and relevant warnings with `rg`, `findstr`, or `Select-String`, or read a bounded tail such as `Get-Content -Tail 50`. This is the concrete threshold behind `Context Suicide` in `Agent Tooling Abuse & Hallucination Prevention`; there is no per-vendor exemption.
+[REQ] Log Evidence (ALL AGENTS): read as much of a log as the evidence requires. There is no size cap, and a long log is never a reason to skip evidence or to report a conclusion you did not actually verify. Superseded 2026-07-27 by owner instruction: the former 10 KB / 100-line ceiling and its per-vendor exemption are retired. Technique, not permission: on a very large log, lead with targeted extraction (`rg`, `findstr`, `Select-String`, `Get-Content -Tail`) to locate the failing region, then read that region in full; read the whole file when the failure cannot be localized. What is still wrong is reporting from a log you did not read.
 
 [FORBID] Fake metrics, fake completion, optimism language, "should work", "problem solved" without evidence, "covered without literal implementation", and microsecond tables without profiler context.
 
@@ -325,7 +327,7 @@ Use these defaults unless a current route bible, mandate, or live source owner p
 
 [RULE] Revert over hack for proven regressions. If a route that was previously working breaks because of your current changes, revert your broken chunk and find the exact broken reference before writing fix-forward glue. If the suspected regression is in other-agent/user work, do not revert it; isolate evidence and report the owner route.
 
-[FORBID] Raw prefab/scene/asset YAML edits unless mathematically certain of FileID/GUID/property alignment. Prefer Unity API/editor tooling when a scene/prefab mutation is required.
+[FORBID] Raw prefab/scene/asset YAML edits. The rule is `YAML Serialization & Asset Integrity (No Textual Edits)` in `Evidence Law` — an absolute ban on text-editing `.unity`/`.prefab`, not a "unless you are confident" exception, which is how this line used to read. Scene and prefab mutation goes through C# Editor scripts. On the Claude side this is now machine-enforced: `C:\hades\.claude\settings.local.json` denies `Edit` on `/Hecton8/**/*.prefab` and `/Hecton8/**/*.unity`.
 
 [RULE] Prefab/scene consistency guard: reusable gameplay objects use prefab as source of truth; scene-only objects use scene instance as source of truth. Do not blanket Apply All/Revert All on player, HUD/visor cameras, RT-driving cameras, or pooling/streaming/world-runtime prefabs. After prefab changes, verify both prefab asset and scene instance values, or report `PENDING VERIFICATION`.
 
@@ -474,13 +476,13 @@ During work, conduct a self-audit for:
 
 [RULE] PowerShell String Hell: NEVER use `powershell -Command` with complex multiline string replacement (e.g., `(Get-Content).Replace()`). Use Python scripts for complex string manipulations OR your harness's native surgical patch tool — Antigravity `replace_file_content`/`multi_replace_file_content`, Claude Code `Edit`, or the equivalent on whatever harness you run. The requirement is a structured patch tool, not a specific vendor API.
 
-[RULE] Context Suicide: Reading entire logs (e.g. `Editor.log`) into the context window is BANNED. Read logs ONLY via `Get-Content -Tail 50` or a repo-wide search tool with context `-C 5`. Do not burn token quota on system garbage. The concrete threshold is in `Reading Huge Log Files in Full`.
+[RULE] Context Hygiene: prefer targeted extraction over dumping a whole multi-hundred-megabyte engine log when `Get-Content -Tail` or a search with context `-C 5` answers the question. This is efficiency guidance, not a ban — reading a log in full is allowed and sometimes necessary, see `Log Evidence`. What is wrong is padding context with system garbage that answers nothing, or reporting from a log you never opened.
 
 [RULE] The Nuking Anti-Pattern (Surgical Patching Only): Do not overwrite entire large files (like 1500 lines) just to change a few lines. You must use your harness's surgical patch tool (`multi_replace_file_content`/`replace_file_content`, `Edit`, or the equivalent) to find the specific blocks and replace only them.
 
 [RULE] Atomic File Delete Rule: Before ANY automated Unity batchmode test or render run, all `.png` diagnostic artifacts and `.log` files in the output directory must be physically deleted using `Remove-Item -Force`. This prevents hallucinatory visual checks against old screenshots.
 
-[RULE] The Hollow System Ban (Mock Data Trap): Do not write "hollow" systems. The words `TODO`, `NotImplementedException`, `Mock`, and `Fake` are BANNED in implementation logic. Do not write facades that return `true` with a `Debug.Log` instead of actual logic. If you cannot write the full integration, write a Pure C# mathematical function that works entirely, with no mock logic. Every line produced by any agent must be production-ready, mathematically pure, Burst-compiled C# or URP HLSL.
+[RULE] The Hollow System Ban (Mock Data Trap): Do not write "hollow" systems. The words `TODO`, `NotImplementedException`, `Mock`, and `Fake` are BANNED in implementation logic. Do not write facades that return `true` with a `Debug.Log` instead of actual logic. If you cannot write the full integration, write a Pure C# mathematical function that works entirely, with no mock logic. Production-readiness bar: see `Absolute Standards (The "Zero Mocks" Rule)` — stated once there, not restated here.
 
 [RULE] The Paranoia Doctrine (Systemic Doubt): Before approving any architectural rewrite, execution plan, or trusting a reconnaissance report, the agent must perform:
 1. Global System Census: Execute a codebase search (`grep`/`Select-String`) for duplicate or competing systems before modifying code.
