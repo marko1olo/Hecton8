@@ -233,6 +233,7 @@ namespace Hecton8.Gameplay
         private const uint ArmorResolvedFlagWeakPoint = 1u << 0;
         private const uint ArmorResolvedFlagDeflected = 1u << 1;
         private const uint ArmorResolvedFlagNonFinite = 1u << 2;
+        private const byte ArmorImpactSignalFlagNone = 0;
         private const byte ArmorImpactSignalFlagDeflect = 1 << 0;
         private const byte ArmorImpactSignalFlagDirectionalDeflect = 1 << 1;
 
@@ -1634,6 +1635,39 @@ namespace Hecton8.Gameplay
                 SecondaryMaterialId = sample.LutByte,
                 Flags = flags
             });
+        }
+
+        /// <summary>
+        /// Publishes readable contact feedback for a strike that actually reduced target health.
+        /// Intensity carries the health delta that was really applied, not the pre-armor figure, so
+        /// audio/haptic/camera presentation reads the consequence rather than the attempt.
+        /// A deflected strike already published its own impact packet, so it is skipped here and one
+        /// contact stays one presentation event. Presentation only: this changes no damage truth,
+        /// hitbox layout, penetration table, save identity, or authority route (combat.md).
+        /// </summary>
+        internal static void EmitLandedImpactFeedback(
+            global::Hecton8.Core.MpscSignalRingBuffer<ImpactSignal>.ParallelWriter impactWriter,
+            NativeArray<int> impactWriterBudget,
+            in ArmorPenetrationSample sample,
+            float previousHealth,
+            float nextHealth,
+            ushort resultFlags,
+            float visualQualityWeight01)
+        {
+            if ((resultFlags & CombatDamageResultFlags.Deflected) != 0)
+                return;
+
+            float appliedHealthDelta = previousHealth - nextHealth;
+            if (!math.isfinite(appliedHealthDelta) || appliedHealthDelta <= 0f)
+                return;
+
+            EmitArmorImpactFeedback(
+                impactWriter,
+                impactWriterBudget,
+                in sample,
+                appliedHealthDelta,
+                visualQualityWeight01,
+                ArmorImpactSignalFlagNone);
         }
 
         internal static unsafe bool TryAtomicSubtractHealth(

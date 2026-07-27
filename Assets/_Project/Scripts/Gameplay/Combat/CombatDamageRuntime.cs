@@ -2564,6 +2564,15 @@ namespace Hecton8.Gameplay
                         flags |= CombatDamageResultFlags.HighFidelityWound;
                     }
 
+                    EmitLandedImpactFeedback(
+                        ImpactSignalWriter,
+                        ImpactSignalWriterBudget,
+                        in armorSample,
+                        previousHealth,
+                        nextHealth,
+                        flags,
+                        VisualQualityWeight01);
+
                     WriteResult(slot, signal, detail, damageType, kind, previousHealth, nextHealth, damage, maxHealth, InvMaxHealth[slot], VisualQualityWeight01, flags);
                 }
 
