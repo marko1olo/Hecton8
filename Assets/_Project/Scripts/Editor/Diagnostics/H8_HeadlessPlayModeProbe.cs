@@ -55,10 +55,20 @@ namespace Hecton8.EditorTools.Diagnostics
         private const string MenuSceneName = "01_MAIN_MENU";
         private const int MenuWarmupFrames = 120;
 
-        // How long to let the game bring up its OWN menu before loading one. The first version
-        // raced it and ended up with two copies of 01_MAIN_MENU loaded at once, pressing New Game
-        // while a scene load was already in flight.
-        private const int MenuWaitFrames = 900;
+        // How long to let the game bring up its OWN menu. Default is generous on purpose: the
+        // bootstrap -> menu handoff is a Single load with an activation gate, and rushing it is how
+        // the earlier versions of this probe went wrong twice.
+        private static int _menuWaitFrames = 4000;
+
+        // Loading a menu ourselves is OFF by default. When the probe did it additively on top of a
+        // still-active 00_BOOTSTRAP, New Game then issued a Single load that unloaded both scenes,
+        // SceneRuntimeService's activation-gate loop exited on isActiveAndEnabled without ever
+        // calling ReleaseSceneActivation, and 02_HECTON_WORLD sat at roots=0 isLoaded=false forever.
+        // No watchdog or emergency-release line appeared in the log, which is how we know that loop
+        // was not running. That deadlock is almost certainly probe-induced - it is a runtime state
+        // the game never produces - so it must not be created by default and must not be reported
+        // as a game defect.
+        private static bool _forceMenuLoad;
 
         // After New Game the world scene load is in flight for a long time in batchmode - 2400
         // gameplay frames were not enough for 02_HECTON_WORLD to report isLoaded. Counting frames
@@ -88,6 +98,8 @@ namespace Hecton8.EditorTools.Diagnostics
             _gameplayFramesTarget = Math.Max(0, ReadIntArg("-h8GameplayFrames", 0));
             _startNewGame = _gameplayFramesTarget > 0;
             _hardTimeoutSeconds = Math.Max(30.0, ReadIntArg("-h8TimeoutSeconds", 240));
+            _menuWaitFrames = Math.Max(1, ReadIntArg("-h8MenuWaitFrames", 4000));
+            _forceMenuLoad = ReadStringArg("-h8ForceMenuLoad", null) != null;
 
             Debug.Log(
                 $"{Marker} START scene={scenePath} warmupFrames={_warmupFrames} " +
@@ -253,7 +265,12 @@ namespace Hecton8.EditorTools.Diagnostics
                 // 01_MAIN_MENU load is often still in flight, and GetSceneAt reports that scene as
                 // isLoaded=false - which is exactly why an earlier version of this probe concluded
                 // "no MainMenuController anywhere" and then loaded a second copy on top.
-                if (TryFindMainMenu(out Hecton.UI.MainMenu.MainMenuController existing) && existing.enabled)
+                // A live menu only counts once nothing is still streaming: the game's own
+                // 01_MAIN_MENU reports isLoaded=false while its Single load is in flight, and acting
+                // during that window is what produced two simultaneous menus last time.
+                if (!IsAnySceneLoadInFlight() &&
+                    TryFindMainMenu(out Hecton.UI.MainMenu.MainMenuController existing) &&
+                    existing.enabled)
                 {
                     Debug.Log(
                         $"{Marker} MENU live in scene '{existing.gameObject.scene.name}' after " +
@@ -262,12 +279,28 @@ namespace Hecton8.EditorTools.Diagnostics
                     return;
                 }
 
-                if (++_menuFrames < MenuWaitFrames)
+                if (++_menuFrames < _menuWaitFrames)
+                {
+                    if (_menuFrames % 1000 == 0)
+                        Debug.Log($"{Marker} waiting for the game's own menu... frame {_menuFrames}");
+
                     return;
+                }
+
+                if (!_forceMenuLoad)
+                {
+                    Debug.Log(
+                        $"{Marker} MENU never became live in {_menuWaitFrames} frames. Not loading one: " +
+                        "doing that additively deadlocks the world-scene activation gate and the " +
+                        "resulting state is not one the game produces. Pass -h8ForceMenuLoad to override.");
+                    _failures++;
+                    _phase = Phase.Reporting;
+                    return;
+                }
 
                 Debug.Log(
-                    $"{Marker} MENU none live after {MenuWaitFrames} frames - loading '{MenuSceneName}' " +
-                    "additively as a fallback (boot is ready, so its route check should pass)");
+                    $"{Marker} MENU none live after {_menuWaitFrames} frames - FORCED load of " +
+                    $"'{MenuSceneName}' additively (probe-induced state, results are suspect)");
                 _menuLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
                     MenuSceneName,
                     UnityEngine.SceneManagement.LoadSceneMode.Additive);
@@ -289,6 +322,17 @@ namespace Hecton8.EditorTools.Diagnostics
                 _menuFrames = 0;
                 _phase = Phase.MenuWarmup;
             }
+        }
+
+        private static bool IsAnySceneLoadInFlight()
+        {
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            {
+                if (!UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isLoaded)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool TryFindMainMenu(out Hecton.UI.MainMenu.MainMenuController menu)
