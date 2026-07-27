@@ -96,6 +96,10 @@ namespace Hecton8.EditorTools.Diagnostics
         private static AsyncOperation _menuLoad;
         private static int _failures;
 
+        private const string ReadyLockRejection = "Ready-locked registry rejected registration";
+        private static readonly List<string> _rejectedServices = new List<string>();
+        private static bool _logHookInstalled;
+
         public static void Run()
         {
             string scenePath = ReadStringArg("-h8Scene", DefaultScene);
@@ -115,6 +119,8 @@ namespace Hecton8.EditorTools.Diagnostics
             Debug.Log(
                 $"{Marker} START scene={scenePath} warmupFrames={_warmupFrames} " +
                 $"gameplayFrames={_gameplayFramesTarget} batchmode={Application.isBatchMode}");
+
+            InstallRegistryRejectionHook();
 
             // EnterPlaymode() silently does NOTHING when scripts have compiler errors, and says
             // nothing about why. A broken build therefore presents as "Play Mode never starts": one
@@ -504,6 +510,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 ReportBootstrapReadiness();
                 CheckWorldSeed();
                 ReportRegistryPresence();
+                ReportRegistryRejections();
                 ReportRuntimeComponentCensus();
                 ReportVegetationVertexInputs();
             }
@@ -629,6 +636,81 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             Debug.Log($"{Marker} REGISTRY {builder}");
+        }
+
+        /// <summary>
+        /// Captures every "Ready-locked registry rejected registration" the run produces.
+        ///
+        /// This exists because the failure it catches is INTERMITTENT and its symptom looks trivial.
+        /// Three identical runs: two came up with 02_HECTON_WORLD roots=37 and a live terrain
+        /// provider, the third with roots=30, Terrain=null, FaunaGenetics=null. The summary made
+        /// that look like a slow load. It was not. The third run's log carried 31 distinct
+        /// CriticalBootException rejections - MapMagicBridge, HectonPlayerMotor, QuestManager,
+        /// HectonCelestialEngine, WorldProceduralFieldSampler, DepthZoneDirector, EndingSystem,
+        /// SoundscapeSystem and 23 more - and the good runs carried zero. The scene-owned service
+        /// layer simply did not register, and the only way to know was grepping a 1 MB log for a
+        /// string nobody had thought to look for.
+        ///
+        /// GlobalRegistry.GuardServicePublication throws whenever Phase == Ready and no
+        /// ForceOverrideToken is present. GameBootstrapper opens a window for exactly this
+        /// (BeginSceneRuntimePublicationGate / EndSceneRuntimePublicationGate, three call sites);
+        /// inside it a hot-swap token is issued and these registrations pass. So the race is
+        /// whether 02_HECTON_WORLD's scene-owned OnEnable calls land inside that window. Diagnosis
+        /// only - the ordering fix belongs to whoever owns GlobalRegistry and the bootstrapper, and
+        /// guessing at activation order is how this class of bug gets made.
+        ///
+        /// Note the first rejection is the only one Unity logs as an error: GlobalRegistry gates
+        /// that on a one-shot _readyLockViolationLogged flag. Every later one arrives as an
+        /// exception log instead, so counting only LogError hits undercounts 31 down to 1.
+        /// </summary>
+        private static void InstallRegistryRejectionHook()
+        {
+            if (_logHookInstalled)
+                return;
+
+            _logHookInstalled = true;
+            Application.logMessageReceived += OnLogMessage;
+        }
+
+        private static void OnLogMessage(string condition, string stackTrace, LogType type)
+        {
+            if (string.IsNullOrEmpty(condition) || condition.IndexOf(ReadyLockRejection, StringComparison.Ordinal) < 0)
+                return;
+
+            // The service name is the tail of "...rejected registration: Name".
+            int colon = condition.LastIndexOf(':');
+            string service = colon >= 0 && colon < condition.Length - 1
+                ? condition.Substring(colon + 1).Trim()
+                : condition.Trim();
+
+            if (!_rejectedServices.Contains(service))
+                _rejectedServices.Add(service);
+        }
+
+        private static void ReportRegistryRejections()
+        {
+            if (_rejectedServices.Count == 0)
+            {
+                Debug.Log($"{Marker} REGISTRYLOCK none - every scene-owned service registered inside the publication gate");
+                return;
+            }
+
+            Debug.Log(
+                $"{Marker} REGISTRYLOCK {_rejectedServices.Count} services were REJECTED by the ready-locked " +
+                "registry. This world is a shell: the scene-owned service layer did not publish. " +
+                "Intermittent - a rerun may come up clean, which is what makes it dangerous.");
+
+            var builder = new StringBuilder();
+            for (int i = 0; i < _rejectedServices.Count; i++)
+            {
+                if (builder.Length > 0)
+                    builder.Append(", ");
+
+                builder.Append(_rejectedServices[i]);
+            }
+
+            Debug.Log($"{Marker} REGISTRYLOCK   {builder}");
+            _failures++;
         }
 
         /// <summary>
@@ -804,6 +886,12 @@ namespace Hecton8.EditorTools.Diagnostics
         private static void Finish(int exitCode)
         {
             EditorApplication.update -= Tick;
+            if (_logHookInstalled)
+            {
+                Application.logMessageReceived -= OnLogMessage;
+                _logHookInstalled = false;
+            }
+
             _phase = Phase.Idle;
 
             Debug.Log($"{Marker} DONE exitCode={exitCode}");
