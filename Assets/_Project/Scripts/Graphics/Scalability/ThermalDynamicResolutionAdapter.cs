@@ -63,6 +63,9 @@ namespace Hecton8.Graphics.Scalability
         private const float DangerFrameTimeMs = 15.0f;
         private const float TargetFrameTimeMs = 16.66f;
         private const float PanicFrameTimeMs = 33.0f;
+        private const float PanicSaturationFrameTimeMs = DynamicResolutionPanicEnvelope.DefaultSaturationFrameTimeMs;
+        private const float PanicReleaseSeconds = DynamicResolutionPanicEnvelope.DefaultReleaseSeconds;
+        private const float PanicAuthorityFlagEpsilon = 0.01f;
         private const float MinScale = 0.6f;
         private const float MaxScale = 1.5f;
         private const float PolicyMaxScale = 1.0f;
@@ -169,6 +172,7 @@ namespace Hecton8.Graphics.Scalability
         private float _latestGpuUtil01;
         private float _latestSystemStress01;
         private float _latestSystemStressEwma01;
+        private float _panicAuthority01;
         private float _latestGlobalQualityWeight01 = PolicyMaxScale;
         private float _scalabilityQualityWeightSnapshot01 = PolicyMaxScale;
         private float _shaderQualityWeightSnapshot01 = PolicyMaxScale;
@@ -568,19 +572,24 @@ namespace Hecton8.Graphics.Scalability
             }
 
             float desiredTargetScale = ResolveHysteresisTarget(requestedScale, pressureActive);
-            bool panicDrop = _latestFrameTimeEwmaMs >= PanicFrameTimeMs || _pressureLevel >= 3;
-            if (panicDrop)
-            {
+            float panicScaleLimit = ResolvePanicScaleLimit(qualityWeight01);
+            AdvancePanicAuthority(deltaTime);
+            if (_panicAuthority01 > PanicAuthorityFlagEpsilon)
                 flags |= FlagFramePressure;
-                desiredTargetScale = ResolvePanicScaleLimit(qualityWeight01);
-            }
 
-            float targetScale = panicDrop
-                ? desiredTargetScale
-                : ResolveSmoothedTargetScale(_targetScale, desiredTargetScale, deltaTime);
-            float nextScale = panicDrop
-                ? targetScale
-                : ResolveSmoothedRenderScale(_currentScale, targetScale, deltaTime);
+            desiredTargetScale = DynamicResolutionPanicEnvelope.ApplyCollapse(
+                desiredTargetScale,
+                panicScaleLimit,
+                _panicAuthority01);
+
+            float targetScale = DynamicResolutionPanicEnvelope.ApplyCollapse(
+                ResolveSmoothedTargetScale(_targetScale, desiredTargetScale, deltaTime),
+                desiredTargetScale,
+                _panicAuthority01);
+            float nextScale = DynamicResolutionPanicEnvelope.ApplyCollapse(
+                ResolveSmoothedRenderScale(_currentScale, targetScale, deltaTime),
+                targetScale,
+                _panicAuthority01);
             if (_mockReconstructionScaleActive)
             {
                 flags |= FlagFramePressure;
@@ -1919,6 +1928,7 @@ namespace Hecton8.Graphics.Scalability
             _latestSystemStressEwma01 = 1f;
             _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
             _sharpenIntensity01 = 0f;
+            _panicAuthority01 = 0f;
             _pressureFrameCount = 0;
             _recoveryFrameCount = RecoveryHysteresisFrames;
             s_systemScalePercentage = 100f;
@@ -2860,6 +2870,27 @@ namespace Hecton8.Graphics.Scalability
                 (float)HectonQualityTier.Low,
                 (float)HectonQualityTier.Ultra,
                 quality);
+        }
+
+        /// <summary>
+        /// Advances the continuous emergency-collapse envelope. The frame-time term is zero at
+        /// <see cref="PanicFrameTimeMs"/> and reaches full authority at
+        /// <see cref="PanicSaturationFrameTimeMs"/>, so there is no step at the old boolean threshold, and
+        /// the latch cannot fall faster than one full release over <see cref="PanicReleaseSeconds"/>.
+        /// </summary>
+        private void AdvancePanicAuthority(float deltaTime)
+        {
+            float instantAuthority01 = DynamicResolutionPanicEnvelope.ResolveInstantAuthority01(
+                SanitizePositive(_latestFrameTimeEwmaMs, TargetFrameTimeMs),
+                PanicFrameTimeMs,
+                PanicSaturationFrameTimeMs,
+                _pressureLevel);
+
+            _panicAuthority01 = DynamicResolutionPanicEnvelope.Advance(
+                _panicAuthority01,
+                instantAuthority01,
+                deltaTime,
+                PanicReleaseSeconds);
         }
 
         private float ResolveHysteresisTarget(float requestedScale, bool pressureActive)
