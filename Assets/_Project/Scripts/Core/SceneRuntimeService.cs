@@ -234,7 +234,25 @@ namespace Hecton8.Core
                 return null;
             }
 
-            GameObject runtimeRoot = new GameObject("[SceneRuntimeService]");
+            GameObject runtimeRoot = new GameObject("[SceneRuntimeService]"); // COLD ALLOC: GameObject[1] - persistent scene service owner - owner: SceneRuntimeService
+
+            // Park under the project persistent root BEFORE AddComponent, so Awake observes the final
+            // hierarchy. Left unparented this object lands in whatever scene is active at creation time -
+            // 00_BOOTSTRAP - and is destroyed when that scene unloads on the way to 02_HECTON_WORLD,
+            // taking ISceneService down with it exactly when the next scene load needs it.
+            //
+            // Raw DontDestroyOnLoad is not the alternative: AGENTS.md:336 forbids it in first-party
+            // runtime, and GameBootstrapper.EnforceProjectPersistentRoot destroys every
+            // DontDestroyOnLoad root that is not the bootstrapper or a child of it. Being a child of that
+            // single persistent root is the sanctioned way to survive a scene transition here.
+            //
+            // A null owner is legitimate - isolated sandbox and render-test scenes run without a
+            // bootstrapper - so fall back to the previous unparented behaviour rather than refusing to
+            // create the service.
+            GameBootstrapper persistentOwner = GlobalRegistry.BootstrapperRuntime;
+            if (persistentOwner != null)
+                runtimeRoot.transform.SetParent(persistentOwner.transform, false);
+
             SceneRuntimeService sceneService = runtimeRoot.AddComponent<SceneRuntimeService>();
             GlobalRegistry.RegisterSceneRuntime(sceneService);
             return sceneService;
