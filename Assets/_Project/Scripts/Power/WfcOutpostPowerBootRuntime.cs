@@ -36,6 +36,24 @@ namespace Hecton8.Power
         private const float ReactorDecayPerSecond = 0.01f / 60f;
         private const float ReactorBrownoutThreshold01 = 0.02f;
         private const float DoorUnlockVoltage = 0.1f;
+
+        // Lower rail of the sealed-door Schmitt latch. A door that is already open
+        // stays open until potential falls to this level, so solver ripple around
+        // DoorUnlockVoltage cannot strobe the door. AGENTS.md:239 hysteresis band.
+        private const float DoorLockVoltage = 0.07f;
+
+        // Continuous seconds the opposing side must hold before the latch flips.
+        // AGENTS.md:239 minimum time band is 2-3 s.
+        private const float DoorSwitchDwellSeconds = 2.5f;
+
+        // Round-robin keepalive window, in node indices, re-published per pass so a
+        // door controller that spawned after the last transition still converges.
+        private const int DoorResyncStrideNodes = 32;
+
+        // Hard per-pass push budget. SignalBus<WfcOutpostDoorPowerSignal> is a
+        // 64-entry lane; anything above the budget is deferred to the next pass
+        // instead of being silently dropped by the bus.
+        private const int DoorSignalPushBudgetPerPass = 24;
         private const float GeneratorWatts = 5000f;
         private const float RoomDemandWatts = 12f;
         private const float CorridorDemandWatts = 4f;
@@ -69,6 +87,12 @@ namespace Hecton8.Power
             MutationGuardBit(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731645);
 
         private readonly LogisticsNetworkGraph _graph; // COLD ALLOC: LogisticsNetworkGraph[1] - WFC outpost power evaluator - owner: WfcOutpostPowerBootRuntime
+        // COLD ALLOC: byte[500] - per-node sealed-door power latch state - owner: WfcOutpostPowerBootRuntime
+        private readonly byte[] _doorLatchState = new byte[MaxCells];
+        // COLD ALLOC: float[500] - per-node dwell anchor seconds for the door power latch - owner: WfcOutpostPowerBootRuntime
+        private readonly float[] _doorLatchCandidateSince = new float[MaxCells];
+        // COLD ALLOC: byte[500] - last door state actually accepted by the signal lane - owner: WfcOutpostPowerBootRuntime
+        private readonly byte[] _doorPublishedState = new byte[MaxCells];
         private VaultGenerationHandle<WfcOutpostPowerNode> _nodesHandle;
         private VaultGenerationHandle<int> _cellToNodeHandle;
         private VaultGenerationHandle<int> _countsHandle;
@@ -91,6 +115,7 @@ namespace Hecton8.Power
         private int _activeRoomCount;
         private int _activeGeneratorNodeIndex;
         private int _blackBoxCursor;
+        private int _doorResyncCursor;
         private int _lastGraphFaultFlags;
         private float _reactorOutput01;
         private float _lastReactorUpdateTime;
@@ -230,6 +255,24 @@ namespace Hecton8.Power
             _hasActiveGraph = false;
             _gasSeedPending = false;
             _faultDumped = false;
+            ResetDoorPowerLatches();
+        }
+
+        /// <summary>
+        /// Drops every sealed-door latch back to unknown. Node indices are only
+        /// stable inside one translated graph, so a rebind or a new outpost must
+        /// not inherit another graph's latch or dwell anchor.
+        /// </summary>
+        private void ResetDoorPowerLatches()
+        {
+            for (int i = 0; i < MaxCells; i++)
+            {
+                _doorLatchState[i] = PowerHysteresisLatch.StateUnknown;
+                _doorLatchCandidateSince[i] = 0f;
+                _doorPublishedState[i] = PowerHysteresisLatch.StateUnknown;
+            }
+
+            _doorResyncCursor = 0;
         }
 
         private void EnsureBuffers()
@@ -350,7 +393,7 @@ namespace Hecton8.Power
                 return;
 
             if (_hasActiveGraph)
-                ScheduleGraphEvaluation();
+                ScheduleGraphEvaluation(now);
         }
 
         public bool LateFrameTick(float now)
@@ -381,7 +424,7 @@ namespace Hecton8.Power
                 return true;
 
             _graphEvaluationPending = false;
-            PublishDoorPowerSignals();
+            PublishDoorPowerSignals(now);
             PublishReactorBrownoutIfNeeded();
             WriteBlackBox(0u, ResolveLastSupplyRatio(), ResolveLastBrownoutSeverity());
             return false;
@@ -407,6 +450,7 @@ namespace Hecton8.Power
             _initialized = false;
             _hasActiveGraph = false;
             _gasSeedPending = false;
+            ResetDoorPowerLatches();
         }
 
         private static bool ForceCompleteTranslationInPostSimulationWindow(ref JobHandle dependency)
@@ -553,6 +597,7 @@ namespace Hecton8.Power
             _lastGraphFaultFlags = ReadCount(WfcOutpostGraphCountSlots.FaultFlags);
             _reactorOutput01 = InitialReactorOutput01;
             _lastReactorUpdateTime = SanitizeClockSeconds(now);
+            ResetDoorPowerLatches();
             bool hasFatalGraphFault = HasFatalGraphFault(_lastGraphFaultFlags);
             _gasSeedPending = !hasFatalGraphFault;
             _hasActiveGraph = _activeNodeCount > 0 && !hasFatalGraphFault;
@@ -568,10 +613,10 @@ namespace Hecton8.Power
             if (!hasFatalGraphFault)
                 TrySeedGasRooms();
             if (_hasActiveGraph)
-                ScheduleGraphEvaluation();
+                ScheduleGraphEvaluation(now);
         }
 
-        private void ScheduleGraphEvaluation()
+        private void ScheduleGraphEvaluation(float now)
         {
             if (_activeNodeCount <= 0 || HasFatalGraphFault(_lastGraphFaultFlags))
                 return;
@@ -582,7 +627,7 @@ namespace Hecton8.Power
             _graphEvaluationPending = _graph.HasPendingEvaluation;
             if (!_graphEvaluationPending)
             {
-                PublishDoorPowerSignals();
+                PublishDoorPowerSignals(now);
                 PublishReactorBrownoutIfNeeded();
                 WriteBlackBox(0u, ResolveLastSupplyRatio(), ResolveLastBrownoutSeverity());
             }
@@ -677,12 +722,23 @@ namespace Hecton8.Power
             _reactorOutput01 = math.max(0f, _reactorOutput01 - dt * ReactorDecayPerSecond);
         }
 
-        private void PublishDoorPowerSignals()
+        private void PublishDoorPowerSignals(float now)
         {
             if (!_hasActiveGraph)
                 return;
 
             int nodeCount = math.clamp(_activeNodeCount, 0, MaxCells);
+            if (nodeCount <= 0)
+            {
+                _doorResyncCursor = 0;
+                return;
+            }
+
+            float safeNow = SanitizeClockSeconds(now);
+            uint frame = CurrentFrameU32();
+            int resyncWindowStart = _doorResyncCursor % nodeCount;
+            int pushBudget = DoorSignalPushBudgetPerPass;
+
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
                 WfcOutpostPowerNode node = _nodes[nodeIndex];
@@ -692,6 +748,31 @@ namespace Hecton8.Power
                 float voltage = 0f;
                 _graph.TryGetNodePotential(nodeIndex, out voltage);
                 voltage = math.saturate(voltage);
+
+                byte latched = PowerHysteresisLatch.Evaluate(
+                    _doorLatchState[nodeIndex],
+                    voltage,
+                    DoorUnlockVoltage,
+                    DoorLockVoltage,
+                    safeNow,
+                    _doorLatchCandidateSince[nodeIndex],
+                    DoorSwitchDwellSeconds,
+                    out float nextCandidateSince);
+                _doorLatchState[nodeIndex] = latched;
+                _doorLatchCandidateSince[nodeIndex] = nextCandidateSince;
+
+                bool changed = _doorPublishedState[nodeIndex] != latched;
+                if (!changed && !IsInDoorResyncWindow(nodeIndex, resyncWindowStart, nodeCount))
+                    continue;
+
+                if (pushBudget <= 0)
+                {
+                    // Lane budget spent. Leave _doorPublishedState untouched so this
+                    // door is retried next pass instead of being dropped by the bus.
+                    continue;
+                }
+
+                byte unlocked = (byte)(PowerHysteresisLatch.IsEngaged(latched) ? 1 : 0);
                 WfcOutpostDoorPowerSignal signal = new WfcOutpostDoorPowerSignal
                 {
                     DoorAup = ResolveNodeAup(in node),
@@ -701,12 +782,39 @@ namespace Hecton8.Power
                     CellIndex = node.CellIndex,
                     DoorId = node.DoorId,
                     Voltage = voltage,
-                    Frame = CurrentFrameU32(),
-                    Unlocked = (byte)(voltage > DoorUnlockVoltage ? 1 : 0),
-                    Flags = (byte)(voltage > DoorUnlockVoltage ? 1 : 0)
+                    Frame = frame,
+                    Unlocked = unlocked,
+                    Flags = unlocked
                 };
-                SignalBus<WfcOutpostDoorPowerSignal>.TryPushTracked(in signal, ref s_x001WfcOutpostPowerBootRuntimeSignalPushDropCount);
+
+                if (!SignalBus<WfcOutpostDoorPowerSignal>.TryPushTracked(in signal, ref s_x001WfcOutpostPowerBootRuntimeSignalPushDropCount))
+                    break;
+
+                _doorPublishedState[nodeIndex] = latched;
+                pushBudget--;
             }
+
+            int nextCursor = resyncWindowStart + DoorResyncStrideNodes;
+            _doorResyncCursor = nextCursor >= nodeCount ? nextCursor % nodeCount : nextCursor;
+        }
+
+        /// <summary>
+        /// Round-robin keepalive window over node indices. Unchanged doors are
+        /// re-announced a slice at a time so a door controller that spawned after
+        /// the last real transition still converges, without flooding the lane.
+        /// </summary>
+        private static bool IsInDoorResyncWindow(int nodeIndex, int windowStart, int nodeCount)
+        {
+            if (nodeCount <= 0)
+                return false;
+            if (DoorResyncStrideNodes >= nodeCount)
+                return true;
+
+            int offset = nodeIndex - windowStart;
+            if (offset < 0)
+                offset += nodeCount;
+
+            return offset < DoorResyncStrideNodes;
         }
 
         private void PublishReactorBrownoutIfNeeded()
