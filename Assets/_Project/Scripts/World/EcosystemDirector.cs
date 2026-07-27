@@ -1406,6 +1406,12 @@ namespace Hecton8.World
         private VaultBufferView<EcosystemIndexEntry> _biomassIndexEntries;
         private HeadlessEntitySoA _headlessEntities;
         private VaultBufferView<byte> _sectorFoodHeatmapR8;
+
+        /// <summary>
+        /// Latches the one-time unbound-heatmap warning below. Without it the report would repeat every
+        /// cold tick; with it the degradation is stated exactly once per session.
+        /// </summary>
+        private bool _sectorFoodHeatmapUnboundReported;
         private VaultBufferView<EcosystemIndexEntry> _sectorIndexEntries;
         private VaultBufferView<ApexTerritorySample> _apexTerritorySamples;
         private VaultBufferView<ApexTerritoryOverlapResult> _apexTerritoryOverlapResults;
@@ -5088,6 +5094,26 @@ namespace Hecton8.World
                 return;
 
             bool keepLocksForScheduledJob = false;
+
+            // Says out loud that the ecosystem is running without a spatial food field.
+            // BindSectorFoodDensityHeatmap has no callers anywhere in the project, so this view is
+            // never created, the heatmap branch of ResolveSectorBaseFoodCapacity01 is unreachable, and
+            // sector base food is the coordinate-hash fallback 0.42 + roll01 * 0.46 on every path.
+            // Geology then reaches food only through the +/-0.12 biome bias and as a hash salt - a
+            // modest bias, not terrain-driven food distribution. That is invisible today: nothing
+            // errors, the numbers look like a populated field, and the vault plumbing reads as wired.
+            // Cold path (one cold tick apart) and latched, with a literal string, so this costs
+            // nothing and cannot repeat.
+            if (!_sectorFoodHeatmapUnboundReported && !_sectorFoodHeatmapR8.IsCreated)
+            {
+                _sectorFoodHeatmapUnboundReported = true;
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[EcosystemDirector] Sector food heatmap is unbound - BindSectorFoodDensityHeatmap " +
+                    "is never called, so sector base food capacity is a coordinate hash, not terrain. " +
+                    "Geology affects food only as a bias. Bind the heatmap or retire the API.",
+                    this);
+            }
+
             try
             {
                 var solveJob = new LotkaVolterraPopulationJob
