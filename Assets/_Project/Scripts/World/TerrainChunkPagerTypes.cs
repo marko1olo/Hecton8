@@ -33,6 +33,31 @@ namespace Hecton8.World
         public const uint TelemetryFaultInvalidHeader = 1u << 7;
         public const uint TelemetryFaultChecksum = 1u << 8;
         public const uint TelemetryFaultCapacityOverflow = 1u << 9;
+
+        /// <summary>Raised when a slot sat in Loading past the watchdog budget and was reclaimed.</summary>
+        public const uint TelemetryFaultLoadingTimeout = 1u << 10;
+
+        /// <summary>
+        /// VisualSync ticks a slot may remain in Loading before the watchdog reclaims it.
+        /// </summary>
+        /// <remarks>
+        /// R100: Loading is cleared only by DrainWorkerResults (needs a result), the commit lane (needs
+        /// ReadyToCommit) or the MissingFile backoff lane. If a result is ever LOST - PublishWorkerResult
+        /// abandons its enqueue spin when _workerRunning drops during StopWorker, or the worker thread is
+        /// killed mid-request - the slot sticks in Loading forever: stale-marking skips it (requires
+        /// !loading), eviction skips it, and FindSlotByHash still counts it occupied, so the sector is
+        /// never re-requested either. Net cost is one permanently burned slot AND one permanently dark
+        /// sector per lost result, with only a TelemetryFaultIo heartbeat and nothing reclaiming.
+        /// Reclaiming is safe even if a late result arrives afterwards: dispatch stamps each load with a
+        /// unique Sequence into FileOffset, and DrainWorkerResults validates SectorHash + Sequence + the
+        /// Loading bit before applying, so a stale result is discarded rather than written to the wrong
+        /// slot. A false positive therefore costs one redundant chunk read, never corruption - which is
+        /// why a generous fixed budget is preferred over trying to infer a per-load deadline.
+        /// Stored in ChunkMetadataDTO._pad2 (a free byte; _pad0/_pad1 belong to the MissingFile lane),
+        /// so 255 is the ceiling. At 60 Hz that is ~4.25 s of no worker response for a single 256 KiB
+        /// read, well past the point the latency EWMA and IO heartbeat have already flagged trouble.
+        /// </remarks>
+        public const byte LoadingWatchdogTicks = 255;
         public const uint RequestFlagMock = 1u << 0;
         public const uint RequestFlagForceMock = 1u << 1;
         public const uint RequestFlagsMask = RequestFlagForceMock;

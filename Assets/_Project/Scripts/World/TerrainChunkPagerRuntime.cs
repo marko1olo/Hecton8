@@ -1175,6 +1175,31 @@ namespace Hecton8.World
                 // the residency job re-requests the sector naturally. Worst case a persistently
                 // failing file retries once per backoff window (~bounded IO), instead of poisoning
                 // the sector for the whole session. Genuine missing files (_pad0 == 0) stay parked.
+                // R100: Loading watchdog. A lost worker result leaves a slot in Loading forever - the
+                // stale-marking test requires !loading, eviction requires Stale, and FindSlotByHash still
+                // reports the slot occupied, so the sector is never re-requested. That burns one slot and
+                // blanks one sector permanently. Count the armed budget down and reclaim on expiry; a late
+                // result is rejected by the SectorHash + Sequence + Loading check in DrainWorkerResults,
+                // so reclaiming early costs at worst one redundant read.
+                for (int slot = 0; slot < metadataCount; slot++)
+                {
+                    ChunkMetadataDTO meta = metadata[slot];
+                    if (meta.SectorHash == 0UL || (meta.StateFlags & TerrainChunkStateFlags.Loading) == 0u)
+                        continue;
+
+                    if (meta._pad2 > 0)
+                    {
+                        meta._pad2--;
+                        metadata[slot] = meta;
+                        continue;
+                    }
+
+                    // SectorHash == 0 is the free-slot condition FindFreeSlot tests, and stale sector
+                    // coords are harmless: dispatch rewrites them on the next allocation of this slot.
+                    metadata[slot] = default;
+                    _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultLoadingTimeout;
+                }
+
                 for (int slot = 0; slot < metadataCount; slot++)
                 {
                     ChunkMetadataDTO meta = metadata[slot];
@@ -1345,6 +1370,9 @@ namespace Hecton8.World
                 meta.FileOffset = request.Sequence;
                 meta.StateFlags = TerrainChunkStateFlags.Loading | TerrainChunkStateFlags.NetcodeExcluded;
                 meta.DistanceSq = request.DistanceSq;
+                // Arm the Loading watchdog; the VisualSync lane counts this down and reclaims the slot if
+                // a worker result is never delivered, which would otherwise strand the sector forever.
+                meta._pad2 = TerrainChunkPagerConstants.LoadingWatchdogTicks;
                 metadata[slot] = meta;
                 TerrainChunkSectorCoordDTO coord = default;
                 coord.X = request.SectorX;
