@@ -494,13 +494,6 @@ namespace Hecton8.World
             return new Vector3(0f, 0f, direction.z < 0f ? -1f : 1f);
         }
 
-        private static float FastTransmissionDecay(float x)
-        {
-            float clamped = math.max(0f, x);
-            float x2 = clamped * clamped;
-            return math.saturate(math.rcp(1f + clamped + (0.48f * x2) + (0.235f * x2 * clamped)));
-        }
-
         public static AcousticOcclusionResult EvaluateOcclusionPath(
             Vector3 sourcePosition,
             Vector3 listenerPosition,
@@ -798,15 +791,6 @@ namespace Hecton8.World
 
             transmission01 = math.max(FloraScatteringTransmissionFloor, transmission01);
             occludingHitCount += floraIntersections;
-        }
-
-        private static float ApproximateMagnitude3D(float3 value)
-        {
-            float3 absoluteValue = math.abs(value);
-            float maxAxis = math.max(absoluteValue.x, math.max(absoluteValue.y, absoluteValue.z));
-            float minAxis = math.min(absoluteValue.x, math.min(absoluteValue.y, absoluteValue.z));
-            float midAxis = absoluteValue.x + absoluteValue.y + absoluteValue.z - maxAxis - minAxis;
-            return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
         }
 
         private static bool TryFindCachedResult(QueryKey queryKey, out AcousticOcclusionResult result)
