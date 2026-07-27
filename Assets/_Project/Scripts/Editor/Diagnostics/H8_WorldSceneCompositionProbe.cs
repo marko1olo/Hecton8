@@ -27,6 +27,17 @@ namespace Hecton8.EditorTools.Diagnostics
             "Assets/_Project/Scenes/00_BOOTSTRAP.unity",
         };
 
+        // Components a subsystem needs somebody to have PLACED. Grows as gateways are identified;
+        // a type belongs here once it is proven that nothing installs it at runtime.
+        private static readonly string[] AuthoredGatewayScripts =
+        {
+            // Proven authored-only: zero AddComponent sites, zero [RuntimeInitializeOnLoadMethod].
+            // (WorldZoneAnchor / WorldSliceAnchor / WorldInterestAnchor were checked and DO self-install,
+            //  so they are deliberately not listed here. DiegeticAssemblyAnchor is a static assembly
+            //  marker, not a Component at all - the NOT-A-COMPONENT guard below caught that.)
+            "Assets/_Project/Scripts/Audio/HectonMusicDirectorAnchor.cs",
+        };
+
         public static void Run()
         {
             foreach (string scenePath in ProbedScenes)
@@ -592,6 +603,96 @@ namespace Hecton8.EditorTools.Diagnostics
                     containers[key] = containerName;
                 }
             }
+        }
+
+        /// <summary>
+        /// Scene-authored gateways: components that no code can create for itself, and that a whole
+        /// subsystem silently depends on. A system that self-installs via [RuntimeInitializeOnLoadMethod]
+        /// works in any scene ever made. A system gated behind a hand-placed component works only in the
+        /// scenes somebody remembered to place it in - and usually fails without saying anything, because
+        /// the "missing" branch is the same branch as "not needed here".
+        ///
+        /// That distinction does not show up in a null-reference audit: the gateway's own fields can be
+        /// perfectly assigned. The defect is the ABSENCE of the object, so it must be counted per scene.
+        ///
+        /// Reports presence across every project scene. Zero scenes = the subsystem is dead everywhere.
+        /// Some-but-not-all = it works today and breaks in the next scene someone creates.
+        /// </summary>
+        public static void RunAuthoredGatewayAudit()
+        {
+            var types = new List<Type>();
+            foreach (string scriptPath in AuthoredGatewayScripts)
+            {
+                MonoScript script = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptPath);
+                Type type = script != null ? script.GetClass() : null;
+                if (type == null)
+                {
+                    Debug.Log($"{Marker} GATEWAY UNRESOLVED {scriptPath}");
+                    continue;
+                }
+
+                // A type that is not a Component cannot be placed in a scene, so "is it in any scene?"
+                // is a category error rather than a finding. Say so instead of throwing on GetComponent.
+                if (!typeof(Component).IsAssignableFrom(type))
+                {
+                    Debug.Log($"{Marker} GATEWAY NOT-A-COMPONENT {type.Name} - cannot be scene-authored, skipped");
+                    continue;
+                }
+
+                types.Add(type);
+            }
+
+            if (types.Count == 0)
+            {
+                Debug.Log($"{Marker} GATEWAY DONE - nothing to probe");
+                return;
+            }
+
+            string[] sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/_Project" });
+            var presence = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            foreach (Type type in types)
+                presence[type.Name] = new List<string>();
+
+            foreach (string guid in sceneGuids)
+            {
+                string scenePath = AssetDatabase.GUIDToAssetPath(guid);
+                Scene scene;
+                try
+                {
+                    scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Log($"{Marker} GATEWAY SCENE FAILED {scenePath}: {ex.GetType().Name}: {ex.Message}");
+                    continue;
+                }
+
+                if (!scene.IsValid())
+                    continue;
+
+                GameObject[] roots = scene.GetRootGameObjects();
+                foreach (Type type in types)
+                {
+                    int found = 0;
+                    foreach (GameObject root in roots)
+                        found += root.GetComponentsInChildren(type, true).Length;
+
+                    if (found > 0)
+                        presence[type.Name].Add($"{System.IO.Path.GetFileNameWithoutExtension(scenePath)}({found})");
+                }
+            }
+
+            foreach (Type type in types)
+            {
+                List<string> hits = presence[type.Name];
+                string verdict = hits.Count == 0
+                    ? "ABSENT EVERYWHERE"
+                    : hits.Count == sceneGuids.Length ? "ALL SCENES" : "PARTIAL";
+                Debug.Log($"{Marker} GATEWAY {type.Name}: {verdict} [{sceneGuids.Length} scenes] -> " +
+                          (hits.Count == 0 ? "<none>" : string.Join(", ", hits)));
+            }
+
+            Debug.Log($"{Marker} GATEWAY DONE");
         }
 
         private static string GetHierarchyPath(Transform t)
