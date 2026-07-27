@@ -226,6 +226,9 @@ namespace Hecton8.Bootstrap
         private const double BootstrapSceneLoadWatchdogSeconds = 10.0d;
         private const double BootstrapCompletedHandoffWatchdogSeconds = 60.0d;
         private const double BootstrapJobWaitWatchdogSeconds = 10.0d;
+        // Diagnostic log cadence only, never a control-flow bound. The gameplay handoff scene load is bounded by
+        // the AsyncOperation itself; a wall clock may not abandon a live, activation-enabled, uncancellable load.
+        private const double BootstrapGameplayHandoffStallLogIntervalSeconds = 10.0d;
         private const int BootstrapSceneRootScratchCapacity = 256;
         private const int BootstrapTransformScratchCapacity = 4096;
         private const double BootstrapAddressablePrewarmSoftTimeoutSeconds = 2.5d;
@@ -527,6 +530,11 @@ namespace Hecton8.Bootstrap
         private static bool _entryRecoveryIssued;
         private static bool _bootstrapGameplayHandoffOwnsSceneLoad;
         private static string _bootstrapGameplayHandoffExpectedScenePath;
+        // Cold single-allocation completion delegate. Owns the scene-runtime publication gate once the awaiting
+        // bootstrap frame unwinds while Unity is still loading/activating the gameplay scene.
+        private static readonly Action<AsyncOperation> _bootstrapHandoffSceneLoadCompletedCallback =
+            ReleaseDeferredScenePublicationGate;
+        private static int _bootstrapHandoffDeferredPublicationGateCount;
         private static BootstrapPhase _currentPhase;
         private static InputManager _bootstrapInputManager;
         private static bool _headlessBootMode;
@@ -824,6 +832,7 @@ namespace Hecton8.Bootstrap
             _entryRecoveryIssued = false;
             _bootstrapGameplayHandoffOwnsSceneLoad = false;
             _bootstrapGameplayHandoffExpectedScenePath = null;
+            _bootstrapHandoffDeferredPublicationGateCount = 0;
             _currentPhase = BootstrapPhase.HardwareCheck;
             _bootstrapInputManager = null;
             _headlessBootMode = false;
@@ -3262,13 +3271,14 @@ namespace Hecton8.Bootstrap
                 loadOperation.allowSceneActivation = true;
                 int waitFrames = 0;
                 long waitStartTimestamp = Stopwatch.GetTimestamp();
+                double nextStallLogSeconds = BootstrapGameplayHandoffStallLogIntervalSeconds;
                 while (!loadOperation.isDone)
                 {
                     ct.ThrowIfCancellationRequested();
-                    if (HasWatchdogElapsed(waitStartTimestamp, BootstrapSceneLoadWatchdogSeconds, out double elapsedSeconds))
+                    if (HasWatchdogElapsed(waitStartTimestamp, nextStallLogSeconds, out double elapsedSeconds))
                     {
-                        LogBootstrapSceneLoadWatchdog("bootstrap-gameplay load/activation", loadOperation.progress, waitFrames, elapsedSeconds, sceneLoadPath);
-                        return false;
+                        LogBootstrapGameplayHandoffSceneLoadStall(loadOperation.progress, waitFrames, elapsedSeconds, sceneLoadPath);
+                        nextStallLogSeconds = elapsedSeconds + BootstrapGameplayHandoffStallLogIntervalSeconds;
                     }
 
                     waitFrames++;
@@ -3308,7 +3318,7 @@ namespace Hecton8.Bootstrap
             finally
             {
                 EndBootstrapGameplayHandoffSceneLoad();
-                if (scenePublicationGateOpen)
+                if (scenePublicationGateOpen && !TryDeferScenePublicationGateToSceneLoad(loadOperation))
                     GlobalRegistry.EndSceneRuntimePublicationGate();
             }
         }
@@ -3394,6 +3404,42 @@ namespace Hecton8.Bootstrap
             _bootstrapGameplayHandoffExpectedScenePath = null;
         }
 
+        /// <summary>
+        /// Transfers an open scene-runtime publication gate from the awaiting bootstrap frame to the scene load that
+        /// is still running. Unity activates the scene, and therefore runs every scene-owned runtime service's
+        /// registration, on the <see cref="AsyncOperation"/>'s clock. A gate whose lifetime ends with the awaiting
+        /// stack frame cannot cover that window, so the frame hands the gate over instead of closing it.
+        /// </summary>
+        /// <param name="loadOperation">Scene load operation that still owns the pending activation.</param>
+        /// <returns>True when the gate was handed to the operation and the caller must not close it inline.</returns>
+        private static bool TryDeferScenePublicationGateToSceneLoad(AsyncOperation loadOperation)
+        {
+            if (loadOperation == null || loadOperation.isDone)
+                return false;
+
+            Interlocked.Increment(ref _bootstrapHandoffDeferredPublicationGateCount);
+            loadOperation.completed += _bootstrapHandoffSceneLoadCompletedCallback;
+            return true;
+        }
+
+        /// <summary>
+        /// Closes exactly one publication gate that was handed to a scene load, after Unity reports the load done.
+        /// </summary>
+        /// <param name="loadOperation">Completed scene load operation that owned the deferred gate.</param>
+        private static void ReleaseDeferredScenePublicationGate(AsyncOperation loadOperation)
+        {
+            if (loadOperation != null)
+                loadOperation.completed -= _bootstrapHandoffSceneLoadCompletedCallback;
+
+            if (Interlocked.Decrement(ref _bootstrapHandoffDeferredPublicationGateCount) < 0)
+            {
+                Interlocked.Exchange(ref _bootstrapHandoffDeferredPublicationGateCount, 0);
+                return;
+            }
+
+            GlobalRegistry.EndSceneRuntimePublicationGate();
+        }
+
         private static bool IsExpectedScenePath(Scene scene, string expectedPath)
         {
             if (string.IsNullOrWhiteSpace(expectedPath) || !expectedPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase))
@@ -3411,6 +3457,17 @@ namespace Hecton8.Bootstrap
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[GameBootstrapper] Scene load watchdog tripped during {stageName}. progress={progress:0.000} frames={waitFrames} elapsed={elapsedSeconds:0.000}s target={targetSceneName}.");
+#endif
+        }
+
+        /// <summary>
+        /// Reports a slow gameplay handoff scene load without abandoning it. The load keeps running; only the
+        /// diagnostic is periodic.
+        /// </summary>
+        private static void LogBootstrapGameplayHandoffSceneLoadStall(float progress, int waitFrames, double elapsedSeconds, string targetScenePath)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning($"[GameBootstrapper] Bootstrap gameplay handoff scene load still running. progress={progress:0.000} frames={waitFrames} elapsed={elapsedSeconds:0.000}s target={targetScenePath}. Waiting on the AsyncOperation, not a wall clock.");
 #endif
         }
 
