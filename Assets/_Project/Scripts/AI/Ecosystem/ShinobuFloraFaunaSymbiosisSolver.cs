@@ -633,7 +633,13 @@ namespace Hecton8.AI.Ecosystem
             if (!ready)
                 return false;
 
+            // Authoring-time only, and guarded at the call site rather than opened up: the legacy
+            // loader reads <repositoryRoot>/Docs/Archive/, a path that cannot exist in a shipped
+            // player. A player build has nothing to migrate, so skipping it is the correct behaviour
+            // and not a lost feature. The links it would import are already baked into the vault.
+#if UNITY_EDITOR
             TryLoadLegacyLinksIntoVault(vault);
+#endif
             _vaultStateReady = true;
             return true;
         }
@@ -1371,6 +1377,7 @@ namespace Hecton8.AI.Ecosystem
                 ReleaseSymbiosisMutationGuard(vault, BufferID.ShinobuSymbiosisTuning);
             }
         }
+#endif
 
         private bool TryWriteSymbiosisTuning(IDataVault vault, SymbiosisTuningDTO dto)
         {
@@ -1869,6 +1876,10 @@ namespace Hecton8.AI.Ecosystem
             _runtimeFlags = 0u;
         }
 
+        // Editor-only: both paths are built from the parent of Application.dataPath, i.e. the
+        // repository root. BuildLegacyPath resolves <root>/Docs/Archive/..., which does not exist in
+        // a shipped player, so the CSV override and legacy-migration routes are authoring-time only.
+#if UNITY_EDITOR
         private static string BuildCsvPath()
         {
             string root = BuildProjectRootForIo();
@@ -1891,6 +1902,7 @@ namespace Hecton8.AI.Ecosystem
             DirectoryInfo parent = Directory.GetParent(assetsPath);
             return parent != null ? parent.FullName : assetsPath;
         }
+#endif
 
         private static void DumpBlackBox(NativeArray<SymbiosisTelemetryEntry> telemetry, int cursor)
         {
@@ -2171,7 +2183,6 @@ namespace Hecton8.AI.Ecosystem
 
             return hash;
         }
-#endif
 
         private static void ResolveLegacyLinkEncoding(ReadOnlySpan<byte> bytes, out bool bigEndian, out int payloadOffset)
         {
