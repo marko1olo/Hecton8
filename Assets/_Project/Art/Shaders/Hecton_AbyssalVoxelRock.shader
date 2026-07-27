@@ -309,19 +309,24 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half skirtAlpha : TEXCOORD2;
         };
 
+        // Magnitude tests rather than isfinite: outside strict-IEEE mode the compiler is entitled to
+        // assume no operand is infinite and fold isfinite() to true, which would delete every guard
+        // these three overloads provide. NaN fails any ordered comparison, so the bounds form still
+        // rejects both corruption modes. Per-component rather than dot(v, v) so a large-but-finite
+        // input cannot overflow the squared sum to infinity and be rejected as corrupt.
         float HectonVoxelRockFiniteOr(float value, float fallbackValue)
         {
-            return isfinite(value) ? value : fallbackValue;
+            return abs(value) < 1.0e32 ? value : fallbackValue;
         }
 
         float3 HectonVoxelRockFiniteOr(float3 value, float3 fallbackValue)
         {
-            return all(isfinite(value)) ? value : fallbackValue;
+            return all(abs(value) < 1.0e32) ? value : fallbackValue;
         }
 
         float4 HectonVoxelRockFiniteOr(float4 value, float4 fallbackValue)
         {
-            return all(isfinite(value)) ? value : fallbackValue;
+            return all(abs(value) < 1.0e32) ? value : fallbackValue;
         }
 
         half4 HectonVoxelRockFiniteOr(half4 value, half4 fallbackValue)
