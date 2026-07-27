@@ -58,7 +58,12 @@ namespace Hecton8.EditorTools.Diagnostics
         // How long to let the game bring up its OWN menu. Default is generous on purpose: the
         // bootstrap -> menu handoff is a Single load with an activation gate, and rushing it is how
         // the earlier versions of this probe went wrong twice.
-        private static int _menuWaitFrames = 4000;
+        // SECONDS, not ticks. Measured: 3300 EditorApplication.update callbacks advanced the game
+        // by 19 frames in 13.7s wall - about one game frame per second, with or without -nographics.
+        // Boot frames genuinely cost that much in the editor, so every frame budget this probe used
+        // before was worth a couple of dozen game frames and proved nothing. Wall time is the only
+        // honest unit here.
+        private static double _menuWaitSeconds = 300.0;
 
         // Loading a menu ourselves is OFF by default. When the probe did it additively on top of a
         // still-active 00_BOOTSTRAP, New Game then issued a Single load that unloaded both scenes,
@@ -73,7 +78,9 @@ namespace Hecton8.EditorTools.Diagnostics
         // After New Game the world scene load is in flight for a long time in batchmode - 2400
         // gameplay frames were not enough for 02_HECTON_WORLD to report isLoaded. Counting frames
         // measures the wrong thing; wait for the loads to actually finish.
-        private const int SettleWaitFrames = 6000;
+        private static double _settleWaitSeconds = 300.0;
+        private static double _gameplaySeconds = 60.0;
+        private static double _phaseStartedAt;
 
         private static Phase _phase = Phase.Idle;
         private static double _startedAt;
@@ -84,6 +91,8 @@ namespace Hecton8.EditorTools.Diagnostics
         private static bool _startNewGame;
         private static int _menuFrames;
         private static int _settleFrames;
+        private static int _gameFrameAtPlayStart;
+        private static double _playStartedAt;
         private static AsyncOperation _menuLoad;
         private static int _failures;
 
@@ -96,9 +105,11 @@ namespace Hecton8.EditorTools.Diagnostics
             // terrain, the world-seed owner - are installed only once a game is actually started.
             // Without this the probe can only ever inspect the menu.
             _gameplayFramesTarget = Math.Max(0, ReadIntArg("-h8GameplayFrames", 0));
-            _startNewGame = _gameplayFramesTarget > 0;
+            _startNewGame = ReadStringArg("-h8StartGame", null) != null || _gameplayFramesTarget > 0;
             _hardTimeoutSeconds = Math.Max(30.0, ReadIntArg("-h8TimeoutSeconds", 240));
-            _menuWaitFrames = Math.Max(1, ReadIntArg("-h8MenuWaitFrames", 4000));
+            _menuWaitSeconds = Math.Max(5, ReadIntArg("-h8MenuSeconds", 300));
+            _settleWaitSeconds = Math.Max(5, ReadIntArg("-h8SettleSeconds", 300));
+            _gameplaySeconds = Math.Max(1, ReadIntArg("-h8GameplaySeconds", 60));
             _forceMenuLoad = ReadStringArg("-h8ForceMenuLoad", null) != null;
 
             Debug.Log(
@@ -140,7 +151,11 @@ namespace Hecton8.EditorTools.Diagnostics
                 case Phase.WaitingForPlayMode:
                     if (EditorApplication.isPlaying)
                     {
-                        Debug.Log($"{Marker} PLAYING (entered after {EditorApplication.timeSinceStartup - _startedAt:F1}s)");
+                        _gameFrameAtPlayStart = Time.frameCount;
+                        _playStartedAt = EditorApplication.timeSinceStartup;
+                        Debug.Log(
+                            $"{Marker} PLAYING (entered after {EditorApplication.timeSinceStartup - _startedAt:F1}s) " +
+                            $"gameFrame={_gameFrameAtPlayStart} timeScale={Time.timeScale}");
                         _phase = Phase.WarmingUp;
                     }
                     break;
@@ -156,7 +171,10 @@ namespace Hecton8.EditorTools.Diagnostics
                     }
 
                     if (++_frames >= _warmupFrames)
+                    {
+                        _phaseStartedAt = EditorApplication.timeSinceStartup;
                         _phase = _startNewGame ? Phase.LoadingMenu : Phase.Reporting;
+                    }
                     break;
 
                 case Phase.LoadingMenu:
@@ -169,6 +187,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     break;
 
                 case Phase.StartingGame:
+                    _phaseStartedAt = EditorApplication.timeSinceStartup;
                     // One shot. If the menu is not there, say so and report on the menu-state
                     // runtime rather than silently pretending a game was started.
                     _phase = TryStartNewGame() ? Phase.WaitingForSettle : Phase.Reporting;
@@ -186,7 +205,8 @@ namespace Hecton8.EditorTools.Diagnostics
                         return;
                     }
 
-                    if (++_gameplayFrames >= _gameplayFramesTarget)
+                    _gameplayFrames++;
+                    if (EditorApplication.timeSinceStartup - _phaseStartedAt >= _gameplaySeconds)
                         _phase = Phase.Reporting;
                     break;
 
@@ -201,6 +221,63 @@ namespace Hecton8.EditorTools.Diagnostics
                         Finish(_failures == 0 ? 0 : 1);
                     break;
             }
+        }
+
+        /// <summary>
+        /// The probe counts EditorApplication.update callbacks and calls them "frames". Whether one
+        /// of those equals one game frame is an assumption, and every conclusion drawn from a frame
+        /// budget rests on it. If the player loop advances far more slowly than the editor loop then
+        /// "no menu after 6000 frames" means "no menu after rather few game frames" and says much
+        /// less than it appears to.
+        /// </summary>
+        private static void ReportClockRates()
+        {
+            int gameFrames = Time.frameCount - _gameFrameAtPlayStart;
+            double wall = EditorApplication.timeSinceStartup - _playStartedAt;
+
+            Debug.Log(
+                $"{Marker} CLOCKS probeTicks={_frames + _menuFrames + _settleFrames + _gameplayFrames} " +
+                $"gameFrames={gameFrames} wallSeconds={wall:F1} " +
+                $"gameFramesPerProbeTick={(_frames + _menuFrames + _settleFrames + _gameplayFrames > 0 ? gameFrames / (double)(_frames + _menuFrames + _settleFrames + _gameplayFrames) : 0):F2} " +
+                $"timeScale={Time.timeScale} unscaledTime={Time.unscaledTime:F1} captureFramerate={Time.captureFramerate}");
+        }
+
+        /// <summary>
+        /// SceneRuntimeService is the strongest suspect for the held menu activation. It sets
+        /// allowSceneActivation = false and only releases it from inside
+        /// `while (Application.isPlaying and _isInitialized and isActiveAndEnabled and !isDone)`.
+        /// If that component is not active the loop body never runs, the activation is never
+        /// released, and nothing is logged - which matches what the clean runs show exactly:
+        /// 01_MAIN_MENU at isLoaded=false roots=0, no watchdog, no exception.
+        ///
+        /// GlobalRegistry.SceneRuntime is internal, so this finds it the same way everything else
+        /// here does. _isInitialized is private and cannot be read; isActiveAndEnabled and the
+        /// public CanLoadScene are the observable parts.
+        /// </summary>
+        private static void ReportSceneRuntimeService()
+        {
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            {
+                UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                if (!scene.isLoaded)
+                    continue;
+
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    var service = root.GetComponentInChildren<Hecton8.Core.SceneRuntimeService>(true);
+                    if (service == null)
+                        continue;
+
+                    Debug.Log(
+                        $"{Marker} SCENERUNTIME found on '{service.gameObject.name}' in scene " +
+                        $"'{service.gameObject.scene.name}' activeAndEnabled={service.isActiveAndEnabled} " +
+                        $"goActive={service.gameObject.activeInHierarchy} enabled={service.enabled} " +
+                        $"canLoadScene={service.CanLoadScene}");
+                    return;
+                }
+            }
+
+            Debug.Log($"{Marker} SCENERUNTIME not found in any loaded scene");
         }
 
         /// <summary>
@@ -226,22 +303,28 @@ namespace Hecton8.EditorTools.Diagnostics
                 pending.Append(scene.name);
             }
 
+            double waited = EditorApplication.timeSinceStartup - _phaseStartedAt;
+
             if (pending.Length == 0)
             {
-                Debug.Log($"{Marker} SETTLED after {_settleFrames} frames - no scene load in flight");
+                Debug.Log($"{Marker} SETTLED after {waited:F0}s - no scene load in flight");
+                _phaseStartedAt = EditorApplication.timeSinceStartup;
                 _phase = Phase.GameplayWarmup;
                 return;
             }
 
-            if (++_settleFrames >= SettleWaitFrames)
+            if (waited >= _settleWaitSeconds)
             {
-                Debug.Log($"{Marker} NOT SETTLED after {SettleWaitFrames} frames - still loading: {pending}");
+                Debug.Log($"{Marker} NOT SETTLED after {_settleWaitSeconds:F0}s - still loading: {pending}");
+                _phaseStartedAt = EditorApplication.timeSinceStartup;
                 _phase = Phase.GameplayWarmup;
                 return;
             }
 
-            if (_settleFrames % 1500 == 0)
-                Debug.Log($"{Marker} settling... frame {_settleFrames}, loading: {pending}");
+            if (++_settleFrames % 400 == 0)
+                Debug.Log(
+                    $"{Marker} settling... {waited:F0}s of {_settleWaitSeconds:F0}s, " +
+                    $"gameFrames={Time.frameCount - _gameFrameAtPlayStart}, loading: {pending}");
         }
 
         /// <summary>
@@ -274,15 +357,18 @@ namespace Hecton8.EditorTools.Diagnostics
                 {
                     Debug.Log(
                         $"{Marker} MENU live in scene '{existing.gameObject.scene.name}' after " +
-                        $"{_menuFrames} waited frames - using the game's own");
+                        $"{EditorApplication.timeSinceStartup - _phaseStartedAt:F0}s of waiting - using the game's own");
                     _phase = Phase.StartingGame;
                     return;
                 }
 
-                if (++_menuFrames < _menuWaitFrames)
+                double waited = EditorApplication.timeSinceStartup - _phaseStartedAt;
+                if (waited < _menuWaitSeconds)
                 {
-                    if (_menuFrames % 1000 == 0)
-                        Debug.Log($"{Marker} waiting for the game's own menu... frame {_menuFrames}");
+                    if (++_menuFrames % 400 == 0)
+                        Debug.Log(
+                            $"{Marker} waiting for the game's own menu... {waited:F0}s of {_menuWaitSeconds:F0}s, " +
+                            $"gameFrames={Time.frameCount - _gameFrameAtPlayStart}");
 
                     return;
                 }
@@ -290,7 +376,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 if (!_forceMenuLoad)
                 {
                     Debug.Log(
-                        $"{Marker} MENU never became live in {_menuWaitFrames} frames. Not loading one: " +
+                        $"{Marker} MENU never became live in {_menuWaitSeconds:F0}s of play. Not loading one: " +
                         "doing that additively deadlocks the world-scene activation gate and the " +
                         "resulting state is not one the game produces. Pass -h8ForceMenuLoad to override.");
                     _failures++;
@@ -299,7 +385,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 }
 
                 Debug.Log(
-                    $"{Marker} MENU none live after {_menuWaitFrames} frames - FORCED load of " +
+                    $"{Marker} MENU none live after {_menuWaitSeconds:F0}s - FORCED load of " +
                     $"'{MenuSceneName}' additively (probe-induced state, results are suspect)");
                 _menuLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
                     MenuSceneName,
@@ -400,6 +486,8 @@ namespace Hecton8.EditorTools.Diagnostics
 
             try
             {
+                ReportClockRates();
+                ReportSceneRuntimeService();
                 ReportBootstrapReadiness();
                 CheckWorldSeed();
                 ReportRegistryPresence();
