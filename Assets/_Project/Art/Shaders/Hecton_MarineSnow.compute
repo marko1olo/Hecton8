@@ -7,7 +7,6 @@
 #pragma kernel CS_EvaluateWakeProximity
 #pragma kernel CS_IntegrateSiltParticles
 #pragma kernel CS_RebaseParticles
-#pragma require compute
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -377,9 +376,14 @@ float2 SampleFlowFieldXZ(float3 positionWS)
     return lerp(sample0, sample1, fracValue.y);
 }
 
+// Single exit with an initialised result. Every branch here used to `return resolvedFlow`
+// directly, and flattening those five returns is what made the compiler report
+// "potentially uninitialized variable" for a value that is initialised on line one.
 float3 SampleAbyssalFlowField(float3 positionWS)
 {
     float3 resolvedFlow = float3(0.0, 0.0, 0.0);
+    bool resolved = false;
+
     if (_AbyssalFlowTextureActive > 0.5 && _AbyssalFlowTextureParams.y > 0.001)
     {
         float3 uvw = (positionWS - _AbyssalFlowCenter.xyz) * rcp(max(_AbyssalFlowTextureParams.y, EPSILON)) + 0.5;
@@ -391,39 +395,42 @@ float3 SampleAbyssalFlowField(float3 positionWS)
             if (dot(textureFlow, textureFlow) < 1.0e32)
             {
                 resolvedFlow = textureFlow;
-                return resolvedFlow;
+                resolved = true;
             }
         }
     }
 
-    int resolutionX = (int)max(_AbyssalGridResolution.x, 0.0);
-    int resolutionY = (int)max(_AbyssalGridResolution.y, 0.0);
-    int resolutionZ = (int)max(_AbyssalGridResolution.z, 0.0);
-    int nodeCount = (int)max(_AbyssalGridResolution.w, 0.0);
-    if (resolutionX <= 0 || resolutionY <= 0 || resolutionZ <= 0 || nodeCount <= 0)
-        return resolvedFlow;
+    if (!resolved)
+    {
+        int resolutionX = (int)max(_AbyssalGridResolution.x, 0.0);
+        int resolutionY = (int)max(_AbyssalGridResolution.y, 0.0);
+        int resolutionZ = (int)max(_AbyssalGridResolution.z, 0.0);
+        int nodeCount = (int)max(_AbyssalGridResolution.w, 0.0);
+        if (resolutionX > 0 && resolutionY > 0 && resolutionZ > 0 && nodeCount > 0)
+        {
+            float horizontalCellSize = max(_AbyssalFlowSpacing.x, 0.001);
+            float verticalCellSize = max(_AbyssalFlowSpacing.y, 0.001);
+            float invHorizontalCellSize = rcp(max(horizontalCellSize, EPSILON));
+            float invVerticalCellSize = rcp(max(verticalCellSize, EPSILON));
+            int3 halfExtent = int3(resolutionX >> 1, resolutionY >> 1, resolutionZ >> 1);
+            float3 localPosition = positionWS - _AbyssalFlowCenter.xyz;
+            int3 coord = int3(
+                (int)floor(localPosition.x * invHorizontalCellSize + (float)halfExtent.x + 0.5),
+                (int)floor(localPosition.y * invVerticalCellSize + (float)halfExtent.y + 0.5),
+                (int)floor(localPosition.z * invHorizontalCellSize + (float)halfExtent.z + 0.5));
 
-    float horizontalCellSize = max(_AbyssalFlowSpacing.x, 0.001);
-    float verticalCellSize = max(_AbyssalFlowSpacing.y, 0.001);
-    float invHorizontalCellSize = rcp(max(horizontalCellSize, EPSILON));
-    float invVerticalCellSize = rcp(max(verticalCellSize, EPSILON));
-    int3 halfExtent = int3(resolutionX >> 1, resolutionY >> 1, resolutionZ >> 1);
-    float3 localPosition = positionWS - _AbyssalFlowCenter.xyz;
-    int3 coord = int3(
-        (int)floor(localPosition.x * invHorizontalCellSize + (float)halfExtent.x + 0.5),
-        (int)floor(localPosition.y * invVerticalCellSize + (float)halfExtent.y + 0.5),
-        (int)floor(localPosition.z * invHorizontalCellSize + (float)halfExtent.z + 0.5));
-
-    if (coord.x < 0 || coord.y < 0 || coord.z < 0 || coord.x >= resolutionX || coord.y >= resolutionY || coord.z >= resolutionZ)
-        return resolvedFlow;
-
-    int index = coord.y * resolutionX * resolutionZ + coord.z * resolutionX + coord.x;
-    if (index < 0 || index >= nodeCount)
-        return resolvedFlow;
-
-    float3 flow = _AbyssalFlowFieldResult[index].xyz;
-    if (dot(flow, flow) < 1.0e32)
-        resolvedFlow = flow;
+            if (all(coord >= int3(0, 0, 0)) && coord.x < resolutionX && coord.y < resolutionY && coord.z < resolutionZ)
+            {
+                int index = coord.y * resolutionX * resolutionZ + coord.z * resolutionX + coord.x;
+                if (index >= 0 && index < nodeCount)
+                {
+                    float3 flow = _AbyssalFlowFieldResult[index].xyz;
+                    if (dot(flow, flow) < 1.0e32)
+                        resolvedFlow = flow;
+                }
+            }
+        }
+    }
 
     return resolvedFlow;
 }
@@ -605,7 +612,7 @@ float3 ResolveMockAcousticImpulse(float3 positionWS)
     float3 fromPulse = positionWS - _MarineSnowMockAcousticPulse.xyz;
     float distanceSq = dot(fromPulse, fromPulse);
     float radiusSq = radius * radius;
-    if (!isfinite(distanceSq) || distanceSq >= radiusSq || distanceSq <= EPSILON)
+    if (!(distanceSq > EPSILON && distanceSq < radiusSq))
         return float3(0.0, 0.0, 0.0);
 
     float distanceToPulse = distanceSq * rsqrt(max(distanceSq, EPSILON));
@@ -656,7 +663,7 @@ float3 ClampParticleVelocity(float3 velocityWS)
     float maxSpeed = max(_MarineSnowVelocityParams.x, 0.1);
     float maxSpeedSq = maxSpeed * maxSpeed;
     float speedSq = dot(velocityWS, velocityWS);
-    if (!isfinite(speedSq) || speedSq > 1.0e32)
+    if (!(speedSq < 1.0e32))
         return float3(0.0, 0.0, 0.0);
 
     if (speedSq > maxSpeedSq)
@@ -674,7 +681,7 @@ float ResolveEyeDepth(float3 positionWS)
 bool TryResolveScreenUv(float3 positionWS, out float2 uv)
 {
     float4 clipPosition = mul(_MarineSnowViewProjection, float4(positionWS, 1.0));
-    if (!isfinite(clipPosition.w) || clipPosition.w <= EPSILON)
+    if (!(clipPosition.w > EPSILON && clipPosition.w < 1.0e32))
     {
         uv = 0.0.xx;
         return false;
@@ -745,7 +752,9 @@ void AccumulateSonarGlowAtUv(float2 uv, float intensity, float size)
     float encoded = min(
         saturate(intensity * splatScale * lerp(0.65, 1.0, sizeInfluence)) * encodedScale * 4.0,
         MARINE_SNOW_MAX_ENCODED_SPLAT);
-    if (!isfinite(encoded) || encoded <= 0.0)
+    // Negated positive test on purpose: NaN fails every ordered comparison, so testing for the
+    // valid band and inverting rejects NaN, whereas `encoded >= 1.0e32` would wave it through.
+    if (!(encoded > 0.0 && encoded < 1.0e32))
         return;
 
     InterlockedAdd(_HectonMarineSnowSonarGlowResult[pixel], (int)(encoded + 0.5));
@@ -767,7 +776,9 @@ void AccumulateFogDensityAtUv(float2 uv, float size, uint particleIndex)
     float encoded = min(
         lerp(0.18, 1.0, sizeInfluence) * encodedScale * 4.0,
         MARINE_SNOW_MAX_ENCODED_SPLAT);
-    if (!isfinite(encoded) || encoded <= 0.0)
+    // Negated positive test on purpose: NaN fails every ordered comparison, so testing for the
+    // valid band and inverting rejects NaN, whereas `encoded >= 1.0e32` would wave it through.
+    if (!(encoded > 0.0 && encoded < 1.0e32))
         return;
 
     InterlockedAdd(_HectonMarineSnowFogDensityResult[pixel], (int)(encoded + 0.5));
@@ -937,7 +948,7 @@ bool ResolveSdfParticleCollision(inout SiltParticle particle, uint particleIndex
 bool TryResolveVisibleParticleScreenUv(float3 positionWS, float radiusWS, out float2 screenUv)
 {
     float4 clipPosition = mul(_MarineSnowViewProjection, float4(positionWS, 1.0));
-    if (!isfinite(clipPosition.w) || clipPosition.w <= EPSILON)
+    if (!(clipPosition.w > EPSILON && clipPosition.w < 1.0e32))
     {
         screenUv = 0.0.xx;
         return false;
@@ -1114,20 +1125,25 @@ SiltParticle BuildBubbleTrailParticle(uint particleIndex, float bubbleDrive, flo
     return particle;
 }
 
+// Magnitude tests rather than isfinite: outside strict-IEEE mode the compiler is entitled to
+// assume no operand is infinite and fold isfinite() to true, which would leave this returning
+// a constant and make the two-stage recovery at CS_RebaseParticles dead code. A bounds test
+// survives that fold, and NaN fails every ordered comparison, so both corruption modes are
+// still caught. Same idiom the flow, wake and thrust reads in this file already use.
 bool IsFiniteSiltParticle(SiltParticle particle)
 {
-    return all(isfinite(particle.Pos)) &&
-        all(isfinite(particle.PrevPos)) &&
-        all(isfinite(particle.Vel)) &&
-        all(isfinite(particle.UV)) &&
-        all(isfinite(particle.Pad)) &&
-        isfinite(particle.Life) &&
-        isfinite(particle.Size);
+    return dot(particle.Pos, particle.Pos) < 1.0e32 &&
+        dot(particle.PrevPos, particle.PrevPos) < 1.0e32 &&
+        dot(particle.Vel, particle.Vel) < 1.0e32 &&
+        dot(particle.UV, particle.UV) < 1.0e32 &&
+        dot(particle.Pad, particle.Pad) < 1.0e32 &&
+        abs(particle.Life) < 1.0e32 &&
+        abs(particle.Size) < 1.0e32;
 }
 
 SiltParticle BuildHardFallbackParticle(uint particleIndex, float3 cameraPosition)
 {
-    float3 safeCameraPosition = all(isfinite(cameraPosition)) ? cameraPosition : float3(0.0, 0.0, 0.0);
+    float3 safeCameraPosition = dot(cameraPosition, cameraPosition) < 1.0e32 ? cameraPosition : float3(0.0, 0.0, 0.0);
     SiltParticle particle;
     particle.Pos = safeCameraPosition;
     particle.Life = 1.0;
