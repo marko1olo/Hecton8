@@ -84,7 +84,11 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             float4 _SargassumGlobalDriftOffset;
             float4 _HectonShallowWaterFieldWorldRect;
             float4 _SargassumCutMaskWorldRect;
-            float4 _HectonPlayerAbsoluteUniversePosition;
+            // _HectonPlayerRuntimePosition, matching ForwardLit / DepthOnly / MotionVectors. This pass
+            // used to declare and read _HectonPlayerAbsoluteUniversePosition, a global that NOTHING in
+            // the project ever writes - it appeared in no C# SetGlobal call and in no other shader, so
+            // it read as all-zero forever. See ResolvePlayerBendOffset for what that cost.
+            float4 _HectonPlayerRuntimePosition;
             float4 _HectonPlayerFloraInteractionParams;
             float4 _HectonFloraLifecycleParams;
             float4 _HectonFlowSynchronyParams;
@@ -408,7 +412,12 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 
             float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
             {
-                float playerRadius = SanitizeNonNegativeFinite(_HectonPlayerAbsoluteUniversePosition.w);
+                // This read was _HectonPlayerAbsoluteUniversePosition.w, a global nothing ever set, so
+                // playerRadius was always 0 and the guard below always took the early return. The whole
+                // player-bend response was dead in the shadow pass ONLY: plants bent away from the player
+                // in ForwardLit while their shadows stayed in the unbent pose. FloraInteractionManager
+                // publishes _HectonPlayerRuntimePosition, which is what the other three passes read.
+                float playerRadius = SanitizeNonNegativeFinite(_HectonPlayerRuntimePosition.w);
                 if (bendMask <= 0.0001 ||
                     SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.w) < 0.5 ||
                     playerRadius <= 0.0001)
@@ -416,7 +425,11 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                     return float3(0.0, 0.0, 0.0);
                 }
 
-                float3 playerRuntimePosition = _HectonPlayerAbsoluteUniversePosition.xyz + _GlobalFloatingOffset.xyz;
+                // _HectonPlayerRuntimePosition is already in runtime space, so the _GlobalFloatingOffset
+                // term that used to be added here is gone: it was reconstructing runtime space from an
+                // AUP global that was never populated, which double-counted the offset even in the
+                // hypothetical case where something had set it.
+                float3 playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
                 if (!all(isfinite(playerRuntimePosition)))
                     return float3(0.0, 0.0, 0.0);
 
