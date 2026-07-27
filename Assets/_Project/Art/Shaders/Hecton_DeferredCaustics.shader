@@ -158,26 +158,33 @@ Shader "Hidden/Hecton8/DeferredCaustics"
             frame1 = frame1 - floor(frame1 / frameCount) * frameCount;
             float frameBlend = frac(frameCursor) * smoothstep(0.24, 0.76, saturate(quality));
             half3 caustic0 = SAMPLE_TEXTURE2D(_HectonBakedCausticAtlas, sampler_HectonBakedCausticAtlas, ResolveBakedAtlasUv(uv, frame0, columns, rows)).rgb;
+            // Single exit with an initialised result. An early return inside a [branch] makes fxc emit
+            // "use of potentially uninitialized variable"; the behaviour is identical, the warning is not.
+            half3 result = caustic0;
             [branch]
             if (frameBlend > 0.0001)
             {
                 half3 caustic1 = SAMPLE_TEXTURE2D(_HectonBakedCausticAtlas, sampler_HectonBakedCausticAtlas, ResolveBakedAtlasUv(uv, frame1, columns, rows)).rgb;
-                return lerp(caustic0, caustic1, (half)frameBlend);
+                result = lerp(caustic0, caustic1, (half)frameBlend);
             }
 
-            return caustic0;
+            return result;
         }
 
         float ResolveBakedWaterlineMask(float3 worldPos)
         {
             float maskWeight = saturate(_HectonBakedCausticWaterlineParams.x);
+            // Same single-exit shape, same reason. Unmasked is the default.
+            float result = 1.0;
             [branch]
-            if (maskWeight <= 0.0001)
-                return 1.0;
+            if (maskWeight > 0.0001)
+            {
+                float maskV = saturate((worldPos.y - _HectonBakedCausticWaterlineParams.y) * max(_HectonBakedCausticWaterlineParams.z, 0.0001));
+                float mask = SAMPLE_TEXTURE2D(_HectonBakedCausticWaterlineMask, sampler_HectonBakedCausticWaterlineMask, float2(0.5, maskV)).r;
+                result = lerp(1.0, mask, maskWeight);
+            }
 
-            float maskV = saturate((worldPos.y - _HectonBakedCausticWaterlineParams.y) * max(_HectonBakedCausticWaterlineParams.z, 0.0001));
-            float mask = SAMPLE_TEXTURE2D(_HectonBakedCausticWaterlineMask, sampler_HectonBakedCausticWaterlineMask, float2(0.5, maskV)).r;
-            return lerp(1.0, mask, maskWeight);
+            return result;
         }
 
         float SampleCaveVoxelSignedDistance(float3 positionWS)
@@ -270,33 +277,37 @@ Shader "Hidden/Hecton8/DeferredCaustics"
                 ? abs(LinearEyeDepth(rawDown, _ZBufferParams) - centerEyeDepth)
                 : H8_CAUSTIC_NORMAL_TAP_REJECT;
 
-            // Both taps dead on either axis: report level ground, which leaves caustic energy as authored.
+            // Level ground is the default: with no usable neighbour on either axis the incidence term leaves
+            // caustic energy exactly as authored. Single exit with an initialised result, because an early
+            // return inside a [branch] makes fxc emit "use of potentially uninitialized variable".
+            float3 result = float3(0.0, 1.0, 0.0);
+
             [branch]
-            if (min(deltaRight, deltaLeft) >= H8_CAUSTIC_NORMAL_TAP_REJECT ||
-                min(deltaUp, deltaDown) >= H8_CAUSTIC_NORMAL_TAP_REJECT)
+            if (min(deltaRight, deltaLeft) < H8_CAUSTIC_NORMAL_TAP_REJECT &&
+                min(deltaUp, deltaDown) < H8_CAUSTIC_NORMAL_TAP_REJECT)
             {
-                return float3(0.0, 1.0, 0.0);
+                // Select the winning neighbour first so only one world-space reconstruction runs per axis.
+                bool useRight = deltaRight <= deltaLeft;
+                bool useUp = deltaUp <= deltaDown;
+                float2 uvX = useRight ? uvRight : uvLeft;
+                float2 uvY = useUp ? uvUp : uvDown;
+                float rawX = useRight ? rawRight : rawLeft;
+                float rawY = useUp ? rawUp : rawDown;
+                float3 alongX = (ComputeWorldSpacePosition(uvX, rawX, UNITY_MATRIX_I_VP) - centerWorldPos) *
+                    (useRight ? 1.0 : -1.0);
+                float3 alongY = (ComputeWorldSpacePosition(uvY, rawY, UNITY_MATRIX_I_VP) - centerWorldPos) *
+                    (useUp ? 1.0 : -1.0);
+
+                // Cross-product winding flips with UNITY_UV_STARTS_AT_TOP and with which neighbour won, so the
+                // result is oriented against the view vector instead of trusting the sign. Every pixel that
+                // survived the depth test faces the camera.
+                float3 geometric = cross(alongY, alongX);
+                float3 towardCamera = GetCameraPositionWS() - centerWorldPos;
+                geometric *= (dot(geometric, towardCamera) < 0.0) ? -1.0 : 1.0;
+                result = SafeNormalize3(geometric, float3(0.0, 1.0, 0.0));
             }
 
-            // Select the winning neighbour first so only one world-space reconstruction runs per axis.
-            bool useRight = deltaRight <= deltaLeft;
-            bool useUp = deltaUp <= deltaDown;
-            float2 uvX = useRight ? uvRight : uvLeft;
-            float2 uvY = useUp ? uvUp : uvDown;
-            float rawX = useRight ? rawRight : rawLeft;
-            float rawY = useUp ? rawUp : rawDown;
-            float3 alongX = (ComputeWorldSpacePosition(uvX, rawX, UNITY_MATRIX_I_VP) - centerWorldPos) *
-                (useRight ? 1.0 : -1.0);
-            float3 alongY = (ComputeWorldSpacePosition(uvY, rawY, UNITY_MATRIX_I_VP) - centerWorldPos) *
-                (useUp ? 1.0 : -1.0);
-
-            // Cross-product winding flips with UNITY_UV_STARTS_AT_TOP and with which neighbour won, so the
-            // result is oriented against the view vector instead of trusting the sign. Every pixel that
-            // survived the depth test faces the camera.
-            float3 geometric = cross(alongY, alongX);
-            float3 towardCamera = GetCameraPositionWS() - centerWorldPos;
-            geometric *= (dot(geometric, towardCamera) < 0.0) ? -1.0 : 1.0;
-            return SafeNormalize3(geometric, float3(0.0, 1.0, 0.0));
+            return result;
         }
 
         // Caustics are refracted light landing ON a surface, so the energy carries the incidence cosine of
