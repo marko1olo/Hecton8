@@ -802,7 +802,9 @@ namespace Hecton8.Physics
                 _physicsCullingMockBodyCount = 0;
                 _physicsSpatialHashLastCount = -1;
                 _physicsSpatialHashRebuildAccumulator = 0f;
+#if UNITY_EDITOR
                 _physicsCullingCsvPollAccumulator = 0f;
+#endif
                 _physicsSpatialHashDirty = true;
                 return;
             }
@@ -847,7 +849,9 @@ namespace Hecton8.Physics
                 _physicsCullingSimulationFrame = 0u;
                 _physicsSpatialHashLastCount = -1;
                 _physicsSpatialHashRebuildAccumulator = 0f;
+#if UNITY_EDITOR
                 _physicsCullingCsvPollAccumulator = 0f;
+#endif
                 _physicsSpatialHashDirty = true;
             }
             finally

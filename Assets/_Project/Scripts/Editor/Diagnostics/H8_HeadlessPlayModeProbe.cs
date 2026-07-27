@@ -269,34 +269,66 @@ namespace Hecton8.EditorTools.Diagnostics
         /// released, and nothing is logged - which matches what the clean runs show exactly:
         /// 01_MAIN_MENU at isLoaded=false roots=0, no watchdog, no exception.
         ///
-        /// GlobalRegistry.SceneRuntime is internal, so this finds it the same way everything else
-        /// here does. _isInitialized is private and cannot be read; isActiveAndEnabled and the
-        /// public CanLoadScene are the observable parts.
+        /// GlobalRegistry.SceneRuntime is internal, but the public GlobalRegistry.Scene exposes the same
+        /// owner as ISceneService, so the registry side is readable from this assembly after all.
+        /// _isInitialized is private and cannot be read; isActiveAndEnabled and the public CanLoadScene
+        /// are the observable parts.
+        ///
+        /// This used to walk SceneManager.GetSceneAt + GetRootGameObjects, which is the exact blind spot
+        /// called out in ReportRuntimeComponentCensus: that traversal cannot enumerate the
+        /// DontDestroyOnLoad scene, so a persistent scene service reads as "not found". It reported
+        /// SCENERUNTIME absent while the service was scene-owned in 00_BOOTSTRAP and destroyed by that
+        /// scene's unload - the right answer for the wrong reason, and it would report absent just the
+        /// same once the service is correctly made persistent. A check that cannot distinguish "fixed"
+        /// from "broken" is not a check. FindObjectsByType sees both cases.
+        ///
+        /// Self-test, same discipline as the component census: the registry and the object census are
+        /// read IN THIS RUN and disagreement is reported as an instrument fault rather than a finding.
+        /// Registry holds an owner the census cannot see =&gt; the census is broken. Census sees an
+        /// instance the registry does not hold =&gt; registration was lost or evicted.
         /// </summary>
         private static void ReportSceneRuntimeService()
         {
-            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            Hecton8.Core.ISceneService registered = Hecton8.Core.GlobalRegistry.Scene;
+            string registeredLabel = registered == null ? "null" : registered.GetType().Name;
+
+            Hecton8.Core.SceneRuntimeService[] found = UnityEngine.Object.FindObjectsByType<Hecton8.Core.SceneRuntimeService>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            Debug.Log($"{Marker} SCENERUNTIME registry={registeredLabel} instances={found.Length}");
+
+            for (int i = 0; i < found.Length; i++)
             {
-                UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
-                if (!scene.isLoaded)
+                Hecton8.Core.SceneRuntimeService service = found[i];
+                if (service == null)
                     continue;
 
-                foreach (GameObject root in scene.GetRootGameObjects())
-                {
-                    var service = root.GetComponentInChildren<Hecton8.Core.SceneRuntimeService>(true);
-                    if (service == null)
-                        continue;
-
-                    Debug.Log(
-                        $"{Marker} SCENERUNTIME found on '{service.gameObject.name}' in scene " +
-                        $"'{service.gameObject.scene.name}' activeAndEnabled={service.isActiveAndEnabled} " +
-                        $"goActive={service.gameObject.activeInHierarchy} enabled={service.enabled} " +
-                        $"canLoadScene={service.CanLoadScene}");
-                    return;
-                }
+                Debug.Log(
+                    $"{Marker} SCENERUNTIME[{i}] on '{service.gameObject.name}' in scene " +
+                    $"'{service.gameObject.scene.name}' isRegistered={ReferenceEquals(service, registered)} " +
+                    $"activeAndEnabled={service.isActiveAndEnabled} " +
+                    $"goActive={service.gameObject.activeInHierarchy} enabled={service.enabled} " +
+                    $"canLoadScene={service.CanLoadScene}");
             }
 
-            Debug.Log($"{Marker} SCENERUNTIME not found in any loaded scene");
+            if (found.Length == 0 && registered != null)
+            {
+                Debug.LogError(
+                    $"{Marker} SCENERUNTIME INSTRUMENT FAULT - registry holds {registeredLabel} but " +
+                    "FindObjectsByType returned 0 instances. Every instance count in this run is suspect.");
+                return;
+            }
+
+            if (found.Length > 0 && registered == null)
+            {
+                Debug.LogError(
+                    $"{Marker} SCENERUNTIME REGISTRATION LOST - {found.Length} live instance(s) exist but " +
+                    "GlobalRegistry.Scene is null, so no ISceneService owner is published.");
+                return;
+            }
+
+            if (found.Length == 0)
+                Debug.Log($"{Marker} SCENERUNTIME absent - no instance anywhere, including DontDestroyOnLoad");
         }
 
         /// <summary>

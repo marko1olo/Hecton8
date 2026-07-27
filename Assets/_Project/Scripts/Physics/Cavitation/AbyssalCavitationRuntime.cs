@@ -640,7 +640,7 @@ namespace Hecton8.Physics
             if (!profiles.IsCreated)
                 return false;
 
-            if (!AbyssalCavitationOrdnanceCsv.TryFindProfile(profiles, profileHash, out OrdnanceProfileDTO profile))
+            if (!AbyssalCavitationOrdnanceLookup.TryFindProfile(profiles, profileHash, out OrdnanceProfileDTO profile))
                 return false;
 
             return TryQueueDetonationAup(

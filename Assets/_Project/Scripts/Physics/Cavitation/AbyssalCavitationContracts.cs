@@ -470,6 +470,49 @@ namespace Hecton8.Physics
         }
     }
 
+    /// <summary>
+    /// Runtime ordnance-profile lookup. Open-addressed linear probe over the baked
+    /// <see cref="OrdnanceProfileDTO"/> table, keyed by profile hash.
+    /// </summary>
+    /// <remarks>
+    /// This lived inside <c>AbyssalCavitationOrdnanceCsv</c>, which is editor-only because it
+    /// parses CSV bytes. The lookup does not touch CSV at all - it is a hash probe over an
+    /// already-baked NativeArray - and its only caller is
+    /// <c>AbyssalCavitationRuntime.TryQueueOrdnanceDetonationAup</c>, which is runtime code. The
+    /// result was CS0103 in any player build. Keeping the probe here and the byte parsing behind
+    /// the guard puts the boundary where TOOL_Designer_Facades_CSV_Binary_Bridge.txt wants it.
+    /// </remarks>
+    public static class AbyssalCavitationOrdnanceLookup
+    {
+        /// <summary>Finds a baked ordnance profile by hash. Returns false on empty table or miss.</summary>
+        public static bool TryFindProfile(NativeArray<OrdnanceProfileDTO> profiles, uint profileHash, out OrdnanceProfileDTO profile)
+        {
+            profile = default;
+            if (!profiles.IsCreated || profiles.Length == 0 || profileHash == 0u)
+                return false;
+
+            int start = (int)(profileHash % (uint)profiles.Length);
+            for (int probe = 0; probe < profiles.Length; probe++)
+            {
+                int slot = start + probe;
+                if (slot >= profiles.Length)
+                    slot -= profiles.Length;
+
+                OrdnanceProfileDTO candidate = profiles[slot];
+                if (candidate.ProfileHash == profileHash)
+                {
+                    profile = candidate;
+                    return true;
+                }
+
+                if (candidate.ProfileHash == 0u)
+                    return false;
+            }
+
+            return false;
+        }
+    }
+
     #if UNITY_EDITOR
     public static class AbyssalCavitationOrdnanceCsv
     {
@@ -561,33 +604,6 @@ namespace Hecton8.Physics
             profile.ForceScale = TryReadFloat(line, ref cursor, 0.018f);
             profile.AcousticIntensity = TryReadFloat(line, ref cursor, 0.7f);
             return true;
-        }
-
-        public static bool TryFindProfile(NativeArray<OrdnanceProfileDTO> profiles, uint profileHash, out OrdnanceProfileDTO profile)
-        {
-            profile = default;
-            if (!profiles.IsCreated || profiles.Length == 0 || profileHash == 0u)
-                return false;
-
-            int start = (int)(profileHash % (uint)profiles.Length);
-            for (int probe = 0; probe < profiles.Length; probe++)
-            {
-                int slot = start + probe;
-                if (slot >= profiles.Length)
-                    slot -= profiles.Length;
-
-                OrdnanceProfileDTO candidate = profiles[slot];
-                if (candidate.ProfileHash == profileHash)
-                {
-                    profile = candidate;
-                    return true;
-                }
-
-                if (candidate.ProfileHash == 0u)
-                    return false;
-            }
-
-            return false;
         }
 
         private static bool TryInsertProfile(NativeArray<OrdnanceProfileDTO> profiles, OrdnanceProfileDTO profile)

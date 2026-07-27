@@ -629,8 +629,10 @@ tool that reports three errors which do not exist.
 
 The two rules that matter most:
 
-1. **Read the authority files before non-trivial work** — `AGENTS.md`, `COMMON_SENSE.md`,
-   `PROJECT_BIBLES.md`, and the route bible for your domain.
+1. **Read the authority files before non-trivial work.** The chain is defined once, in `AGENTS.md`
+   `Task Intake` — start at `AGENTS.md` and follow it there rather than trusting any short list, including
+   this one. No reading cap applies: full bibles, full mandate bodies and full logs are expected when the
+   task touches them.
 2. **Commit only your own files.** The tree routinely contains other contributors' in-flight work.
    Never revert or sweep it up silently.
 

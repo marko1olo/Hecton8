@@ -25,6 +25,16 @@ search is for navigation and audit, not for comprehension.
 6. `TASTE.md` — required for player-visible work
 7. The matching **route bible** at repo root (`world.md`, `ecosystem.md`, `rendering.md`, …)
 
+This list is a human-facing summary, not the authority chain itself. The chain is defined once, in
+`AGENTS.md` `Task Intake`, and additionally requires `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`,
+`Docs/SYSTEMS_CONTRACTS.md` for runtime/architecture work, `.agents-skills/README.md` plus every mandate
+the task domain touches, and `Docs/QUALITY_GATES.md` before any `VERIFIED`/`COMPLETE` claim. Follow the
+`AGENTS.md` version if the two ever disagree, and do not grow agent law in this file.
+
+There is no cap on how much of that you may read — the old context-budget limits were retired 2026-07-27.
+Full bibles, full mandate bodies and full logs are expected when the task touches them, and `2-8` mandates
+is a floor rather than a quota.
+
 Current source, current assets and fresh proof outrank dated reports, generated snapshots, task
 logs and archives. If a report and the code disagree, the code is right and the report is stale.
 
