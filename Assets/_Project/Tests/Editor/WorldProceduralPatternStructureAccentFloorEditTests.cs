@@ -239,5 +239,125 @@ namespace Hecton8.Tests.Editor.World
                 Destroy(profile);
             }
         }
+
+        private static void ApplyFertileShallowsClusters(WorldProceduralPatternProfile profile)
+        {
+            profile.minClusterPlacements = 12;
+            profile.clusterTargetMax = 16;
+            profile.fertileGrowthMin = 2;
+            profile.biologicalNestMin = 1;
+            profile.resourcePocketMin = 1;
+            profile.shelterPocketMin = 1;
+            profile.hazardPocketMin = 0;
+            profile.debrisFieldMin = 0;
+            profile.rockCoverMin = 0;
+            profile.fertileGrowthMaxRatio = 0.5f;
+            profile.biologicalNestMaxRatio = 0.18f;
+            profile.resourcePocketMaxRatio = 0.16f;
+            profile.shelterPocketMaxRatio = 0.18f;
+            profile.hazardPocketMaxRatio = 0.05f;
+            profile.debrisFieldMaxRatio = 0.03f;
+            profile.rockCoverMaxRatio = 0.12f;
+        }
+
+        private static int SumClusterAccentFloors(WorldProceduralPatternProfile profile)
+        {
+            int total = 0;
+            for (int i = WorldProceduralPatternProfile.FirstClusterAccentRoleIndex;
+                 i <= WorldProceduralPatternProfile.LastClusterAccentRoleIndex;
+                 i++)
+            {
+                total += profile.GetClusterAccentMin((WorldPrefabFamilyProfile.ClusterAccentRole)i);
+            }
+
+            return total;
+        }
+
+        [Test]
+        public void FertileShallows_GuaranteesOneDebrisFieldCluster()
+        {
+            WorldProceduralPatternProfile profile = CreateProfile();
+            try
+            {
+                ApplyFertileShallowsClusters(profile);
+
+                Assert.AreEqual(
+                    1,
+                    profile.GetClusterAccentMin(WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField),
+                    "A 0.03 debris ratio means the pattern solicits salvage debris, so it must not stay at zero.");
+                Assert.AreEqual(
+                    2,
+                    profile.GetClusterAccentMin(WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth),
+                    "Authored cluster floors are never lowered.");
+                Assert.AreEqual(8, SumClusterAccentFloors(profile));
+                Assert.LessOrEqual(
+                    SumClusterAccentFloors(profile),
+                    profile.GetTargetMax(WorldPrefabFamilyProfile.ScatterLayer.Cluster));
+            }
+            finally
+            {
+                Destroy(profile);
+            }
+        }
+
+        [Test]
+        public void BannedClusterAccentRatioStaysAtZeroFloor()
+        {
+            WorldProceduralPatternProfile profile = CreateProfile();
+            try
+            {
+                ApplyFertileShallowsClusters(profile);
+                profile.debrisFieldMaxRatio = 0f;
+
+                Assert.AreEqual(
+                    0,
+                    profile.GetClusterAccentMin(WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField),
+                    "A zero ratio is an explicit ban and must never receive a guaranteed floor.");
+                Assert.AreEqual(7, SumClusterAccentFloors(profile));
+            }
+            finally
+            {
+                Destroy(profile);
+            }
+        }
+
+        [Test]
+        public void IndustrialServiceClusterFloorsStayInsideLayerTarget()
+        {
+            WorldProceduralPatternProfile profile = CreateProfile();
+            try
+            {
+                profile.minClusterPlacements = 7;
+                profile.clusterTargetMax = 9;
+                profile.fertileGrowthMin = 0;
+                profile.biologicalNestMin = 0;
+                profile.resourcePocketMin = 0;
+                profile.shelterPocketMin = 0;
+                profile.hazardPocketMin = 0;
+                profile.debrisFieldMin = 6;
+                profile.rockCoverMin = 0;
+                profile.fertileGrowthMaxRatio = 0.06f;
+                profile.biologicalNestMaxRatio = 0.04f;
+                profile.resourcePocketMaxRatio = 0.1f;
+                profile.shelterPocketMaxRatio = 0.08f;
+                profile.hazardPocketMaxRatio = 0.18f;
+                profile.debrisFieldMaxRatio = 0.85f;
+                profile.rockCoverMaxRatio = 0.18f;
+
+                Assert.AreEqual(
+                    6,
+                    profile.GetClusterAccentMin(WorldPrefabFamilyProfile.ClusterAccentRole.DebrisField),
+                    "IndustrialService already demands six debris clusters and must be unchanged.");
+                Assert.AreEqual(9, SumClusterAccentFloors(profile));
+                Assert.LessOrEqual(
+                    SumClusterAccentFloors(profile),
+                    profile.GetTargetMax(WorldPrefabFamilyProfile.ScatterLayer.Cluster),
+                    "The guarantee only ever spends slack, so summed floors can never pass the layer target.");
+            }
+            finally
+            {
+                Destroy(profile);
+            }
+        }
     }
 }

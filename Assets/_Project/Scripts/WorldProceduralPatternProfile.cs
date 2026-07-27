@@ -212,7 +212,35 @@ namespace Hecton8.World
             return 0;
         }
 
+        public const int FirstClusterAccentRoleIndex = (int)WorldPrefabFamilyProfile.ClusterAccentRole.FertileGrowth;
+        public const int LastClusterAccentRoleIndex = (int)WorldPrefabFamilyProfile.ClusterAccentRole.RockCover;
+
+        /// <summary>
+        /// Effective per-role cluster accent floor. Same contract as
+        /// <see cref="GetStructureAccentMin"/>: a role the pattern solicits (authored ceiling ratio
+        /// above zero) but leaves without an authored floor is guaranteed one placement while the
+        /// cluster layer target still has slack after every authored floor is reserved. Without it
+        /// the cluster guarantee pass skips the role outright
+        /// (WorldProceduralScatterDirector.cs:6027 continues on a zero required count), which is
+        /// what left DebrisField - the salvage/wreck-fragment accent - at zero on FertileShallows
+        /// and ReefNavigation. A floor of one can never breach the ratio ceiling because the
+        /// acceptance pass floors the allowance at one
+        /// (WorldProceduralScatterDirectorCandidateAcceptance.cs:847).
+        /// A role the pattern bans outright (authored ratio zero) stays at zero.
+        /// </summary>
         public int GetClusterAccentMin(WorldPrefabFamilyProfile.ClusterAccentRole role)
+        {
+            int authoredMin = GetAuthoredClusterAccentMin(role);
+            if (authoredMin > 0)
+                return authoredMin;
+
+            if (GetClusterAccentMaxRatio(role) <= 0f)
+                return 0;
+
+            return ResolveGuaranteedClusterAccentFloor(role);
+        }
+
+        private int GetAuthoredClusterAccentMin(WorldPrefabFamilyProfile.ClusterAccentRole role)
         {
             return role switch
             {
@@ -225,6 +253,47 @@ namespace Hecton8.World
                 WorldPrefabFamilyProfile.ClusterAccentRole.RockCover => Mathf.Max(0, rockCoverMin),
                 _ => 0
             };
+        }
+
+        /// <summary>
+        /// Deterministic, allocation-free. Reserves every authored cluster floor first, then walks
+        /// the seven cluster accent roles in declaration order and grants a floor of one to each
+        /// solicited role that still fits inside the cluster layer target.
+        /// </summary>
+        private int ResolveGuaranteedClusterAccentFloor(WorldPrefabFamilyProfile.ClusterAccentRole role)
+        {
+            int layerBudget = GetTargetMax(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
+            if (layerBudget <= 0)
+                return 0;
+
+            int authoredTotal = 0;
+            for (int i = FirstClusterAccentRoleIndex; i <= LastClusterAccentRoleIndex; i++)
+                authoredTotal += GetAuthoredClusterAccentMin((WorldPrefabFamilyProfile.ClusterAccentRole)i);
+
+            int remaining = layerBudget - authoredTotal;
+            if (remaining <= 0)
+                return 0;
+
+            for (int i = FirstClusterAccentRoleIndex; i <= LastClusterAccentRoleIndex; i++)
+            {
+                WorldPrefabFamilyProfile.ClusterAccentRole candidate =
+                    (WorldPrefabFamilyProfile.ClusterAccentRole)i;
+
+                if (GetAuthoredClusterAccentMin(candidate) > 0)
+                    continue;
+
+                if (GetClusterAccentMaxRatio(candidate) <= 0f)
+                    continue;
+
+                if (remaining <= 0)
+                    return 0;
+
+                remaining--;
+                if (candidate == role)
+                    return 1;
+            }
+
+            return 0;
         }
 
         public float GetClusterAccentMaxRatio(WorldPrefabFamilyProfile.ClusterAccentRole role)
