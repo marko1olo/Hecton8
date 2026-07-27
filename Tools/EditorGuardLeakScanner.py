@@ -36,6 +36,7 @@ test will fail and should be promoted to a detection case.
 
 import argparse
 import glob
+import json
 import os
 import re
 import sys
@@ -186,10 +187,46 @@ def scan_file(path):
     return scan_text(lines, path)
 
 
+def _nearest_asmdef(path):
+    directory = os.path.dirname(path)
+    while True:
+        candidates = glob.glob(os.path.join(directory, "*.asmdef"))
+        if candidates:
+            return candidates[0]
+        parent = os.path.dirname(directory)
+        if parent == directory or not directory:
+            return None
+        directory = parent
+
+
+def compiles_into_a_player(path, _cache={}):
+    """True when this file ends up in an assembly that ships in a player build.
+
+    An `Editor` folder name is NOT sufficient to exclude a file. An asmdef overrides the
+    Editor-folder convention, so an `Editor` directory sitting under a runtime asmdef is
+    compiled straight into that runtime assembly - 84 files in this repo, 83 of them into
+    Hecton8.Core. Measured against Library/ScriptAssemblies by ZETA in 504e346da and
+    reproduced here. Only an asmdef whose includePlatforms is exactly ["Editor"] keeps its
+    files out of a player.
+    """
+    asmdef = _nearest_asmdef(path)
+    if asmdef is None:
+        # No asmdef: Assembly-CSharp, where the Editor-folder convention does apply.
+        return os.sep + "Editor" + os.sep not in path
+    if asmdef not in _cache:
+        try:
+            with open(asmdef, encoding="utf-8-sig") as handle:
+                platforms = json.load(handle).get("includePlatforms") or []
+        except (OSError, ValueError):
+            platforms = []
+        _cache[asmdef] = platforms != ["Editor"]
+    return _cache[asmdef]
+
+
 def scan_tree(root="Assets/_Project/Scripts"):
     found = []
     for path in glob.glob(os.path.join(root, "**", "*.cs"), recursive=True):
-        if os.sep + "Editor" + os.sep in path:
+        if not compiles_into_a_player(path):
             continue
         found.extend(scan_file(path))
     return found
