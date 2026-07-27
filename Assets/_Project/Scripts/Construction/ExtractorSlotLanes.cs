@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Mathematics;
 
@@ -33,21 +34,12 @@ namespace Hecton8.Construction
             return math.max(0, rowCount);
         }
 
-        /// <summary>A non-finite or negative accumulated cycle time is corruption, not a schedule. Clamp to zero.</summary>
-        public static float SanitizeCycleTimerSeconds(float seconds)
-        {
-            return math.isfinite(seconds) && seconds > 0f ? seconds : 0f;
-        }
-
-        /// <summary>Buffered and completed tallies are physical unit counts; negative values are meaningless.</summary>
-        public static int SanitizeUnitCount(int count)
-        {
-            return count > 0 ? count : 0;
-        }
-
         /// <summary>
         /// Carries one extractor's accumulated row from <paramref name="sourceIndex"/> to
         /// <paramref name="destinationIndex"/> and zeroes the vacated row so nothing inherits it.
+        /// A non-finite or negative accumulated cycle time is corruption, not a schedule, so the timer is
+        /// clamped through the <see cref="MathGuard"/> owner rather than a local copy of the same rule;
+        /// buffered and completed tallies are physical unit counts, so negatives are clamped away too.
         /// </summary>
         public static bool TryMoveRow(
             NativeArray<float> cycleTimers,
@@ -64,19 +56,20 @@ namespace Hecton8.Construction
             if (sourceIndex == destinationIndex)
                 return true;
 
-            cycleTimers[destinationIndex] = SanitizeCycleTimerSeconds(cycleTimers[sourceIndex]);
+            cycleTimers[destinationIndex] = MathGuard.SanitizeNonNegative(cycleTimers[sourceIndex]);
             bufferedItemHashIds[destinationIndex] = bufferedItemHashIds[sourceIndex];
-            bufferedUnitCounts[destinationIndex] = SanitizeUnitCount(bufferedUnitCounts[sourceIndex]);
-            completedCycleCounts[destinationIndex] = SanitizeUnitCount(completedCycleCounts[sourceIndex]);
+            bufferedUnitCounts[destinationIndex] = math.max(0, bufferedUnitCounts[sourceIndex]);
+            completedCycleCounts[destinationIndex] = math.max(0, completedCycleCounts[sourceIndex]);
 
-            cycleTimers[sourceIndex] = 0f;
-            bufferedItemHashIds[sourceIndex] = 0;
-            bufferedUnitCounts[sourceIndex] = 0;
-            completedCycleCounts[sourceIndex] = 0;
-            return true;
+            return TryClearRow(cycleTimers, bufferedItemHashIds, bufferedUnitCounts, completedCycleCounts, sourceIndex);
         }
 
-        /// <summary>Zeroes one slot row so a claimed slot cannot inherit an abandoned extraction buffer.</summary>
+        /// <summary>
+        /// Zeroes one slot row so a claimed slot cannot inherit an abandoned extraction buffer. This is the
+        /// only place a zeroed extractor row is defined: slot claim, module unregistration, and the
+        /// job-completion pass over a vacated slot all route here, so a fifth lane is added once, not three
+        /// times. Returns false when the index is outside the shortest lane.
+        /// </summary>
         public static bool TryClearRow(
             NativeArray<float> cycleTimers,
             NativeArray<int> bufferedItemHashIds,

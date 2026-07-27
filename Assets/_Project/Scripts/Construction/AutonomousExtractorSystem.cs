@@ -482,10 +482,12 @@ namespace Hecton8.Construction
                 AutonomousExtractorModule module = i < _moduleCount ? _modules[i] : null;
                 if (module == null)
                 {
-                    cycleTimers[i] = 0f;
-                    bufferedItemHashIds[i] = 0;
-                    bufferedUnitCounts[i] = 0;
-                    completedCycleCounts[i] = 0;
+                    ExtractorSlotLanes.TryClearRow(
+                        cycleTimers,
+                        bufferedItemHashIds,
+                        bufferedUnitCounts,
+                        completedCycleCounts,
+                        i);
                     continue;
                 }
 
@@ -614,22 +616,7 @@ namespace Hecton8.Construction
             if (_scheduledJobActive && index < _scheduledModuleCount)
                 return;
 
-            if (!TryAcquireExtractorStateBuffers(
-                    out NativeArray<float> cycleTimers,
-                    out NativeArray<int> bufferedItemHashIds,
-                    out NativeArray<int> bufferedUnitCounts,
-                    out NativeArray<int> completedCycleCounts))
-            {
-                return;
-            }
-
-            if ((uint)index >= (uint)cycleTimers.Length)
-                return;
-
-            cycleTimers[index] = 0f;
-            bufferedItemHashIds[index] = 0;
-            bufferedUnitCounts[index] = 0;
-            completedCycleCounts[index] = 0;
+            ClearExtractorStateRow(index);
         }
 
         internal bool IsNodeClaimed(ResourceNode node, AutonomousExtractorModule requester)
@@ -717,8 +704,10 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
-        /// Zeroes the accumulation row of a slot a module has just claimed so the new extractor cannot inherit
-        /// an abandoned buffer and deposit units that were never mined.
+        /// Zeroes one accumulation row through the single owner of that rule, <see cref="ExtractorSlotLanes"/>.
+        /// Used on slot claim (a new extractor must not inherit an abandoned buffer and deposit units that were
+        /// never mined) and on module unregistration (the departing extractor's tally must not survive the slot).
+        /// Adding a fifth lane therefore means editing <see cref="ExtractorSlotLanes.TryClearRow"/> only.
         /// </summary>
         private void ClearExtractorStateRow(int index)
         {

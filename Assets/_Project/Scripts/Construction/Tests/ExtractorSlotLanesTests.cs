@@ -241,18 +241,63 @@ namespace Hecton8.Construction.Tests
                 Is.EqualTo(0));
         }
 
-        [Test]
-        public void SanitizeGuards_RejectNonFiniteAndNegativeAccumulators()
+        /// <summary>
+        /// The sanitize rule is owned by <c>Hecton8.Core.MathGuard.SanitizeNonNegative</c> and
+        /// <c>math.max</c>, not by a private copy inside the lanes, so it is locked here through the public
+        /// row API that actually applies it. Each case is carried across a real slot move.
+        /// </summary>
+        [TestCase(float.NaN, 0f)]
+        [TestCase(float.PositiveInfinity, 0f)]
+        [TestCase(float.NegativeInfinity, 0f)]
+        [TestCase(-0.5f, 0f)]
+        [TestCase(0f, 0f)]
+        [TestCase(2.5f, 2.5f)]
+        public void MoveRow_ClampsTheCarriedCycleTimerToAFiniteNonNegativeSchedule(
+            float storedSeconds,
+            float expectedSeconds)
         {
-            Assert.That(ExtractorSlotLanes.SanitizeCycleTimerSeconds(float.NaN), Is.EqualTo(0f));
-            Assert.That(ExtractorSlotLanes.SanitizeCycleTimerSeconds(float.PositiveInfinity), Is.EqualTo(0f));
-            Assert.That(ExtractorSlotLanes.SanitizeCycleTimerSeconds(float.NegativeInfinity), Is.EqualTo(0f));
-            Assert.That(ExtractorSlotLanes.SanitizeCycleTimerSeconds(-0.5f), Is.EqualTo(0f));
-            Assert.That(ExtractorSlotLanes.SanitizeCycleTimerSeconds(2.5f), Is.EqualTo(2.5f));
+            WriteRow(index: 1, cycleTimerSeconds: storedSeconds, itemHashId: 4242, bufferedUnits: 3, completedCycles: 5);
 
-            Assert.That(ExtractorSlotLanes.SanitizeUnitCount(-1000), Is.EqualTo(0));
-            Assert.That(ExtractorSlotLanes.SanitizeUnitCount(0), Is.EqualTo(0));
-            Assert.That(ExtractorSlotLanes.SanitizeUnitCount(6), Is.EqualTo(6));
+            Assert.That(
+                ExtractorSlotLanes.TryMoveRow(
+                    _cycleTimers,
+                    _bufferedItemHashIds,
+                    _bufferedUnitCounts,
+                    _completedCycleCounts,
+                    sourceIndex: 1,
+                    destinationIndex: 0),
+                Is.True);
+
+            Assert.That(_cycleTimers[0], Is.EqualTo(expectedSeconds));
+            Assert.That(_bufferedItemHashIds[0], Is.EqualTo(4242));
+        }
+
+        [TestCase(-1000, 0)]
+        [TestCase(-1, 0)]
+        [TestCase(0, 0)]
+        [TestCase(6, 6)]
+        public void MoveRow_ClampsCarriedUnitTalliesToNonNegativeCounts(int storedCount, int expectedCount)
+        {
+            WriteRow(
+                index: 2,
+                cycleTimerSeconds: 1.25f,
+                itemHashId: 808,
+                bufferedUnits: storedCount,
+                completedCycles: storedCount);
+
+            Assert.That(
+                ExtractorSlotLanes.TryMoveRow(
+                    _cycleTimers,
+                    _bufferedItemHashIds,
+                    _bufferedUnitCounts,
+                    _completedCycleCounts,
+                    sourceIndex: 2,
+                    destinationIndex: 0),
+                Is.True);
+
+            Assert.That(_bufferedUnitCounts[0], Is.EqualTo(expectedCount));
+            Assert.That(_completedCycleCounts[0], Is.EqualTo(expectedCount));
+            Assert.That(_cycleTimers[0], Is.EqualTo(1.25f));
         }
 
         [Test]
