@@ -146,8 +146,6 @@ float4 _HectonXRNearClipDitherParams;  // x=active, y=fade start meters, z=fade 
 float4 _HectonXROriginShiftState;      // x=XR active, y=origin shift sequence, z=pose refresh marker, w=fixed alpha
 float4 _TotalUniverseOffset;           // xyz=runtime-to-absolute offset used for AUP-stable visual phase
 float _AupJitterMask;                  // 1 during the AUP shift render frame; rounds camera-relative vertices to millimeters
-float _HectonMathLodMode;              // Legacy mirror of the continuous math LOD weight.
-float _HectonMathLodWeight;            // 0=cheap dear-lie math, 1=exact visual overkill.
 float _HectonMathLodDistanceSq;        // C# scalability bridge debug/readback value
 float4 _HectonWorldShake;              // xyz=seismic vertex offset, w=intensity
 float _HectonEquipmentRust01;          // global equipment corrosion scalar, 0 clean -> 1 ruined
@@ -156,40 +154,13 @@ float4 _HectonPlayerBloodSplatter;     // x=stress01, y=health damage01, z=gloss
 float _InternalWaterlineY;
 float4 _InternalWaterlineRuntime;      // xyz/w owned by InternalFloodWaterlineRuntime
 
-float3 HectonCoreLitDominantAxisOrDefault(float3 value, float3 fallbackValue)
-{
-    if (!all(isfinite(value)))
-        return fallbackValue;
-
-    float3 absValue = abs(value);
-    float maxAxis = max(max(absValue.x, absValue.y), absValue.z);
-    if (maxAxis <= 0.0001)
-        return fallbackValue;
-
-    float3 axisX = float3(value.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0);
-    float3 axisY = float3(0.0, value.y < 0.0 ? -1.0 : 1.0, 0.0);
-    float3 axisZ = float3(0.0, 0.0, value.z < 0.0 ? -1.0 : 1.0);
-    return absValue.x >= absValue.y && absValue.x >= absValue.z
-        ? axisX
-        : (absValue.y >= absValue.z ? axisY : axisZ);
-}
-
-float HectonCoreLitMathLodWeight()
-{
-    float weight = isfinite(_HectonMathLodWeight) ? _HectonMathLodWeight : _HectonMathLodMode;
-    return saturate(weight);
-}
-
-float3 HectonCoreLitSafeNormalize(float3 value)
-{
-    float lenSq = dot(value, value);
-    if (!isfinite(lenSq) || lenSq <= 0.0001)
-        return float3(0.0, 1.0, 0.0);
-
-    float3 cheap = HectonCoreLitDominantAxisOrDefault(value, float3(0.0, 1.0, 0.0));
-    float3 exact = value * rsqrt(lenSq);
-    return lerp(cheap, exact, HectonCoreLitMathLodWeight());
-}
+// Math-LOD weight and the safe-normalize built on it now live in HectonMathLod.hlsl, together with
+// the _HectonMathLodMode / _HectonMathLodWeight globals declared just above this block before the
+// move. Passes that build geometry but do not want the whole of CoreLit (indirect particle and
+// vegetation motion-vector passes) include that file directly, so they snap or stay exact in step
+// with ForwardLit instead of carrying a private copy that cannot see the weight. Visibility for
+// every existing CoreLit consumer is unchanged.
+#include "Assets/_Project/Art/Shaders/HectonMathLod.hlsl"
 
 float HectonCoreLitApproxDistance(float3 delta)
 {

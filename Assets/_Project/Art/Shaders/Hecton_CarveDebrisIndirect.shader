@@ -388,12 +388,13 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                 return Triangle01(value) * 2.0 - 1.0;
             }
 
-            float3 DebrisSafeNormalize(float3 value, float3 fallback)
-            {
-                float lengthSq = dot(value, value);
-                float validMask = step(0.000001, lengthSq);
-                return lerp(fallback, value * rsqrt(max(lengthSq, 0.000001)), validMask);
-            }
+            // DebrisSafeNormalize used to live here, hardcoded to the EXACT normalise. The ForwardLit
+            // pass builds the same basis with HectonCoreLitSafeNormalize, which blends toward a
+            // dominant-axis-snapped direction as _HectonMathLodWeight falls. The two passes therefore
+            // agreed only at weight 1: the moment the math-LOD system started scaling down, every
+            // debris quad was oriented differently here than in ForwardLit, so the velocities written
+            // by this pass described geometry that was never drawn. Physically shared now.
+            #include "Assets/_Project/Art/Shaders/HectonMathLod.hlsl"
 
             void BuildDebrisBasis(uint particleIndex, float timeSeconds, float qualityPressure01, out float3 rightWS, out float3 upWS, out float3 forwardWS)
             {
@@ -402,10 +403,10 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
                     Hash11(particleIndex ^ 0x9E3779B9u) * 2.0 - 1.0,
                     Hash11(particleIndex ^ 0x85EBCA6Bu) * 0.7 - 0.35,
                     edgeJitter * 2.0 - 1.0);
-                forwardWS = DebrisSafeNormalize(rawForward, float3(0.0, 1.0, 0.0));
+                forwardWS = HectonCoreLitSafeNormalize(rawForward);
                 float basisUpMask = 1.0 - step(0.92, abs(forwardWS.y));
                 float3 basisUp = lerp(float3(1.0, 0.0, 0.0), float3(0.0, 1.0, 0.0), basisUpMask);
-                rightWS = DebrisSafeNormalize(cross(basisUp, forwardWS), float3(1.0, 0.0, 0.0));
+                rightWS = HectonCoreLitSafeNormalize(cross(basisUp, forwardWS));
                 upWS = cross(forwardWS, rightWS);
                 float angularSpeed = lerp(-8.0, 8.0, Hash11(particleIndex ^ 0x27D4EB2Du));
                 float spinPhase = Hash11(particleIndex ^ 0x165667B1u) * 6.28318530718 + timeSeconds * angularSpeed;
