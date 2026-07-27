@@ -4698,6 +4698,7 @@ namespace Hecton8.World
 
             return ruleIndex > 0;
         }
+#endif
 
         private bool TryResolveFloraStiffnessRules(out NativeArray<FloraStiffnessRuleDTO> rules)
         {
@@ -4715,6 +4716,9 @@ namespace Hecton8.World
                 out rules);
         }
 
+        // Only the CSV ingest path above uses this scratch buffer, so it stays editor-only. The
+        // existing #endif below closes this region.
+#if UNITY_EDITOR
         private bool TryResolveFloraCsvScratch(out NativeArray<byte> scratch)
         {
             scratch = default;

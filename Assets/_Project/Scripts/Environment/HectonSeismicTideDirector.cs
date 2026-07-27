@@ -2564,6 +2564,7 @@ namespace Hecton8.Environment
                 return false;
             }
         }
+#endif
 
         private static void SeedDefaultFaultProfile(NativeArray<SeismicFaultProfileDTO> profiles, ref SeismicTuningDTO tuning)
         {
@@ -2904,7 +2905,6 @@ namespace Hecton8.Environment
             environmentState.ActiveEventFlags = (uint)CelestialEventFlagValid;
             return false;
         }
-#endif
 
         private bool TryReadCachedCelestialSolve(
             out CelestialStateDTO state,
