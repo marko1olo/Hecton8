@@ -645,10 +645,16 @@ namespace Hecton8.EditorTools.Diagnostics
         /// SceneManager.GetSceneAt does not enumerate the DontDestroyOnLoad scene, so root
         /// traversal cannot see persistent objects. This can.
         ///
-        /// Self-test: FaunaGeneticsManager MUST be counted, because the WORLDSEED check in this
-        /// same run resolved a live FaunaGeneticsManager through GlobalRegistry a few lines
-        /// earlier. If the census cannot find a component the same run just used, the census is
-        /// broken and every "0 instances" below is worthless.
+        /// Self-test: cross-check the census against GlobalRegistry IN THIS RUN. If the registry
+        /// holds a live FaunaGeneticsManager and the census cannot see it, the census is broken
+        /// and every "0 instances" below is worthless.
+        ///
+        /// The first version of this self-test asserted FaunaGeneticsManager unconditionally,
+        /// because two consecutive runs had it. The third run did not: the world came up with
+        /// roots=30 instead of 37, Terrain and FaunaGenetics both null. The assertion fired and
+        /// suppressed a census that was working correctly. A known-answer case has to be read
+        /// from the same run, not from the last one - which is also why the boot being
+        /// non-deterministic matters more than any single reading here.
         /// </summary>
         private static void ReportRuntimeComponentCensus()
         {
