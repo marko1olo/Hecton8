@@ -10,6 +10,7 @@ using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Dev;
 using Hecton8.Editor;
+using Hecton8.EditorTools.Diagnostics;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
@@ -1146,13 +1147,17 @@ namespace Hecton8.Editor.Validation
             if (result.ResourceNodeCount <= 0)
                 return;
 
-            string sceneText = string.Empty;
-            bool sceneTextAvailable = TryReadProjectTextFile(ProductionWorldScenePath, out sceneText, out string sceneReadFailure);
+            // Presence is a format-agnostic question and is answered through the dependency graph.
+            // The YAML read below is only for the serialized field values, which no dependency
+            // edge can carry, and it now fails with a specific reason when the scene is binary.
+            bool sceneTextAvailable = TryReadProductionSceneYaml(out string sceneText, out string sceneReadFailure);
             string directorGuid = AssetDatabase.AssetPathToGUID(ResourceDistributionDirectorScriptPath);
             string directorSceneBlock = string.Empty;
-            bool hasDirectorInScene = sceneTextAvailable &&
-                                      !string.IsNullOrWhiteSpace(directorGuid) &&
-                                      TryExtractMonoBehaviourBlockByScriptGuid(sceneText, directorGuid, out directorSceneBlock);
+            bool hasDirectorInScene = ProductionSceneSerializesScript(ResourceDistributionDirectorScriptPath);
+            bool directorBlockAvailable = hasDirectorInScene &&
+                                          sceneTextAvailable &&
+                                          !string.IsNullOrWhiteSpace(directorGuid) &&
+                                          TryExtractMonoBehaviourBlockByScriptGuid(sceneText, directorGuid, out directorSceneBlock);
             if (string.IsNullOrWhiteSpace(directorGuid))
             {
                 AddResourceDistributionRouteError(
@@ -1161,23 +1166,21 @@ namespace Hecton8.Editor.Validation
             }
             else if (!hasDirectorInScene)
             {
-                string readFailureSuffix = string.IsNullOrWhiteSpace(sceneReadFailure)
-                    ? string.Empty
-                    : $" Read failure: {sceneReadFailure}";
                 AddResourceDistributionRouteError(
                     result,
                     $"{ProductionWorldScenePath}: production scene has ResourceNodeTemplate data but no serialized ResourceDistributionDirector component. " +
                     $"Run HECTON-8/World/Install Resource Distribution Director in the loaded world scene. " +
-                    $"Director script GUID={directorGuid}.{readFailureSuffix}");
+                    $"Director script GUID={directorGuid}. " +
+                    "Resolved through the AssetDatabase dependency graph, which reads binary and text scenes alike.");
             }
 
-            ValidateScavengingLootOracleHost(result, sceneTextAvailable, sceneText, sceneReadFailure);
+            ValidateScavengingLootOracleHost(result);
 
             bool hasOreFallbackPrefab = ValidateResourceDistributionOreFallbackPrefab(result);
             bool hasMagmaVentPrefab = ValidateResourceDistributionMagmaVentPrefab();
             CountResourceTemplateRuntimePrefabCoverage(out int templateCount, out int validTemplatePrefabCount);
             bool allTemplatesHaveRuntimePrefab = templateCount > 0 && validTemplatePrefabCount == templateCount;
-            if (hasDirectorInScene)
+            if (directorBlockAvailable)
             {
                 ValidateResourceDistributionSceneAssignments(
                     result,
@@ -1185,6 +1188,16 @@ namespace Hecton8.Editor.Validation
                     hasOreFallbackPrefab,
                     hasMagmaVentPrefab,
                     allTemplatesHaveRuntimePrefab);
+            }
+            else if (hasDirectorInScene)
+            {
+                // The director IS in the scene, so this is not a wiring defect - the field-level
+                // check simply cannot run. Say that, loudly and specifically. Silently skipping it
+                // would leave a merge gate that is vacuously green.
+                result.Warnings.Add(
+                    $"{ProductionWorldScenePath}: ResourceDistributionDirector is serialized in the production scene, but its field " +
+                    $"assignments could not be inspected: {sceneReadFailure} " +
+                    "Prefab and template assignments on the director are therefore UNVERIFIED, not proven correct.");
             }
 
             if (!hasOreFallbackPrefab && !allTemplatesHaveRuntimePrefab)
@@ -1203,11 +1216,7 @@ namespace Hecton8.Editor.Validation
             }
         }
 
-        private static void ValidateScavengingLootOracleHost(
-            ValidationResult result,
-            bool sceneTextAvailable,
-            string sceneText,
-            string sceneReadFailure)
+        private static void ValidateScavengingLootOracleHost(ValidationResult result)
         {
             string oracleGuid = AssetDatabase.AssetPathToGUID(ScavengingLootOracleRuntimeScriptPath);
             if (string.IsNullOrWhiteSpace(oracleGuid))
@@ -1218,20 +1227,15 @@ namespace Hecton8.Editor.Validation
                 return;
             }
 
-            if (sceneTextAvailable &&
-                TryExtractMonoBehaviourBlockByScriptGuid(sceneText, oracleGuid, out _))
-            {
+            if (ProductionSceneSerializesScript(ScavengingLootOracleRuntimeScriptPath))
                 return;
-            }
 
-            string readFailureSuffix = string.IsNullOrWhiteSpace(sceneReadFailure)
-                ? string.Empty
-                : $" Read failure: {sceneReadFailure}";
             AddResourceDistributionRouteError(
                 result,
                 $"{ProductionWorldScenePath}: production resource distribution has no serialized ScavengingLootOracleRuntime host. " +
                 "ResourceNode extraction can deplete nodes while failing to publish item pickup signals. " +
-                $"Run HECTON-8/World/Install Resource Distribution Director. Loot oracle script GUID={oracleGuid}.{readFailureSuffix}");
+                $"Run HECTON-8/World/Install Resource Distribution Director. Loot oracle script GUID={oracleGuid}. " +
+                "Resolved through the AssetDatabase dependency graph, which reads binary and text scenes alike.");
         }
 
         private static bool ValidateResourceDistributionOreFallbackPrefab(ValidationResult result)
@@ -1432,6 +1436,55 @@ namespace Hecton8.Editor.Validation
             return layer >= 0 &&
                    layer < 32 &&
                    (layerMask & (1 << layer)) != 0;
+        }
+
+        /// <summary>
+        /// True when the production world scene serializes at least one component of the script at
+        /// <paramref name="scriptAssetPath"/>.
+        ///
+        /// THIS REPLACES A GATE THAT COULD NEVER PASS. The previous route read the scene with
+        /// <see cref="TryReadProjectTextFile"/> and searched the resulting string for the script's
+        /// 32-character hex GUID. Assets/_Project/Scenes/02_HECTON_WORLD.unity is BINARY on disk -
+        /// it opens with null bytes and has no %YAML header, because ProjectSettings/
+        /// EditorSettings.asset sets m_SerializationMode: 2 (ForceBinary). Binary Unity
+        /// serialization stores a script reference as raw GUID bytes, never as hex text, so the
+        /// search could not match. Worse, File.ReadAllText does not throw on binary input - it
+        /// lossily decodes it - so the read "succeeded", the read-failure suffix came back empty,
+        /// and the validator reported a confident "component is missing" for every component in
+        /// the production scene whether it was authored there or not.
+        ///
+        /// A direct (non-recursive) AssetDatabase dependency is exactly what that text search was
+        /// looking for: a script GUID stored in the scene file itself. Same question, answered
+        /// through the importer, so it is correct for binary and text scenes alike.
+        /// </summary>
+        private static bool ProductionSceneSerializesScript(string scriptAssetPath)
+        {
+            return H8_FormatAgnosticTypeCensus.AssetDirectlyReferencesScript(ProductionWorldScenePath, scriptAssetPath);
+        }
+
+        /// <summary>
+        /// Reads the production world scene as YAML text, and fails with a specific, actionable
+        /// reason when the scene is not text-serialized instead of handing back a lossily decoded
+        /// binary blob that every downstream <c>IndexOf</c> will silently miss in.
+        ///
+        /// Only the gates that need a serialized PROPERTY BLOCK (layer, socket id, collider,
+        /// object name, field assignments) may use this. Presence questions go through
+        /// <see cref="ProductionSceneSerializesScript"/>, which does not care about the format.
+        /// </summary>
+        private static bool TryReadProductionSceneYaml(out string sceneText, out string failure)
+        {
+            sceneText = string.Empty;
+            if (!H8_FormatAgnosticTypeCensus.IsYamlTextSerialized(ProductionWorldScenePath, out string formatDetail))
+            {
+                failure =
+                    $"scene is not YAML text ({formatDetail}), so a text parse over it cannot resolve object names, " +
+                    "layers, colliders, or serialized field values. This is a structural limit of the text route, not a missing component. " +
+                    "Resolve scene contents with the object model instead: Unity.exe -batchmode -quit -projectPath . " +
+                    "-executeMethod Hecton8.EditorTools.Diagnostics.H8_FormatAgnosticTypeCensus.Run";
+                return false;
+            }
+
+            return TryReadProjectTextFile(ProductionWorldScenePath, out sceneText, out failure);
         }
 
         private static bool TryExtractMonoBehaviourBlockByScriptGuid(string sceneText, string scriptGuid, out string block)
@@ -1645,20 +1698,23 @@ namespace Hecton8.Editor.Validation
             result.Errors.Add("FirstHourQuestSpine: " + string.Join("; ", failures));
         }
 
+        /// <summary>
+        /// Gates the three owners the First 20 Minutes contract's source anchor depends on
+        /// (Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md:15 names
+        /// FirstHourDirector.cs by name).
+        ///
+        /// This gate was permanently, silently failing. It read the binary production scene as
+        /// text and searched for three hex GUIDs that binary serialization never writes as hex, so
+        /// all three owners were reported missing on every single run regardless of the truth, and
+        /// the read never failed loudly enough to reveal why. It now resolves each owner through
+        /// the AssetDatabase dependency graph, which is format-agnostic.
+        /// </summary>
         private static void ValidateFirstHourRuntimeSceneOwners(ValidationResult result)
         {
-            if (!TryReadProjectTextFile(ProductionWorldScenePath, out string sceneText, out string readFailure))
-            {
-                result.FirstHourDrillRouteErrorCount++;
-                result.Errors.Add(
-                    $"{ProductionWorldScenePath}: failed to read first-hour runtime owner scene proof: {readFailure}");
-                return;
-            }
-
             List<string> missing = new List<string>(3);
-            RequireSceneScriptGuid(sceneText, LoreSystemsRootScriptPath, "HectonLoreSystemsRoot", missing);
-            RequireSceneScriptGuid(sceneText, QuestManagerScriptPath, "QuestManager", missing);
-            RequireSceneScriptGuid(sceneText, FirstHourDirectorScriptPath, "FirstHourDirector", missing);
+            RequireSceneScriptReference(LoreSystemsRootScriptPath, "HectonLoreSystemsRoot", missing);
+            RequireSceneScriptReference(QuestManagerScriptPath, "QuestManager", missing);
+            RequireSceneScriptReference(FirstHourDirectorScriptPath, "FirstHourDirector", missing);
             if (missing.Count <= 0)
                 return;
 
@@ -1666,17 +1722,20 @@ namespace Hecton8.Editor.Validation
             result.Errors.Add(
                 $"{ProductionWorldScenePath}: missing first-hour runtime owner(s): {string.Join(", ", missing)}. " +
                 "QuestData assets alone do not run the drill/copper/first-breath chain; run Tools/Hecton8/Lore Systems/Bootstrap Production World Scene in Unity, " +
-                "or execute Hecton8.Editor.LoreSystemsBootstrapUtility.BootstrapProductionWorldSceneBatch in Unity batchmode, before claiming runtime integration.");
+                "or execute Hecton8.Editor.LoreSystemsBootstrapUtility.BootstrapProductionWorldSceneBatch in Unity batchmode, before claiming runtime integration. " +
+                "Resolved through the AssetDatabase dependency graph; this reports SCENE AUTHORING only and does not cover an owner created at runtime by AddComponent.");
         }
 
-        private static void RequireSceneScriptGuid(
-            string sceneText,
-            string scriptPath,
-            string label,
-            List<string> missing)
+        private static void RequireSceneScriptReference(string scriptPath, string label, List<string> missing)
         {
             string guid = AssetDatabase.AssetPathToGUID(scriptPath);
-            if (!string.IsNullOrWhiteSpace(guid) && sceneText.IndexOf(guid, StringComparison.OrdinalIgnoreCase) >= 0)
+            if (string.IsNullOrWhiteSpace(guid))
+            {
+                missing.Add(label + " (script asset itself is missing)");
+                return;
+            }
+
+            if (ProductionSceneSerializesScript(scriptPath))
                 return;
 
             missing.Add(label);
@@ -1720,12 +1779,21 @@ namespace Hecton8.Editor.Validation
             string glassPanelRecipeGuid = AssetDatabase.AssetPathToGUID(GlassPanelRecipePath);
             string fiberMeshRecipeGuid = AssetDatabase.AssetPathToGUID(FiberMeshRecipePath);
             string hologramMaterialGuid = AssetDatabase.AssetPathToGUID(AssemblyHologramMaterialPath);
-            bool sceneTextAvailable = TryReadProjectTextFile(ProductionWorldScenePath, out string sceneText, out string sceneReadFailure);
+            // This gate needs the serialized property block - object name, m_Layer, the socket id
+            // string, the BoxCollider marker, field assignments. No dependency edge carries any of
+            // those, so unlike the presence gates above it genuinely cannot leave the text route.
+            // What it CAN do is stop pretending: when the scene is not YAML the failure is now
+            // reported as a structural limit of the instrument, with the command that answers the
+            // question, instead of as "the Forward_Fabricator object is missing".
+            bool sceneTextAvailable = TryReadProductionSceneYaml(out string sceneText, out string sceneReadFailure);
             if (!sceneTextAvailable)
             {
+                bool fabricatorPresent = ProductionSceneSerializesScript(FabricatorScriptPath);
                 result.FirstHourDrillRouteErrorCount++;
                 result.Errors.Add(
-                    $"{ProductionWorldScenePath}: failed to read production scene for first-hour fabricator route validation: {sceneReadFailure}");
+                    $"{ProductionWorldScenePath}: first-hour fabricator route is UNVERIFIED, not proven absent. {sceneReadFailure} " +
+                    $"Dependency-graph cross-check: the scene {(fabricatorPresent ? "DOES" : "does NOT")} serialize {FabricatorScriptPath}, " +
+                    "which covers component presence only and cannot confirm layer, socket id, collider, or recipe assignments.");
                 return;
             }
 
