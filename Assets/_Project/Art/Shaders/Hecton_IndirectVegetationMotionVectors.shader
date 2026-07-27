@@ -396,39 +396,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
 
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationInteraction.hlsl"
 
-            float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
-            {
-                float playerRadius = SanitizeNonNegativeFinite(_HectonPlayerRuntimePosition.w);
-                if (bendMask <= 0.0001 ||
-                    SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.w) < 0.5 ||
-                    playerRadius <= 0.0001)
-                {
-                    return float3(0.0, 0.0, 0.0);
-                }
-
-                float3 playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
-                if (!all(isfinite(playerRuntimePosition)))
-                    return float3(0.0, 0.0, 0.0);
-
-                float playerSpeed = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.x);
-                float playerPush = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.y);
-                if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
-                    return float3(0.0, 0.0, 0.0);
-
-                float3 delta = evaluationPositionWS - playerRuntimePosition;
-                delta.y *= 0.22;
-                float radiusSq = playerRadius * playerRadius;
-                float distSq = dot(delta, delta);
-                if (distSq >= radiusSq)
-                    return float3(0.0, 0.0, 0.0);
-
-                float invRadiusSq = rcp(max(radiusSq, 0.00000001));
-                float proximity = saturate(1.0 - distSq * invRadiusSq);
-                proximity *= proximity;
-                float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.08 : 0.52);
-                return (SafeNormalize3(float3(delta.x, 0.0, delta.z)) + baseNormalWS * 0.04) *
-                    (proximity * saturate(playerSpeed * 0.16) * playerPush * typeScale * bendMask);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlayerBend.hlsl"
 
             float3 ResolveBillboardPositionWS(float3 originWS, float3 localPosition, float instanceHeight, float instanceWidth, float heightMask, float3 cameraPositionWS)
             {
@@ -558,7 +526,8 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                     bendMask,
                     ResolveVegetationViewDistanceSq(animatedPositionWS),
                     historyDelta) * (_InteractionPushStrength * ResolveInteractionTypeScale(instanceType));
-                animatedPositionWS += ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType) * 1.1;
+                animatedPositionWS += ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType) *
+                    (_InteractionPushStrength * 1.1);
                 float2 stateWeights = ResolveStateBlendWeights(instanceData.RuntimeState);
                 if (stateWeights.x > 0.0001 || stateWeights.y > 0.0001)
                 {

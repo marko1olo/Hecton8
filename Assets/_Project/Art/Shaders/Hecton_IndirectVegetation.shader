@@ -1047,40 +1047,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationInteraction.hlsl"
 
-            float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
-            {
-                float playerRadius = SanitizeNonNegativeFinite(_HectonPlayerRuntimePosition.w);
-                if (bendMask <= 0.0001 ||
-                    SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.w) < 0.5 ||
-                    playerRadius <= 0.0001)
-                {
-                    return float3(0.0, 0.0, 0.0);
-                }
-
-                float3 playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
-                float playerSpeed = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.x);
-                float playerPush = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.y);
-                if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
-                    return float3(0.0, 0.0, 0.0);
-
-                if (!all(isfinite(playerRuntimePosition)))
-                    return float3(0.0, 0.0, 0.0);
-
-                float3 delta = evaluationPositionWS - playerRuntimePosition;
-                delta.y *= 0.22;
-                float radiusSq = playerRadius * playerRadius;
-                float distSq = dot(delta, delta);
-                if (distSq >= radiusSq)
-                    return float3(0.0, 0.0, 0.0);
-
-                float proximity = 1.0 - smoothstep(0.0, radiusSq, distSq);
-                proximity *= proximity;
-                float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.08 : 0.52);
-                float lift = lerp(0.01, 0.05, bendMask) * proximity * typeScale;
-                float pushStrength = saturate(playerSpeed * 0.16) * playerPush * typeScale;
-                return (SafeNormalize3(float3(delta.x, 0.0, delta.z)) + baseNormalWS * 0.04) *
-                    (proximity * pushStrength * bendMask) + float3(0.0, -lift, 0.0);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlayerBend.hlsl"
 
             float3 ResolveImpactOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask)
             {

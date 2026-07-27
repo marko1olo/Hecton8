@@ -389,47 +389,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationInteraction.hlsl"
 
-            float3 ResolvePlayerBendOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
-            {
-                // This read was _HectonPlayerAbsoluteUniversePosition.w, a global nothing ever set, so
-                // playerRadius was always 0 and the guard below always took the early return. The whole
-                // player-bend response was dead in the shadow pass ONLY: plants bent away from the player
-                // in ForwardLit while their shadows stayed in the unbent pose. FloraInteractionManager
-                // publishes _HectonPlayerRuntimePosition, which is what the other three passes read.
-                float playerRadius = SanitizeNonNegativeFinite(_HectonPlayerRuntimePosition.w);
-                if (bendMask <= 0.0001 ||
-                    SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.w) < 0.5 ||
-                    playerRadius <= 0.0001)
-                {
-                    return float3(0.0, 0.0, 0.0);
-                }
-
-                // _HectonPlayerRuntimePosition is already in runtime space, so the _GlobalFloatingOffset
-                // term that used to be added here is gone: it was reconstructing runtime space from an
-                // AUP global that was never populated, which double-counted the offset even in the
-                // hypothetical case where something had set it.
-                float3 playerRuntimePosition = _HectonPlayerRuntimePosition.xyz;
-                if (!all(isfinite(playerRuntimePosition)))
-                    return float3(0.0, 0.0, 0.0);
-
-                float playerSpeed = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.x);
-                float playerPush = SanitizeNonNegativeFinite(_HectonPlayerFloraInteractionParams.y);
-                if (playerSpeed <= 0.0001 || playerPush <= 0.0001)
-                    return float3(0.0, 0.0, 0.0);
-
-                float3 delta = evaluationPositionWS - playerRuntimePosition;
-                delta.y *= 0.22;
-                float radiusSq = playerRadius * playerRadius;
-                float distSq = dot(delta, delta);
-                if (distSq >= radiusSq)
-                    return float3(0.0, 0.0, 0.0);
-
-                float proximity = saturate(1.0 - distSq / max(radiusSq, 0.0001));
-                proximity *= proximity;
-                float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.08 : 0.52);
-                return (SafeNormalize3(float3(delta.x, 0.0, delta.z)) + baseNormalWS * 0.04) *
-                    (proximity * saturate(playerSpeed * 0.16) * playerPush * typeScale * bendMask);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlayerBend.hlsl"
 
             // Reference body from the lit pass. The old local version hardcoded a 0.85 s decay and
             // read _Time.y raw, so it knew nothing of the negative-width encoding that means a 600 s
@@ -548,7 +508,8 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                     bendMask,
                     ResolveVegetationViewDistanceSq(animatedPositionWS),
                     0.0) * (_InteractionPushStrength * ResolveInteractionTypeScale(instanceType));
-                animatedPositionWS += ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType) * 1.1;
+                animatedPositionWS += ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType) *
+                    (_InteractionPushStrength * 1.1);
                 float2 stateWeights = ResolveStateBlendWeights(instanceData.RuntimeState);
                 if (stateWeights.x > 0.0001 || stateWeights.y > 0.0001)
                 {
