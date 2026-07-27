@@ -26,10 +26,76 @@ namespace Hecton8.Gameplay
         private const string DefaultInteractText = "Break Rock";
         private const float MinimumToolPower = 0.05f;
         private const uint OutcropShardSpeciesHash = 0xC0DEFACEu;
+        private const int HarvestScarRegistryCapacity = 1024;
         private static readonly uint s_YieldDeliveryBlockedWarningHash =
             unchecked((uint)LocHash.Compute("HarvestableOutcrop.YieldDeliveryBlocked"));
         private static readonly uint s_YieldDeliveryContextHash =
             unchecked((uint)LocHash.Compute("HarvestableOutcrop.YieldDelivery"));
+
+        // COLD ALLOC: RegistryBucket<HarvestableOutcrop>[1024] - live outcrops re-checked against persisted harvest scars after a save load - owner: HarvestableOutcrop
+        private static readonly RegistryBucket<HarvestableOutcrop> s_liveOutcrops =
+            new RegistryBucket<HarvestableOutcrop>(HarvestScarRegistryCapacity);
+
+        private static readonly HarvestScarLoadListener s_harvestScarLoadListener = new HarvestScarLoadListener();
+        private static bool s_harvestScarLoadListenerRegistered;
+
+        /// <summary>
+        /// Re-applies persisted harvest scars once a save load has restored world depletion state.
+        /// Scene props enable before <see cref="WorldStateManager"/> restores its payload, so the
+        /// enable-time scar check alone would always read an empty depletion set on a fresh load.
+        /// </summary>
+        private sealed class HarvestScarLoadListener : Hecton8.SaveSystem.ISaveEventListener
+        {
+            public void OnSaveEvent(in Hecton8.SaveSystem.SaveEventPayload payload)
+            {
+                if (payload.Type != Hecton8.SaveSystem.SaveEventType.LoadCompleted)
+                    return;
+
+                ApplyPersistedHarvestScarsToLiveOutcrops();
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetHarvestScarStaticState()
+        {
+            s_liveOutcrops.Clear();
+            s_harvestScarLoadListenerRegistered = false;
+            s_YieldDeliveryBlockedCount = 0;
+        }
+
+        private static void ApplyPersistedHarvestScarsToLiveOutcrops()
+        {
+            for (int i = s_liveOutcrops.Count - 1; i >= 0; i--)
+            {
+                HarvestableOutcrop outcrop = s_liveOutcrops.GetAt(i);
+                if (outcrop == null)
+                    continue;
+
+                outcrop.TryApplyPersistedHarvestScar();
+            }
+        }
+
+        private static void RegisterLiveOutcrop(HarvestableOutcrop outcrop)
+        {
+            s_liveOutcrops.TryRegister(outcrop);
+
+            if (s_harvestScarLoadListenerRegistered || s_liveOutcrops.Count <= 0)
+                return;
+
+            Hecton8.SaveSystem.SaveEvents.Register(s_harvestScarLoadListener);
+            s_harvestScarLoadListenerRegistered = true;
+        }
+
+        private static void UnregisterLiveOutcrop(HarvestableOutcrop outcrop)
+        {
+            s_liveOutcrops.TryUnregister(outcrop);
+
+            if (!s_harvestScarLoadListenerRegistered || s_liveOutcrops.Count > 0)
+                return;
+
+            Hecton8.SaveSystem.SaveEvents.Unregister(s_harvestScarLoadListener);
+            s_harvestScarLoadListenerRegistered = false;
+        }
 
         [Header("Health")]
         [SerializeField, Range(1, 10)]
@@ -113,6 +179,12 @@ namespace Hecton8.Gameplay
         private bool _isBroken;
         private IPlayerInventoryService _playerInventoryService;
         private IPersistentDroppedItemRegistry _persistentWorldRegistry;
+        private PersistentWorldRegistry _persistentWorldScarRegistry;
+        private WorldStateManager _worldStateManager;
+        private AbsoluteUniversePosition _persistentScarAup;
+        private bool _hasPersistentScarAup;
+        private ulong _persistentScarTombstoneId;
+        private string _persistentScarLabel;
         private IAudioService _audioService;
         private IObjectPoolService _objectPool;
         private ILocalizationTextReadModel _localizationManager;
@@ -166,10 +238,13 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             ResetState();
+            RegisterLiveOutcrop(this);
+            TryApplyPersistedHarvestScar();
         }
 
         private void OnDisable()
         {
+            UnregisterLiveOutcrop(this);
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwapListener();
             StopLateFrameTicking();
@@ -178,6 +253,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            UnregisterLiveOutcrop(this);
             InteractableRegistry.InvalidateTree(this);
         }
 
@@ -209,12 +285,12 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         string IInteractable.GetInteractText()
         {
-            return allowDirectInteract ? ResolveLegacyConfigured(interactText, DefaultInteractText) : null;
+            return allowDirectInteract && !_isBroken ? ResolveLegacyConfigured(interactText, DefaultInteractText) : null;
         }
 
         public bool TryCopyInteractText(System.Span<char> destination, out int length)
         {
-            ReadOnlySpan<char> source = allowDirectInteract
+            ReadOnlySpan<char> source = allowDirectInteract && !_isBroken
                 ? _cachedInteractTextBuffer.AsSpan(0, _cachedInteractTextLength)
                 : ReadOnlySpan<char>.Empty;
             return InteractableTextCopy.TryCopy(source, destination, out length);
@@ -263,12 +339,109 @@ namespace Hecton8.Gameplay
             }
 
             _isBroken = true;
+            RefreshPersistentScarIdentity();
+            RegisterPersistentHarvestScar();
             QueueBreakEffects();
             QueueIntactRendererState(false);
             DisableIntactColliders();
             DispatchDebris(hitPoint, hitNormal, toolPower);
             DispatchYield(toolPower, hitPoint);
             QueueComponentDisable();
+        }
+
+        /// <summary>
+        /// Resolves the outcrop's stable world-scar identity from its absolute universe position.
+        /// Shares the ResourceNode tombstone id space so one consumed node maps to one persisted
+        /// scar regardless of which world-object component owns it.
+        /// </summary>
+        private void RefreshPersistentScarIdentity()
+        {
+            Vector3 runtimePosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            _hasPersistentScarAup = TryResolveAupFromRuntimeOrigin(runtimePosition, out _persistentScarAup);
+            ulong tombstoneId = _hasPersistentScarAup
+                ? PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in _persistentScarAup)
+                : 0UL;
+
+            if (tombstoneId == _persistentScarTombstoneId)
+                return;
+
+            _persistentScarTombstoneId = tombstoneId;
+            _persistentScarLabel = null;
+        }
+
+        private string ResolvePersistentScarLabel()
+        {
+            if (_persistentScarLabel != null)
+                return _persistentScarLabel;
+
+            if (_persistentScarTombstoneId == 0UL)
+                return null;
+
+            // COLD ALLOC: string[30] - stable world-scar label written into the WorldStateManager save payload - owner: HarvestableOutcrop
+            _persistentScarLabel = PersistentWorldRegistry.FormatResourceNodeTombstoneId(_persistentScarTombstoneId);
+            return _persistentScarLabel;
+        }
+
+        /// <summary>
+        /// True when this outcrop was already harvested in a previous session or earlier in this one.
+        /// </summary>
+        private bool IsPersistentlyHarvested()
+        {
+            if (_persistentScarTombstoneId == 0UL)
+                return false;
+
+            PersistentWorldRegistry scarRegistry = _persistentWorldScarRegistry;
+            if (scarRegistry != null && scarRegistry.IsResourceNodeTombstoned(_persistentScarTombstoneId))
+                return true;
+
+            WorldStateManager worldState = _worldStateManager;
+            if (worldState == null || worldState.DepletedCount <= 0)
+                return false;
+
+            string scarLabel = ResolvePersistentScarLabel();
+            return !string.IsNullOrEmpty(scarLabel) && worldState.IsNodeDepleted(scarLabel);
+        }
+
+        /// <summary>
+        /// Records the collapse as a persistent world scar on both the native tombstone route and the
+        /// save-payload depletion set, so the node stays consumed across quit/reload.
+        /// </summary>
+        private void RegisterPersistentHarvestScar()
+        {
+            if (_persistentScarTombstoneId == 0UL)
+                return;
+
+            PersistentWorldRegistry scarRegistry = _persistentWorldScarRegistry;
+            if (scarRegistry != null && _hasPersistentScarAup)
+                scarRegistry.TryRegisterDestroyedResourceNode(_persistentScarTombstoneId, in _persistentScarAup);
+
+            WorldStateManager worldState = _worldStateManager;
+            if (worldState == null)
+                return;
+
+            string scarLabel = ResolvePersistentScarLabel();
+            if (!string.IsNullOrEmpty(scarLabel))
+                worldState.RegisterDepletedNode(scarLabel);
+        }
+
+        /// <summary>
+        /// Restores the collapsed state for an outcrop that was already harvested, without replaying
+        /// the break audio, debris, or yield of a fresh collapse.
+        /// </summary>
+        private void TryApplyPersistedHarvestScar()
+        {
+            if (_isBroken || !isActiveAndEnabled)
+                return;
+
+            RefreshPersistentScarIdentity();
+            if (!IsPersistentlyHarvested())
+                return;
+
+            _isBroken = true;
+            _currentHealth = 0f;
+            ApplyIntactRendererState(false);
+            DisableIntactColliders();
+            InteractableRegistry.InvalidateTree(this);
         }
 
         private void DispatchDebris(Vector3 hitPoint, Vector3 hitNormal, float toolPower)
@@ -674,6 +847,12 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
                     _persistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
+                    _persistentWorldScarRegistry = currentService as PersistentWorldRegistry;
+                    TryApplyPersistedHarvestScar();
+                    break;
+                case GlobalRegistryServiceSlot.WorldStateRuntime:
+                    _worldStateManager = currentService as WorldStateManager;
+                    TryApplyPersistedHarvestScar();
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     CacheAudioService(currentService as IAudioService);
@@ -709,6 +888,8 @@ namespace Hecton8.Gameplay
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _persistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
+            _persistentWorldScarRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _worldStateManager = GlobalRegistry.WorldState;
             CacheAudioService(GlobalRegistry.Audio);
             CacheObjectPoolService(null);
             _localizationManager = GlobalRegistry.LocalizationText;
