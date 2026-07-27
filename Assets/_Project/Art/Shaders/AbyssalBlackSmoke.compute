@@ -39,6 +39,18 @@ float _MaxViewDistance;
 #define THREAD_GROUP_SIZE 64
 #define EPSILON 0.0001
 
+// Same 15 FPS floor Hecton_FluidAdvection clamps dt to. Without it a hitch integrates one enormous step and
+// throws the whole plume out of the vent column.
+#define ABYSSAL_SMOKE_MAX_DT 0.0666667
+
+// Ash in water is drag-dominated, not ballistic: it reaches terminal velocity in well under a second. This
+// rate gives a ~0.35 s time constant, so the plume rises at the vent's authored updraft speed instead of
+// accelerating past it. See the velocity integration for why this must exist.
+#define ABYSSAL_SMOKE_DRAG_RATE_PER_SECOND 2.85
+
+// Fraction of a particle's life spent fading in, so it does not pop into existence at the vent mouth.
+#define ABYSSAL_SMOKE_BIRTH_FADE_FRACTION 0.12
+
 float Hash11(float value)
 {
     float3 hash = frac(float3(value, value + 19.19, value + 37.37) * float3(0.1031, 0.1030, 0.0973));
@@ -87,7 +99,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     uint ventIndex = (uint)clamp(particle.VentIndex, 0.0, max(0, _ActiveVentCount - 1));
     ThermalVentGpuData vent = _ThermalVents[ventIndex];
-    float dt = max(_DeltaTime, 0.0);
+    float dt = min(max(_DeltaTime, 0.0), ABYSSAL_SMOKE_MAX_DT);
 
     particle.Lifetime += dt;
     float heightLimit = vent.PositionWS.y + vent.HeightWS;
@@ -100,8 +112,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         particle.VelocityWS = float3(0.0, vent.UpdraftVelocity * lerp(0.55, 1.05, respawnSeed), 0.0);
         particle.Lifetime = 0.0;
         particle.MaxLifetime = lerp(1.8, 5.6, Hash11(index * 0.73 + particle.Seed * 3.7));
-        particle.Alpha = 0.0;
         particle.VentIndex = ventIndex;
+        // No Alpha reset here: it was a dead store, unconditionally overwritten by the alpha resolve below.
+        // The fade-in it was reaching for is now a real birth ramp driven by Lifetime.
     }
 
     float lifeT = saturate(particle.Lifetime / max(particle.MaxLifetime, 0.001));
@@ -120,16 +133,47 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 turbulence = SafeNormalize(lateralNoise) * (_NoiseParams.x * vent.SmokeDensity);
     float upward = vent.UpdraftVelocity + (Hash11(noisePhase + 4.0) * 2.0 - 1.0) * _NoiseParams.y;
     float confinement = saturate((radialT - 0.3025) / 0.6975);
-    float3 acceleration = float3(0.0, upward, 0.0) + inward * (confinement * vent.UpdraftVelocity * 0.28) + turbulence;
 
-    particle.VelocityWS += acceleration * dt;
+    // These three terms are VELOCITIES, so they resolve to a target the particle is dragged toward - they are
+    // not an acceleration to integrate. UpdraftVelocity is a speed: it seeds VelocityWS directly at respawn
+    // above. Adding it to velocity every frame as well made one field do duty as both m/s and m/s^2, and with
+    // no drag anywhere the result grew without bound - a 2 m/s vent reached about 13 m/s across a 5.6 s life.
+    // Particles then cleared vent.HeightWS almost immediately, so expiry was driven by height alone and
+    // MaxLifetime was very nearly dead, which is why the plume read as a jet rather than buoyant smoke.
+    // Water is drag-dominated: ash reaches terminal velocity fast, and terminal velocity here is the target.
+    float3 targetVelocity =
+        float3(0.0, upward, 0.0) +
+        inward * (confinement * vent.UpdraftVelocity * 0.28) +
+        turbulence;
+
+    // Exponential relaxation, so the approach is framerate-independent rather than a raw per-frame blend.
+    float dragBlend = saturate(1.0 - exp(-ABYSSAL_SMOKE_DRAG_RATE_PER_SECOND * dt));
+    particle.VelocityWS = lerp(particle.VelocityWS, targetVelocity, dragBlend);
     particle.PositionWS += particle.VelocityWS * dt;
 
     float3 toCamera = particle.PositionWS - _CameraPositionWS;
     float maxViewDistanceSq = max(_MaxViewDistance * _MaxViewDistance, 0.001);
     float distanceFade = 1.0 - saturate(dot(toCamera, toCamera) / maxViewDistanceSq);
     float plumeFade = (1.0 - heightT) * (1.0 - radialT * 0.82);
-    particle.Alpha = saturate(plumeFade * distanceFade * vent.SmokeDensity * 0.42);
+
+    // Birth ramp. Respawned particles previously appeared at full plume alpha in the same frame they were
+    // placed, because the Alpha = 0.0 written in the respawn branch was overwritten here before it ever
+    // reached the buffer - ash popped into existence at the vent mouth. Ramping over the first slice of life
+    // also keeps the transition C1 at t=0 rather than a step.
+    float birthFade = saturate(lifeT * rcp(ABYSSAL_SMOKE_BIRTH_FADE_FRACTION));
+    birthFade *= birthFade * (3.0 - 2.0 * birthFade);
+    particle.Alpha = saturate(plumeFade * distanceFade * birthFade * vent.SmokeDensity * 0.42);
+
+    // A non-finite particle never recovers on its own: it is read back next frame and re-integrated forever.
+    // Park it invisibly at the vent so the slot recycles through the normal expiry path instead of leaking.
+    bool finiteParticle = all(isfinite(particle.PositionWS)) && all(isfinite(particle.VelocityWS));
+    if (!finiteParticle)
+    {
+        particle.PositionWS = vent.PositionWS;
+        particle.VelocityWS = float3(0.0, 0.0, 0.0);
+        particle.Lifetime = particle.MaxLifetime;
+        particle.Alpha = 0.0;
+    }
 
     _ParticlesWrite[index] = particle;
 }
