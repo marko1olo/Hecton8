@@ -84,9 +84,14 @@ float4 _VoxelSdfInvDoubleHalfExtents;
 // are supplied by CarveDebrisComputeRenderer; HectonFluidEngine passes 0 there so the kernel defaults apply.
 float4 _FluidAdvectionSdfParams;     // x=active, y=solid threshold, z=debris bounce, w=debris sleep speed sq
 
+// Magnitude test rather than isfinite: outside strict-IEEE mode the compiler is entitled to assume
+// no operand is infinite and fold isfinite() to true, deleting this guard from the compiled kernel.
+// A bounds test survives that fold, and NaN fails every ordered comparison, so both corruption
+// modes are still rejected. Squared world-space magnitudes here peak around 1e8, so the 1.0e32
+// ceiling never clips a legitimate value. Same idiom Hecton_MarineSnow.compute already uses.
 float3 Sanitize(float3 value)
 {
-    return all(isfinite(value)) ? value : float3(0.0, 0.0, 0.0);
+    return dot(value, value) < 1.0e32 ? value : float3(0.0, 0.0, 0.0);
 }
 
 float3 SafeNormalize(float3 value, float3 fallback)
@@ -423,7 +428,7 @@ void AdvectCarveDebris(uint3 id : SV_DispatchThreadID)
     particle.w = lerp(particle.w, resolvedLife, liveMask);
     velocity = lerp(velocityPacked.xyz, velocity, liveMask);
 
-    float finiteMask = (all(isfinite(particle)) && all(isfinite(velocity))) ? 1.0 : 0.0;
+    float finiteMask = (dot(particle, particle) < 1.0e32 && dot(velocity, velocity) < 1.0e32) ? 1.0 : 0.0;
     particle = lerp(float4(0.0, 0.0, 0.0, 0.0), particle, finiteMask);
     velocity = lerp(float3(0.0, 0.0, 0.0), velocity, finiteMask);
 
@@ -440,7 +445,7 @@ void CullCarveDebrisForRender(uint3 id : SV_DispatchThreadID)
         return;
 
     float4 particle = _CarveDebrisRead[index];
-    float finiteMask = all(isfinite(particle)) ? 1.0 : 0.0;
+    float finiteMask = dot(particle, particle) < 1.0e32 ? 1.0 : 0.0;
     float liveMask = step(0.000001, particle.w);
     float3 delta = particle.xyz - _CarveDebrisCameraParams.xyz;
     float distanceSq = dot(delta, delta);

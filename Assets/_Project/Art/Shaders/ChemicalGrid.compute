@@ -72,6 +72,10 @@ void DiffuseChemicalGrid(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     // A single NaN in a diffusion grid is not a local defect: it reaches every neighbour on the next step
     // and never leaves. Cheaper to reject it here than to debug a globally poisoned grid.
-    result = all(isfinite(result)) ? result : float4(0.0, 0.0, 0.0, 0.0);
+    // Magnitude test rather than isfinite: outside strict-IEEE mode the compiler may assume no operand is
+    // infinite and fold isfinite() to true, deleting this guard. NaN fails every ordered comparison, so the
+    // bounds form still rejects it. Intensities are clamped to _ChemicalGridMaxIntensity on the next line,
+    // so a legitimate squared sum is nowhere near the 1.0e32 ceiling.
+    result = dot(result, result) < 1.0e32 ? result : float4(0.0, 0.0, 0.0, 0.0);
     _ChemicalGridTarget[index] = min(max(result, 0.0), _ChemicalGridMaxIntensity.xxxx);
 }

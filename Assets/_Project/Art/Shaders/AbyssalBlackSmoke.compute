@@ -166,7 +166,11 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     // A non-finite particle never recovers on its own: it is read back next frame and re-integrated forever.
     // Park it invisibly at the vent so the slot recycles through the normal expiry path instead of leaking.
-    bool finiteParticle = all(isfinite(particle.PositionWS)) && all(isfinite(particle.VelocityWS));
+    // Magnitude test rather than isfinite: outside strict-IEEE mode the compiler may assume no operand is
+    // infinite and fold isfinite() to true, which would delete the very guard this comment describes. NaN
+    // fails every ordered comparison, so the bounds form still rejects both corruption modes.
+    bool finiteParticle = dot(particle.PositionWS, particle.PositionWS) < 1.0e32 &&
+        dot(particle.VelocityWS, particle.VelocityWS) < 1.0e32;
     if (!finiteParticle)
     {
         particle.PositionWS = vent.PositionWS;
