@@ -398,16 +398,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
 
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlayerBend.hlsl"
 
-            float3 ResolveBillboardPositionWS(float3 originWS, float3 localPosition, float instanceHeight, float instanceWidth, float heightMask, float3 cameraPositionWS)
-            {
-                float3 cameraDelta = cameraPositionWS - originWS;
-                float3 cameraForwardXZ = SafeNormalize3(float3(cameraDelta.x, 0.0, cameraDelta.z));
-                float3 billboardRight = SafeNormalize3(float3(cameraForwardXZ.z, 0.0, -cameraForwardXZ.x));
-                float3 billboardUp = float3(0.0, 1.0, 0.0);
-                float widthAtHeight = instanceWidth * lerp(1.0, 0.42, heightMask) * max(_HectonVegetationRuntimeDrawParams.y, 0.25);
-                float heightScale = instanceHeight * max(_HectonVegetationRuntimeDrawParams.z, 0.25);
-                return originWS + billboardRight * (localPosition.x * widthAtHeight) + billboardUp * (heightMask * heightScale);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationBillboard.hlsl"
 
             float ResolveOrganicEntropyProgress(float encodedHeightScale, float encodedWidthScale, float timeValue)
             {

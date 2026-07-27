@@ -389,6 +389,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationInteraction.hlsl"
 
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationBillboard.hlsl"
             #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationPlayerBend.hlsl"
 
             // Reference body from the lit pass. The old local version hardcoded a 0.85 s decay and
@@ -516,6 +517,22 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                     float statePhase = TriangleSigned(timeValue * (1.35 + max(instanceData.PulseFrequency, 0.05)) + instanceNoise * 9.0 + heightMask * 3.2);
                     animatedPositionWS.xz += ResolvePlanarCurrentDirection() * (statePhase * bendMask * 0.16 * stateWeights.x);
                     animatedPositionWS.y -= instanceHeight * bendMask * (0.06 * stateWeights.x + 0.18 * stateWeights.y);
+                }
+
+                // The shadow pass had no far-LOD branch at all, so past the threshold the visible
+                // flora was a camera-facing quad while its shadow still came from the detail-mesh
+                // pose. Matches DepthOnly exactly, including the 0.85 flow-synchrony weight. The
+                // view position is the CAMERA, not _WorldSpaceCameraPos - that is the light here.
+                if (_HectonVegetationRuntimeLodParams.x >= 0.5)
+                {
+                    animatedPositionWS = ResolveBillboardPositionWS(
+                        originWS + driftOffsetWS,
+                        localPosition,
+                        instanceHeight,
+                        instanceWidth,
+                        heightMask,
+                        ResolveVegetationViewPositionWS());
+                    animatedPositionWS += flowSynchronyOffset * 0.85;
                 }
 
                 float seasonalDecayWeight =

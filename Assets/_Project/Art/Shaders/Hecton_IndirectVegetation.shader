@@ -1150,19 +1150,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return flowVector * strengthScale;
             }
 
-            float3 ResolveBillboardPositionWS(float3 originWS, float3 localPosition, float instanceHeight, float instanceWidth, float heightMask)
-            {
-                float3 cameraDelta = _WorldSpaceCameraPos - originWS;
-                float3 cameraForwardXZ = SafeNormalize3(float3(cameraDelta.x, 0.0, cameraDelta.z));
-                float3 billboardRight = SafeNormalize3(float3(cameraForwardXZ.z, 0.0, -cameraForwardXZ.x));
-                float3 billboardUp = float3(0.0, 1.0, 0.0);
-                float widthAtHeight = instanceWidth * lerp(1.0, 0.42, heightMask) * max(_HectonVegetationRuntimeDrawParams.y, 0.25);
-                float heightScale = instanceHeight * max(_HectonVegetationRuntimeDrawParams.z, 0.25);
-
-                return originWS +
-                    billboardRight * (localPosition.x * widthAtHeight) +
-                    billboardUp * (heightMask * heightScale);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationBillboard.hlsl"
 
             float ResolveOrganicEntropyProgress(float encodedHeightScale, float encodedWidthScale, float timeValue)
             {
@@ -1724,7 +1712,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                             FastSinApprox(farPhase) * (_SargassumWaveAmplitude * lerp(0.9, 0.24, oceanLiftBlend));
                     }
 
-                    animatedPositionWS = ResolveBillboardPositionWS(renderOriginWS, localPosition, instanceHeight, instanceWidth, heightMask);
+                    animatedPositionWS = ResolveBillboardPositionWS(renderOriginWS, localPosition, instanceHeight, instanceWidth, heightMask, ResolveVegetationViewPositionWS());
 
                     float2 farFlow = ResolvePlanarOceanFlowDirection(currentVector + float2(FastSinApprox(farPhase), FastCosApprox(farPhase * 0.83)) * currentStrength);
                     float farStateSwayScale = lerp(1.0, 1.18, agitatedWeight) * lerp(1.0, 0.58, dyingWeight);

@@ -408,16 +408,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 return impactOffset * bendMask;
             }
 
-            float3 ResolveBillboardPositionWS(float3 originWS, float3 localPosition, float instanceHeight, float instanceWidth, float heightMask)
-            {
-                float3 cameraDelta = _WorldSpaceCameraPos - originWS;
-                float3 cameraForwardXZ = SafeNormalize3(float3(cameraDelta.x, 0.0, cameraDelta.z));
-                float3 billboardRight = SafeNormalize3(float3(cameraForwardXZ.z, 0.0, -cameraForwardXZ.x));
-                float3 billboardUp = float3(0.0, 1.0, 0.0);
-                float widthAtHeight = instanceWidth * lerp(1.0, 0.42, heightMask) * max(_HectonVegetationRuntimeDrawParams.y, 0.25);
-                float heightScale = instanceHeight * max(_HectonVegetationRuntimeDrawParams.z, 0.25);
-                return originWS + billboardRight * (localPosition.x * widthAtHeight) + billboardUp * (heightMask * heightScale);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationBillboard.hlsl"
 
             // Reference body from the lit pass. The old local version hardcoded a 0.85 s decay and
             // read _Time.y raw, so it knew nothing of the negative-width encoding that means a 600 s
@@ -549,7 +540,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
 
                 if (_HectonVegetationRuntimeLodParams.x >= 0.5)
                 {
-                    animatedPositionWS = ResolveBillboardPositionWS(originWS + driftOffsetWS, localPosition, instanceHeight, instanceWidth, heightMask);
+                    animatedPositionWS = ResolveBillboardPositionWS(originWS + driftOffsetWS, localPosition, instanceHeight, instanceWidth, heightMask, ResolveVegetationViewPositionWS());
                     animatedPositionWS += flowSynchronyOffset * 0.85;
                 }
 
