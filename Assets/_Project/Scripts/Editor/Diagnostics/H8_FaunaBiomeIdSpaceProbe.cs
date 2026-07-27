@@ -62,6 +62,8 @@ namespace Hecton8.EditorTools.Diagnostics
                 return;
             }
 
+            ReportFaunaDirectorOwnership();
+
             // One Unity boot, several scenes: opening the editor costs minutes, opening a scene
             // costs seconds.
             bool anyComparisonMade = false;
@@ -87,6 +89,78 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             EditorApplication.Exit(allConsistent ? 0 : 1);
+        }
+
+        /// <summary>
+        /// Answers "does ANY scene or prefab in the project reference FaunaDirector at all", without
+        /// opening anything. Scene .unity files here are binary-serialized, so a text grep for the
+        /// script GUID returns a false negative; the dependency graph does not have that blind spot.
+        /// Needed because the sweep can only afford to open a handful of scenes, and "absent from the
+        /// three I opened" is a much weaker claim than "referenced by nothing".
+        /// </summary>
+        private static void ReportFaunaDirectorOwnership()
+        {
+            string scriptPath = null;
+            string[] scriptGuids = AssetDatabase.FindAssets("FaunaDirector t:MonoScript");
+            for (int i = 0; i < scriptGuids.Length; i++)
+            {
+                string candidate = AssetDatabase.GUIDToAssetPath(scriptGuids[i]);
+                if (candidate.EndsWith("/FaunaDirector.cs", StringComparison.OrdinalIgnoreCase))
+                {
+                    scriptPath = candidate;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(scriptPath))
+            {
+                Debug.LogWarning("[H8_FAUNABIOMEID] OWNERSHIP - could not locate the FaunaDirector script asset.");
+                return;
+            }
+
+            Debug.Log(string.Format(
+                CultureInfo.InvariantCulture,
+                "[H8_FAUNABIOMEID] OWNERSHIP scanning dependants of {0}",
+                scriptPath));
+
+            ReportDependants(scriptPath, "t:Scene", "scene");
+            ReportDependants(scriptPath, "t:Prefab", "prefab");
+        }
+
+        private static void ReportDependants(string scriptPath, string filter, string label)
+        {
+            string[] guids = AssetDatabase.FindAssets(filter);
+            int referencing = 0;
+            StringBuilder owners = new StringBuilder();
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (string.IsNullOrEmpty(assetPath) || !assetPath.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string[] dependencies = AssetDatabase.GetDependencies(assetPath, true);
+                for (int d = 0; d < dependencies.Length; d++)
+                {
+                    if (!string.Equals(dependencies[d], scriptPath, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    referencing++;
+                    if (owners.Length > 0)
+                        owners.Append(", ");
+
+                    owners.Append(assetPath);
+                    break;
+                }
+            }
+
+            Debug.Log(string.Format(
+                CultureInfo.InvariantCulture,
+                "[H8_FAUNABIOMEID] OWNERSHIP {0}s scanned={1} referencing FaunaDirector={2}{3}",
+                label,
+                guids.Length,
+                referencing,
+                referencing > 0 ? " -> " + owners : " (NONE)"));
         }
 
         private enum ProbeOutcome
