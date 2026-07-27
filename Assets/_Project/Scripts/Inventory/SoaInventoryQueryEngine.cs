@@ -147,6 +147,14 @@ namespace Hecton8.Inventory
         public const int TelemetryCapacity = 300;
         public const int DefaultSlotCapacity = 512;
         public const int CapacityProfileCapacity = 64;
+
+        /// <summary>
+        /// Sentinel for <see cref="ResolveScanWindow"/>: scan every slot from the start offset to the
+        /// end of the shortest bound lane. A requested count of zero means "the active region is
+        /// empty", never "scan everything".
+        /// </summary>
+        public const int ScanToBufferEnd = -1;
+
         public const int QueryResultDtoSizeBytes = 32;
         public const int MutationResultDtoSizeBytes = 32;
         public const int CapacityProfileDtoSizeBytes = 32;
@@ -829,6 +837,32 @@ namespace Hecton8.Inventory
             return buffer;
         }
 
+        /// <summary>
+        /// Resolves the half-open slot window [<paramref name="scanStart"/>, <paramref name="scanEnd"/>)
+        /// a hash scan is allowed to touch. Every call site feeds an ACTIVE SLOT COUNT here, so
+        /// <paramref name="requestedSlotCount"/> == 0 means the inventory holds nothing and the window
+        /// must be empty. Only <see cref="ScanToBufferEnd"/> (any negative value) opens the window to
+        /// the end of the shortest bound lane; the SOA tail past the active region is uninitialized
+        /// vault memory and matching a stale hash there routes a pickup into a slot no consumer reads.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ResolveScanWindow(
+            int hashLaneLength,
+            int quantityLaneLength,
+            int slotStart,
+            int requestedSlotCount,
+            out int scanStart,
+            out int scanEnd)
+        {
+            int laneLength = math.min(math.max(0, hashLaneLength), math.max(0, quantityLaneLength));
+            scanStart = math.clamp(slotStart, 0, laneLength);
+            int available = laneLength - scanStart;
+            int count = requestedSlotCount < 0
+                ? available
+                : math.min(requestedSlotCount, available);
+            scanEnd = scanStart + math.max(0, count);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void ScanHashQuantity(
             NativeArray<uint> itemHashIds,
@@ -852,11 +886,13 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            int start = math.clamp(slotStart, 0, itemHashIds.Length);
-            int count = requestedSlotCount > 0
-                ? math.min(requestedSlotCount, itemHashIds.Length - start)
-                : itemHashIds.Length - start;
-            int end = start + math.max(0, math.min(count, quantities.Length - start));
+            ResolveScanWindow(
+                itemHashIds.Length,
+                quantities.Length,
+                slotStart,
+                requestedSlotCount,
+                out int start,
+                out int end);
             int cursor = start;
             if (X86.Avx2.IsAvx2Supported)
             {
@@ -1428,7 +1464,10 @@ namespace Hecton8.Inventory
                     return;
 
                 int active = ResolveActiveSlotCount(ItemHashIDs, ActiveSlotCount);
-                int requested = RequestedSlotCount > 0 ? math.min(RequestedSlotCount, active - math.clamp(SlotStart, 0, active)) : active;
+                int availableFromStart = active - math.clamp(SlotStart, 0, active);
+                int requested = RequestedSlotCount > 0
+                    ? math.min(RequestedSlotCount, availableFromStart)
+                    : availableFromStart;
                 ScanHashQuantity(
                     ItemHashIDs,
                     Quantities,
