@@ -203,7 +203,20 @@ namespace Hecton8.World
         [FieldOffset(48)] public uint Lz4ErrorCount;
         [FieldOffset(52)] public uint QueueOverflowCount;
         [FieldOffset(56)] public uint LayoutValid;
-        [FieldOffset(60)] public uint _pad0;
+
+        /// <summary>
+        /// Cumulative count of chunk slots freed by <see cref="EvictStaleChunksJob"/> since Initialize.
+        /// </summary>
+        /// <remarks>
+        /// R100: streaming.md lists "missing release ledger" as an explicit rejection gate, and the
+        /// eviction path had no observable output at all - the job wrote FreedSlots/FreedSlotCount and
+        /// nothing in the project ever read them. This is also the proof artifact for the cull-radius
+        /// invariant: with a stationary camera this value must go FLAT. A steadily climbing count while
+        /// the camera is parked is the eviction-thrash signature returning.
+        /// Occupies the former _pad0 slot, so the explicit 64-byte layout and every other FieldOffset
+        /// are unchanged.
+        /// </remarks>
+        [FieldOffset(60)] public uint EvictedChunks;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

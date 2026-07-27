@@ -189,6 +189,7 @@ namespace Hecton8.World
         private long _pendingResidencyStartTimestamp;
         private int _pendingResidency;
         private int _pendingEviction;
+        private uint _evictedChunksTotal;
         private int _deferredShutdown;
         private int _cameraAupSequence;
         private long _cameraAupBitsX;
@@ -1023,6 +1024,7 @@ namespace Hecton8.World
             _frameId = 0u;
             _pendingResidency = 0;
             _pendingEviction = 0;
+            _evictedChunksTotal = 0u;
             _pendingResidencyStartTimestamp = 0L;
             _pendingResidencyHandle = default;
             _pendingEvictionHandle = default;
@@ -1216,6 +1218,19 @@ namespace Hecton8.World
                 return false;
 
             _pendingEviction = 0;
+
+            // R100: fold the job's freed-slot count into the release ledger. This is the only reader of
+            // FreedSlotCount in the project - the eviction path previously produced no observable output,
+            // which streaming.md rejects and which made eviction thrash impossible to see in the tuner.
+            // Safe to read here and only here: the fence above proves the job is complete.
+            if (TryReadOnlyArray(in _freedCountHandle, _freedCountLength, out NativeArray<int>.ReadOnly freedCountView) &&
+                freedCountView.Length > 0)
+            {
+                int freedThisPass = freedCountView[0];
+                if (freedThisPass > 0)
+                    _evictedChunksTotal += (uint)freedThisPass;
+            }
+
             return true;
         }
 
@@ -2219,6 +2234,7 @@ namespace Hecton8.World
                 counters.ActiveChunks = active;
                 counters.LoadingChunks = loading;
                 counters.StaleChunks = stale;
+                counters.EvictedChunks = _evictedChunksTotal;
                 counters.PendingRequests = pendingLoads;
                 counters.PendingResults = pendingResults;
                 counters.LatencyEwmaMs = tuning.LatencyEwmaMs;
