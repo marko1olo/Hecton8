@@ -69,11 +69,21 @@ namespace Hecton8.Tools
         private static IDataVault _schedulerBufferGuardVault;
         private static ulong _schedulerBufferGuardMask;
         private static bool _schedulerBufferGuardActive;
+        private static readonly LaserCutterDodLateFramePump _lateFramePump = new LaserCutterDodLateFramePump();
+        private static bool _lateFramePumpRegistered;
+        private static bool _hasQueuedCutRequests;
+        private static float _lastPublishedToolHeat01;
+
+        // COMMON_SENSE.md:17 - the cutter probe marches the voxel SDF only. Trigger volumes and the
+        // water surface must never answer it, so the mask is explicit and never the -1 catch-all.
+        private static readonly int CutterProbeLayerMask =
+            HectonLayerMasks.VoxelCaveLayerMask | HectonLayerMasks.VoxelProxyLayerMask;
 
         public static bool EnsureInitialized(IDataVault vault)
         {
             if (vault == null)
             {
+                TryUnregisterLateFramePump();
                 ReleaseCoreBufferGuard();
                 ReleaseSchedulerBufferGuard();
                 ReleaseVaultHandles(_dataVault);
@@ -104,6 +114,7 @@ namespace Hecton8.Tools
                 CacheScalabilityStateHandle();
                 RefreshCachedGlobalQualityWeight();
                 EnsureTuningSeeded();
+                TryRegisterLateFramePump();
             }
 
             return ready;
@@ -212,6 +223,7 @@ namespace Hecton8.Tools
                 };
 
                 requestCount[0] = index + 1;
+                _hasQueuedCutRequests = true;
                 if (counters.IsCreated && counters.Length > 0)
                 {
                     LaserCutterCountersDTO counter = counters[0];
@@ -281,6 +293,7 @@ namespace Hecton8.Tools
                 DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
 
                 requestCount[0] = safeCount;
+                _hasQueuedCutRequests = true;
 
                 if (counters.IsCreated && counters.Length > 0)
                 {
@@ -300,6 +313,83 @@ namespace Hecton8.Tools
 #else
             return false;
 #endif
+        }
+
+        /// <summary>
+        /// Resolves which half of the probe/evaluate job pair the late-frame pump must advance.
+        /// Pure decision state: no vault, no jobs, no Unity types, so it is unit-testable in isolation.
+        /// </summary>
+        /// <param name="vaultBound">True when a DataVault is currently bound to this runtime.</param>
+        /// <param name="scheduledProbeActive">True when the SDF probe job is in flight.</param>
+        /// <param name="scheduledEvaluationActive">True when the evaluation job is in flight.</param>
+        /// <param name="hasQueuedRequests">True when a cut request was staged since the last schedule.</param>
+        /// <returns>The action the pump must perform this late frame.</returns>
+        public static LaserCutterDodPumpAction ResolvePumpAction(
+            bool vaultBound,
+            bool scheduledProbeActive,
+            bool scheduledEvaluationActive,
+            bool hasQueuedRequests)
+        {
+            if (!vaultBound)
+                return LaserCutterDodPumpAction.Idle;
+
+            if (scheduledProbeActive || scheduledEvaluationActive)
+                return LaserCutterDodPumpAction.AdvanceScheduledBatch;
+
+            return hasQueuedRequests
+                ? LaserCutterDodPumpAction.ScheduleProbeBatch
+                : LaserCutterDodPumpAction.Idle;
+        }
+
+        /// <summary>
+        /// Owner-local late-frame drain for the staged cut batch. The tool stages requests through
+        /// <see cref="QueueLiveRequest"/>; without this pump nothing schedules the probe/evaluate jobs,
+        /// so the request ring saturates at <see cref="LaserCutterDodConstants.MaxRequests"/> and the
+        /// battery drain, burn decal, and spark results are never produced or published.
+        /// </summary>
+        internal static void PumpScheduledCutBatch()
+        {
+            LaserCutterDodPumpAction action = ResolvePumpAction(
+                _dataVault != null,
+                _scheduledSdfProbeActive,
+                _scheduledEvaluationActive,
+                _hasQueuedCutRequests);
+
+            switch (action)
+            {
+                case LaserCutterDodPumpAction.AdvanceScheduledBatch:
+                    TryCompleteScheduledSdfProbesAndEvaluate(_lastPublishedToolHeat01);
+                    break;
+
+                case LaserCutterDodPumpAction.ScheduleProbeBatch:
+                    // Cleared before the attempt: a failed schedule leaves the staged rows in the ring
+                    // for the next request, and a suppressed batch already zeroed the ring itself.
+                    _hasQueuedCutRequests = false;
+                    TryScheduleSdfProbeBatch(
+                        CutterProbeLayerMask,
+                        QueryTriggerInteraction.Ignore,
+                        ResolveCurrentFrameId());
+                    break;
+            }
+        }
+
+        private static void TryRegisterLateFramePump()
+        {
+            if (_lateFramePumpRegistered)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFramePumpRegistered = GlobalRegistry.TryRegisterLateFrameTickable(_lateFramePump, PriorityLayer.Player);
+        }
+
+        private static void TryUnregisterLateFramePump()
+        {
+            if (!_lateFramePumpRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(_lateFramePump, PriorityLayer.Player);
+            _lateFramePumpRegistered = false;
         }
 
         public static bool TryScheduleSdfProbeBatch(int layerMask, QueryTriggerInteraction queryTriggerInteraction, uint frame)
@@ -603,6 +693,11 @@ namespace Hecton8.Tools
 
         public static void StageGpuSparkSignal(double3 hitAup, float3 normal, float heat01, float cuttingPower01, uint toolHashID, uint parentEntityID, uint frame)
         {
+            // The tool owns heat truth; this is the only route on which it hands that value to the DOD
+            // runtime, so the last published value is cached for the evaluation job rather than mirrored
+            // into a second owner. It is staged on hit frames only and is therefore last-known, not live.
+            _lastPublishedToolHeat01 = math.saturate(math.isfinite(heat01) ? heat01 : 0f);
+
             LaserCutterTuningDTO tuning = ReadTuningOrDefaultNoAcquire();
             float quality = Smooth01(_cachedGlobalQualityWeight);
             float intensity = math.saturate((0.35f + heat01 * 0.65f) * (0.55f + cuttingPower01 * 0.45f));
@@ -1743,6 +1838,8 @@ namespace Hecton8.Tools
             _cachedGlobalQualityWeight = 1f;
             _cachedPresentationOriginAup = double3.zero;
             _hasCachedPresentationOriginAup = false;
+            _hasQueuedCutRequests = false;
+            _lastPublishedToolHeat01 = 0f;
             ClearScheduledSdfProbePresentationOrigin();
             ClearScheduledEvaluationPresentationOrigin();
         }
@@ -1842,6 +1939,34 @@ namespace Hecton8.Tools
         private static ulong Mix(ulong hash, uint value)
         {
             return (hash ^ value) * 1099511628211UL;
+        }
+    }
+
+    /// <summary>
+    /// Work the laser cutter late-frame pump may perform on a single dispatcher pass.
+    /// </summary>
+    public enum LaserCutterDodPumpAction : byte
+    {
+        /// <summary>No vault is bound, or no cut request is staged.</summary>
+        Idle = 0,
+
+        /// <summary>Requests are staged and the probe job pair is free; schedule the batch.</summary>
+        ScheduleProbeBatch = 1,
+
+        /// <summary>A probe or evaluation job is in flight; poll it and advance the state machine.</summary>
+        AdvanceScheduledBatch = 2
+    }
+
+    /// <summary>
+    /// Dispatcher-owned late-frame drain for <see cref="LaserCutterDodRuntime"/>. It is registered by
+    /// the runtime when its vault binds and unregistered when the vault is released, so the job state
+    /// machine is owned by the runtime instead of being hand-driven by every tool call site.
+    /// </summary>
+    internal sealed class LaserCutterDodLateFramePump : ILateFrameTickable
+    {
+        public void LateFrameTick()
+        {
+            LaserCutterDodRuntime.PumpScheduledCutBatch();
         }
     }
 }
