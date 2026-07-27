@@ -65,10 +65,22 @@ namespace Hecton8.EditorTools.Diagnostics
             int errors = 0;
             int warnings = 0;
 
-            for (int pathIndex = 0; pathIndex < requestedPaths.Count; pathIndex++)
+            // Async compilation lets the importer return before the compiler has produced any
+            // message, which would have this gate read an empty list and report a pass.
+            bool restoreAsyncCompilation = ShaderUtil.allowAsyncCompilation;
+            ShaderUtil.allowAsyncCompilation = false;
+
+            try
             {
-                string path = requestedPaths[pathIndex];
-                errors += InspectSingleAsset(path, ref warnings);
+                for (int pathIndex = 0; pathIndex < requestedPaths.Count; pathIndex++)
+                {
+                    string path = requestedPaths[pathIndex];
+                    errors += InspectSingleAsset(path, ref warnings);
+                }
+            }
+            finally
+            {
+                ShaderUtil.allowAsyncCompilation = restoreAsyncCompilation;
             }
 
             string resultLine =
@@ -115,29 +127,46 @@ namespace Hecton8.EditorTools.Diagnostics
             int assetErrors = 0;
             int assetWarnings = 0;
 
-            if (ShaderUtil.GetComputeShaderMessageCount(compute) > 0)
-            {
-                CountAndLogMessages(
-                    path, ShaderUtil.GetComputeShaderMessages(compute), ref assetErrors, ref assetWarnings);
-            }
-
-            // Stands in for the missing Shader.isSupported: a kernel the compiler rejected is
-            // absent from the built asset even though the asset still loads non-null, which
-            // would otherwise read as a clean pass.
+            // Measured, not assumed: the importer enumerates kernels straight from the #pragma
+            // list and defers backend codegen, so HasKernel answers true for a kernel whose body
+            // does not compile and the message list is still empty at this point. Asking for a
+            // kernel's thread group sizes is the cheapest call that needs real reflection data
+            // off the compiled kernel, so it forces the codegen the importer skipped.
             List<string> declaredKernels = ReadDeclaredKernelNames(path);
             int liveKernels = 0;
 
             for (int kernelIndex = 0; kernelIndex < declaredKernels.Count; kernelIndex++)
             {
                 string kernelName = declaredKernels[kernelIndex];
-                if (compute.HasKernel(kernelName))
+                if (!compute.HasKernel(kernelName))
                 {
-                    liveKernels++;
+                    Debug.LogError($"{Marker} MISSING_KERNEL {Path.GetFileName(path)}:{kernelName}");
+                    assetErrors++;
                     continue;
                 }
 
-                Debug.LogError($"{Marker} MISSING_KERNEL {Path.GetFileName(path)}:{kernelName}");
-                assetErrors++;
+                liveKernels++;
+
+                try
+                {
+                    compute.GetKernelThreadGroupSizes(
+                        compute.FindKernel(kernelName), out uint _, out uint _, out uint _);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogError(
+                        $"{Marker} KERNEL_NOT_COMPILED {Path.GetFileName(path)}:{kernelName} " +
+                        $"{exception.GetType().Name} {exception.Message}");
+                    assetErrors++;
+                }
+            }
+
+            // Queried only after the forced realisation above, otherwise the list is read before
+            // the compiler has had anything to say about the kernel bodies.
+            if (ShaderUtil.GetComputeShaderMessageCount(compute) > 0)
+            {
+                CountAndLogMessages(
+                    path, ShaderUtil.GetComputeShaderMessages(compute), ref assetErrors, ref assetWarnings);
             }
 
             warnings += assetWarnings;
