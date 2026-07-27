@@ -1412,6 +1412,29 @@ namespace Hecton8.World
         /// cold tick; with it the degradation is stated exactly once per session.
         /// </summary>
         private bool _sectorFoodHeatmapUnboundReported;
+
+        /// <summary>Latches the one-time unreachable-migration-threshold warning.</summary>
+        private bool _migrationFoodThresholdFloorReported;
+
+        /// <summary>
+        /// Lowest food density a sector can reach with no harvest pressure and no algae bloom, i.e. from
+        /// terrain and biome alone. Assembled from three literals that live in
+        /// <see cref="ResolveSectorBaseFoodCapacity01"/> and <see cref="ResolveSectorFoodDensity01"/>:
+        /// the hash-fallback base <c>0.42</c> at its zero roll, plus the scarce-lane bias <c>-0.04</c>.
+        /// <para>
+        /// Named because it is a real constraint that is invisible at the point where it matters. A
+        /// designer tuning <c>migrationFoodThreshold01</c> cannot see that any value at or below this
+        /// floor makes starvation-driven migration unreachable from terrain - only player harvest
+        /// (<c>-0.35</c>) or an algae bloom (<c>-0.45</c>) can push food under it.
+        /// </para>
+        /// <para>
+        /// This tracks the HASH fallback, which is the only live path today (see the unbound-heatmap
+        /// warning). If <c>BindSectorFoodDensityHeatmap</c> is ever wired, the real floor drops to 0 and
+        /// this constant becomes wrong - update it in the same change, or food migration will switch on
+        /// abruptly across the whole world.
+        /// </para>
+        /// </summary>
+        private const float NaturalSectorFoodFloor01 = 0.38f;
         private VaultBufferView<EcosystemIndexEntry> _sectorIndexEntries;
         private VaultBufferView<ApexTerritorySample> _apexTerritorySamples;
         private VaultBufferView<ApexTerritoryOverlapResult> _apexTerritoryOverlapResults;
@@ -5111,6 +5134,23 @@ namespace Hecton8.World
                     "[EcosystemDirector] Sector food heatmap is unbound - BindSectorFoodDensityHeatmap " +
                     "is never called, so sector base food capacity is a coordinate hash, not terrain. " +
                     "Geology affects food only as a bias. Bind the heatmap or retire the API.",
+                    this);
+            }
+
+            // Starvation migration fires on state.FoodDensity01 < migrationFoodThreshold01. With the
+            // threshold at or under the natural floor, terrain and biome can never trigger it - only
+            // harvest pressure or an algae bloom can. That is a tuning trap, not an error, so it is
+            // reported rather than clamped: silently raising a designer-authored threshold would be
+            // worse than saying the value is inert.
+            if (!_migrationFoodThresholdFloorReported &&
+                migrationFoodThreshold01 <= NaturalSectorFoodFloor01)
+            {
+                _migrationFoodThresholdFloorReported = true;
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[EcosystemDirector] migrationFoodThreshold01 is at or below the natural sector food " +
+                    "floor (0.38 = base 0.42 + scarce bias -0.04), so no sector can starve from terrain " +
+                    "alone and food-driven migration only fires under harvest pressure or an algae bloom. " +
+                    "Raise it above the floor to let poor terrain drive migration.",
                     this);
             }
 
