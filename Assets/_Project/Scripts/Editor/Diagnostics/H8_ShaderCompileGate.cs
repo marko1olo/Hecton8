@@ -116,10 +116,10 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (ShaderUtil.GetShaderMessageCount(shader) > 0)
             {
-                ShaderMessage[] messages = ShaderUtil.GetShaderMessages(shader);
+                var messages = ShaderUtil.GetShaderMessages(shader);
                 for (int messageIndex = 0; messageIndex < messages.Length; messageIndex++)
                 {
-                    ShaderMessage message = messages[messageIndex];
+                    var message = messages[messageIndex];
                     if (message.severity == ShaderCompilerMessageSeverity.Error)
                         assetErrors++;
                     else
