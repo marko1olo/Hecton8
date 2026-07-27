@@ -36,18 +36,28 @@ namespace Hecton8.EditorTools.Diagnostics
         private const string Marker = "[H8_PLAYPROBE]";
         private const string DefaultScene = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
         private const int DefaultWarmupFrames = 240;
-        private const double HardTimeoutSeconds = 240.0;
+        private static double _hardTimeoutSeconds = 240.0;
 
         private enum Phase
         {
             Idle,
             WaitingForPlayMode,
             WarmingUp,
+            LoadingMenu,
+            MenuWarmup,
             StartingGame,
             GameplayWarmup,
             Reporting,
             LeavingPlayMode,
         }
+
+        private const string MenuSceneName = "01_MAIN_MENU";
+        private const int MenuWarmupFrames = 120;
+
+        // How long to let the game bring up its OWN menu before loading one. The first version
+        // raced it and ended up with two copies of 01_MAIN_MENU loaded at once, pressing New Game
+        // while a scene load was already in flight.
+        private const int MenuWaitFrames = 900;
 
         private static Phase _phase = Phase.Idle;
         private static double _startedAt;
@@ -56,6 +66,8 @@ namespace Hecton8.EditorTools.Diagnostics
         private static int _warmupFrames = DefaultWarmupFrames;
         private static int _gameplayFramesTarget;
         private static bool _startNewGame;
+        private static int _menuFrames;
+        private static AsyncOperation _menuLoad;
         private static int _failures;
 
         public static void Run()
@@ -68,6 +80,7 @@ namespace Hecton8.EditorTools.Diagnostics
             // Without this the probe can only ever inspect the menu.
             _gameplayFramesTarget = Math.Max(0, ReadIntArg("-h8GameplayFrames", 0));
             _startNewGame = _gameplayFramesTarget > 0;
+            _hardTimeoutSeconds = Math.Max(30.0, ReadIntArg("-h8TimeoutSeconds", 240));
 
             Debug.Log(
                 $"{Marker} START scene={scenePath} warmupFrames={_warmupFrames} " +
@@ -96,9 +109,9 @@ namespace Hecton8.EditorTools.Diagnostics
 
         private static void Tick()
         {
-            if (EditorApplication.timeSinceStartup - _startedAt > HardTimeoutSeconds)
+            if (EditorApplication.timeSinceStartup - _startedAt > _hardTimeoutSeconds)
             {
-                Debug.Log($"{Marker} TIMEOUT after {HardTimeoutSeconds}s in phase={_phase} frames={_frames}");
+                Debug.Log($"{Marker} TIMEOUT after {_hardTimeoutSeconds}s in phase={_phase} frames={_frames}");
                 Finish(1);
                 return;
             }
@@ -124,7 +137,16 @@ namespace Hecton8.EditorTools.Diagnostics
                     }
 
                     if (++_frames >= _warmupFrames)
-                        _phase = _startNewGame ? Phase.StartingGame : Phase.Reporting;
+                        _phase = _startNewGame ? Phase.LoadingMenu : Phase.Reporting;
+                    break;
+
+                case Phase.LoadingMenu:
+                    TickLoadingMenu();
+                    break;
+
+                case Phase.MenuWarmup:
+                    if (++_menuFrames >= MenuWarmupFrames)
+                        _phase = Phase.StartingGame;
                     break;
 
                 case Phase.StartingGame:
@@ -159,11 +181,65 @@ namespace Hecton8.EditorTools.Diagnostics
         }
 
         /// <summary>
-        /// Presses "New Game" the way the menu button does. Root traversal rather than any
-        /// FindObjectOfType variant: those are banned project-wide and the ban is worth honouring
-        /// in tooling too.
+        /// Brings up the menu AFTER boot has finished, which is the whole trick.
+        ///
+        /// During a normal headless run the menu scene is entered while the bootstrap is still
+        /// initialising, so MainMenuController.Awake sees AreAllSystemsReady() == false, calls
+        /// BootstrapRouteEnforcer, and sets enabled = false on itself. The component survives but
+        /// is inert, and the enforcer's own recovery LoadSceneAsync returns null. By the time this
+        /// probe looks, no usable menu exists.
+        ///
+        /// Loading the menu here, once allSystemsReady is true, lets that same Awake take the happy
+        /// path. Additive on purpose: Single would unload 00_BOOTSTRAP and risk taking the very
+        /// services the route check is about with it.
         /// </summary>
-        private static bool TryStartNewGame()
+        private static void TickLoadingMenu()
+        {
+            if (_menuLoad == null)
+            {
+                // Prefer the menu the game brings up itself. At the point boot reports ready its
+                // 01_MAIN_MENU load is often still in flight, and GetSceneAt reports that scene as
+                // isLoaded=false - which is exactly why an earlier version of this probe concluded
+                // "no MainMenuController anywhere" and then loaded a second copy on top.
+                if (TryFindMainMenu(out Hecton.UI.MainMenu.MainMenuController existing) && existing.enabled)
+                {
+                    Debug.Log(
+                        $"{Marker} MENU live in scene '{existing.gameObject.scene.name}' after " +
+                        $"{_menuFrames} waited frames - using the game's own");
+                    _phase = Phase.StartingGame;
+                    return;
+                }
+
+                if (++_menuFrames < MenuWaitFrames)
+                    return;
+
+                Debug.Log(
+                    $"{Marker} MENU none live after {MenuWaitFrames} frames - loading '{MenuSceneName}' " +
+                    "additively as a fallback (boot is ready, so its route check should pass)");
+                _menuLoad = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(
+                    MenuSceneName,
+                    UnityEngine.SceneManagement.LoadSceneMode.Additive);
+
+                if (_menuLoad == null)
+                {
+                    Debug.Log($"{Marker} MENU LoadSceneAsync returned null - cannot reach gameplay");
+                    _failures++;
+                    _phase = Phase.Reporting;
+                }
+
+                return;
+            }
+
+            if (_menuLoad.isDone)
+            {
+                Debug.Log($"{Marker} MENU fallback scene loaded");
+                _menuLoad = null;
+                _menuFrames = 0;
+                _phase = Phase.MenuWarmup;
+            }
+        }
+
+        private static bool TryFindMainMenu(out Hecton.UI.MainMenu.MainMenuController menu)
         {
             for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
             {
@@ -173,27 +249,53 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 foreach (GameObject root in scene.GetRootGameObjects())
                 {
-                    var menu = root.GetComponentInChildren<Hecton.UI.MainMenu.MainMenuController>(true);
-                    if (menu == null)
-                        continue;
-
-                    Debug.Log($"{Marker} STARTING NEW GAME via {menu.GetType().Name} in scene '{scene.name}'");
-                    try
-                    {
-                        menu.ReadableStartNewGame();
+                    menu = root.GetComponentInChildren<Hecton.UI.MainMenu.MainMenuController>(true);
+                    if (menu != null)
                         return true;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.Log($"{Marker} NEW GAME THREW {ex.GetType().Name}: {ex.Message}");
-                        _failures++;
-                        return false;
-                    }
                 }
             }
 
-            Debug.Log($"{Marker} NO MainMenuController found in any loaded scene - reporting on the current runtime instead");
+            menu = null;
             return false;
+        }
+
+        /// <summary>
+        /// Presses "New Game" the way the menu button does. Root traversal rather than any
+        /// FindObjectOfType variant: those are banned project-wide and the ban is worth honouring
+        /// in tooling too.
+        /// </summary>
+        private static bool TryStartNewGame()
+        {
+            if (!TryFindMainMenu(out Hecton.UI.MainMenu.MainMenuController menu))
+            {
+                Debug.Log($"{Marker} NO MainMenuController found in any loaded scene - reporting on the current runtime instead");
+                _failures++;
+                return false;
+            }
+
+            // A controller that disabled itself in Awake will not respond, and calling into it
+            // anyway would look like success in the log.
+            if (!menu.enabled)
+            {
+                Debug.Log(
+                    $"{Marker} MENU FOUND BUT DISABLED in scene '{menu.gameObject.scene.name}' - it failed its own " +
+                    "bootstrap route check in Awake, so New Game cannot be pressed");
+                _failures++;
+                return false;
+            }
+
+            Debug.Log($"{Marker} STARTING NEW GAME via MainMenuController in scene '{menu.gameObject.scene.name}'");
+            try
+            {
+                menu.ReadableStartNewGame();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"{Marker} NEW GAME THREW {ex.GetType().Name}: {ex.Message}");
+                _failures++;
+                return false;
+            }
         }
 
         private static void RunChecks()
@@ -239,11 +341,23 @@ namespace Hecton8.EditorTools.Diagnostics
                 $"Save={(IsAlive(GlobalRegistry.Save) ? "ok" : "null")} " +
                 $"ObjectPool={(IsAlive(GlobalRegistry.ObjectPool) ? "ok" : "null")}");
 
-            // Whatever the game ended up in. The interesting answer is 01_MAIN_MENU.
+            // Every loaded scene, not just the active one: "sceneCount=2" with no menu in sight was
+            // the single most misleading line the first version of this probe printed.
             UnityEngine.SceneManagement.Scene active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-            Debug.Log(
-                $"{Marker} SCENE active='{active.name}' loaded={active.isLoaded} " +
-                $"sceneCount={UnityEngine.SceneManagement.SceneManager.sceneCount}");
+            var scenes = new StringBuilder();
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            {
+                UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                if (scenes.Length > 0)
+                    scenes.Append(", ");
+
+                scenes.Append('[').Append(i).Append("] '").Append(scene.name).Append("' loaded=")
+                    .Append(scene.isLoaded)
+                    .Append(" roots=")
+                    .Append(scene.isLoaded ? scene.rootCount : 0);
+            }
+
+            Debug.Log($"{Marker} SCENE active='{active.name}' count={UnityEngine.SceneManagement.SceneManager.sceneCount} -> {scenes}");
         }
 
         /// <summary>

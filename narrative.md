@@ -20,6 +20,10 @@ HECTON-8 narrative is strongest when the room, machine, route, body, log fragmen
 
 Opening motive lock: the protagonist starts as a Marauder/salvage worker driven by contract, debt, payout, route opportunity, procedure, and survival economics. Do not replace the opening with missing family, revenge, romance, chosen-one destiny, secret passenger drama, or other personal melodrama unless the user explicitly overturns this lock. Personal weight may emerge through professional guilt, recognition of workers, procedures, evidence, and consequences, but the first motive is salvage work.
 
+Deep Space & Orbital Isolation Law: Planet Hecton-8 is deep in uncharted space with NO live corporate personnel on site. All corporate communication/debt settlement is processed via an automated, drifting Orbital Hub / Drop-Pod Relay through laser pulses and single-use atmospheric ascent pods.
+
+Endgame Narrative Axis (1000m+ "Ultra-Deep-8"): The catastrophe was caused by an ancient geothermal mechanism beneath the crust. Atlas-6 tried to contain it at human cost. Endgame branches: 1) Evacuation via Orbital Relay, 2) Override Atlas-6 into an autonomous citadel, 3) Core reactor meltdown.
+
 ## 1. Mission Shape
 
 Missions must be physical operations:

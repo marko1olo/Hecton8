@@ -60,6 +60,10 @@ Every resource must have a visible or audible world consequence. Hidden spreadsh
 
 Oxygen uses the Subnautica-like readability model: a clear reserve, route planning, upgrades, and physical extension routes such as better tanks, hoses/tethers from a ship or base, or other credible expedition support. The player can die quickly if they ignore oxygen.
 
+Interface Split Law: Visor HUD glass displays ONLY minimalist critical survival metrics (Oxygen reserve, Depth/Pressure, Hazard Warnings). All 3D Sonar, maps, inventory, salvage diagnostics, and technical data live on the Tactical Wrist PDA (КПКТ-планшет) and vehicle dashboards.
+
+Hydroacoustic Stealth & Drone Counterplay: Atlas-6 drones react to acoustic noise and light. Counterplay is non-lethal and systemic: EMP directional pings, active sonar jamming, or baiting native abyssal bio-creatures into attacking noisy drones.
+
 ## 3. Verbs
 
 Primary verbs:
@@ -110,6 +114,8 @@ Reward text without world change is rejected.
 ## 6. Construction And Base Systems
 
 Construction is survival infrastructure first, but cozy safe rooms and beautiful player bases are allowed when pressure, oxygen, power, maintenance, and industrial material logic remain visible.
+
+Hybrid Base Reclamation Law: Players can claim abandoned Deep Reach undersea research/drill stations by repairing water pumps and power reactors, then expand them using custom pressure-rated modular hulls (Hull Pressure Integrity) attached to or around the reclaimed structures.
 
 Good construction:
 

@@ -178,3 +178,19 @@ Never sacrifice these to optimization:
 ## Public Claim Lock
 
 No public-facing claim may say release-ready, AAA, optimized, platform-ready, VR-ready, modding-ready, or comparable claims without matching proof artifacts.
+
+## Core Master Vision Cementing (Grill-Me Resolution)
+
+- Deep Space System & Orbital Relay Lock: Planet Hecton-8 is physically isolated in deep space (light-years from colonies). NO live corporate personnel on site. All corporate debt/salvage interaction is processed through an automated, drifting Orbital Hub / Drop-Pod Relay via laser pulses and unguided atmospheric drop-pods.
+- Open-Ocean Subnautica Gameplay Lock: Gameplay is centered on open ocean swimming, diving, and deep trench exploration (not corridor FPS horror). Biome depths scale: Photic Shallows (0-100m) -> Twilight Reefs (100-400m) -> Abyssal Trenches (400-1000m+).
+- Atlas-6 Infrastructure AI & Drone Lock: Atlas-6 is a corrupted, automated habitat management AI, not a melodrama stalker. Drone encounters are episodic and perimeter-based around submerged industrial structures.
+- Hydroacoustic Stealth & Creature Baiting: Drones react to acoustic noise and light. The player neutralizes or bypasses them via EMP/sonar jamming, stealth diving, or baiting abyssal predators against noisy drones.
+- Hybrid Base System: Players can claim abandoned Deep Reach undersea research/drill stations by repairing pumps/reactors, and build custom pressure-rated modular hulls (Hull Pressure Integrity) attached to or around them.
+- Visor HUD & Wrist PDA Lock: Visor helmet glass HUD displays ONLY minimalist critical survival metrics (Oxygen, Depth/Pressure, Hazard Warnings). 3D Sonar, inventory, map, and technical diagnostics live on the Wrist PDA (КПКТ-планшет) and vehicle dashboards.
+- Tri-Branch Endgame & Relic Mystery Lock: At 1000m+ ("Ultra-Deep-8"), the catastrophe is revealed to be triggered by an ancient geothermal mechanism beneath the crust. Endings: 1) Archive upload to Orbital Relay for evac, 2) Reprogram Atlas-6 to claim Hecton-8 as an autonomous citadel, 3) Meltdown/flood reactor core to erase evidence forever.
+- Ion Surface Storms Lock: Surface storms raise 5m waves, block Orbital Relay laser uplinks (disabling Drop-Pod launches), and reduce 0-30m surface visibility through plankton/silt suspension.
+- Suit Breach & Thermal Mechanics: Structural suit breaches require Plasma Welder repair; micro-punctures are auto-sealed by gel cartridges; abyssal freezing vs boiling vents require active suit heater/cooler units.
+- Subnautica Death & Salvage Crate Lock: Respawn occurs at nearest base/sub. Tools remain with player; raw salvage drops at death point inside a beacon-marked Salvage Recovery Crate.
+- Singleplayer Supremacy & Co-Op Duo Protocol: Core game is 100% singleplayer Marauder experience, but Data Vault DTOs and SignalBus contracts are strictly decoupled (no singleton lock) to support future 2-player Co-Op (Submarine Console Operator + Deep Trench Diver).
+
+

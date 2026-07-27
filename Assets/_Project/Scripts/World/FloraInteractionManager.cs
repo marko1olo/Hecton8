@@ -263,7 +263,12 @@ namespace Hecton8.World
                 }
 
                 float3 position = new float3(Matrices[index].m03, Matrices[index].m13, Matrices[index].m23);
-                float bestSeed = InactiveSeed;
+                // This fold keeps the EARLIEST activation time, so it has to start ABOVE every
+                // candidate. It used to start at InactiveSeed, which is a large negative sentinel
+                // (-100000f), so math.min() returned that sentinel on every iteration and every
+                // plant read back as inactive on the GPU. Invalid candidates are lifted to
+                // float.MaxValue instead of being masked afterwards, so they can never win the min.
+                float bestSeed = float.MaxValue;
                 bool found = false;
                 float safeSpeed = math.max(0.01f, PropagationSpeedMetersPerSecond);
                 int safeEventCount = math.min(EventCount, Events.Length);
@@ -278,8 +283,9 @@ namespace Hecton8.World
 
                     float distance = distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f));
                     float activationTime = cascadeEvent.StartTimeSeconds + (distance / safeSpeed);
-                    bestSeed = math.select(bestSeed, math.min(bestSeed, activationTime), valid);
-                    found |= valid;
+                    bool activationValid = valid & math.isfinite(activationTime);
+                    bestSeed = math.min(bestSeed, math.select(float.MaxValue, activationTime, activationValid));
+                    found |= activationValid;
                 }
 
                 PhaseSeeds[index] = math.select(InactiveSeed, bestSeed + BuildDeterministicFrameOffset(index, instanceData), found);

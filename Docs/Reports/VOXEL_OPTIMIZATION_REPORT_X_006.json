@@ -1,0 +1,1140 @@
+{
+  "active_dirty_chunk_memory": {
+    "chunk_cell_count": 32768,
+    "chunk_state_allocator_sites": 1,
+    "chunk_state_dictionary_grows": false,
+    "compaction_copy_job_present": false,
+    "compaction_dirty_state_copy_job_present": false,
+    "compaction_dirty_state_main_thread_copy_absent": true,
+    "compaction_main_thread_copy_absent": false,
+    "compaction_pressure_scheduler_present": true,
+    "compaction_schedule_native_alloc_sites": 0,
+    "compaction_scratch_pool_present": true,
+    "compaction_scratch_preallocated_bytes": 2412930,
+    "compaction_source_sdf_capacity_bytes": 2146689,
+    "compaction_source_version_guard_present": true,
+    "compaction_transient_breakdown_excluding_source_sdf": {
+      "deltaSdfCopy": 65536,
+      "dirtyMaskCopy": 4096,
+      "flagsCopy": 32768,
+      "materialCopy": 32768,
+      "outputFlags": 32768,
+      "outputMaterials": 32768,
+      "outputSdf": 65536,
+      "rleUniformFlag": 1
+    },
+    "compaction_transient_known_bytes_excluding_source_sdf": 266241,
+    "dirty_mask_words": 1024,
+    "fixed_chunk_registry_present": true,
+    "fixed_dirty_chunk_pool_capacity": 256,
+    "fixed_dirty_chunk_pool_native_bytes": 34603008,
+    "fixed_dirty_chunk_pool_present": true,
+    "global_datavault_dirty_pool_handles_present": false,
+    "global_datavault_dirty_pool_ids_present": true,
+    "global_datavault_hot_swap_rebind_present": true,
+    "global_datavault_recycler_proven": false,
+    "hard_capacity_proven": true,
+    "initial_fixed_registry_capacity": 256,
+    "local_pool_hard_capacity_proven": true,
+    "native_bytes_if_initial_capacity_full": 34603008,
+    "native_bytes_per_dirty_chunk": 135168,
+    "native_bytes_per_dirty_chunk_breakdown": {
+      "CellFlags": 32768,
+      "DirtyMaskWords": 4096,
+      "MaterialIds": 32768,
+      "SdfValueBits": 65536
+    },
+    "reason_global_datavault_recycler_not_proven": "Only false when fixed registry, fixed pool, or GlobalDataVault generation handles for dirty mask/SDF/material/flags are missing.",
+    "x006_blackbox_dump_path": "Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin"
+  },
+  "agent": "X_006",
+  "carve_queue_pressure": {
+    "blind_oldest_drop_absent": true,
+    "event_layout_offsets": {
+      "AbsoluteHalfExtents": 32,
+      "AbsoluteHitPoint": 8,
+      "AbsoluteHitPointDouble": 56,
+      "AbsoluteImpulseDirection": 44,
+      "AbsoluteSegmentEnd": 20,
+      "AbsoluteSegmentEndDouble": 80,
+      "BlendStrengthMeters": 108,
+      "MaterialId": 114,
+      "Operation": 112,
+      "RadiusMeters": 104,
+      "Reserved0": 116,
+      "Reserved1": 120,
+      "Reserved2": 124,
+      "Shape": 113,
+      "SourceFlags": 115,
+      "VolumeInstanceId": 0
+    },
+    "pending_carve_capacity": 32,
+    "pending_managed_growth_absent": true,
+    "pending_overflow_coalescing_present": true,
+    "policy": "Ingress, pending, and scheduled write buffers are fixed-size. Under saturation, compatible newest laser cuts coalesce into a capsule/radius-expanded command; incompatible overload is shed through the black-box overflow flag instead of growing memory. Queue drain and scheduled carve commit use continuous GlobalQualityWeight token buckets; backlog raises commit cadence without changing memory capacity.",
+    "queue_overflow_coalescing_present": true,
+    "queued_carve_event_capacity": 64,
+    "queued_carve_event_payload_bytes": 8192,
+    "queued_drain_continuous_quality_scaled": true,
+    "scheduled_carve_candidate_overflow_guard_present": false,
+    "scheduled_carve_schedule_exception_blackbox_present": false,
+    "scheduled_carve_write_bytes": 32,
+    "scheduled_carve_write_capacity": 8192,
+    "scheduled_carve_write_hot_growth_absent": true,
+    "scheduled_carve_write_over_capacity_reject_present": true,
+    "scheduled_carve_write_payload_bytes": 262144,
+    "scheduled_carve_write_prewarm_present": true,
+    "scheduled_commit_continuous_quality_scaled": true,
+    "scheduled_commit_max_writes_per_frame": 512,
+    "scheduled_commit_min_writes_per_frame": 64,
+    "voxel_carve_event_bytes": 128
+  },
+  "cave_graph_generator": {
+    "engine_rebuild_graph_scratch_hard_cap_present": true,
+    "engine_rebuild_graph_scratch_prewarmed": false,
+    "max_entrances": 8,
+    "max_rooms": 64,
+    "max_structures": 128,
+    "max_tunnels": 128,
+    "native_list_references_absent": true,
+    "policy": "CaveGraphGenerator TryMeasure/TryFill use bounded stackalloc Span scratch with fixed MAX_ROOMS/MAX_TUNNELS/MAX_ENTRANCES/MAX_STRUCTURES. HectonVoxelEngine prewarms matching rebuild graph and crater scratch arrays when the streaming scratch slot is leased and rejects counts above those caps instead of growing NativeArrays.",
+    "span_generator_present": true,
+    "temp_native_allocations_absent": true,
+    "try_fill_stackalloc_present": true,
+    "try_measure_stackalloc_present": true
+  },
+  "collider_chunk_registry": {
+    "cold_prepare_prewarms_hierarchy": true,
+    "fixed_registry_arrays_present": true,
+    "hot_split_requires_prewarmed_hierarchy": false,
+    "max_collider_chunk_count": 8,
+    "policy": "Collider chunk registries are fixed at MaxColliderChunkCount. PrepareForReuse prewarms child collider/proxy objects through a private capacity builder; hot collider split paths only accept prewarmed hierarchy and fail to the cinematic fake if it is missing.",
+    "runtime_registry_resize_absent": false
+  },
+  "deferred_collider_upload_budgeting": {
+    "continuous_quality_budget_present": true,
+    "drain_uses_resolved_budget": false,
+    "fixed_budget_driver_absent": true,
+    "policy": "Deferred voxel collider cleanup uses a continuous GlobalQualityWeight token bucket from 1 to 4 queue drains per frame. The lane drains staged/proxy state only; runtime non-null PhysX mesh publication remains disabled.",
+    "token_bucket_present": false
+  },
+  "engine_active_volume_registry": {
+    "active_volume_registry_capacity": 64,
+    "dedupe_present": false,
+    "eviction_selector_present": true,
+    "hard_capacity_guard_present": false,
+    "policy": "HectonVoxelEngine active volume lists retain List storage for editor/runtime API compatibility, but RegisterActiveVolume deduplicates, evicts an existing active volume at the 64-slot cap, and fails closed instead of growing the lists.",
+    "post_eviction_fail_closed_present": false
+  },
+  "evidence": {
+    "datavault_lanes": {
+      "carve_blackbox": "BufferID.ShinobuDeltaCrusherVoxelBlackBox = 70130",
+      "carve_writes": "BufferID.ShinobuDeltaCrusherCarveWrites = 70131",
+      "save_rle_bytes": "BufferID.SaveVoxelDeltaRleBytes = 70291",
+      "save_rle_runs": "BufferID.SaveVoxelDeltaRleRuns = 70289",
+      "world_pager_write_arena": "BufferID.SaveWorldPagerWriteArena = 70200",
+      "world_pager_write_commands": "BufferID.SaveWorldPagerWriteCommands = 70207"
+    },
+    "deferred_bake_presentation_shared_mesh_null_mutations": [],
+    "deferred_or_direct_collider_shared_mesh_assignments": [
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1986,
+        "text": "collider.sharedMesh = stagedMesh;"
+      }
+    ],
+    "deferred_or_direct_shared_mesh_assignments": [
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 13814,
+        "text": "mf.sharedMesh = mesh;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1986,
+        "text": "collider.sharedMesh = stagedMesh;"
+      }
+    ],
+    "deformation_collider_shared_mesh_null_mutations": [],
+    "main_thread_mesh_upload_sites": [
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 13577,
+        "text": "static unsafe bool UploadSurfaceMesh("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 13624,
+        "text": "Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 13636,
+        "text": "static bool UploadColliderMesh("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 13703,
+        "text": "Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 13810,
+        "text": "if (!UploadSurfaceMesh(mesh, surfaceVertices, triangleIndices, vertCount, triIndexCount, bounds))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 14744,
+        "text": "meshUploaded = UploadColliderMesh("
+      }
+    ],
+    "managed_chunk_tracking": [],
+    "mesh_upload_budgeting": {
+      "budget_awaiter_present": true,
+      "budget_constant_present": true,
+      "budgeted": false,
+      "budgeted_upload_call_count": 1,
+      "continuous_quality_budget_present": true,
+      "direct_upload_call_count": 3,
+      "low_tier_burst_bias_present": true,
+      "mesh_data_upload_guard_present": false,
+      "policy": "Unity mesh upload remains main-thread API; budget gate uses a continuous GlobalQualityWeight token bucket from 1 to 3 uploads per frame and delays later uploads behind Dear Lie visual clipping."
+    },
+    "native_allocations_classified": {
+      "cold_or_prewarm": [],
+      "fallback_only": [],
+      "generation_or_rebuild_snapshot": [],
+      "hot_rebuild": [
+        {
+          "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+          "line": 15197,
+          "text": "NativeArray<float> terrainHeights = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+        },
+        {
+          "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+          "line": 15198,
+          "text": "NativeArray<float> gridBiome = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
+        },
+        {
+          "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+          "line": 7311,
+          "text": "NativeArray<byte> payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
+        }
+      ],
+      "pooled_growth": []
+    },
+    "native_allocations_in_voxel_sources": [
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 15197,
+        "text": "NativeArray<float> terrainHeights = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 15198,
+        "text": "NativeArray<float> gridBiome = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 7311,
+        "text": "NativeArray<byte> payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
+      }
+    ],
+    "paging_cleanup_getcomponent_hotpath_hits": [],
+    "physics_bake_calls": [
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 14160,
+        "text": "Physics.BakeMesh(bakeMeshEntityId, false);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 14763,
+        "text": "Physics.BakeMesh(bakeMeshEntityId, false);"
+      }
+    ],
+    "residual_hot_native_allocations": [
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 15197,
+        "text": "NativeArray<float> terrainHeights = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 15198,
+        "text": "NativeArray<float> gridBiome = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 7311,
+        "text": "NativeArray<byte> payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);"
+      }
+    ],
+    "runtime_collider_shared_mesh_null_mutations": [],
+    "shader_clip_routes": {
+      "ghost_forward": true,
+      "rock_forward_shadow_depth": true,
+      "terrain_forward_shadow_depth_normals": true
+    },
+    "sync_physx_registration_fallbacks": [],
+    "unsafe_malloc_in_voxel_sources": []
+  },
+  "failed_gates": [
+    "cave_graph_rebuild_scratch_prewarmed",
+    "collider_chunk_hot_path_object_creation_absent",
+    "collider_chunk_registry_fixed_capacity_present",
+    "compaction_dirty_state_copy_job_present",
+    "compaction_source_copy_job_present",
+    "compaction_source_main_thread_copy_absent",
+    "cut_mask_gpu_upload_fail_closed",
+    "deferred_collider_upload_budget_continuous_quality_scaled",
+    "deformation_collider_main_thread_assignment_absent",
+    "engine_active_volume_registry_hard_cap_present",
+    "global_datavault_dirty_chunk_recycler_proven",
+    "graphics_stamp_buffer_bounded",
+    "hot_native_allocations_absent",
+    "mesh_publication_component_cache_present",
+    "mesh_publication_volume_addcomponent_absent",
+    "mesh_upload_budgeted",
+    "modified_cells_fill_time_sliced",
+    "modified_cells_hashmap_overflow_fail_closed",
+    "modified_cells_scratch_prewarmed",
+    "pager_direct_read_slice_ready_only",
+    "pager_direct_read_staging_prewarmed",
+    "physics_bake_job_not_burst_compiled",
+    "physics_bake_schedule_backpressure_guard_present",
+    "physics_bake_teardown_budget_continuous_quality_scaled",
+    "physics_bake_teardown_driver_registered_before_schedule",
+    "published_sonar_active_staging_buffers_present",
+    "published_sonar_cancel_force_complete_absent",
+    "published_sonar_clear_aborts_inflight_publish_present",
+    "published_sonar_compaction_copies_actual_count",
+    "published_sonar_descriptor_final_write_after_sdf_copy",
+    "published_sonar_descriptor_invalidated_before_sdf_copy",
+    "published_sonar_descriptor_lock_not_held_during_sdf_copy",
+    "published_sonar_dispose_guarded_by_read_lease_present",
+    "published_sonar_encode_job_present",
+    "published_sonar_high_water_buffer_reuse_present",
+    "published_sonar_local_read_lease_guard_present",
+    "published_sonar_staging_swap_present",
+    "published_sonar_vault_copy_job_present",
+    "published_sonar_vault_owner_phase_prewarm_present",
+    "published_sonar_vault_write_lock_release_guard_present",
+    "published_volume_registry_hard_cap_present",
+    "save_voxel_legacy_load_fallback_present",
+    "save_voxel_snapshot_borrowed_scratch_present",
+    "save_voxel_snapshot_borrowed_write_exclusion_present",
+    "save_voxel_snapshot_copy_failure_fail_closed",
+    "save_voxel_snapshot_growth_blocked_during_borrow",
+    "scheduled_carve_write_buffer_fixed_capacity_present",
+    "streaming_scratch_post_lease_growth_absent",
+    "surface_nets_blackbox_dump_path_x006",
+    "surface_nets_gpu_partial_lock_failure_unlocks",
+    "surface_nets_gpu_release_completed_upload_nonblocking",
+    "surface_nets_gpu_upload_capacity_fail_closed",
+    "surface_nets_gpu_upload_finalize_completes_completed_job",
+    "unbudgeted_mesh_upload_absent",
+    "voxel_mesh_pool_runtime_lazy_allocation_absent",
+    "voxel_spawn_point_add_no_resize_bounded",
+    "voxel_spawn_point_scratch_prewarmed",
+    "voxel_volume_registry_fixed_capacity_present",
+    "world_residency_aup_paging_double_precision",
+    "world_residency_hydration_apply_ledger_prewarmed",
+    "world_residency_load_dispatch_continuous_quality_scaled",
+    "world_residency_pager_request_ids_monotonic",
+    "world_residency_radius_continuous_quality_scaled",
+    "x006_blackbox_dump_path_present"
+  ],
+  "gates": {
+    "carve_ingress_queue_bounded": true,
+    "carve_overflow_coalescing_present": true,
+    "cave_graph_rebuild_scratch_prewarmed": false,
+    "cave_graph_trymeasure_tryfill_temp_alloc_absent": true,
+    "collider_chunk_hot_path_object_creation_absent": false,
+    "collider_chunk_registry_fixed_capacity_present": false,
+    "compaction_dirty_state_copy_job_present": false,
+    "compaction_dirty_state_main_thread_copy_absent": true,
+    "compaction_pressure_scheduler_present": true,
+    "compaction_source_copy_job_present": false,
+    "compaction_source_main_thread_copy_absent": false,
+    "compaction_source_version_guard_present": true,
+    "cut_mask_gpu_upload_fail_closed": false,
+    "cut_mask_shader_stamp_count_clamped": true,
+    "damage_stamp_overflow_coalescing_present": true,
+    "damage_volume_binary_quality_route_absent": true,
+    "damage_volume_energy_gated": true,
+    "damage_volume_gpu_upload_fail_closed": true,
+    "damage_volume_quality_resize_inactive_gate_present": true,
+    "damage_volume_quality_scaled": true,
+    "damage_volume_shader_active_energy_gated": true,
+    "damage_volume_shader_stamp_count_clamped": true,
+    "datavault_rebind_waits_for_snapshot_lease": true,
+    "dear_lie_shader_clip_present": true,
+    "deferred_bake_presentation_null_mesh_mutation_absent": true,
+    "deferred_collider_upload_budget_continuous_quality_scaled": false,
+    "deformation_collider_main_thread_assignment_absent": false,
+    "deformation_collider_null_mesh_mutation_absent": true,
+    "engine_active_volume_registry_hard_cap_present": false,
+    "global_datavault_dirty_chunk_hot_swap_rebind_present": true,
+    "global_datavault_dirty_chunk_recycler_proven": false,
+    "global_datavault_pool_limits_proven": true,
+    "graphics_stamp_buffer_bounded": false,
+    "hot_native_allocations_absent": false,
+    "managed_chunk_tracking_absent": true,
+    "mesh_publication_component_cache_present": false,
+    "mesh_publication_volume_addcomponent_absent": false,
+    "mesh_upload_budget_continuous_quality_scaled": true,
+    "mesh_upload_budgeted": false,
+    "mesh_upload_low_tier_burst_bias_present": true,
+    "mesh_upload_main_thread_absent": false,
+    "modified_cells_fill_time_sliced": false,
+    "modified_cells_hashmap_overflow_fail_closed": false,
+    "modified_cells_scratch_prewarmed": false,
+    "pager_direct_read_slice_ready_only": false,
+    "pager_direct_read_staging_prewarmed": false,
+    "pager_write_queue_bounded": true,
+    "paging_cleanup_getcomponent_hotpath_absent": true,
+    "physics_bake_deferred_teardown_keeps_chunk_visuals": true,
+    "physics_bake_force_complete_shutdown_only": true,
+    "physics_bake_job_not_burst_compiled": false,
+    "physics_bake_live_job_cancellable_wait_absent": true,
+    "physics_bake_overflow_teardown_nonblocking": true,
+    "physics_bake_registration_failure_nonblocking": true,
+    "physics_bake_schedule_backpressure_guard_present": false,
+    "physics_bake_teardown_budget_continuous_quality_scaled": false,
+    "physics_bake_teardown_driver_registered_before_schedule": false,
+    "published_sdf_read_accessors_pure": true,
+    "published_sonar_active_staging_buffers_present": false,
+    "published_sonar_cancel_force_complete_absent": false,
+    "published_sonar_clear_aborts_inflight_publish_present": false,
+    "published_sonar_clear_metadata_only_present": true,
+    "published_sonar_compaction_copies_actual_count": false,
+    "published_sonar_descriptor_final_write_after_sdf_copy": false,
+    "published_sonar_descriptor_invalidated_before_sdf_copy": false,
+    "published_sonar_descriptor_lock_not_held_during_sdf_copy": false,
+    "published_sonar_dispose_guarded_by_read_lease_present": false,
+    "published_sonar_encode_job_present": false,
+    "published_sonar_high_water_buffer_reuse_present": false,
+    "published_sonar_local_read_lease_guard_present": false,
+    "published_sonar_main_thread_encode_absent": true,
+    "published_sonar_staging_swap_present": false,
+    "published_sonar_vault_copy_job_present": false,
+    "published_sonar_vault_descriptor_owner_guard_present": true,
+    "published_sonar_vault_descriptor_unconditional_clear_absent": true,
+    "published_sonar_vault_fixed_capacity_present": true,
+    "published_sonar_vault_memcopy_absent": true,
+    "published_sonar_vault_owner_phase_prewarm_present": false,
+    "published_sonar_vault_per_byte_copy_absent": true,
+    "published_sonar_vault_publish_hot_ensure_absent": true,
+    "published_sonar_vault_publish_serialized_present": true,
+    "published_sonar_vault_write_lock_release_guard_present": false,
+    "published_volume_registry_hard_cap_present": false,
+    "rle_packet_aligned": true,
+    "rle_worst_case_fits_single_pager_sector": true,
+    "runtime_collider_null_mesh_mutation_absent": true,
+    "save_voxel_legacy_load_fallback_present": false,
+    "save_voxel_snapshot_borrowed_lifetime_guarded": true,
+    "save_voxel_snapshot_borrowed_not_disposed": true,
+    "save_voxel_snapshot_borrowed_scratch_present": false,
+    "save_voxel_snapshot_borrowed_write_exclusion_present": false,
+    "save_voxel_snapshot_copy_failure_fail_closed": false,
+    "save_voxel_snapshot_growth_blocked_during_borrow": false,
+    "save_voxel_snapshot_per_save_nativearray_absent": true,
+    "scheduled_carve_write_buffer_fixed_capacity_present": false,
+    "stamp_graphics_buffer_invalid_fail_closed": true,
+    "stamp_graphics_buffers_recreated_when_invalid": true,
+    "streaming_scratch_post_lease_growth_absent": false,
+    "surface_nets_blackbox_dump_path_x006": false,
+    "surface_nets_gpu_initialize_respects_inflight_release": true,
+    "surface_nets_gpu_invalid_buffer_fail_closed": true,
+    "surface_nets_gpu_partial_lock_failure_unlocks": false,
+    "surface_nets_gpu_release_completed_upload_nonblocking": false,
+    "surface_nets_gpu_upload_capacity_fail_closed": false,
+    "surface_nets_gpu_upload_finalize_completes_completed_job": false,
+    "sync_physx_registration_fallback_removed": true,
+    "unbudgeted_mesh_upload_absent": false,
+    "unsafe_utility_malloc_absent_in_voxel_jobs": true,
+    "voxel_carve_queue_and_commit_continuous_quality_scaled": true,
+    "voxel_carving_torture_job_present": true,
+    "voxel_delta_force_complete_shutdown_only": true,
+    "voxel_job_wait_cancellation_no_live_throw": true,
+    "voxel_mesh_pool_runtime_lazy_allocation_absent": false,
+    "voxel_rebuild_qualitysettings_lodbias_absent": true,
+    "voxel_rle_architecture_wal_payload_guard": true,
+    "voxel_spawn_point_add_no_resize_bounded": false,
+    "voxel_spawn_point_scratch_prewarmed": false,
+    "voxel_volume_registry_fixed_capacity_present": false,
+    "voxel_volume_runtime_spawn_pool_only": true,
+    "world_residency_aup_paging_double_precision": false,
+    "world_residency_hydration_apply_ledger_prewarmed": false,
+    "world_residency_load_dispatch_continuous_quality_scaled": false,
+    "world_residency_pager_request_ids_monotonic": false,
+    "world_residency_radius_continuous_quality_scaled": false,
+    "world_residency_teleport_reset_nonblocking": true,
+    "x006_blackbox_dump_path_present": false
+  },
+  "global_data_vault_pool": {
+    "arena_grow_slack_bytes": 67108864,
+    "boot_primary_prewarm_present": true,
+    "bounded_growth_guards_present": true,
+    "default_buffer_capacity": 128,
+    "defrag_black_box_frames": 300,
+    "initial_arena_bytes": 134217728,
+    "max_block_capacity": 65536,
+    "max_buffer_capacity": 32768,
+    "max_generation_handle_capacity": 100000,
+    "max_live_defrag_move_bytes_per_slice": 1024,
+    "max_memory_budget_entries": 128,
+    "max_relocation_record_count": 64,
+    "maximum_quality_arena_limit_bytes": 4294967296,
+    "minimum_quality_arena_limit_bytes": 536870912,
+    "pointer_alignment_audit_present": true,
+    "policy": "GlobalDataVault boots one 64-byte aligned unmanaged arena, clamps buffer/block metadata capacity, grows only up to the resolved arena limit, and exposes X_006 hot routes through prewarmed generation handles or fixed-size queues. Read paths in X_006 resolve existing handles; they do not allocate or grow vault buffers.",
+    "preallocated_core_lanes": {
+      "H8Time": "H8TimeSlot.Count",
+      "RigidbodyAUPs": 512,
+      "VaultSovereigntyMaintenance": "HotEntityCapacity or DefaultHotEntityCapacity"
+    },
+    "vault_block_alignment_bytes": 64,
+    "x006_fixed_lane_payload_bytes": {
+      "published_sonar_vault_sdf_payload": 2146689,
+      "queued_carve_ingress_payload": 8192,
+      "sargassum_cut_mask_stamp_graphics_buffer": 256,
+      "sargassum_damage_stamp_graphics_buffer": 512,
+      "scheduled_carve_write_payload": 262144,
+      "world_pager_compression_scratch": 262080,
+      "world_pager_direct_read_staging": 524160,
+      "world_pager_read_arena": 1048320,
+      "world_pager_write_arena": 2096640,
+      "world_residency_hydration_apply_ledger_default": 32768
+    },
+    "x006_fixed_lane_payload_total_bytes": 6381761
+  },
+  "mesh_publication_component_cache": {
+    "apply_volume_uses_source_volume": false,
+    "build_welded_uses_cached_components": false,
+    "cinematic_fake_proxy_search_editor_only": false,
+    "generated_volume_bound_before_mesh_publication": false,
+    "mesh_pipeline_blackbox_agent_dump_aligned": false,
+    "mesh_publication_getcomponent_absent": true,
+    "policy": "Surface mesh publication and collider setup use HectonVoxelVolume cached MeshFilter/MeshRenderer/MeshCollider from VoxelPipelineData.SourceVolume. Fresh generation binds the prewarmed HectonVoxelVolume before mesh publication, so runtime generation does not fall into legacy AddComponent branches. Runtime null-volume collider fallback fails closed to visual-only publication and records a mesh-pipeline black-box flag before any component search, MeshCollider creation, or bake-proxy allocation. Cinematic fake proxy searches run only outside play mode. Mesh-pipeline black-box faults write the primary mesh-pipeline dump and the X_006 mandated agent dump. TryGetComponent/AddComponent remain only as cold editor fallback for legacy/null-volume objects; malformed volumes fail closed or use cinematic fake.",
+    "runtime_null_volume_collider_fails_closed": false,
+    "volume_missing_collider_uses_fake": false,
+    "volume_missing_component_fails_closed": false
+  },
+  "modified_cells_fill": {
+    "delta_async_fill_present": false,
+    "delta_dirty_mask_word_probe_present": false,
+    "delta_fill_budget_yield_present": false,
+    "delta_fill_probe_stride_present": false,
+    "engine_caps_measure_to_total_cells": false,
+    "engine_prepare_async_present": false,
+    "engine_uses_async_delta_fill": false,
+    "execute_awaits_modified_cells_prepare": false,
+    "execute_yields_after_spatial_partitions": false,
+    "policy": "Voxel rebuild still builds the authoritative modified-cell hash map, but dense delta history fill is time-sliced with AwaitableDebtMonitor on the same chunk-generation frame budget instead of running as one uninterrupted pre-job main-thread loop. The scratch hash map is prewarmed on streaming scratch lease acquisition and measured capacity is capped to the rebuild volume's total cell count.",
+    "prepare_reuses_prewarmed_scratch": false,
+    "scratch_prewarmed_on_lease": false,
+    "sync_fill_still_available_for_cold_callers": false,
+    "try_add_fail_closed_present": false
+  },
+  "physics_bake_schedule_guard": {
+    "backpressure_guard_present": false,
+    "cancellation_deferred_teardown_present": true,
+    "dispatcher_guard_present": false,
+    "emergency_teardown_capacity": 512,
+    "emergency_teardown_overflow_nonblocking": true,
+    "force_complete_shutdown_only": true,
+    "force_complete_sites": [
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 8640,
+        "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
+      }
+    ],
+    "live_job_cancellable_frame_wait_absent": true,
+    "normal_teardown_capacity": 2048,
+    "physics_bake_job_not_burst_compiled": false,
+    "policy": "New PhysX bake jobs are refused while the deferred teardown lane cannot register or total normal+emergency teardown count is at backpressure threshold; live bake waits do not use cancellable frame awaits. If teardown driver registration fails after a bake is already scheduled, the teardown remains queued for a later lane registration. Capacity overflow uses a fixed emergency teardown lane and records blackbox state instead of force-completing on the deformation path; force-release is limited to dispatcherless shutdown/reset. Teardown drain cadence is a continuous GlobalQualityWeight token bucket from 8 to 32 drains/frame, with backpressure lifting low-quality devices to the emergency drain ceiling without changing capacity.",
+    "registration_failure_keeps_deferred_teardown": true,
+    "schedule_precheck_present": false,
+    "teardown_budget_continuous_quality_scaled": false,
+    "teardown_driver_registered_before_bake_schedule": false,
+    "teardown_renderer_lookup_destroy_owner_only": true,
+    "total_tracked_teardown_capacity": 2560
+  },
+  "published_sonar_snapshot": {
+    "active_and_staging_buffers_present": false,
+    "async_publish_present": true,
+    "build_buffer_read_lease_guard_present": false,
+    "cancel_force_complete_absent": false,
+    "clear_aborts_inflight_publish_present": false,
+    "clear_metadata_only_present": true,
+    "compaction_copies_actual_grid_count": false,
+    "compaction_read_lease_release_present": false,
+    "compaction_source_read_lease_present": false,
+    "descriptor_final_write_after_sdf_copy": false,
+    "descriptor_invalidated_before_sdf_copy": false,
+    "descriptor_lock_not_held_during_sdf_copy": false,
+    "dispose_guarded_by_read_lease_present": false,
+    "encoded_sample_job_present": false,
+    "high_water_buffer_reuse_present": false,
+    "local_publish_serialized_present": true,
+    "main_thread_encode_loop_absent": true,
+    "max_supported_payload_bytes": 2146689,
+    "max_supported_payload_note": "129^3 encoded SDF bytes matches CompactionSourceSdfMaxGridDimension capacity; audio-material staging doubles local byte arrays. Published sonar buffers now reuse high-water capacity and copy only the current grid product.",
+    "staging_swap_present": false,
+    "total_point_count_grid_product_present": true,
+    "vault_copy_job_present": false,
+    "vault_copy_policy": "Vault SDF payload copy is scheduled as PublishedSonarSdfCopyJob while holding only the SDF payload write lock. Shared publication is serialized; descriptor is invalidated before SDF copy and final descriptor write happens after SDF release, preventing consumers from reading an old valid descriptor against a partially overwritten SDF buffer. The local published-buffer pair is also serialized: compaction takes a read lease before its source copy job, and the next publish refuses to encode into the build buffer while that physical buffer is leased. Local SDF arrays are max-capacity high-water buffers; clear invalidates metadata/descriptor only, requests abort for any in-flight publish, and physical disposal is guarded by reader leases and publish-in-flight state. The vault SDF lane is resolved from a fixed max-capacity prewarmed handle during publish, so grid-size changes do not resize GlobalDataVault in the publish path. Descriptor clear is guarded by the publishing volume version and AUP-rebased origin, so one volume cannot erase another volume's newer descriptor.",
+    "vault_descriptor_owner_guard_present": true,
+    "vault_descriptor_unconditional_clear_absent": true,
+    "vault_fixed_max_capacity_present": true,
+    "vault_memcopy_absent": true,
+    "vault_owner_phase_prewarm_present": false,
+    "vault_per_byte_copy_absent": true,
+    "vault_publish_hot_ensure_absent": true,
+    "vault_publish_serialized_present": true,
+    "vault_write_lock_released_after_copy": false
+  },
+  "published_volume_registry": {
+    "all_read_accessors_pure": true,
+    "list_capacity_matches_max": false,
+    "max_registered_published_volumes": 256,
+    "policy": "Published sonar/SDF volume registry is capped at MaxRegisteredPublishedVolumes. Registration evicts stale/farthest entries before Add; raymarch and density read accessors do not mutate the registry.",
+    "read_density_registry_mutation_absent": true,
+    "read_raymarch_registry_mutation_absent": true,
+    "read_sample_registry_mutation_absent": true,
+    "register_hard_cap_present": false,
+    "swap_back_remove_present": false
+  },
+  "report": "VOXEL_OPTIMIZATION_REPORT_X_006",
+  "residual_risks": {
+    "unity_mesh_publication_main_thread_api": false,
+    "unity_mesh_publication_policy": "Unity mesh upload remains main-thread API; budget gate uses a continuous GlobalQualityWeight token bucket from 1 to 3 uploads per frame and delays later uploads behind Dear Lie visual clipping."
+  },
+  "rle_packet_byte_layout": {
+    "alignment_proof": "All listed packet structs are explicit layout and multiples of 8 bytes.",
+    "architecture_max_wal_payload_bytes": 262080,
+    "architecture_overflow_policy": "VoxelDeltaCompressionArchitecture WAL packing and enqueue reject payloads over MaxVoxelDeltaWalPayloadBytes before they reach the pager write queue.",
+    "architecture_queue_growth_unbounded": false,
+    "architecture_wal_payload_guard_present": true,
+    "architecture_worst_case_exceeds_sector_payload_by_bytes": 0,
+    "chunk_cell_count": 32768,
+    "compression_telemetry_dump_path_aligned": false,
+    "max_voxel_delta_rle_runs_per_wal_payload": 32756,
+    "native_effective_worst_case_exceeds_sector_payload_by_bytes": 0,
+    "native_snapshot_chunk_header_delta_rle": {
+      "bytes": 40,
+      "offsets": {
+        "ChunkX": 0,
+        "ChunkY": 4,
+        "ChunkZ": 8,
+        "DirtyCellCount": 16,
+        "PayloadByteLength": 24,
+        "PayloadHashHigh": 32,
+        "PayloadHashLow": 28,
+        "Reserved0": 21,
+        "Reserved1": 22,
+        "Reserved2": 36,
+        "StorageFlags": 20,
+        "VoxelSize": 12
+      }
+    },
+    "native_snapshot_dense_fallback_present": true,
+    "native_snapshot_dense_payload_bytes": 135168,
+    "native_snapshot_dense_total_bytes": 135208,
+    "native_snapshot_effective_worst_case_bytes": 135208,
+    "native_snapshot_header": {
+      "bytes": 16,
+      "offsets": {
+        "ChunkCount": 4,
+        "Reserved0": 12,
+        "TotalDirtyCellCount": 8,
+        "Version": 0
+      }
+    },
+    "native_snapshot_worst_case_chunk_payload_bytes": 262184,
+    "native_worst_case_exceeds_sector_payload_by_bytes": 104,
+    "save_voxel_delta_run8": {
+      "bytes": 8,
+      "offsets": {
+        "Flags": 6,
+        "MaterialId": 5,
+        "Reserved0": 7,
+        "RunLength": 2,
+        "SdfValue": 4,
+        "StartIndex": 0
+      }
+    },
+    "sector_payload_bytes": 262080,
+    "vault_buffer_cell_capacity_fixed_to_chunk": true,
+    "vault_buffer_run_capacity_clamped_to_wal_payload": true,
+    "vault_buffer_sector_stats_capacity_clamped": true,
+    "vault_buffer_staging_capacity_clamped_to_wal_payload": true,
+    "voxel_delta_architecture_full_chunk_theoretical_payload_bytes": 262176,
+    "voxel_delta_architecture_worst_case_payload_bytes": 262080,
+    "voxel_delta_header_dto": {
+      "bytes": 32,
+      "offsets": {
+        "CompressedSize": 16,
+        "Flags": 24,
+        "LayoutMarker": 28,
+        "SectorHash": 0,
+        "UncompressedSize": 20,
+        "XXHash3Checksum": 8
+      }
+    },
+    "voxel_delta_rle_run_dto": {
+      "bytes": 8,
+      "offsets": {
+        "Flags": 6,
+        "MaterialId": 5,
+        "Reserved0": 7,
+        "RunLength": 2,
+        "SdfValue": 4,
+        "StartIndex": 0
+      }
+    }
+  },
+  "save_voxel_snapshot_scratch": {
+    "datavault_rebind_waits_for_snapshot_lease": true,
+    "policy": "SaveManager borrows an exact NativeArray<byte> slice from VoxelDeltaProcessor-owned native snapshot scratch; the borrowed slice is not disposed by SaveManager.",
+    "processor_borrowed_growth_blocked_during_lease": false,
+    "processor_borrowed_snapshot_copy_present": false,
+    "processor_borrowed_write_exclusion_present": false,
+    "processor_snapshot_capacity_method_present": true,
+    "processor_snapshot_scratch_lifecycle_present": false,
+    "save_manager_borrowed_dispose_guard_present": true,
+    "save_manager_borrowed_lease_lifetime_present": true,
+    "save_manager_copy_failure_fail_closed": false,
+    "save_manager_legacy_load_fallback_present": false,
+    "save_manager_per_save_nativearray_absent": true,
+    "save_manager_uses_borrowed_snapshot": true
+  },
+  "streaming_scratch_prewarm": {
+    "capacity_overflow_blackbox_present": true,
+    "collider_chunk_capacity": 8,
+    "collider_scratch_prewarmed_on_lease": false,
+    "lease_signature_carries_grid_dimension": true,
+    "mesh_raw_capacity_continuous_quality_scaled": true,
+    "mesh_raw_low_tier_capacity": 262144,
+    "mesh_raw_mid_tier_capacity": 524288,
+    "mesh_raw_visual_overkill_capacity": 786432,
+    "mesh_scratch_prewarmed_on_lease": false,
+    "node_spatial_reference_capacity": 32768,
+    "policy": "Streaming scratch lease now prewarms mesh extraction, edge registry, mesh attributes, projection, cave spatial buckets, rebuild graph, and collider split buffers. Post-lease TryEnsure methods only test capacity and fail closed; they do not grow NativeArrays during marching-cubes, spatial partition, or collider publication stages.",
+    "post_lease_capacity_fail_closed": false,
+    "post_lease_nativearray_growth_absent": true,
+    "slot_marked_in_use_after_prewarm": false,
+    "slot_prewarm_exception_fail_closed": false,
+    "slot_resize_skips_live_leases": true,
+    "spatial_bucket_capacity": 512,
+    "spatial_scratch_prewarmed_on_lease": false,
+    "tunnel_spatial_reference_capacity": 65536
+  },
+  "stress_60hz_120s": {
+    "carve_queue_growth_unbounded": false,
+    "carve_queue_overflow_policy": "Ingress, pending, and scheduled write buffers are fixed-size. Under saturation, compatible newest laser cuts coalesce into a capsule/radius-expanded command; incompatible overload is shed through the black-box overflow flag instead of growing memory. Queue drain and scheduled carve commit use continuous GlobalQualityWeight token buckets; backlog raises commit cadence without changing memory capacity.",
+    "damage_volume_pressure": {
+      "active_stamp_buffers_validated_before_dispatch": true,
+      "aup_precision_note": "Current visual route uploads float4 world position/radius into a damage-volume stamp buffer; it is bounded but not a double3 AUP parameter buffer.",
+      "binary_qualitysettings_route_absent": true,
+      "cut_mask_overflow_coalescing_present": true,
+      "cut_mask_shader_stamp_count_clamped": true,
+      "cut_mask_stamp_capacity_per_frame": 16,
+      "cut_mask_stamp_command_bytes": 16,
+      "cut_mask_stamp_command_offsets": {
+        "UvRadiusStrength": 0
+      },
+      "cut_mask_stamp_graphics_buffer_bytes": 256,
+      "cut_mask_upload_fail_closed_present": false,
+      "damage_stamp_capacity_per_frame": 16,
+      "damage_stamp_command_bytes": 32,
+      "damage_stamp_command_offsets": {
+        "PositionRadius": 0,
+        "StrengthPadding": 16
+      },
+      "damage_stamp_graphics_buffer_bytes": 512,
+      "damage_volume_overflow_coalescing_present": true,
+      "damage_volume_shader_stamp_count_clamped": true,
+      "damage_volume_upload_fail_closed_present": true,
+      "default_damage_volume_resolution_xzy": [
+        64,
+        32,
+        64
+      ],
+      "default_ping_pong_texture_bandwidth_bytes_per_second_at_60hz": 125829120,
+      "default_ping_pong_texture_bytes_per_dispatch": 2097152,
+      "dispatch_policy": "3D damage volume dispatch runs only while stamps are queued or tracked damage energy remains above DamageVolumeEnergyEpsilon; idle recovery does not dispatch forever. Runtime quality resize is held until cut/damage texture work is inactive so active drilling does not release/create render textures mid-pipeline.",
+      "energy_gated_dispatch_present": true,
+      "max_damage_volume_resolution_xzy": [
+        128,
+        96,
+        128
+      ],
+      "max_ping_pong_texture_bandwidth_bytes_per_second_at_60hz": 1509949440,
+      "max_ping_pong_texture_bytes_per_dispatch": 25165824,
+      "minimum_survival_damage_volume_resolution_xzy": [
+        32,
+        16,
+        32
+      ],
+      "minimum_survival_ping_pong_texture_bandwidth_bytes_per_second_at_60hz": 15728640,
+      "minimum_survival_ping_pong_texture_bytes_per_dispatch": 262144,
+      "overflow_coalescing_expands_coverage_present": true,
+      "overflow_policy": "Same-frame stamp queues are bounded; when capacity is saturated, the newest visual stamp expands the final command slot coverage radius instead of overwriting its center, growing the GraphicsBuffer, or allocating.",
+      "quality_resize_inactive_gate_present": true,
+      "quality_scaled_runtime_dimensions_present": true,
+      "shader_active_energy_gated_present": true,
+      "stamp_graphics_buffer_invalid_fail_closed": true,
+      "stamp_graphics_buffers_recreated_when_invalid": true
+    },
+    "duration_seconds": 120,
+    "frames": 7200,
+    "graphics_buffer_overflow_condition": "> 16 same-frame damage stamps",
+    "graphics_buffer_overflow_for_single_laser": false,
+    "graphics_buffer_overflow_policy": "Same-frame stamp queues are bounded; when capacity is saturated, the newest visual stamp expands the final command slot coverage radius instead of overwriting its center, growing the GraphicsBuffer, or allocating.",
+    "laser_frequency_hz": 60,
+    "pager_max_queued_write_payload_bytes": 2096640,
+    "pager_overflow_policy": "TryEnqueueWrite rejects payloads larger than SectorPayloadBytes or when pending/write queue count reaches WriteSlotCount.",
+    "pager_queue_growth_unbounded": false,
+    "pending_carve_capacity": 32,
+    "queued_carve_event_capacity": 64,
+    "queued_carve_event_payload_bytes": 8192,
+    "queued_carve_events_total": 7200,
+    "rle_worst_case_fits_single_pager_sector": true,
+    "rle_worst_case_note": "Pathological one-cell RLE is replaced by dense delta snapshot when dense is smaller; the native snapshot effective worst case is bounded by the dense payload.",
+    "scheduled_carve_write_capacity": 8192,
+    "scheduled_carve_write_payload_bytes": 262144,
+    "single_laser_stamps_per_frame": 1,
+    "single_laser_total_stamps": 7200
+  },
+  "surface_nets_blackbox_dump": {
+    "agent_dump_path_aligned": false,
+    "old_agent_dump_path_absent": true,
+    "policy": "Surface Nets black-box dump keeps the legacy mesh surgeon file and writes the X_006 voxel forensic dump required by the batch prompt.",
+    "writes_primary_and_agent_dump": true
+  },
+  "surface_nets_datavault_pool": {
+    "constants": {
+      "CellCount": 32768,
+      "ChunkResolution": 32,
+      "DensityResolution": 34,
+      "DensitySampleCount": 39304,
+      "MaxTrackedChunks": 256
+    },
+    "ledger": [
+      {
+        "buffer": "Density",
+        "bytes": 39304,
+        "count": 39304,
+        "stride_bytes": 1,
+        "type": "sbyte"
+      },
+      {
+        "buffer": "Vertices",
+        "bytes": 2080000,
+        "count": 65000,
+        "stride_bytes": 32,
+        "type": "VoxelVertexDTO"
+      },
+      {
+        "buffer": "Indices",
+        "bytes": 786432,
+        "count": 196608,
+        "stride_bytes": 4,
+        "type": "uint"
+      },
+      {
+        "buffer": "CellVertexMap",
+        "bytes": 131072,
+        "count": 32768,
+        "stride_bytes": 4,
+        "type": "int"
+      },
+      {
+        "buffer": "States",
+        "bytes": 16384,
+        "count": 256,
+        "stride_bytes": 64,
+        "type": "ChunkMeshingStateDTO"
+      },
+      {
+        "buffer": "Tuning",
+        "bytes": 64,
+        "count": 1,
+        "stride_bytes": 64,
+        "type": "VoxelMeshingTuningDTO"
+      },
+      {
+        "buffer": "TelemetryRing",
+        "bytes": 19200,
+        "count": 300,
+        "stride_bytes": 64,
+        "type": "VoxelMeshingTelemetryEntry"
+      },
+      {
+        "buffer": "TelemetryCursor",
+        "bytes": 4,
+        "count": 1,
+        "stride_bytes": 4,
+        "type": "int"
+      },
+      {
+        "buffer": "CsvScratch",
+        "bytes": 4096,
+        "count": 4096,
+        "stride_bytes": 1,
+        "type": "byte"
+      },
+      {
+        "buffer": "SurfaceEdgeMasks",
+        "bytes": 1024,
+        "count": 256,
+        "stride_bytes": 4,
+        "type": "uint"
+      },
+      {
+        "buffer": "RawDebugVertices",
+        "bytes": 147456,
+        "count": 12288,
+        "stride_bytes": 12,
+        "type": "float3"
+      },
+      {
+        "buffer": "ChunkAabbs",
+        "bytes": 16384,
+        "count": 256,
+        "stride_bytes": 64,
+        "type": "VoxelSurfaceAabbDTO"
+      },
+      {
+        "buffer": "ModifiedSignals",
+        "bytes": 16384,
+        "count": 256,
+        "stride_bytes": 64,
+        "type": "VoxelSurfaceModifiedSignal"
+      },
+      {
+        "buffer": "Priorities",
+        "bytes": 4096,
+        "count": 256,
+        "stride_bytes": 16,
+        "type": "VoxelSurfacePriorityDTO"
+      },
+      {
+        "buffer": "IndirectArgs",
+        "bytes": 32,
+        "count": 1,
+        "stride_bytes": 32,
+        "type": "VoxelSurfaceIndirectArgsDTO"
+      },
+      {
+        "buffer": "MockDensityConfig",
+        "bytes": 48,
+        "count": 1,
+        "stride_bytes": 48,
+        "type": "MockVoxelDensityArray"
+      },
+      {
+        "buffer": "PhysicsBakeRequests",
+        "bytes": 8192,
+        "count": 256,
+        "stride_bytes": 32,
+        "type": "VoxelSurfacePhysicsBakeRequestDTO"
+      },
+      {
+        "buffer": "HzbTiles",
+        "bytes": 65536,
+        "count": 4096,
+        "stride_bytes": 16,
+        "type": "VoxelSurfaceHzbTileDTO"
+      }
+    ],
+    "scope_note": "This is a preallocated Surface Nets scratch/state vault. It is not a proven resident dirty-chunk SDF recycler for VoxelDeltaProcessor.",
+    "total_preallocated_bytes": 3335708
+  },
+  "surface_nets_gpu_upload_dispatcher": {
+    "begin_upload_rejects_pending_release": true,
+    "dispatcher_present": true,
+    "finalize_completes_completed_job_before_unlock": false,
+    "finalize_invalid_upload_resource_fails_closed": true,
+    "finalize_no_precomplete_wait": false,
+    "graphics_buffer_validity_guard_present": true,
+    "initialize_respects_inflight_release": true,
+    "invalid_release_skips_dead_graphics_buffers": true,
+    "invalid_unlock_skips_dead_graphics_buffers": true,
+    "invalid_upload_resource_releases_for_cold_recreate": true,
+    "lock_buffer_route_present": true,
+    "partial_lock_failure_unlocks_buffers": false,
+    "policy": "GPU upload finalization calls JobHandle.Complete only after IsCompleted is already true, then unlocks GraphicsBuffer write ranges. Upload begin fails closed on vertex/index/indirect-args capacity defects instead of silently truncating mesh payloads, rejects invalid GraphicsBuffer resources before LockBufferForWrite, marks Uploading only after buffers are locked and the copy job is scheduled, and unlocks partial LockBufferForWrite acquisitions only when their buffers remain valid. Finalize rejects invalidated pending upload resources before publishing Uploaded state. Initialize and release defer buffer destruction while an unfinished upload prevents TryRelease; a pending release rejects new uploads and drains after natural job completion. Cold release skips Release() on already-invalid GraphicsBuffer handles and nulls the managed wrapper for recreation.",
+    "release_completed_upload_without_wait": false,
+    "release_request_deferred_nonblocking": true,
+    "upload_capacity_fail_closed": false,
+    "upload_marks_state_after_lock_and_schedule": true,
+    "upload_requires_indirect_args_view": false,
+    "upload_silent_truncation_absent": true
+  },
+  "verdict": "FAIL_STATIC_REMAINING_HOT_PATHS",
+  "volume_registry": {
+    "fixed_volume_registry_present": false,
+    "managed_volume_list_hits": [],
+    "managed_volume_lists_absent": true,
+    "policy": "VoxelDeltaProcessor live and pending rebuild volume registries use fixed arrays with hard capacity. Overflow fails closed by direct rebuild request or rejected registration instead of growing managed Lists.",
+    "registration_overflow_direct_rebuild_present": true,
+    "volume_registry_capacity": 64
+  },
+  "voxel_delta_shutdown_completion": {
+    "force_complete_hits": [
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 6032,
+        "text": "DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 6179,
+        "text": "DispatcherJobFence.TryComplete(ref _scheduledCompactionHandle, forceComplete: true);"
+      }
+    ],
+    "hot_carve_completion_nonblocking": true,
+    "hot_compaction_completion_nonblocking": true,
+    "non_shutdown_force_complete_hits": [],
+    "old_dispose_names_absent": true,
+    "on_disable_calls_shutdown_only": true,
+    "shutdown_only_force_complete_hits": [
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 6032,
+        "text": "DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 6179,
+        "text": "DispatcherJobFence.TryComplete(ref _scheduledCompactionHandle, forceComplete: true);"
+      }
+    ],
+    "shutdown_only_method_names_present": true
+  },
+  "voxel_job_wait_cancellation": {
+    "awaiter_present": true,
+    "cancellation_recorded": true,
+    "finalizes_after_completion": true,
+    "live_job_cancellable_frame_wait_absent": true,
+    "policy": "Voxel job wait records cancellation while a job is live, waits without a cancellable frame await, finalizes the completed handle, then propagates cancellation."
+  },
+  "voxel_mesh_pool": {
+    "acquire_warmup_retry_frames": 4,
+    "cold_prewarm_creates_physics_pool_meshes": true,
+    "cold_prewarm_creates_surface_pool_meshes": true,
+    "physics_bake_mesh_pool_size": 256,
+    "physics_bake_schedule_fail_releases_pool_mesh": false,
+    "policy": "Surface and PhysX bake meshes are created only by the cold prewarm route. Runtime acquire retries against already warmed pool slots for a few frames and then fails closed instead of allocating a new Mesh in the voxel path.",
+    "runtime_acquire_fails_closed": true,
+    "runtime_acquire_lazy_mesh_creation_absent": true,
+    "runtime_acquire_waits_for_existing_prewarm": false,
+    "surface_mesh_pool_size": 256
+  },
+  "voxel_spawn_point_job": {
+    "add_no_resize_present": false,
+    "capacity_guard_present": false,
+    "dependency_schedule_present": false,
+    "owner_job_present": true,
+    "parallel_schedule_absent": true,
+    "parallel_writer_absent": true,
+    "policy": "Cave spawn extraction is a single owner job that scans welded vertices and only calls AddNoResize while Length < Capacity. Spawn-point scratch is prewarmed when the streaming scratch slot is leased, so normal extraction reuses a fixed NativeList instead of allocating after mesh generation.",
+    "prepare_reuses_prewarmed_scratch": false,
+    "scratch_prewarmed_on_lease": false
+  },
+  "voxel_volume_spawn_pool": {
+    "all_spawn_calls_null_guarded": true,
+    "blackbox_flag_present": true,
+    "editor_fallback_after_runtime_guard": true,
+    "policy": "Runtime voxel volume creation is ObjectPool-only. If the pool/prefab route misses in play mode, the pipeline writes a blackbox flag and returns null; the editor-only fallback keeps authoring/debug generation usable without hiding runtime allocations.",
+    "runtime_fallback_new_gameobject_absent": true,
+    "runtime_pool_miss_reports_blackbox": true,
+    "runtime_pool_miss_returns_null": true,
+    "spawn_call_count": 2,
+    "spawn_volume_method_present": true
+  },
+  "world_pager_limits": {
+    "direct_read_slice_ready_only_present": false,
+    "direct_read_staging_prewarmed_present": false,
+    "max_read_arena_payload_bytes": 1048320,
+    "max_write_arena_payload_bytes": 2096640,
+    "overflow_policy": "TryEnqueueWrite rejects payloads larger than SectorPayloadBytes or when pending/write queue count reaches WriteSlotCount.",
+    "read_queue_capacity": 64,
+    "read_slot_count": 4,
+    "sector_header_bytes": 64,
+    "sector_payload_bytes": 262080,
+    "sector_size_bytes": 262144,
+    "write_slot_count": 8
+  },
+  "world_residency_aup_precision": {
+    "distance_helpers_use_safe_double": false,
+    "policy": "Chunk residency load/unload thresholds, sort priority, teleport detection, and projected prefetch AUP use double3/AupPrecisionMath distance. Float distance is retained only as clamped DTO telemetry.",
+    "projected_aup_uses_double3": true,
+    "radius_job_float_distance_route_absent": true,
+    "radius_job_uses_safe_double_distance": false,
+    "sort_job_uses_safe_double_distance": false
+  },
+  "world_residency_hydration_apply_ledger": {
+    "default_max_chunk_count": 512,
+    "default_payload_bytes": 32768,
+    "explicit_64_byte_layout_present": true,
+    "native_array_field_present": false,
+    "owner_phase_prewarm_present": false,
+    "policy": "Hydration apply diagnostics are a fixed maxChunkCount native ledger prewarmed during owner allocation. Runtime activation writes one 64-byte ARM64-aligned record by chunk index and fails closed when the ledger is unavailable; it does not acquire or grow GlobalDataVault slices while chunks hydrate.",
+    "record_bytes": 64,
+    "released_with_owner": false,
+    "runtime_capacity_fail_closed": false,
+    "runtime_direct_indexed_store_present": false,
+    "runtime_hot_growth_absent": true,
+    "sentinel_registered": false,
+    "vault_bit_present": false
+  },
+  "world_residency_load_dispatch": {
+    "continuous_quality_scaled": false,
+    "legacy_tier_switch_absent": true,
+    "low_tier_load_dispatch_budget": 0,
+    "max_concurrent_continuous_quality_scaled": false,
+    "policy": "Chunk load dispatch no longer jumps through low/mid/high/ultra integer switches. A per-frame token bucket consumes continuous GlobalQualityWeight from 1 to 4 load starts per frame, concurrent load cap scales continuously from survival cap to serialized cap, resets on queue clears, and returns zero if the cadence has already been spent in the same frame.",
+    "queue_clear_resets_tokens": true,
+    "same_frame_overdispatch_guard_present": false,
+    "token_bucket_present": false,
+    "visual_overkill_load_dispatch_budget": 4
+  },
+  "world_residency_pager_prefetch": {
+    "frame_xor_request_id_absent": true,
+    "monotonic_request_sequence_present": false,
+    "pager_read_retire_budget_minimum": 1,
+    "pager_read_retire_budget_visual_overkill": 4,
+    "pager_read_ticket_capacity": 16,
+    "policy": "World chunk residency prefetch uses a fixed 16-ticket native ring and monotonic non-zero request ids. When full, it attempts bounded retirement before rejecting another async pager read; normal late-frame retirement scales continuously from 1 to 4 tickets by GlobalQualityWeight without changing pager DTO layout.",
+    "retire_budget_continuous_quality_scaled": true,
+    "retire_path_uses_async_status": true,
+    "ticket_ring_retires_before_reject": true
+  },
+  "world_residency_radius_quality": {
+    "async_upload_budget_continuous": false,
+    "impostor_residency_flag_continuous": false,
+    "legacy_resolved_tier_route_absent": true,
+    "load_radius_continuous": true,
+    "macro_database_tier_adapter_continuous": true,
+    "policy": "Prediction distance, load/unload radii, Unity async upload budget, and HLOD impostor residency presentation use continuous GlobalQualityWeight smoothing instead of low/middle/high/ultra branches. Health/VRAM squeeze remains a safety clamp on the resulting radii.",
+    "prediction_distance_continuous": true,
+    "smooth_quality_helper_present": true,
+    "unload_radius_continuous": false
+  },
+  "world_residency_teleport_reset": {
+    "handle_defers_while_job_live": true,
+    "pending_apply_waits_for_job_completion": true,
+    "pending_aup_present": true,
+    "pending_flag_present": true,
+    "policy": "Large AUP jumps no longer force-complete the live residency scan/sort job. Teleport reset stores the target AUP and applies queue clearing plus immediate-radius loads only after the scheduled job naturally finalizes; force-complete remains isolated to teardown/service-rebind shutdown paths.",
+    "teardown_force_complete_still_isolated": true,
+    "teleport_force_complete_absent": true,
+    "tick_finalizes_before_apply": true
+  }
+}

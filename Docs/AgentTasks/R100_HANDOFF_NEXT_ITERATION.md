@@ -28,21 +28,21 @@ Status: `ALL_R100_TASKS_COMPLETE` | Date: 2026-07-27 | Target: `C:\hades\Hecton8
 
 ---
 
+- ✅ **Задача 1.9 (P0 — Коллизия пещер)**: ВЫПОЛНЕНА И ЗАКОММИЧЕНА ранее (`commit 33e7c47c1`). Код уже есть в ветке `main`. Агент только выполнил аудит и подтвердил наличие фикса.
+
+---
+
+- ✅ **Задача 1.10 (P1 — Раздел 9a: float precision terrain)**: ВЫПОЛНЕНА И ЗАКОММИЧЕНА (`commit 93f0ea1df`).
+
+---
+
 ## 2. СЛЕДУЮЩИЕ ПРИОРИТЕТЫ (из HANDOFF_CLAUDE_CODE.md)
 
-Все R100 задачи выполнены. Следующие открытые дефекты из `HANDOFF_CLAUDE_CODE.md`:
-
-### P0 — Раздел 3: Коллизия пещер не работает
-* `HectonVoxelVolume.cs:1748` — `AssignColliderChunkBakeMesh` содержит буквально `return false`.
-* Коллайдер-меш никогда не публикуется. Игрок проплывает сквозь стены.
-* **Реализовать:** сборка Mesh из `chunkTriangleIndices`, `Physics.BakeMesh`, `_bakeState = Complete`.
-
-### P1 — Раздел 9a: float precision terrain (WorldMacroGeologyFields.cs:622)
-* `float2 warpedPos = (float2)warpedPosD;` — потеря точности на X≈777 000 м → зебра-пятна.
-* **Фикс:** вычитать `chunkOriginAup` перед кастом в float.
+Все R100 задачи, P0 (коллизия пещер) и первый P1 (float precision) выполнены. Следующие открытые дефекты из `HANDOFF_CLAUDE_CODE.md`:
 
 ### P1 — Раздел 7b: Two meshes (visual LOD + canonical collider)
 * Surface Nets stride/decimationBias влияют на физический меш → коллизия зависит от качества.
+* **Фикс:** канонический физический меш должен строиться с максимальной детализацией (`stride=1`, `decimationBias=0`), а визуальный — с учётом настроек качества.
 
 ---
 
