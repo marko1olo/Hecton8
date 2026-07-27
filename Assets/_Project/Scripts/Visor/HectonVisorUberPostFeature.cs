@@ -2100,7 +2100,12 @@ namespace Hecton8.Visor
                 _aestheticProfileCache[i] = default;
             _aestheticProfileCacheCount = safeCount;
         }
+#endif
 
+        // Runtime consumer half of the aesthetic-profile route. The CSV loader above is editor-only
+        // authoring I/O; this selector reads the already-cached snapshot and fails closed when the
+        // cache is empty, which is exactly the editor behaviour with settings.loadAestheticCsv off.
+        // It must compile into a player build or the reconstruction constant path has no caller.
         private bool TrySelectAestheticProfileSnapshot(
             Camera renderCamera,
             RuntimeState runtimeState,
@@ -2180,6 +2185,7 @@ namespace Hecton8.Visor
                     math.abs(fogStratification.w) > 0.000001f);
         }
 
+#if UNITY_EDITOR
         private static string ResolveAestheticCsvPath()
         {
             string root = Directory.GetCurrentDirectory();
@@ -2194,7 +2200,14 @@ namespace Hecton8.Visor
             path = Path.Combine(root, "Assets", "_Project", "Data", AestheticCsvFileName);
             return File.Exists(path) ? path : null;
         }
+#endif
 
+        // Runtime read of the DRS injected-scale Vault lane (UberNoirReconstructionVaultIds.MockSignal,
+        // declared in the runtime contract assembly). ThermalDynamicResolutionAdapter already reads this
+        // same buffer unguarded on its runtime tick; guarding it here would let the DRS adapter honour an
+        // injected render scale while the visor reconstruction constants silently did not. Fails closed:
+        // with no writer the handle/flags checks reject and BuildReconstructionConstants keeps the real
+        // IResolutionScalerService values.
         private bool TryCopyMockReconstructionSignalSnapshot(out MockReconstructionInputSignal signal)
         {
             signal = default;
@@ -2293,6 +2306,7 @@ namespace Hecton8.Visor
             return math.isfinite(value) && value > 0f ? value : fallback;
         }
 
+#if UNITY_EDITOR
         private static void SkipCsvWhitespace(ReadOnlySpan<byte> bytes, int limit, ref int cursor)
         {
             while (cursor < limit)
