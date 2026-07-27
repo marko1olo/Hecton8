@@ -287,15 +287,38 @@ static cave SDF, hadal arches, hadal trenches and wreckage.
 
 The world is partitioned into **1 km sectors** with biomass on a **50 m macro-cell** grid. Sector
 populations evolve under a Lotka-Volterra model modulated by food density, carrying capacity,
-oxygen, temperature and light. Sector biome is derived from geology into three lanes:
+oxygen, temperature and light.
 
-| Lane | Condition | Meaning |
+Sector biome is derived from geology by **the zone the geology field already resolved**
+(`WorldMacroGeologySample.PrimaryZone`), not by re-testing masks locally:
+
+| Lane | Zones | Meaning |
 |:--:|:--|:--|
-| `2` scarce | `TrenchMask > 0.8` | Abyssal trench. Thin food column, pressure-adapted hunters. `-0.05` capacity. |
-| `1` rich | `ShelfMask > 0.5` | Photic shelf. Dense kelp, schooling prey. `+0.08` capacity. |
-| `0` neutral | otherwise | No bias. |
+| `1` rich | `PhoticShelf`, `ShelfBreak` | Sunlit or upwelling-fed. Dense kelp, schooling prey. `+0.08` capacity. |
+| `2` scarce | `BrineTrench`, `HadalBasin` | Thin food column, pressure-adapted hunters only. `-0.05` capacity. |
+| `0` neutral | everything else | No bias. |
 
-Trench wins where both masks overlap — a trench cutting through a shelf is still a trench.
+The zone criteria are owned by `WorldMacroGeologyFields.ResolveZone` and are **depth-gated**, which
+is the part that matters:
+
+```
+BrineTrench   (TrenchMask > 0.92 && Depth > 500) || Depth > 4450
+PhoticShelf    ShelfMask > 0.68 && Depth < 260
+ShelfBreak     ShelfBreakMask > 0.35 && 150 < Depth < 2400
+HadalBasin     Depth > 3900 && TrenchMask < 0.76
+```
+
+> [!CAUTION]
+> **Do not re-derive lanes from masks.** An earlier version of this mapping tested `ShelfMask > 0.5`
+> and `TrenchMask > 0.8` directly. It looked reasonable and was wrong twice over: the authority
+> requires `ShelfMask > 0.68` **and** `Depth < 260` for a photic shelf, and it resolves a shelf break
+> from `ShelfBreakMask` — a different field entirely. Being depth-blind, that test labelled 700 m
+> abyssal terrain a rich photic shelf and reported half the world as rich. No compile gate can catch
+> this, because the number looks plausible. Delegate to `ResolveZone`.
+
+`ColdSeepField` is deliberately left **neutral** rather than rich. It is chemosynthetically
+productive in reality, but promoting it would shift fauna density across a large share of the world
+without an ecology authority asking for it — that is a design decision, not a bug fix.
 
 **Whalefall.** Death is conserved, not deleted. `FaunaBrain.Die()` publishes an `EntityDeathSignal`
 whose intensity scales with max health, so a leviathan leaves a proportionally larger corpse.
@@ -563,16 +586,31 @@ Unity.exe -batchmode -nographics -projectPath <repo> \
   -h8SectorRadius 16
 ```
 
-No play mode required. Measured baseline over 33×33 sectors (1,089 samples, default authoring seed):
+No play mode required, so it is cheap to re-run after any geology or threshold change. It reports
+lane counts, the mask extremes (informational only, since lanes come from `PrimaryZone`), and — most
+importantly — **the zone breakdown behind each lane**:
 
 ```
-samples=1089  neutral=437  rich=545  scarce=107  nonFinite=0
-maxTrenchMask=1.0000 (threshold 0.8)   maxShelfMask=1.0000 (threshold 0.5)
-DISCRIMINATING
+[H8_GEOLOGYLANES] samples=… neutral=… rich=… scarce=… nonFinite=…
+[H8_GEOLOGYLANES] zones behind the lanes: photicShelf=… shelfBreak=… (-> rich)
+                                          brineTrench=… hadalBasin=… (-> scarce)
+[H8_GEOLOGYLANES] DISCRIMINATING | DEGENERATE
 ```
 
-Both masks reach 1.0, so neither non-neutral lane is unreachable. The resulting shape — ~50 % shelf,
-~10 % trench — is the physically expected one: shelves common, trenches rare.
+The zone breakdown is what makes the lane counts **falsifiable**. A plausible-looking rich share with
+zero contributing shelf zones means the mapping is picking up something else — which is exactly how
+the earlier mask-threshold version went unchallenged.
+
+> [!NOTE]
+> `WaterSurfaceY` must be set explicitly when building the probe's geology parameters. Lanes are
+> depth-sensitive and `DepthMeters = max(0, WaterSurfaceY - heightMeters)`, so leaving it at
+> `CreateDefault`'s `0` audits a world sitting ~14 m below the one the runtime classifies and reports
+> counts for terrain that does not exist.
+
+**Current status: pending re-measurement.** A previously published baseline was invalidated when the
+mapping moved from mask thresholds to `ResolveZone`; the old numbers described the depth-blind test,
+not the current one. No measured distribution is claimed here until the probe is re-run against the
+zone-based mapping.
 
 </details>
 
