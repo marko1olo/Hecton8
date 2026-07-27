@@ -364,20 +364,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 return saturate(organicDensity * 1.15 + laceNoise * 0.18 - interiorBias);
             }
 
-            float3 ResolveWakeTrailOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float instanceType)
-            {
-                float4 shallowWaterData = EvaluateShallowWaterFieldData(evaluationPositionWS);
-                float displacement = saturate(shallowWaterData.b);
-                float2 planarVelocity = DecodeShallowWaterVelocity(shallowWaterData.rg);
-                float velocityMagnitude = saturate(ApproxMagnitude2(planarVelocity));
-                if (displacement <= 0.0001 && velocityMagnitude <= 0.0001)
-                    return float3(0.0, 0.0, 0.0);
-
-                float3 wakeDirection = SafeNormalize3(float3(planarVelocity.x, 0.0, planarVelocity.y));
-                float3 planarWakeDirection = SafeNormalize3(wakeDirection - baseNormalWS * dot(wakeDirection, baseNormalWS));
-                float typeScale = instanceType < 0.5 ? 0.7 : (instanceType < 1.5 ? 1.0 : 0.3);
-                return planarWakeDirection * ((displacement + velocityMagnitude * 0.5) * bendMask * typeScale);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationWakeTrail.hlsl"
 
             float3 ResolveInteractionOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask)
             {
@@ -589,7 +576,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave * healthSwayScale);
                 animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask * healthSwayScale);
                 animatedPositionWS += flowSynchronyOffset;
-                animatedPositionWS += ResolveWakeTrailOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType);
+                animatedPositionWS += ResolveWakeTrailOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
                 animatedPositionWS += ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask);
                 animatedPositionWS += ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType) * 1.1;
                 animatedPositionWS += ResolveImpactOffset(animatedPositionWS, baseNormalWS, bendMask) * 0.95;

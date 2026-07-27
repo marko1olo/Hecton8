@@ -976,32 +976,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return SAMPLE_TEXTURE2D_LOD(_HectonShallowWaterFieldRT, sampler_HectonShallowWaterFieldRT, uv, 0);
             }
 
-            float3 ResolveWakeTrailOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float heightMask, float instanceType)
-            {
-                if (bendMask <= 0.0001)
-                    return float3(0.0, 0.0, 0.0);
-
-                float4 shallowWaterData = EvaluateShallowWaterFieldData(evaluationPositionWS);
-                float displacement = saturate(shallowWaterData.b);
-                float2 planarVelocity = DecodeShallowWaterVelocity(shallowWaterData.rg);
-                float velocityMagnitudeSq = dot(planarVelocity, planarVelocity);
-                float velocityMagnitude = saturate(velocityMagnitudeSq);
-                if (displacement <= 0.0001 && velocityMagnitude <= 0.0001)
-                    return float3(0.0, 0.0, 0.0);
-
-                float3 wakeDirection = SafeNormalize3(float3(planarVelocity.x, 0.0, planarVelocity.y));
-                float3 planarWakeDirection = wakeDirection - baseNormalWS * dot(wakeDirection, baseNormalWS);
-                planarWakeDirection = SafeNormalize3(planarWakeDirection);
-                float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.05 : 0.38);
-                float flattening = (displacement + velocityMagnitude * 0.5) * bendMask * typeScale;
-                if (instanceType > 0.5 && instanceType < 1.5)
-                {
-                    float whipFactor = saturate((velocityMagnitude - 0.58) * 2.8 + displacement * 0.75);
-                    flattening *= lerp(1.0, 2.35, whipFactor);
-                }
-                float downwardBias = lerp(0.04, 0.18, heightMask) * flattening;
-                return (planarWakeDirection + baseNormalWS * 0.02) * flattening + float3(0.0, -downwardBias, 0.0);
-            }
+            #include "Assets/_Project/Art/Shaders/HectonIndirectVegetationWakeTrail.hlsl"
 
             float3 ResolveSubmarineWashOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float heightMask, float instanceType)
             {
