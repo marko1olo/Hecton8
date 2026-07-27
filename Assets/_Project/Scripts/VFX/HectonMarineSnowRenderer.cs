@@ -766,7 +766,49 @@ namespace Hecton8.Environment
             RefreshMaterialFlipbookAtlasFallbackCold();
             _staticBindingsDirty = true;
             _externalGpuBindingsDirty = true;
+#if UNITY_EDITOR
+            ResolveMarineSnowComputeAtAuthorTime();
+#endif
         }
+
+#if UNITY_EDITOR
+        private const string MarineSnowComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute";
+
+        /// <summary>
+        /// Resolves the marine snow kernel at AUTHOR time so the reference is serialized and therefore ships.
+        ///
+        /// marineSnowCompute arrived only through [SerializeField], and a GUID census found this compute asset
+        /// referenced by no scene, prefab or asset - so the field was null everywhere. IsOperational gates on
+        /// it, as do every dispatch guard, which means all marine snow paths early-returned and the densest
+        /// depth cue in the abyss never rendered at all. Commit 32c3c8a1a connected the two missing pieces
+        /// around this system but not this reference, so it stayed inert regardless.
+        ///
+        /// The assignment is proven by kernel name rather than name similarity: CS_IntegrateSiltParticles and
+        /// CS_RebaseParticles are declared in exactly one compute asset in the project.
+        ///
+        /// SetDirty is what separates this from a lazy runtime resolve. Assigning in memory only would repair
+        /// the field on every editor load and still ship null - the exact failure mode 30deb1fe9 documents,
+        /// where the editor always looks correct and the player build is dead. Marking dirty serializes it, so
+        /// any new scene or prefab carrying this component wires itself instead of depending on somebody
+        /// remembering an Inspector drag. Runtime cost is zero; none of this exists in a build.
+        ///
+        /// Writing it to disk is a separate, deliberate step owned by Hecton8/GPU/Persist Kernel References
+        /// (GpuKernelReferencePersist). That tool only persists references already resolved in memory, which is
+        /// precisely what this supplies - it previously saw this field as stillNull and could not act on it.
+        /// </summary>
+        private void ResolveMarineSnowComputeAtAuthorTime()
+        {
+            if (Application.isPlaying || marineSnowCompute != null)
+                return;
+
+            ComputeShader resolved = AssetDatabase.LoadAssetAtPath<ComputeShader>(MarineSnowComputeAssetPath);
+            if (resolved == null)
+                return;
+
+            marineSnowCompute = resolved;
+            EditorUtility.SetDirty(this);
+        }
+#endif
 
         private void OnDisable()
         {
