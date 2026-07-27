@@ -1673,7 +1673,11 @@ namespace Hecton8.Atmosphere
             SignalBus<ToxicBioluminescenceSignal>.EnsureInitialized();
         }
 
-#if UNITY_EDITOR
+        // Runtime helper, deliberately OUTSIDE the editor CSV block below.
+        // ReadBinaryProbe() -> ProbeColdBinaryPayloads() runs unguarded from EnsureNativeState(), and
+        // the buffer it fills (_binaryProbeBytes) is acquired unguarded as well, so the player build
+        // needs this reader. It is a bounded FileStream.Read into a preallocated NativeArray - not
+        // File.ReadAllBytes - and its payload is the sanctioned Data/Precomputed .h8bin artifact.
         private static int FillByteBufferFromFile(string path, NativeArray<byte> buffer)
         {
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -1690,6 +1694,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
+#if UNITY_EDITOR
         private static void ParseChemicalCsv(NativeArray<byte> bytes, int length, ref ToxicOutgassingConstants constants)
         {
             int cursor = 0;

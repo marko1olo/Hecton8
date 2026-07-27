@@ -41,9 +41,12 @@ namespace Hecton8.Animation.KineticCharacter
             KineticMutationGuardBit(BufferID.PlayerHandIkPublishedStates);
         private static readonly ulong SolverPlayerStateReadGuardMask =
             KineticMutationGuardBit(BufferID.PlayerKinematicState);
-#if UNITY_EDITOR
+        // Consumed by TryApplyEditorTuning(), which is public and NOT preprocessor-guarded, so it is
+        // compiled into a player build and needs this mask there. The value is a pure buffer-id bit
+        // (KineticMutationGuardBit), not an editor facility - only its caller is editor-facing.
         private static readonly ulong EditorTuningMutationGuardMask =
             KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.Tuning);
+#if UNITY_EDITOR
         private static readonly ulong EditorProfileMutationGuardMask =
             KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.Rigs) |
             KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.Tuning);

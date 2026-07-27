@@ -1085,6 +1085,15 @@ namespace Hecton8.Visor
                    IsOwnedHandle(in _telemetryHandle, VisorARStencilContracts.TelemetryRingBufferId);
         }
 
+        // Pure buffer-id bit computation. It is consumed by the CsvProfileMutationGuardMask static
+        // field initializer near the top of the file, which is NOT preprocessor-guarded, so this
+        // helper must exist in a player build too. Same shape and placement as
+        // HectonVisorUberPostFeature.UberVisorMutationGuardBit, which is likewise unguarded.
+        private static ulong VisorMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
+        }
+
 #if UNITY_EDITOR
         private void LoadCsvProfilesCold()
         {
@@ -1154,11 +1163,6 @@ namespace Hecton8.Visor
             {
                 // Cold editor/dev configuration path. Runtime rendering must not depend on CSV success.
             }
-        }
-
-        private static ulong VisorMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << ((int)bufferId & 31);
         }
 
         private static int ReadCsvFileIntoSpan(string path, Span<byte> destination)

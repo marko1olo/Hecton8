@@ -2095,6 +2095,25 @@ namespace Hecton8.AI
             _macroTuningHandle = default;
         }
 
+        // Runtime helper, deliberately OUTSIDE the editor CSV block below.
+        // InitializeDefaultRules() hashes the four built-in species/loot keys with this, and that
+        // default table is the ONLY spawn-rule source a player build has - the CSV loader is
+        // editor-only. Guarding this with the CSV loader stripped the default table from the player.
+        private static uint HashLower(string text)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                for (int i = 0; i < text.Length; i++)
+                {
+                    char ch = text[i];
+                    byte b = (byte)(ch >= 'A' && ch <= 'Z' ? ch + 32 : ch);
+                    hash = (hash ^ b) * 16777619u;
+                }
+                return hash == 0u ? 1u : hash;
+            }
+        }
+
 #if UNITY_EDITOR
         private bool TryLoadRulesCsvCold(IDataVault vault, bool forceReload, bool locksHeld)
         {
@@ -2469,21 +2488,6 @@ namespace Hecton8.AI
         private static byte ToLower(byte value)
         {
             return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
-        }
-
-        private static uint HashLower(string text)
-        {
-            unchecked
-            {
-                uint hash = 2166136261u;
-                for (int i = 0; i < text.Length; i++)
-                {
-                    char ch = text[i];
-                    byte b = (byte)(ch >= 'A' && ch <= 'Z' ? ch + 32 : ch);
-                    hash = (hash ^ b) * 16777619u;
-                }
-                return hash == 0u ? 1u : hash;
-            }
         }
 
         private static uint Fnv1aLower(ReadOnlySpan<byte> token)

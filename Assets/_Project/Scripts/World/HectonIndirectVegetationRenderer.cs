@@ -1722,7 +1722,12 @@ namespace Hecton8.World
             _cachedQualityWeight01 = ResolveVegetationQualityWeight01(_cachedQualityWeight01);
             _cachedSystemStress01 = 0f;
             _resolvedDensityDecimationStep = ResolveDensityDecimationStep();
+#if UNITY_EDITOR
+            // AssetDatabase authoring convenience - it cannot exist in a player build. There the
+            // serialized references ARE the assignment, and VerifyRequiredIndirectRenderAssets()
+            // below is what proves they were actually authored instead of drawing nothing.
             TryAutoAssignAssets();
+#endif
             CacheGraphicsCapabilitiesCold();
             if (_cullingCompute != null)
             {
@@ -1754,6 +1759,12 @@ namespace Hecton8.World
                     _depthPyramidDownsampleKernel,
                     out _depthPyramidDownsampleThreadGroupSizeX,
                     out _depthPyramidDownsampleThreadGroupSizeY);
+            }
+
+            if (!VerifyRequiredIndirectRenderAssets())
+            {
+                enabled = false;
+                return;
             }
 
             if (!EnsureRenderMaterialResolved())
@@ -6841,6 +6852,65 @@ namespace Hecton8.World
                 out _depthPyramidDownsampleThreadGroupSizeY);
         }
 #endif
+
+        /// <summary>
+        /// Player-build counterpart of the editor-only TryAutoAssignAssets().
+        /// In the editor that helper repairs missing serialized references through AssetDatabase; in a
+        /// player build the serialized references are all there is. An unassigned culling compute used
+        /// to mean this renderer drew nothing and said nothing: PrepareGpuIndirectResourcesCold and
+        /// TryRenderGpuIndirect both early-return on a null _cullingCompute, and RunVisualTick has no
+        /// non-indirect fallback - it just releases BRG resources and leaves the frame empty.
+        /// Returns false only for the fatal cases, so Awake disables the component instead of leaving a
+        /// wired-looking renderer that yields nothing. Degraded-but-usable cases warn and name the
+        /// exact capability they disable.
+        /// </summary>
+        private bool VerifyRequiredIndirectRenderAssets()
+        {
+            // Deliberate authoring choice, not a missing reference: this component is configured to
+            // stay out of the indirect path entirely, so its compute references are not required.
+            if (!_preferGpuIndirectRendering)
+                return true;
+
+            if (!_supportsComputeShadersCold)
+            {
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[HectonIndirectVegetationRenderer] SystemInfo.supportsComputeShaders is false on this device. Capability disabled: GPU flora culling and every indirect flora draw.",
+                    this);
+                return true;
+            }
+
+            if (_cullingCompute == null)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    "[HectonIndirectVegetationRenderer] Culling compute shader reference is unassigned. Capability disabled: every indirect flora draw. Disabling the renderer instead of silently rendering nothing.",
+                    this);
+                return false;
+            }
+
+            if (_cullFloraKernel < 0 || _clearIndirectArgsKernel < 0)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    "[HectonIndirectVegetationRenderer] Culling compute shader is assigned but CullFloraInstances/ClearIndirectArgs did not resolve. Capability disabled: every indirect flora draw. Disabling the renderer instead of silently rendering nothing.",
+                    this);
+                return false;
+            }
+
+            if (_abyssalFlowFieldCompute == null || _clearFloraSnapFlagsKernel < 0)
+            {
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[HectonIndirectVegetationRenderer] Abyssal flow field compute is unassigned or its kernels did not resolve. Capability disabled: GPU flora current-snap flagging. Flora still draws.",
+                    this);
+            }
+
+            if (_enableDepthOcclusion && (_depthPyramidCompute == null || _depthPyramidCopyKernel < 0))
+            {
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[HectonIndirectVegetationRenderer] Depth pyramid compute is unassigned or its kernels did not resolve. Capability disabled: Hi-Z occlusion culling. Flora still draws, at a higher surviving instance count.",
+                    this);
+            }
+
+            return true;
+        }
 
         private void CreateAuxiliaryMaterials()
         {

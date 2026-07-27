@@ -4937,6 +4937,12 @@ namespace Hecton8.Environment
                 mainCameraTransform.TryGetComponent(out _gameplayMainCamera);
         }
 
+#if UNITY_EDITOR
+        // Edit-mode only, and guarded to match its own state: _editorGameplaySpaceCamera is declared
+        // inside #if UNITY_EDITOR. The body is also unreachable in a player build by construction -
+        // Application.isPlaying is constant true there - so there is no player behaviour to preserve.
+        // The player/runtime space-camera route is ResolveSpaceCamera() below, which owns _spaceCamera
+        // and its own retry interval; it is a separate resolver, not a fallback for this one.
         private void ResolveGameplaySpaceCameraForEditor()
         {
             if (Application.isPlaying)
@@ -4956,6 +4962,7 @@ namespace Hecton8.Environment
             spaceCameraTransform.TryGetComponent(out _editorGameplaySpaceCamera);
             ResolveValidCameraReference(ref _editorGameplaySpaceCamera);
         }
+#endif
 
         private void ResolveSpaceCamera()
         {
