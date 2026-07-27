@@ -2630,7 +2630,14 @@ namespace Hecton8.Physiology
             else if (keyHash == _NarcosisThresholdHash)
                 tuning.NarcosisStartAtm = value;
         }
+#endif
 
+        // Everything from here to ClearCachedHandles is runtime lifecycle - DataVault mutation
+        // guards, dispatcher tick registration, hot-swap listener wiring and handle teardown - and
+        // is called from unguarded code above. It sat inside the editor-only CSV override block, so
+        // a player build had no job-buffer locking and no tick registration for physiology at all.
+        // Keep this block outside the guard. CSV parsing stays inside it, per
+        // TOOL_Designer_Facades_CSV_Binary_Bridge.txt.
         private bool TryLockJobBuffers(IDataVault vault)
         {
             if (vault == null || _jobLocksHeld)
@@ -2735,6 +2742,7 @@ namespace Hecton8.Physiology
             _decompressionTelemetryCursor = 0;
         }
 
+#if UNITY_EDITOR
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsCsvSpace(byte value)
         {
