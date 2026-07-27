@@ -29,13 +29,20 @@ namespace Hecton8.EditorTools.Diagnostics
 
         // Components a subsystem needs somebody to have PLACED. Grows as gateways are identified;
         // a type belongs here once it is proven that nothing installs it at runtime.
+        //
+        // The criterion is "nothing CREATES one", and counting [RuntimeInitializeOnLoadMethod]
+        // attributes does not test that - HectonVoxelEngine and HectonWorldGenerator each carry one
+        // (two, for the engine) and none of them installs anything: they are SubsystemRegistration
+        // static-state resets for domain reload. Read what the method does before trusting the count.
         private static readonly string[] AuthoredGatewayScripts =
         {
-            // Proven authored-only: zero AddComponent sites, zero [RuntimeInitializeOnLoadMethod].
             // (WorldZoneAnchor / WorldSliceAnchor / WorldInterestAnchor were checked and DO self-install,
             //  so they are deliberately not listed here. DiegeticAssemblyAnchor is a static assembly
             //  marker, not a Component at all - the NOT-A-COMPONENT guard below caught that.)
             "Assets/_Project/Scripts/Audio/HectonMusicDirectorAnchor.cs",
+            "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+            "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+            "Assets/_Project/Scripts/HectonWorldGenerator.cs",
         };
 
         public static void Run()

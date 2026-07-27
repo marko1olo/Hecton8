@@ -2038,6 +2038,16 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         const int MaxVoxelsPerChunk = 3;
         const int MinClusterVertices = 20;
 
+        // Nothing ever assigned this field - not a prefab, not code - so this method has returned on
+        // its first line for the whole life of the project and no voxel cave or rift has ever spawned.
+        // HectonVoxelEngine self-installs and registers itself with GlobalRegistry, so resolve it the
+        // way the rest of the project resolves services. Lazy and repeated on purpose: Unity reports a
+        // destroyed engine as null, so a hot-swapped one is picked up on the next chunk rather than
+        // leaving a dangling reference behind. The guard below still stands for the frames before the
+        // engine exists, and ReleaseChunkWorldSideEffects keeps its own name-based fallback.
+        if (voxelEngine == null)
+            voxelEngine = GlobalRegistry.VoxelEngine;
+
         if (voxelEngine == null) return;
 
         float2 chunkOrg = ChunkOrigin(coord);
