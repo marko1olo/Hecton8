@@ -150,14 +150,49 @@ masking after the fold.
 ### Silent degeneracy is the dominant failure mode here
 
 Because so much is procedural, a broken system usually does not throw — it produces uniform,
-plausible-looking output. Two real examples: vegetation whose bioluminescent pulse could never fire,
-and ecosystem biome derived from a coordinate hash entirely decorrelated from the visible seafloor.
-Both compiled, ran, and logged nothing.
+plausible-looking output. Three real examples: vegetation whose bioluminescent pulse could never
+fire; ecosystem biome derived from a coordinate hash entirely decorrelated from the visible seafloor;
+and the fix for that second one, which replaced the hash with a **depth-blind** mask test and
+labelled 700 m abyssal terrain a rich photic shelf. All three compiled, ran, and logged nothing.
 
 **If a system can silently collapse, write a probe that fails loudly instead.**
 `EcosystemGeologyBiomeLanes.SampleLaneDistribution` + `H8_GeologyBiomeLaneProbe` are the reference
 pattern: the canonical mapping lives in one shared unit that both the runtime and the audit call, so
 the audit cannot drift and report health while the runtime is degenerate.
+
+> [!CAUTION]
+> **A shared unit is necessary but not sufficient, and the third example above is why.** That version
+> *had* the shared unit and *had* the probe. Both were wrong together, because both were built from
+> the same author's premise: the runtime tested `ShelfMask > 0.5`, and the probe dutifully reported
+> `maxShelfMask` against that same threshold. The audit could not contradict the code because it
+> shared the code's assumption. It reported `DISCRIMINATING` and a plausible 50 % shelf share, and
+> that number was published as proof.
+>
+> The shared-unit pattern prevents **drift**. It does nothing about a **shared wrong premise**.
+>
+> Two rules follow, and they are worth more than the pattern itself:
+>
+> 1. **Assert against the authority's output, not against your own re-derivation.** The mapping now
+>    switches on `WorldMacroGeologySample.PrimaryZone`, and the probe reports the *zone counts*
+>    (`photicShelf`, `shelfBreak`, `brineTrench`, `hadalBasin`) that produced each lane. A rich share
+>    with zero contributing shelf zones is now a visible contradiction. Before, there was nothing the
+>    output could contradict.
+> 2. **Make the probe's output falsifiable, not merely informative.** "Both masks reach 1.0" cannot
+>    be wrong. "545 rich sectors, of which 0 are PhoticShelf and 0 are ShelfBreak" can be — and that
+>    is the whole value.
+>
+> If you find yourself writing a diagnostic that can only agree with the code it tests, you have
+> written a mirror, not a check.
+
+**Corollary — do not re-derive rules an authority already owns.** The depth-blind bug existed because
+the lane mapping re-implemented zone classification instead of calling
+`WorldMacroGeologyFields.ResolveZone`, which already encoded `ShelfMask > 0.68 && Depth < 260` and
+resolved shelf break from a different field entirely (`ShelfBreakMask`). Swept the rest of the
+codebase for siblings afterwards: the only other mask comparisons outside the geology owner are
+`ProceduralWreckGenerator` asking "is this ridge-like enough to site a wreck" and
+`WorldTerrainDetailContracts` blending surface materials. Both ask genuinely local questions rather
+than re-deriving zones, so both are legitimate. If you add a third, check which of those two kinds it
+is before you ship it.
 
 ---
 
