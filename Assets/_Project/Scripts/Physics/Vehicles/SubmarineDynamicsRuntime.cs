@@ -1,8 +1,6 @@
 using System;
-#if UNITY_EDITOR
 using System.IO;
 using System.Threading;
-#endif
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -1398,7 +1396,6 @@ namespace Hecton8.Physics.Vehicles
             vault?.ReleaseMutationGuard(guardMask);
         }
 
-#if UNITY_EDITOR
         private bool TryLoadLegacyProfiles(ref SubmarineKinematicConfig config, Span<float> dragLut)
         {
             try
@@ -1622,6 +1619,11 @@ namespace Hecton8.Physics.Vehicles
             }
         }
 
+        // Editor-only for a real reason, unlike the outer guard that used to wrap the whole tail of
+        // this class: this block parses CSV. TOOL_Designer_Facades_CSV_Binary_Bridge.txt forbids CSV
+        // parsing and File.ReadAllText from gameplay runtime paths, so the designer override
+        // convenience stays out of player builds. Keep this guard tight around the CSV path only -
+        // widening it again would take the runtime boot methods below out of the player build.
 #if UNITY_EDITOR
         private bool TryApplyCsvOverrides()
         {
@@ -2545,6 +2547,5 @@ namespace Hecton8.Physics.Vehicles
                 ? current
                 : Path.Combine(current, "Hecton8");
         }
-#endif
     }
 }
