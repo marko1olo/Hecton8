@@ -387,6 +387,9 @@ namespace Hecton8.Gameplay
         private const string BallastPidDumpRelativePath = "Docs/AgentLogs/Dump_1420_SubmarineNavigation.bin";
         private const string BallastBuoyancyDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_333.bin";
         private const float WaterDensityKgPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;
+        // Densest authored brine layer sits near 1.3x sea water; the ratio bounds a hot-swapped or
+        // malformed density provider instead of trusting it to stay in range.
+        private const float MaximumAmbientDensityRatio = 1.35f;
         private const float DefaultBallastHullHeightMeters = 4f;
         private const float DefaultBallastAirPressureATM = 24f;
         private const float DefaultBallastHullVolumeMassScalar = 1.12f;
@@ -480,6 +483,7 @@ namespace Hecton8.Gameplay
         private IPhysicsService _physicsService;
         private IDataVault _dataVault;
         private IAnalyticalFlowReadModel _analyticalFlowReadModel;
+        private IBrineFluidDensityReadModel _brineDensityReadModel;
         private IHectonOceanKinematicsService _oceanKinematicsService;
         private Rigidbody _hull;
         private Transform _cachedTransform;
@@ -785,6 +789,12 @@ namespace Hecton8.Gameplay
             if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
             {
                 _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.ResourceDistributionRuntime)
+            {
+                _brineDensityReadModel = currentService as IBrineFluidDensityReadModel;
                 return;
             }
 
@@ -1276,7 +1286,7 @@ namespace Hecton8.Gameplay
                     PumpRateLitersPerSecond = math.max(0f, pumpFillRate01PerSecond) * math.max(0.01f, tankVolumeLiters),
                     BlowRateLitersPerSecond = math.max(0f, ballastBlowRate01PerSecond) * math.max(0.01f, tankVolumeLiters),
                     AirBankPressureATM = math.max(1f, airBankPressureATM),
-                    FluidDensityKgPerM3 = WaterDensityKgPerCubicMeter,
+                    FluidDensityKgPerM3 = ResolveAmbientFluidDensityKgPerM3(),
                     GlobalQualityWeight = ReadCachedGlobalQualityWeight(),
                     SourceHash = SubmarineBallastConstants.SourceHash,
                     Frame = unchecked((uint)_tickCount),
@@ -1312,7 +1322,7 @@ namespace Hecton8.Gameplay
                 dto.PumpRateLitersPerSecond = math.max(0f, pumpFillRate01PerSecond) * math.max(0.01f, tankVolumeLiters);
                 dto.BlowRateLitersPerSecond = math.max(0f, ballastBlowRate01PerSecond) * math.max(0.01f, tankVolumeLiters);
                 dto.AirBankPressureATM = math.max(1f, airBankPressureATM);
-                dto.FluidDensityKgPerM3 = WaterDensityKgPerCubicMeter;
+                dto.FluidDensityKgPerM3 = ResolveAmbientFluidDensityKgPerM3();
                 dto.GlobalQualityWeight = ReadCachedGlobalQualityWeight();
                 dto.SourceHash = SubmarineBallastConstants.SourceHash;
                 dto.Frame = packet.Frame;
@@ -1984,7 +1994,7 @@ namespace Hecton8.Gameplay
                     HullVelocity = (float3)(_hull.linearVelocity),
                     HullHeightMeters = hullHeight,
                     HullVolumeCubicMeters = hullVolume,
-                    FluidDensityKgPerM3 = WaterDensityKgPerCubicMeter,
+                    FluidDensityKgPerM3 = ResolveAmbientFluidDensityKgPerM3(),
                     AmbientPressureATM = SubmarineBallastConstants.AtmosphericPressureAtm +
                                          (depthMeters * SubmarineBallastConstants.SeaWaterAtmPerMeter),
                     GlobalQualityWeight = quality,
@@ -2103,6 +2113,35 @@ namespace Hecton8.Gameplay
 
             float neutralMass = math.max(1f, _baseMassKg) * DefaultBallastHullVolumeMassScalar;
             return neutralMass * math.rcp(math.max(1f, WaterDensityKgPerCubicMeter));
+        }
+
+        /// <summary>
+        /// Ambient fluid density at the hull. The buoyancy solver and the ballast DTO both carry a
+        /// per-instance FluidDensityKgPerM3, and SubmarineBallastBuoyancyContracts already divides by
+        /// it - but every call site fed the sea-water compile-time constant, so the submarine
+        /// displaced the same mass of fluid inside a heavy brine pool as in open ocean. The brine
+        /// read model is the same service ToolDurabilitySystem consumes, injected cold through the
+        /// registry hot-swap slot, so this stays a pure read with no scene search.
+        /// </summary>
+        private float ResolveAmbientFluidDensityKgPerM3()
+        {
+            IBrineFluidDensityReadModel readModel = _brineDensityReadModel;
+            if (readModel == null || _hull == null)
+                return WaterDensityKgPerCubicMeter;
+
+            if (!readModel.TrySampleBrineFluidDensity(_hull.position, out float densityKgPerCubicMeter) ||
+                !math.isfinite(densityKgPerCubicMeter))
+            {
+                return WaterDensityKgPerCubicMeter;
+            }
+
+            // Brine is denser than sea water, never lighter; clamping the low side keeps a bad
+            // sample from making the hull weightless, and the high side bounds the solver's
+            // buoyant force so a hot-swapped provider cannot launch the submarine.
+            return math.clamp(
+                densityKgPerCubicMeter,
+                WaterDensityKgPerCubicMeter,
+                WaterDensityKgPerCubicMeter * MaximumAmbientDensityRatio);
         }
 
         private void RefreshGlobalQualityWeightSnapshotCold()
