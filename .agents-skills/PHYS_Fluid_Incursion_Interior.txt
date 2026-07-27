@@ -15,7 +15,7 @@
 
 ## [RULE] EXECUTION LAWS
 
-- ALL float math: `FixedUpdate` / `IFixedTickSystem` ONLY. Zero `MonoBehaviour` hierarchy traversal.
+- ALL float math: `FixedUpdate` / `IFixedTickable` ONLY (the live interface is `IFixedTickable` — `IFixedTickSystem` does not exist, verified 2026-07-27). Zero `MonoBehaviour` hierarchy traversal.
 - Zero GC per frame. No `new`, no LINQ, no boxing. NativeArrays persist across frames.
 - DOD-first. Structs in NativeArray<T>. Cache-line aligned. No class polymorphism in hot path.
 - Burst-compile all Job structs. `[BurstCompile(FloatMode=FloatMode.Fast, FloatPrecision=FloatPrecision.Low)]` on inner loops.

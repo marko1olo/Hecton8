@@ -558,8 +558,13 @@ private JobHandle GrowNativeList<T>(
 | Renderer Export | VisibleEntityBuffer | 4096 | 12288 | Pre-allocate max |
 | Pathfinding | OpenSetBuffer | 2048 | 8192 | Exponential x2 |
 
-These values are validated against profiler data quarterly. table lives
-in `Systems/MemoryBudgets.cs` as compile-time constants, not magic numbers.
+These values are validated against profiler data quarterly and must be compile-time constants at their
+owning system, never magic numbers at the call site. There is no central Systems/MemoryBudgets.cs (unbackticked: dead path) —
+that path does not exist (verified 2026-07-27). Budget constants live with their owner; current examples:
+`Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`,
+`Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs`,
+`Assets/_Project/Editor/PlayModePerformanceMonitor.cs`. Project-wide ceilings (4096 MB memory, 1800 MB
+compact VRAM, 900 MB texture, 320 MB RT+depth) are stated once in `AGENTS.md` Role and `performance.md`.
 
 ---
 

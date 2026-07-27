@@ -547,11 +547,21 @@ namespace Hecton8.World
                     int2 cell = cellBase + new int2(dx, dz);
                     float2 hashP = Hash2(cell.x, cell.y, seed ^ 0x6E2D9A15u);
                     float2 center = new float2(cell.x, cell.y) + hashP;
-                    float dist = math.length(sampleP - center);
-                    if (dist < f1) { f2 = f1; f1 = dist; bestCell = cell; }
-                    else if (dist < f2) { f2 = dist; }
+                    // math.md section 7: rank in SQUARED space. sqrt is monotonic, so nearest and
+                    // second-nearest are unchanged, and the two survivors are rooted once after the
+                    // loop instead of nine times inside it. The 1.5 cull also moves ahead of the sqrt,
+                    // so out-of-range cells now cost neither the root nor the exp.
+                    float distSq = math.lengthsq(sampleP - center);
+                    if (distSq < f1) { f2 = f1; f1 = distSq; bestCell = cell; }
+                    else if (distSq < f2) { f2 = distSq; }
 
-                    if (dist > 1.5f) continue;
+                    const float provinceCullRadius = 1.5f;
+                    if (distSq > provinceCullRadius * provinceCullRadius) continue;
+
+                    // SUPPRESSION (math.sqrt): owner WorldMacroGeologyFields, reason = the exp falloff
+                    // and smoothstep taper both need true metric distance; tier = all; verified by the
+                    // 160k-sample height checksum recorded in the commit that introduced this.
+                    float dist = math.sqrt(distSq);
                     float w = math.exp(-provHardness * dist) * math.smoothstep(1.5f, 1.0f, dist);
                     ProvinceRecipe r = ProvinceRecipe.GetRecipe(SelectGeologicalType(cell, continentality, plateEdgeMask, seed));
                     aCr += r.Craters * w; aRi += r.Rivers * w; aLa += r.Lakes * w; aSt += r.Strata * w;
@@ -562,6 +572,9 @@ namespace Hecton8.World
 
             float inv = 1f / math.max(1e-6f, wSum);
             primaryTypeIndex = SelectGeologicalType(bestCell, continentality, plateEdgeMask, seed); // atlas colour only
+            // f1/f2 were ranked squared inside the loop; take the two roots here, once.
+            f1 = f1 < float.MaxValue ? math.sqrt(f1) : f1;
+            f2 = f2 < float.MaxValue ? math.sqrt(f2) : f2;
             provinceBlend = math.saturate((f2 - f1) * 2.5f); // atlas display only; NOT fed into height
             return new ProvinceRecipe
             {
@@ -842,6 +855,10 @@ namespace Hecton8.World
 
             // THREAT 2 (Auditor #7): Subduction Crease Asymmetry and Depth Reduction
             float creaseWarp = FractalSimplexNoise01(warpedPos * 0.005f, seed ^ 0x11223344u, 2) * 0.2f;
+            // Left as math.pow deliberately. ((x*x)*(x*x)*(x*x)) is cheaper, but it rounds differently
+            // from pow and shifted the 160k-sample height checksum by 1.5e-4 (~1 nm per sample). The
+            // saving is once per sample and was not measurable above machine noise, so it is not worth
+            // perturbing generated terrain. Revisit only with a profiler capture showing this matters.
             float trenchCrease = math.pow(math.saturate(trenchMask + creaseWarp), 6.0f);
             depth += trenchCrease * 250f * oceanicTrenchGate;
 
@@ -1046,7 +1063,10 @@ namespace Hecton8.World
                         
                         double cx = (neighbor.x + HashToUnitFloat(h ^ 0x99AABBCCu)) * microGridD;
                         double cz = (neighbor.y + HashToUnitFloat(h ^ 0xDDEEFF00u)) * microGridD;
-                        float radius = math.lerp(30f, 180f, math.pow(HashToUnitFloat(h ^ 0x11335577u), 2f));
+                        // Squared bias curve as a multiply, not a transcendental. This one sits inside
+                        // the 3x3 micro-crater neighbourhood, so it ran up to nine times per sample.
+                        float microRadiusBias = HashToUnitFloat(h ^ 0x11335577u);
+                        float radius = math.lerp(30f, 180f, microRadiusBias * microRadiusBias);
                         // Same squared-distance cull as the macro crater loop above; micro craters are
                         // denser (600 m grid), so proportionally more candidates are rejected here.
                         double microDx = warpedPosD.x - cx;
@@ -1199,7 +1219,7 @@ namespace Hecton8.World
                 float reefPatch = math.smoothstep(0.50f, 0.75f, reefNoise);
                 
                 float coralHeads = DoubleFractalSimplexNoise01(warpedPosD * 0.025, seed ^ 0xCC00AA11u, 3);
-                coralHeads = math.pow(coralHeads, 2f); 
+                coralHeads = coralHeads * coralHeads; // was math.pow(x, 2f) - a transcendental for a square
                 
                 reefMask = reefPatch * depthGate * recipe.Reefs * reefFade;
                 depth -= (coralHeads - 0.33f) * 35f * reefMask;
@@ -1281,7 +1301,8 @@ namespace Hecton8.World
             // --- B11: COASTAL EROSION & KARST SPIRES ---
             float waveExposure = DoubleFractalSimplexNoise01((double2)warpedNorm * 4.5 + new double2(44.0, -12.0), seed ^ 0x99AABBCCu, 3);
             float cliffAsymmetry = math.smoothstep(0.3f, 0.7f, waveExposure);
-            float coastalInfluence = math.exp(-math.pow(depth / 15f, 2f));
+            float coastalFalloff = depth / 15f;
+            float coastalInfluence = math.exp(-(coastalFalloff * coastalFalloff)); // was exp(-pow(t, 2f))
             depth = math.lerp(depth, 2f, coastalInfluence * cliffAsymmetry * 0.9f);
 
             float spireRegion = math.smoothstep(0.75f, 0.98f, DoubleFractalSimplexNoise01(warpedPosD * 0.0008 + new double2(-22.0, 55.0), seed ^ 0x11223344u, 3));
@@ -1312,6 +1333,8 @@ namespace Hecton8.World
             // R52 GAMEPLAY & BIOME MASKS (Nervous system for voxels, loot, and hazard biomes)
             float ledgeMask = math.saturate(strataMask * math.smoothstep(0.35f, 0.05f, slopeProxy));
             float caveEntranceMask = math.saturate(faultMask * steepRockMask);
+            // Left as math.pow for the same reason as trenchCrease above: (x*x)*(x*x) rounds differently
+            // and perturbs the terrain checksum for a once-per-sample saving that machine noise swallowed.
             float brinePoolMask = math.pow(math.saturate(trenchMask), 4.0f) * (1f - continentality);
 
             masks = new MacroMasks

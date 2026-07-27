@@ -23,7 +23,7 @@ Covers: seam geometry, normal-space unification, collision arbitration, raycasti
 ### Section1.1 Transition Band Specification
 - Overlap zone: 3.5m measured from voxel mesh boundary inward toward terrain surface.
 - Band contains: skirt geometry, blended normals, collision handoff zone, dither VFX emitters.
-- Band coordinate system: always `AbsoluteAUPition` (AUP). Never local Transform space.
+- Band coordinate system: always absolute AUP world coordinates (AUP). Never local Transform space.
 
 ### Section1.2 Skirt Generation - FLOW
 

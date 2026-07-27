@@ -159,7 +159,10 @@ _refreshTimer -= cfg.hudRefreshInterval;
 
 > Note: Full `WritePercent` / `WriteFloat3` / `WriteInt` implementations use manual
 > base-10 decomposition into `char[]` slots. No intermediate `string` objects are created.
-> Reference implementation in `Runtime/Util/CharBufferWriter.cs`.
+> Runtime/Util/CharBufferWriter.cs (unbackticked: dead path) does NOT exist in this tree (verified 2026-07-27) — do not go
+> looking for it. The live pattern is `ZString` or a preallocated `char[]` pushed through
+> `TMP_Text.SetCharArray`; `Assets/_Project/Scripts/Build/BuildInfoHudPresenter.cs` is a working call
+> site. Write the decomposition inline in the owner, or add the helper yourself if it earns its keep.
 
 ---
 
@@ -599,8 +602,10 @@ No system may query `SurvivalState` before its upstream tick in this order.
 
 ## SECTION 6: TESTING & VALIDATION CONTRACTS
 
-Every formula in Section 3 MUST have corresponding deterministic unit test in
-`Tests/Runtime/SurvivalMathTests.cs`.
+Every formula in Section 3 MUST have a corresponding deterministic unit test. The path
+Tests/Runtime/SurvivalMathTests.cs (unbackticked: dead path) does not exist — verified 2026-07-27.
+The live survival suite is `Assets/_Project/Tests/Editor/HectonSurvivalSystemEditTests.cs`. Add cases
+there, or create a new EditMode test file beside it. Do not recreate the stale path.
 
 ### Required Test Cases
 

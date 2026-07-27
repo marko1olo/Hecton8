@@ -255,7 +255,9 @@ Python validators may only evaluate X-Ray maps (raw height/slope arrays). They a
 
 Testing on `02_HECTON_WORLD` is banned — bootstrapper overhead and system coupling make it unreliable. Isolated testing scene or `020_RENDER_SANDBOX_V2` only.
 
-Required `CleanRoomTerrainTest.cs` / `NakedTerrainProtocolRunner.cs` setup:
+Required setup, driven from `Assets\_Project\Scripts\Editor\CleanRoomTerrainTest.cs` (the live runner; the
+NakedTerrainProtocolRunner.cs (unbackticked: dead path) named here previously does not exist — verified 2026-07-27, the `NTP_`
+prefixes below are what remains of that name):
 
 1. Destroy all cameras and lights in scene.
 2. Create `NTP_Camera` (SolidColor background, `Color(0.02, 0.03, 0.05)`).

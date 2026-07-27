@@ -232,7 +232,7 @@ The historical failure mode: a validator checked for "no black pixels (RGB < 15)
 
 **Validator scope boundaries:**
 
-- `analyze_terrain.py` and similar tools: ALLOWED to analyze raw X-Ray maps (`GetHeights`, `GetSteepness` exports), gradient variance, seam detection, and structural data.
+- Structural analysis tools: ALLOWED to analyze raw X-Ray maps (`GetHeights`, `GetSteepness` exports), gradient variance, seam detection, and structural data. Live examples under `Tools\`: `ValidateTerrainProbeEvidence.py`, `ValidateTerrainSurfaceMaterialBindings.py`, `BuildWorldNestedTerrainPreview.py`. (analyze_terrain.py — unbackticked: dead path — was named here but does not exist — verified 2026-07-27; the permission is for the tool CLASS, so write or extend a real script rather than hunting for that filename.)
 - Python validators: BANNED from analyzing final shaded screenshots / Beauty Renders.
 - Beauty quality assessment: ONLY via Multimodal Vision (agent eyes) with ACES Tonemapping active, DirectionalLight Soft Shadows active, and Exponential Depth Fog active. Agent must describe specific pixels and features seen, not just "looks good".
 

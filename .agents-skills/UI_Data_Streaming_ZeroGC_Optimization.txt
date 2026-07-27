@@ -208,7 +208,7 @@ Display "REBOOTING INTERFACE..." overlay during states 1-3
 Progress bar: (processedCount / totalCount) * 100
 
 ### Fallback_BIOS_Font
-- If font.material == null after 2 frames: Use `Resources/Fonts/Fallback_Mono.asset`
+- If font.material == null after 2 frames: bind a monospace fallback font asset. Resources/Fonts/Fallback_Mono.asset (unbackticked: dead path) does not exist and the route is wrong twice over (verified 2026-07-27): no such asset, and `Resources.Load` is banned by `AGENTS.md` Runtime Hot-Path Law. Reference the fallback as a serialized field on the UI owner, or load it through the approved Addressables/streaming route with a tracked handle. If no fallback asset exists yet, creating one is an `ASSET_CHANGE` — do it explicitly, do not fake the path.
 - BIOS style: Monospace, no SDF, 12pt fixed size
 - Auto-revert when primary font loads
 
