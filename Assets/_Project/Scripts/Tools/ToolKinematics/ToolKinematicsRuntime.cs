@@ -30,6 +30,8 @@ namespace Hecton8.Tools.ToolKinematics
             unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.TickRegistrationMiss"));
         private static readonly uint ConsumerlessLaneWarningHash =
             unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.SignalLaneHasNoConsumer"));
+        private static readonly uint DiscardedCarveVerbWarningHash =
+            unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.CarveVerbDiscarded"));
         private static readonly uint SignalPushDropWarningHash =
             unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.SignalPushDrop"));
         private static readonly uint BlackBoxDumpFaultWarningHash =
@@ -47,19 +49,45 @@ namespace Hecton8.Tools.ToolKinematics
         // (Tools/LaserCutterDodRuntime.cs:753, Construction/DroneFleetManager.cs:6271), so counting it made
         // a fully wired lane raise a release-audible "lane has no consumer" warning on the very first
         // spark. ToolTriggerPullSignal is the mirror error - genuinely undrained and not counted at all.
-        // The trigger and heat payloads still reach consumers through the bridges below, which ARE drained:
-        // ToolTriggerSignal (Core/Signals/GlobalSignals.LegacyFacade.cs:1141), ToolStateChangedSignal
-        // (Visor/VisorHUDController.cs:1459) and ToolAcousticSignal
-        // (Core/HectonInputRuntime_HapticSynth.cs:209). So this counter measures a redundant native lane,
-        // not lost gameplay data - which is the difference between "stop publishing" and "needs a consumer".
+        //
+        // THE FOUR UNDRAINED LANES ARE NOT EQUIVALENT, AND LUMPING THEM COST THE ONE WARNING THAT MATTERS.
+        // Three of them are redundant duplicates: the payload also leaves this runtime on a bridge lane
+        // published in the same loop, and every bridge IS drained. ToolTriggerPullSignal bridges to
+        // ToolTriggerSignal (PublishGlobalTriggerBridge, drained at
+        // Core/Signals/GlobalSignals.LegacyFacade.cs:1141). ToolHeatSignal bridges to ToolStateChangedSignal
+        // (drained at Visor/VisorHUDController.cs:1459 and UI/Tools/ToolDiegeticDisplayController.cs:417) and
+        // to ToolAcousticSignal (drained at Core/HectonInputRuntime_HapticSynth.cs:209 and :414).
+        // ToolPowerDepletedSignal carries no fact of its own - it is reconstructed from heat.Flags, which
+        // ships to the same drained consumers as ToolStateChangedSignal.StatusMask. For those three,
+        // "no consumer" is a static, harmless duplication fact, so ONE latched report is correct.
+        //
+        // ToolCarveRequestSignal is categorically different and gets its own counter below. It has NO bridge
+        // anywhere in this class and no reader anywhere in the project, so a carve publication is the
+        // player's cut being thrown away - the gameplay verb, lost. It is also the ONLY route from a tool
+        // hit to voxel carving: the live handheld cutter (LaserCutter.cs, authored on
+        // Prefabs/Tools/Held/Tool_LaserCutter_Held.prefab) reaches LaserCutterDodRuntime, which deliberately
+        // produces no deformation row either (Tools/LaserCutterDodJobs.cs:439-455), and the only carve
+        // enqueue entry point in the project - VoxelDeltaProcessor.TryQueueCarveEvent
+        // (VoxelDeltaProcessor.cs:2041) - takes a HectonVoxelVolume MonoBehaviour that its only two callers
+        // (Gameplay/Mining/DeployableSdfDrillRuntime.cs:1239, World/VoxelCarveVolume.cs:251) hold as a
+        // serialized field. So no player tool carves anything today.
+        //
+        // Sharing one counter made that unreportable rather than merely imprecise. The consumerless report
+        // latches once per process (Interlocked.Exchange on _consumerlessLaneReported), and heat publishes on
+        // EVERY active frame while a carve publishes only when the player actually cuts - so the latch was
+        // always spent by a harmless duplicate lane before the first carve, and the discarded verb could
+        // never raise a warning in a shipped player at all. The context hash was also the XOR of all four
+        // lane hashes, which is not attributable to any lane. Split: the duplicate-lane fact keeps its
+        // latched report and an honest three-lane context hash, and a discarded carve reports as a DELTA
+        // under its own warning hash with ToolCarveRequestSignal.LaneHash alone as context.
         private const uint ConsumerlessLaneContextHash =
             ToolTriggerPullSignal.LaneHash ^
-            ToolCarveRequestSignal.LaneHash ^
             ToolHeatSignal.LaneHash ^
             ToolPowerDepletedSignal.LaneHash;
 
         private static int _consumerlessLanePublishTotal;
         private static int _consumerlessLaneReported;
+        private static int _discardedCarveVerbTotal;
         private static int _abiLayoutFaultReported;
 
         public const int MaxToolCapacity = 8;
@@ -157,6 +185,7 @@ namespace Hecton8.Tools.ToolKinematics
         private bool _abiValid;
         private IDataVault _pendingDataVault;
         private int _reportedSignalPushDropCount;
+        private int _reportedDiscardedCarveVerbTotal;
         private int _reportedBlackBoxDumpFailureCode;
         private int _tickRegistrationMissReported;
 
@@ -186,6 +215,7 @@ namespace Hecton8.Tools.ToolKinematics
             Volatile.Write(ref _signalPushDropCount, 0);
             Volatile.Write(ref _consumerlessLanePublishTotal, 0);
             Volatile.Write(ref _consumerlessLaneReported, 0);
+            Volatile.Write(ref _discardedCarveVerbTotal, 0);
             Volatile.Write(ref _abiLayoutFaultReported, 0);
         }
 
@@ -399,6 +429,20 @@ namespace Hecton8.Tools.ToolKinematics
                     ConsumerlessLaneContextHash,
                     math.max(1, consumerlessPublishTotal));
             }
+
+            // Reported as a running DELTA, not latched once like the redundant-lane fact above: every carve
+            // publication is one player cut discarded, so the count is the damage and a second cut must be
+            // audible after the first has been reported. Context is the carve lane hash alone, so the
+            // warning is attributable to one lane instead of an XOR of four.
+            int discardedCarveTotal = Volatile.Read(ref _discardedCarveVerbTotal);
+            if (discardedCarveTotal > _reportedDiscardedCarveVerbTotal)
+            {
+                _reportedDiscardedCarveVerbTotal = discardedCarveTotal;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    DiscardedCarveVerbWarningHash,
+                    ToolCarveRequestSignal.LaneHash,
+                    math.max(1, discardedCarveTotal));
+            }
         }
 
         /// <summary>
@@ -606,20 +650,35 @@ namespace Hecton8.Tools.ToolKinematics
                 if (carve.Frame != 0u && carve.MaterialHash != 0u)
                 {
                     SignalBus<ToolCarveRequestSignal>.TryPushTracked(in carve, ref _signalPushDropCount);
-                    CountConsumerlessLanePublish();
+                    CountDiscardedCarveVerb();
                 }
             }
         }
 
         /// <summary>
-        /// Counts one publication into a lane that has no consumer anywhere under Assets/. Main-thread
-        /// post-fixed phase only, saturating, no allocation and no branch on managed state.
+        /// Counts one publication into a REDUNDANT lane - undrained, but whose payload also leaves on a
+        /// bridge lane that is drained, so no gameplay data is lost. Main-thread post-fixed phase only
+        /// (FinishPendingFrameCompletion), saturating, no allocation and no branch on managed state.
         /// </summary>
         private static void CountConsumerlessLanePublish()
         {
             int current = _consumerlessLanePublishTotal;
             if (current != int.MaxValue)
                 _consumerlessLanePublishTotal = current + 1;
+        }
+
+        /// <summary>
+        /// Counts one carve request that was published into <see cref="ToolCarveRequestSignal"/> and
+        /// therefore discarded: that lane has no consumer and no bridge, so this is the player's cut being
+        /// dropped, not a duplicate telemetry row. Kept separate from
+        /// <see cref="CountConsumerlessLanePublish"/> so the redundant-lane report cannot mask it. Same
+        /// phase and cost profile as that counter.
+        /// </summary>
+        private static void CountDiscardedCarveVerb()
+        {
+            int current = _discardedCarveVerbTotal;
+            if (current != int.MaxValue)
+                _discardedCarveVerbTotal = current + 1;
         }
 
         private static void EnsureSignalLanesReady()
