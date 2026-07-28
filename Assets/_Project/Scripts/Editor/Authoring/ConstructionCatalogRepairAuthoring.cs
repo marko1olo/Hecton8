@@ -74,6 +74,48 @@
 // ORDERING WARNING FOR THE OPERATOR:
 //   Re-running Hecton8/Authoring/Rebuild Starter Construction Kit AFTER this repair
 //   truncates ModuleCatalog_Starter.asset back to five rows. Run repair last.
+//
+// UPSTREAM BLOCKER THIS TOOL CANNOT FIX (core territory, not data):
+//   Repairing the data is necessary and NOT sufficient. The catalog never reaches the
+//   runtime at all. Verified chain, each link read off live source/assets, reachability
+//   checked by script GUID because scenes bind by GUID and not by class name:
+//     • ModuleCatalog_Starter.asset (guid dfbd85b7b5b39644a82a0be61a5d4240) is
+//       referenced by ZERO .unity, .prefab, and .asset files. It is an orphan.
+//     • The ConstructionManager script guid b2c01d4999b341d45ae34bab9a99b499 appears in
+//       ZERO scenes and ZERO prefabs. The component is created bare —
+//       new GameObject("[ConstructionManager]") then AddComponent<ConstructionManager>()
+//       in GameBootstrapper.EnsureConstructionServiceRegistered
+//       (GameBootstrapper.cs:6376-6378).
+//     • ConstructionManager.catalog is [SerializeField] private
+//       (ConstructionManager.cs:223) with no setter and no runtime resolver; the only
+//       accessor is the read-only Catalog getter (ConstructionManager.cs:432). A bare
+//       AddComponent therefore leaves it null for the whole session.
+//     • EnvironmentRuntimeContextService assigns its module catalog from
+//       _logisticsService.Catalog (EnvironmentRuntimeContextService.cs:200, :349),
+//       i.e. from that null field, and _logisticsService is the ConstructionManager
+//       registered as GlobalRegistry.Logistics (same file :346-347, :360).
+//     • PlayerBuilder.ResolveModuleCatalog reads the environment context
+//       (PlayerBuilder.cs:4391-4394) into _buildCatalog (PlayerBuilder.cs:1505), so
+//       catalog cycling has nothing to cycle and only the prefab-serialized
+//       activeBuildable is ever selectable.
+//     • ConstructionManager.LoadFromSaveData hard-aborts on the null catalog
+//       (ConstructionManager.cs:2688-2695), while PopulateSaveData has NO such guard
+//       (ConstructionManager.cs:2493-2504) — so saves keep writing module rows that can
+//       never be restored.
+//   ConstructionBootstrapAuthoring.AssignCatalogToScene (:2310-2320) already tries to
+//   wire this with FindAnyObjectByType<ConstructionManager>() and silently no-ops,
+//   because there is no scene instance to find.
+//   MINIMAL CORRECT ASSIGNMENT POINT — named, deliberately NOT implemented here:
+//   GameBootstrapper.EnsureConstructionServiceRegistered (:6366-6385), between the
+//   AddComponent at :6378 and InitializeService at :6383. That is the only window where
+//   the instance exists and nothing has read Catalog yet. It needs a core-owned
+//   assignment route, because ConstructionManager exposes no setter today, plus a
+//   sanctioned load path: Resources.Load is forbidden by AGENTS.md, and the in-repo
+//   precedent for a bootstrap-created service acquiring an SO catalog is
+//   ConstructionManager.ResolvePlayerItemCatalog (:3375-3380), which pulls ItemCatalog
+//   from the already-wired PlayerInventory rather than loading it. The cheaper
+//   alternative is authoring the ConstructionManager component into 00_BOOTSTRAP with
+//   catalog assigned, which also makes AssignCatalogToScene start working.
 // ============================================================================
 
 #if UNITY_EDITOR
@@ -685,6 +727,8 @@ namespace Hecton8.Editor.Authoring
                 }
             }
 
+            AppendRuntimeReachabilityAdvisory(report);
+
             report.AppendLine(
                 $"  SUMMARY: failures={failureCount}, warnings={warningCount}, recipes={Recipes.Length}. " +
                 "Static asset-graph proof only — this is not Unity Play Mode, profiler, or placement proof.");
@@ -707,6 +751,35 @@ namespace Hecton8.Editor.Authoring
 
             if (Application.isBatchMode)
                 EditorApplication.Exit(failureCount > 0 ? 1 : 0);
+        }
+
+        /// <summary>
+        /// Names the upstream blocker every time the gate runs, so a PASS can never be
+        /// mistaken for "the player can now build these". Deliberately does NOT count
+        /// toward the exit code: assigning ConstructionManager.catalog is core territory,
+        /// not a data binding this tool owns, and an un-passable gate is a useless gate.
+        /// Reachability is probed by script GUID because scenes and prefabs bind by GUID,
+        /// not by class name.
+        /// </summary>
+        private static void AppendRuntimeReachabilityAdvisory(StringBuilder report)
+        {
+            ModuleCatalog catalog = AssetDatabase.LoadAssetAtPath<ModuleCatalog>(ModuleCatalogPath);
+            if (catalog == null)
+                return;
+
+            string catalogGuid = AssetDatabase.AssetPathToGUID(ModuleCatalogPath);
+            report.AppendLine(
+                $"  ADVISORY (not counted in failures): catalog asset guid '{catalogGuid}' is authored data only. " +
+                "ConstructionManager.catalog is [SerializeField] private with no setter and no runtime resolver " +
+                "(ConstructionManager.cs:223, :432), and GameBootstrapper creates the component bare via " +
+                "AddComponent (GameBootstrapper.cs:6376-6378), so the field stays null at runtime. " +
+                "EnvironmentRuntimeContextService reads it from _logisticsService.Catalog " +
+                "(EnvironmentRuntimeContextService.cs:200, :349) and PlayerBuilder reads " +
+                "that context (PlayerBuilder.cs:4391-4394, :1505), so catalog cycling has nothing to cycle and " +
+                "LoadFromSaveData hard-aborts (ConstructionManager.cs:2688-2695). A PASS here proves the asset " +
+                "graph is correct, NOT that any of it is reachable in Play Mode. Owner fix belongs in " +
+                "GameBootstrapper.EnsureConstructionServiceRegistered (:6366-6385) or by authoring the component " +
+                "into 00_BOOTSTRAP with catalog assigned.");
         }
 
         // ══════════════════════════════════════════════════════════

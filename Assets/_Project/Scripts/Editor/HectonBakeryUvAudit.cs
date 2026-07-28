@@ -76,6 +76,24 @@ namespace Hecton8.Editor
                     if (!inspection.HasIssue)
                         continue;
 
+                    // An offline forge package whose manifest explicitly declares generateSecondaryUV=false owns
+                    // its own UV1. Unity's auto-unwrap OVERWRITES that channel, and 3dmodel.md section 3 makes
+                    // TexCoord1 authored data: "Lightmap, detail, atlas remap, or packed baked masks when
+                    // required." The finding is still recorded rather than dropped, because a real UV1 defect in
+                    // a generated package must be fixed in the generator, not hidden behind an importer toggle.
+                    if (HectonFBXPostprocessor.TryResolveForgeImportContract(
+                            modelPath,
+                            out HectonFBXPostprocessor.ForgeImportContract forgeContract) &&
+                        forgeContract.SuppressSecondaryUv)
+                    {
+                        result.ManualReviewModels.Add(
+                            $"{modelPath}: offline forge package (manifest '{forgeContract.ManifestPath}') declares " +
+                            "generateSecondaryUV=false, so importer auto-unwrap is SKIPPED - it would overwrite the " +
+                            "authored TexCoord1 that 3dmodel.md section 3 requires. Fix the generator's UV1 layout " +
+                            $"instead. Reported issues: {string.Join(" | ", inspection.Issues)}");
+                        continue;
+                    }
+
                     ModelImporter importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
                     if (inspection.CanAttemptAutoFix && importer != null && !importer.generateSecondaryUV)
                     {

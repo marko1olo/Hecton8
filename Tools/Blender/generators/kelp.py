@@ -481,15 +481,29 @@ class KelpForm:
         # long blades read as a corn stalk; the reference crowds many shorter, ruffled
         # blades along the stipe. Length came down and count went up together, because
         # raising count alone just makes a bigger corn stalk.
-        self.canopy_blades = _qi(11, 22, self.quality)
+        # VISUAL_ROUTE_INVALID replacement of the blade arrangement grammar. The prior
+        # grammar attached blades at intervals along the stipe like leaves on a branch,
+        # which read as a willow/bamboo shoot twice in review. In the reference frame
+        # every column is a CONTINUOUS shaggy mass with no bare stipe visible between
+        # attachments, so the grammar is now whorled NODES at near-zero internode, each
+        # carrying several narrow straps.
+        self.blade_nodes = _qi(8, 15, self.quality)
+        self.blades_per_node = _qi(2, 3, self.quality)
         self.basal_blades = _qi(2, 4, self.quality)
-        self.blade_length = float(rng.uniform(0.26, 0.46))
-        self.blade_width = float(rng.uniform(0.050, 0.082))
+        # Short-to-medium and NARROW. Straps, not paddles: the previous 0.050-0.082 m
+        # half-width read as a leaf. The reference projections are 3-6x longer than wide,
+        # not the 5-10x of a draping Macrocystis strap, so length stays moderate.
+        self.blade_length = float(rng.uniform(0.20, 0.36))
+        self.blade_width = float(rng.uniform(0.020, 0.034))
         # Thicker than the first pass. The rim columns of a very flat lens are where the
         # area-weighted stretch concentrates, and 3DMODEL_FLORA_CORAL.md section 3 wants
         # real thickness anyway: "Blade surfaces must not be zero-thickness if seen from
         # both sides at close range."
         self.blade_thickness = float(rng.uniform(0.0058, 0.0088))
+
+    @property
+    def canopy_blades(self) -> int:
+        return self.blade_nodes * self.blades_per_node
 
     @property
     def blade_count(self) -> int:
@@ -535,9 +549,9 @@ def _stipe_material_for(form):
         # band with enough area to survive to LOD2 as a compact UV island.
         if u < 0.17:
             return law.MATERIAL_SLOT_CUT_EDGE
-        for centre, width, _fraction in form.swellings:
-            if abs(u - centre) < width * 1.6:
-                return law.MATERIAL_SLOT_EMISSIVE
+        # The bladder slot moved to the blade bases. Painting it along the stipe made a
+        # continuous orange stripe down the stem instead of the discrete pneumatocysts
+        # the reference shows clustered through the tissue mass.
         return law.MATERIAL_SLOT_PRIMARY
     return material_fn
 
@@ -607,9 +621,17 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
         # Widest at the substrate, narrowing where the stipe emerges: an anchor pad,
         # not a ball resting on the floor.
         radius = form.boss_radius * (1.0 - 0.42 * (u ** 1.25))
-        lumps = 1.0 + boss_lumps * math.cos(3.0 * theta + u * 2.2)
+        # Fade the lump and noise modulation out at the capped bottom ring. The boss is
+        # the largest-radius part, so its cap fan carries the biggest triangles on the
+        # asset (~42 cm2), and a flat centroid fan across a LUMPY, non-planar ring is
+        # genuinely warped -- the gate flagged exactly that at 60.9 aspect distortion and
+        # confirmed it as real stretch on visible surface, 90x the sliver floor. A
+        # near-circular capped ring removes the cause. It also matches reality: the
+        # underside of a holdfast is pressed smooth against the substrate.
+        settle = _smoothstep(0.0, 0.22, u)
+        lumps = 1.0 + boss_lumps * settle * math.cos(3.0 * theta + u * 2.2)
         sample = Vector((math.cos(theta), math.sin(theta), u * 2.0))
-        fine = 1.0 + 0.12 * _fine_noise(sample, form.noise_offset, 3.1)
+        fine = 1.0 + 0.12 * settle * _fine_noise(sample, form.noise_offset, 3.1)
         scaled = radius * lumps * fine
         return (math.cos(theta) * scaled, math.sin(theta) * scaled)
 
@@ -704,12 +726,11 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
     part_id = part_start
     attachments = []
 
-    rows = _qi(7, 10, quality)
-    # More columns across the lens lowers the share of surface AREA sitting in the
-    # heavily foreshortened rim columns, which is what the area-weighted stretch gate
-    # measures. Measured at nu 5-7: 11.7% of area over the 0.55 organic limit vs a 10%
-    # allowance.
-    nu = _qi(6, 8, quality)
+    # A narrow strap needs fewer samples around its section than a broad paddle did, and
+    # every triangle saved goes into blade COUNT, which is what closes the silhouette
+    # into a continuous mass instead of a stem with foliage.
+    rows = _qi(6, 9, quality)
+    nu = _qi(5, 6, quality)
     segments = 2 * (nu - 1)
     # Serration teeth and blister count are the density knobs section 9 names:
     # "GlobalQualityWeight scales flora and coral fidelity through offline branch
@@ -720,17 +741,18 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
 
     stipe_rows = len(stipe_points)
 
-    # Blades run the whole stipe, densest in the upper half, as the reference shows.
-    # Spacing is a jittered even distribution rather than independent random draws, so
-    # no two blades land on one ring and leave a bald patch somewhere else.
+    # Whorled nodes at near-ZERO internode. Node spacing is deliberately smaller than a
+    # blade is wide, so successive whorls overlap and the silhouette closes into a
+    # continuous mass rather than a stem punctuated by foliage.
     heights = []
-    for k in range(form.canopy_blades):
-        span = k / float(max(1, form.canopy_blades - 1)) if form.canopy_blades > 1 else 0.5
-        base = 0.14 + 0.85 * (span ** 0.82)
-        heights.append((base + float(rng.uniform(-0.018, 0.018)), True))
+    node_span = 0.92 / float(max(1, form.blade_nodes))
+    for node in range(form.blade_nodes):
+        base = 0.07 + node * node_span
+        for _slot in range(form.blades_per_node):
+            heights.append((base + float(rng.uniform(-0.006, 0.006)), True))
     for k in range(form.basal_blades):
         span = k / float(max(1, form.basal_blades - 1)) if form.basal_blades > 1 else 0.5
-        heights.append((0.055 + 0.085 * span + float(rng.uniform(-0.012, 0.012)), False))
+        heights.append((0.030 + 0.038 * span + float(rng.uniform(-0.008, 0.008)), False))
 
     for index, (height_t, is_canopy) in enumerate(heights):
         height_t = min(0.985, max(0.055, height_t))
@@ -755,11 +777,22 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # Elevation: blades radiate at varied pitch -- some angled up, some straight
         # out, some slumped. One shared rise/droop profile for every blade is what
         # makes a procedural plant read as a manufactured object.
-        elevation = float(rng.uniform(-0.55, 0.95))
-        rise = float(rng.uniform(0.10, 0.30)) + max(0.0, elevation) * 0.42
-        droop = float(rng.uniform(0.14, 0.36)) + max(0.0, -elevation) * 0.55
-        # Curl: reference blades twist and hook rather than lying in one plane.
-        curl_side = float(rng.uniform(-0.42, 0.42))
+        # Wide per-blade orientation spread. A single shared rise/droop profile applied
+        # radially is the land-plant tell; in the reference the straps leave the column at
+        # every pitch, curve as they go, and fold over one another.
+        elevation = float(rng.uniform(-0.85, 0.75))
+        rise = float(rng.uniform(0.04, 0.16)) + max(0.0, elevation) * 0.30
+        droop = float(rng.uniform(0.55, 1.05)) + max(0.0, -elevation) * 0.60
+        curl_side = float(rng.uniform(-0.70, 0.70))
+        # Roll: the strap twists about its own axis along its length, like a ribbon.
+        # Twist bounded to under a half turn. At +-1.5 rad the strap became a helical
+        # ribbon, and a conformal unwrap of a helicoid carries GENUINE stretch -- the gate
+        # flagged a 42 cm2 triangle at 60.9 and reported it as 90x the sliver floor, i.e.
+        # real distortion on visible surface rather than numerical noise on a sliver.
+        roll = float(rng.uniform(-0.85, 0.85))
+        undulate_periods = float(detail_rng.uniform(1.6, 3.2))
+        undulate_amp = float(detail_rng.uniform(0.20, 0.34))
+        bladder_size = float(detail_rng.uniform(1.7, 3.0))
         serr_phase_right = float(detail_rng.uniform(0.0, 1.0))
         serr_phase_left = float(detail_rng.uniform(0.0, 1.0))
         serr_amp = float(detail_rng.uniform(0.20, 0.34))
@@ -779,19 +812,24 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         scar_at = float(detail_rng.uniform(0.2, 0.8))
         scar_width = float(detail_rng.uniform(0.020, 0.045))
 
-        # Curve: leaves the stipe, sweeps downstream under drag, rises then droops.
+        # Curve: DRAPE, not radiate. The radial term used to dominate (0.90 of length at
+        # a low exponent) so every strap left the stipe as a straight outward spike and
+        # the plant read as a bottle-brush. Pulling radial reach back and letting a strong
+        # late-kicking droop take over makes the strap arc over and hang, so tips fall
+        # BELOW their attachment and neighbouring straps fold across each other -- which
+        # is what closes the silhouette into a continuous mass.
         points = []
         for step in range(rows):
             u = step / float(rows - 1)
             # Start inside the stipe so the junction is a hidden union under the
             # sheath, per the section 3 weld/knuckle/hidden-union clause.
-            radial = outward * (-stipe_r * 0.55 + length * 0.90 * (u ** 0.78))
+            radial = outward * (-stipe_r * 0.55 + length * 0.48 * (u ** 0.58))
             flow = form.current * (length * 0.52 * form.current_strength *
-                                   1.45 * (u ** 1.4))
+                                   1.45 * (u ** 1.3))
             # Sideways curl, perpendicular to this blade's own outward direction.
             sideways = Vector((-outward.y, outward.x, 0.0)) * \
                 (length * curl_side * (u ** 1.5))
-            vertical = length * (rise * (u ** 0.55) - droop * (u ** 2.1))
+            vertical = length * (rise * (u ** 0.5) - droop * (u ** 1.55))
             points.append(Vector((attach.x + radial.x + flow.x + sideways.x,
                                   attach.y + radial.y + flow.y + sideways.y,
                                   attach.z + vertical)))
@@ -802,7 +840,10 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
                          spr=serr_phase_right, spl=serr_phase_left,
                          fk=fold_k, fp=fold_phase, fa=fold_amp,
                          tear_list=tears, blister_list=blisters,
-                         scar_u=scar_at, scar_w=scar_width):
+                         scar_u=scar_at, scar_w=scar_width,
+                         roll=roll, undulate_amp=undulate_amp,
+                         undulate_periods=undulate_periods,
+                         bladder_size=bladder_size):
             # Sheet plan-form: narrow at the sheath, widest just past mid, tapering
             # to a rounded tip. A rectangle is the "flat untextured rectangle" the
             # section 8 gate rejects.
@@ -916,9 +957,13 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             # Slot 1 now lives on the basal collar, which has real area -- see
             # _stipe_material_for.
             #
-            # Pneumatocyst blisters carry the amber bladder pigment the reference uses
-            # as its colour focal point. Upper face only, matching the geometry: the
-            # bulge is only raised where sin(theta) > 0.
+            # Bladder pigment on the basal swelling, matching exactly where blade_offset
+            # raises it. This is the reference's repeated amber accent distributed through
+            # the tissue mass, replacing the stripe that used to run down the stipe. A
+            # blade base is also a compact region with real area, unlike the thin blister
+            # patches that produced sub-4-px islands.
+            if (i / float(max(1, r - 1))) < 0.15:
+                return law.MATERIAL_SLOT_EMISSIVE
             return law.MATERIAL_SLOT_PRIMARY
 
         # A blade's underside faces away from the light and the swimmer above it, so
