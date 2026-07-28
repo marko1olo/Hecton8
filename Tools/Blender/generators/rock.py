@@ -292,6 +292,7 @@ class Bed:
     hardness: float
     radius_scale: float
     overhangs_below: bool
+    plan_phase: float = 0.0
 
     @property
     def thickness(self) -> float:
@@ -334,7 +335,9 @@ class Stratigraphy:
         for bed in beds:
             if bed.base_h <= h <= bed.top_h:
                 previous = beds[bed.index - 1].radius_scale if bed.index > 0 else bed.radius_scale
-                window = max(1e-6, bed.thickness * 0.18)
+                # Narrow window: the step must read as a LEDGE. At 0.18 the profile was
+                # effectively a smooth taper and the beds were invisible in silhouette.
+                window = max(1e-6, bed.thickness * 0.06)
                 local = (h - bed.base_h) / window
                 if local >= 1.0:
                     return bed.radius_scale
@@ -349,8 +352,18 @@ class Stratigraphy:
         return self.beds[-1].hardness if self.beds else 1.0
 
     def plan_shape(self, theta: float, h: float) -> float:
-        """Irregular closed plan outline. Never a circle, never self-intersecting."""
-        twisted = theta + self.plan_twist_rad * (h / max(1e-6, self.height_m))
+        """Irregular closed plan outline. Never a circle, never self-intersecting.
+
+        Each bed carries its own phase offset, so consecutive beds do not share one
+        outline extruded vertically. That per-bed difference is what makes a stack read
+        as separately deposited beds instead of a single lathe-turned solid.
+        """
+        bed_phase = 0.0
+        for bed in self.beds:
+            if bed.base_h <= h <= bed.top_h:
+                bed_phase = bed.plan_phase
+                break
+        twisted = theta + self.plan_twist_rad * (h / max(1e-6, self.height_m)) + bed_phase
         value = 1.0
         for amp, phase, order in zip(self.plan_harmonics, self.plan_phases, self.plan_orders):
             value += amp * math.sin(order * twisted + phase)
@@ -419,18 +432,25 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
         if process == "basalt":
             hardness = min(1.0, hardness * 0.55 + 0.45)
         top = cursor + float(thicknesses[i])
-        beds.append(Bed(i, cursor, top, hardness, 1.0, False))
+        beds.append(Bed(i, cursor, top, hardness, 1.0, False,
+                        float(rng.uniform(-0.45, 0.45))))
         cursor = top
 
     # Soft beds recede; a competent bed sitting on a soft one gains an overhang lip.
     # That pair is the mechanism behind both the stratified silhouette and the
     # occluded cavity the AO bake has to find.
-    recess_gain = float(rng.uniform(0.055, 0.155))
+    #
+    # These amplitudes are DOMINANT by design. At 0.055-0.155 the beds were invisible:
+    # the rendered outcrop read as a chamfered gemstone with no banding at all, which
+    # 3DMODEL_GEOLOGY_ROCKS.md section 9 rejects outright. Bed relief is the macro form of
+    # a sedimentary rock, so it must be the largest term in the shape -- an order of
+    # magnitude above the surface grain, not comparable to it.
+    recess_gain = float(rng.uniform(0.14, 0.34))
     for bed in beds:
         recess = recess_gain * (1.0 - bed.hardness)
         scale = 1.0 - recess
-        if bed.index > 0 and bed.hardness > beds[bed.index - 1].hardness + 0.22:
-            scale += float(rng.uniform(0.018, 0.052))
+        if bed.index > 0 and bed.hardness > beds[bed.index - 1].hardness + 0.18:
+            scale += float(rng.uniform(0.050, 0.110))
             bed.overhangs_below = True
         bed.radius_scale = scale
 
@@ -439,10 +459,10 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
     lower = max(1, int(count * 0.34))
     upper = max(lower + 1, int(count * 0.72))
     landmark = int(rng.integers(lower, min(count - 1, upper) + 1))
-    beds[landmark].radius_scale -= float(rng.uniform(0.075, 0.155))
+    beds[landmark].radius_scale -= float(rng.uniform(0.14, 0.26))
     beds[landmark].hardness = min(beds[landmark].hardness, 0.32)
     if landmark + 1 < count:
-        beds[landmark + 1].radius_scale += float(rng.uniform(0.035, 0.085))
+        beds[landmark + 1].radius_scale += float(rng.uniform(0.070, 0.140))
         beds[landmark + 1].overhangs_below = True
         beds[landmark + 1].hardness = max(beds[landmark + 1].hardness, 0.72)
 
@@ -548,7 +568,14 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     q = law.saturate(quality)
     bm = bmesh.new()
 
-    grain_amp = size.longest_extent_m * (0.006 + 0.011 * q)
+    # Grain amplitude is tied to the grain WAVELENGTH, not to the asset extent. A
+    # band-limited field of wavelength L can only carry amplitude of roughly L/(2*pi)
+    # before its own gradient exceeds 1 and the surface folds through itself. At
+    # 0.006-0.011 of a 2.9 m extent the requested amplitude was 5-8x that limit, so it was
+    # either clamped away to nothing or self-intersecting. Keeping grain small and
+    # absolute is also what the geology bible wants: strata are the dominant term and fine
+    # noise stays weak, or the asset becomes the "noise sphere" the pipeline bible rejects.
+    grain_amp = WITNESS_GRAIN_WAVELENGTH_M * (0.05 + 0.09 * q)
     grain = AnisotropicField(
         rng, WITNESS_GRAIN_WAVELENGTH_M,
         octaves=2 if q < 0.5 else 3,
@@ -583,11 +610,19 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
         radius_scale = strata.radius_scale_at(h)
         bed_hardness = strata.hardness_at(h)
         drift_u, drift_v = strata.drift(h)
+        # Close the top over the last 14 percent of the height instead of capping a
+        # full-width ring. A wide flat cap poked into a fan renders as a radial starburst
+        # of thin triangles -- clearly visible as an artifact in the first contact sheet,
+        # and the kind of thing an artist rejects on sight.
+        taper = 1.0
+        if t > 0.86:
+            local = (t - 0.86) / 0.14
+            taper = 1.0 - 0.70 * (local * local * (3.0 - 2.0 * local))
         for s in range(segments):
             theta = (s / float(segments)) * 2.0 * math.pi
             shape = strata.plan_shape(theta, h)
             notch = strata.landmark_sector_weight(theta, h)
-            radius = size.radius_m * shape * radius_scale * (1.0 - 0.30 * notch)
+            radius = size.radius_m * shape * radius_scale * taper * (1.0 - 0.30 * notch)
             direction = frame.e1 * math.cos(theta) + frame.e2 * math.sin(theta)
             point = direction * radius + frame.normal * h
             point.x += drift_u
@@ -600,32 +635,11 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
             height_of[index] = h
             index += 1
 
-    # Pass 2: displacement. Soft beds weather rougher, competent beds stay tight.
-    grain_values = grain.sample(positions)
-    pit_values = pit.sample(positions)
-    softness = 1.0 + 0.85 * (1.0 - hardness)
-    radial = grain_values * grain_amp * softness
-
-    # Absolute-depth pitting: only the upper tail of the field cuts, so pits are
-    # discrete vugs rather than a wobble over the whole surface.
-    pit_threshold = 0.34 if process == "basalt" else 0.46
-    pit_mask = np.clip((pit_values - pit_threshold) / max(1e-6, 1.0 - pit_threshold), 0.0, 1.0)
-    pit_mask = pit_mask * pit_mask * (3.0 - 2.0 * pit_mask)
-    pit_depth = WITNESS_PIT_DEPTH_M * (0.55 + 0.45 * q) * (1.6 if process == "basalt" else 1.0)
-    radial -= pit_mask * pit_depth
-
-    # Clamp so displacement can never invert a vertex through the local surface: the
-    # coral run self-intersected exactly here, and self-intersection shows up later as
-    # impossible bright pixels in the channel renders.
-    limit = local_scale * 0.34
-    radial = np.clip(radial, -limit, limit)
-    displaced = positions + outward * radial[:, None]
-
     verts = []
     for i in range(rings * segments):
-        verts.append(bm.verts.new(Vector((float(displaced[i, 0]),
-                                          float(displaced[i, 1]),
-                                          float(displaced[i, 2])))))
+        verts.append(bm.verts.new(Vector((float(positions[i, 0]),
+                                          float(positions[i, 1]),
+                                          float(positions[i, 2])))))
     bm.verts.ensure_lookup_table()
 
     for r in range(rings - 1):
@@ -641,13 +655,53 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     # top can dome and the base can dish -- a flat lid reads as a sliced cylinder.
     bottom = bm.faces.new(tuple(reversed(verts[0:segments])))
     top = bm.faces.new(tuple(verts[(rings - 1) * segments:rings * segments]))
-    for face, sign, amount in ((top, 1.0, 0.16), (bottom, -1.0, 0.055)):
+    for face, sign, amount in ((top, 1.0, 0.055), (bottom, -1.0, 0.030)):
         poked = bmesh.ops.poke(bm, faces=[face], offset=0.0,
                                center_mode="MEAN_WEIGHTED", use_relative_offset=False)
         for vert in poked["verts"]:
             vert.co += frame.normal * (sign * size.height_m * amount)
-            wobble = float(grain.sample(np.array([[vert.co.x, vert.co.y, vert.co.z]]))[0])
-            vert.co += frame.normal * (sign * grain_amp * 2.0 * wobble)
+
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bm.normal_update()
+
+    # Displacement runs AFTER the caps exist, over every vertex, along each vertex's own
+    # normal. Displacing only the lattice left the caps perfectly flat, which is half of
+    # why the top read as a machined fan. Using the vertex normal also means the cap
+    # vertices push along the bedding normal while the flank vertices push outward,
+    # without any special-casing.
+    #
+    # Amplitude is scaled by a LOCAL size measure -- the mean length of the vertex's own
+    # linked edges -- NOT by distance from an axis. Scaling by distance-from-axis leaves
+    # the core smooth while the rim takes full amplitude and self-intersects.
+    all_verts = bm.verts[:]
+    coords = np.array([[v.co.x, v.co.y, v.co.z] for v in all_verts])
+    grain_values = grain.sample(coords)
+    pit_values = pit.sample(coords)
+
+    heights = coords @ np.array([frame.normal.x, frame.normal.y, frame.normal.z])
+    softness = np.array([1.0 + 0.85 * (1.0 - strata.hardness_at(float(h))) for h in heights])
+
+    offsets = grain_values * grain_amp * softness
+
+    # Absolute-depth pitting: only the upper tail of the field cuts, so pits are
+    # discrete vugs rather than a wobble over the whole surface.
+    pit_threshold = 0.34 if process == "basalt" else 0.46
+    pit_mask = np.clip((pit_values - pit_threshold) / max(1e-6, 1.0 - pit_threshold), 0.0, 1.0)
+    pit_mask = pit_mask * pit_mask * (3.0 - 2.0 * pit_mask)
+    pit_depth = WITNESS_PIT_DEPTH_M * (0.55 + 0.45 * q) * (1.6 if process == "basalt" else 1.0)
+    offsets = offsets - pit_mask * pit_depth
+
+    for i, vert in enumerate(all_verts):
+        linked = vert.link_edges
+        if not linked:
+            continue
+        local_edge = sum(e.calc_length() for e in linked) / len(linked)
+        limit = local_edge * 0.70
+        amount = max(-limit, min(limit, float(offsets[i])))
+        normal = vert.normal
+        if normal.length <= 1e-9:
+            continue
+        vert.co += normal.normalized() * amount
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     stats = mesh_ops.weld_and_clean(bm, blackbox=blackbox)
@@ -686,7 +740,7 @@ def cut_fractures(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigrap
     body in half and deleting a lobe.
     """
     q = law.saturate(quality)
-    conjugate = 2 + int(round(2.0 * q))
+    conjugate = 1 + int(round(1.5 * q))
     if size.name == "cliff-chunk":
         conjugate += 1
     if process == "basalt":
@@ -714,15 +768,33 @@ def cut_fractures(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigrap
         parting_normal = -parting_normal
     planes.append(FracturePlane(normal * soft.top_h, parting_normal, "bedding_parting"))
 
+    # A fracture TRUNCATES A CORNER. It does not slice the body.
+    #
+    # Measured failure that forced this: at keep_fraction 0.80-0.93 applied five times
+    # over, each cut removing 7-20 percent of the remaining vertices along a different
+    # normal, the result was the intersection of five half-spaces -- the rendered outcrop
+    # was a faceted gemstone with 4-5 huge clean planes and every bed gone. The strata are
+    # the asset; the fractures are an accent on them. Hence a shallow per-cut bite AND a
+    # hard cap on cumulative removal.
+    original_verts = len(bm.verts)
+    removal_budget = int(original_verts * 0.14)
+    removed_total = 0
+
     created = []
     for plane in planes:
+        if removed_total >= removal_budget:
+            blackbox.record("fracture_budget_reached",
+                            warning="stopped after {n} of {t} verts removed".format(
+                                n=removed_total, t=original_verts))
+            break
         coords = np.array([[v.co.x, v.co.y, v.co.z] for v in bm.verts])
         distances = coords @ plane.normal
-        keep_fraction = float(rng.uniform(0.80, 0.93))
+        keep_fraction = float(rng.uniform(0.955, 0.990))
         cut_at = float(np.quantile(distances, keep_fraction))
         removed_estimate = int((distances > cut_at).sum())
-        if removed_estimate < 3:
+        if removed_estimate < 3 or removed_total + removed_estimate > removal_budget:
             continue
+        removed_total += removed_estimate
 
         geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
         result = bmesh.ops.bisect_plane(
@@ -1459,6 +1531,89 @@ class ChannelFields:
 # Topology inspection (real numbers for the manifold/island/seam report)
 # ---------------------------------------------------------------------------
 
+def signed_volume(mesh: bpy.types.Mesh) -> float:
+    """Signed volume of a closed mesh. NEGATIVE means the shell is inside-out.
+
+    A loud probe for the one failure that silently ruins everything downstream: with
+    inverted winding the AO bake samples the interior, so occlusion comes back near zero
+    everywhere and the B channel is garbage while every count-based check still passes.
+    Measured symptom that sent me here: AO mean 0.0058 on a closed manifold rock whose
+    sphere/cube control baked to a correct 1.0.
+    """
+    mesh.calc_loop_triangles()
+    total = 0.0
+    for tri in mesh.loop_triangles:
+        a = mesh.vertices[tri.vertices[0]].co
+        b = mesh.vertices[tri.vertices[1]].co
+        c = mesh.vertices[tri.vertices[2]].co
+        total += a.dot(b.cross(c))
+    return total / 6.0
+
+
+def ensure_outward_winding(obj: bpy.types.Object, blackbox: BlackBox,
+                           stage: str) -> float:
+    """Flip the shell outward if it is inside-out, measured by signed volume.
+
+    Must run AFTER the last ``recalc_face_normals`` in the pipeline, which is the whole
+    point. Verified sequence that defeated an earlier placement: the fix ran inside the
+    bmesh stage, then ``weld_and_clean`` -> ``recalc_face_normals`` during post-decimation
+    cleanup flipped the body straight back to inward, reproducing signed volume
+    -9.397259 m3 to the digit.
+
+    ``recalc_face_normals`` only guarantees CONSISTENT normals. Its choice of which side
+    is "outside" is a heuristic, and on this body -- deep bedding-parting grooves plus
+    dozens of nested inset vugs -- it picks the inside. Verified against a control: a 2 m
+    cube measures +8.0 by both ``bmesh.calc_volume(signed=True)`` and the loop-triangle
+    formula, and -8.0 after a deliberate ``reverse_faces``, so the measurement is sound
+    and the geometry really was inverted.
+    """
+    volume = signed_volume(obj.data)
+    if volume >= 0.0:
+        blackbox.record("winding_ok:" + stage,
+                        triangle_count=mesh_ops.triangle_count(obj.data))
+        return volume
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bmesh.ops.reverse_faces(bm, faces=bm.faces[:])
+    bm.to_mesh(obj.data)
+    obj.data.update()
+    bm.free()
+    corrected = signed_volume(obj.data)
+    blackbox.record(
+        "winding_flipped:" + stage, triangle_count=mesh_ops.triangle_count(obj.data),
+        warning="signed volume {v:.5f} -> {c:.5f} m3".format(v=volume, c=corrected),
+        failure_code="" if corrected > 0.0 else "WINDING_STILL_INVERTED")
+    return corrected
+
+
+def read_back_channels(mesh: bpy.types.Mesh) -> dict:
+    """Read the packed attribute back OFF the mesh, per channel.
+
+    Not a debug print: this is the gate that catches a vertex-colour set that was authored
+    correctly and then lost or renamed before export. A ``ShaderNodeVertexColor`` pointing
+    at a missing layer returns 1.0 for every channel, which renders as a uniform white
+    subject and measures as four near-identical tiles -- indistinguishable from a
+    legitimately saturated channel unless the stored data is read back directly.
+    """
+    attribute = mesh.color_attributes.get(law.VCOL_ATTRIBUTE_NAME)
+    if attribute is None:
+        return {"present": False,
+                "layers": [a.name for a in mesh.color_attributes],
+                "activeColorName": getattr(mesh.attributes, "active_color_name", ""),
+                }
+    out = {"present": True, "elements": len(attribute.data),
+           "domain": attribute.domain, "dataType": attribute.data_type,
+           "layers": [a.name for a in mesh.color_attributes],
+           "activeColorName": getattr(mesh.attributes, "active_color_name", "")}
+    for channel, key in enumerate("RGBA"):
+        values = [attribute.data[i].color[channel] for i in range(len(attribute.data))]
+        if not values:
+            continue
+        out["stored" + key] = [round(min(values), 5), round(max(values), 5),
+                               round(sum(values) / len(values), 5)]
+    return out
+
+
 def inspect_topology(mesh: bpy.types.Mesh) -> dict:
     """Manifold / island / degenerate report required by section 10 proof artifacts."""
     bm = bmesh.new()
@@ -1494,6 +1649,7 @@ def inspect_topology(mesh: bpy.types.Mesh) -> dict:
                     stack.append(other)
     bm.free()
 
+    volume = signed_volume(mesh)
     return {
         "boundaryEdges": boundary,
         "nonManifoldEdges": non_manifold,
@@ -1501,6 +1657,8 @@ def inspect_topology(mesh: bpy.types.Mesh) -> dict:
         "looseVerts": loose,
         "islands": islands,
         "manifoldClosedSolid": boundary == 0 and non_manifold == 0 and islands == 1,
+        "signedVolumeM3": round(volume, 6),
+        "outwardWinding": volume > 0.0,
     }
 
 
@@ -1562,6 +1720,7 @@ class VariantResult:
     nominal_chip_width_m: float = 0.0
     shading: Optional[mesh_ops.ShadingResult] = None
     post_fracture_topology: dict = field(default_factory=dict)
+    channel_readback: dict = field(default_factory=dict)
 
 
 def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str,
@@ -1613,6 +1772,21 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # makes the authored topology identical to what the engine receives.
     bmesh.ops.triangulate(bm, faces=bm.faces[:])
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+
+    # Force OUTWARD winding by measurement, not by trusting recalc_face_normals.
+    # Measured: after the cut/fill/inset stages this body came out at signed volume
+    # -9.397 m3, i.e. globally inside-out, even though recalc_face_normals had run and
+    # every manifold/winding/island check passed. The consequence was invisible in the
+    # geometry and catastrophic downstream -- the Cycles AO bake sampled the interior and
+    # returned mean 0.0058, so the whole B channel was garbage while the sphere/cube
+    # control baked correctly. recalc_face_normals guarantees CONSISTENT normals; it does
+    # not guarantee the sign a closed solid needs.
+    volume = bm.calc_volume(signed=True)
+    if volume < 0.0:
+        bmesh.ops.reverse_faces(bm, faces=bm.faces[:])
+        blackbox.record("flip_winding", triangle_count=len(bm.faces),
+                        warning="signed volume was {v:.5f} m3; faces reversed".format(
+                            v=volume))
     result.chips = chips
     result.open_boundary_edges = open_edges
     result.nominal_chip_width_m = chips.nominal_width_m
@@ -1660,7 +1834,7 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
                     vertex_count=len(mesh.vertices),
                     warning="" if census.components == 1 else
                     "{n} disconnected components impose a triangle floor of {f}".format(
-                        n=census.components, f=census.estimated_triangle_floor))
+                        n=census.components, f=census.irreducible_floor))
 
     # Sit the base on z=0 so the preview grid shows real ground contact.
     lo, _hi = mesh_ops.local_bounds(obj)
@@ -1696,6 +1870,19 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # channels of its target, so composing R/G/A before the bake destroys them.
     ao_distance = min(1.20, max(0.12, 0.085 * size.longest_extent_m))
     ao_samples = int(round(24 + 104 * q))
+    # The REAL AO ray bound. `scene.render.bake.distance` does not exist on 4.5 and
+    # `max_ray_distance` was measured to change AO statistics not at all (its RNA scope is
+    # selected-to-active cage matching). `world.light_settings.distance` is the knob, and
+    # nothing in h8forge sets it -- so unbounded rays turn local cavity contrast into a
+    # global sky-occlusion term. Set here until the core owns it.
+    world = bpy.context.scene.world
+    if world is None:
+        world = bpy.data.worlds.new("H8_RockWorld")
+        bpy.context.scene.world = world
+    world.light_settings.distance = ao_distance
+    # Last chance before the bake: an inverted shell makes AO sample the interior and
+    # return near-zero everywhere, which no count-based check can detect.
+    ensure_outward_winding(obj, blackbox, "pre_ao_bake")
     result.ao = vertexcolor.bake_ambient_occlusion(
         obj, samples=ao_samples, distance=ao_distance, blackbox=blackbox)
     ao_values = vertexcolor.consume_baked_ao(obj)
@@ -1719,6 +1906,10 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
             tighten_to_target(level.obj, target, blackbox,
                               "lod{i}_size_row".format(i=level.index))
             clean_object(level.obj, blackbox, "post_lod{i}".format(i=level.index))
+        # Every LOD passes through weld_and_clean/_split_uv_seams, each of which calls
+        # recalc_face_normals, so each level needs its own winding check.
+        ensure_outward_winding(level.obj, blackbox,
+                               "lod{i}".format(i=level.index))
         result.lods.append({
             "index": level.index,
             "object": level.obj.name,
@@ -1737,6 +1928,10 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     result.collider_triangles = collider.triangles
     result.collider_within_budget = collider.within_budget
     result.collider_kind = collider.kind
+
+    # Read the authored channels back off the mesh that will actually be rendered and
+    # exported, not off the lists that were handed to the writer.
+    result.channel_readback = read_back_channels(lods[0].obj.data)
 
     # Stage 11: validation BEFORE save.
     result.gates = hard_gates(result, size)
@@ -1984,6 +2179,26 @@ def hard_gates(result: VariantResult, size: SizeClass) -> list:
     else:
         lines.append("PASS UV0 fallback unwrap present alongside triplanar route")
 
+    lines.append(("PASS" if topology.get("outwardWinding", False) else "FAIL")
+                 + " outward winding, signed volume {v} m3".format(
+                     v=topology.get("signedVolumeM3")))
+
+    readback = result.channel_readback
+    if not readback.get("present", False):
+        lines.append("FAIL packed vcol attribute '{a}' missing from the exported mesh "
+                     "(layers present: {l})".format(a=law.VCOL_ATTRIBUTE_NAME,
+                                                    l=readback.get("layers")))
+    else:
+        flat = []
+        for key in "RGBA":
+            stored = readback.get("stored" + key)
+            if stored is not None and (stored[1] - stored[0]) < 0.02:
+                flat.append("{k}(min={lo} max={hi})".format(k=key, lo=stored[0],
+                                                            hi=stored[1]))
+        lines.append(("PASS" if not flat else "FAIL")
+                     + " every stored channel varies; flat channels: {f}".format(
+                         f=flat or "none"))
+
     shading = result.shading
     if shading is None:
         lines.append("FAIL shading basis never ran")
@@ -2063,6 +2278,16 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
         },
         "detailCounts": result.counts,
         "topologyValidation": result.topology,
+        "postFractureCensus": result.post_fracture_topology,
+        "shadingBasis": {
+            "smoothPolygons": result.shading.smooth_polygons if result.shading else 0,
+            "sharpEdges": result.shading.sharp_edges if result.shading else 0,
+            "weightedNormalsApplied": bool(result.shading and result.shading.weighted_applied),
+            "smoothAngleDeg": law.SMOOTH_ANGLE_DEG,
+            "bibleRequirement": "3DMODEL_GEOLOGY_ROCKS.md s4: split normals above 45 deg; "
+                                "law.SMOOTH_ANGLE_DEG=32 is stricter, so all fracture "
+                                "edges split",
+        },
         "vertexColorReport": result.channels,
         "aoBake": {
             "engine": "CYCLES",
@@ -2280,7 +2505,13 @@ def main(argv: list) -> int:
             print("[rock] collider: {t} tris / {m} ceiling ({k})".format(
                 t=result.collider_triangles, m=law.COLLIDER_CONVEX_TRI_MAX,
                 k=result.collider_kind))
+            print("[rock] post-fracture census: " + json.dumps(result.post_fracture_topology))
             print("[rock] topology: " + json.dumps(result.topology))
+            if result.shading is not None:
+                print("[rock] shading: smooth_polygons={s} sharp_edges={e} "
+                      "weighted={w}".format(s=result.shading.smooth_polygons,
+                                            e=result.shading.sharp_edges,
+                                            w=result.shading.weighted_applied))
             if result.ao is not None:
                 print("[rock] AO bake: samples={s} min={lo:.4f} max={hi:.4f} "
                       "mean={m:.4f} contrast={c}".format(
@@ -2290,8 +2521,9 @@ def main(argv: list) -> int:
             for name in ("R", "G", "A"):
                 key = "range" + name
                 if key in result.channels:
-                    print("[rock] vcol {n}: min/max/mean {v}".format(
+                    print("[rock] vcol authored {n}: min/max/mean {v}".format(
                         n=name, v=result.channels[key]))
+            print("[rock] vcol readback: " + json.dumps(result.channel_readback))
             for entry in result.channel_stats:
                 print("[rock] channel {c} ({m}): min={lo} max={hi} mean={me} "
                       "coverage={cv} gradient={g} subject={s}".format(

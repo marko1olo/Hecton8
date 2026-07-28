@@ -593,7 +593,10 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
 
         sampler = SkeletonSampler.build(nodes)
         refine_surface(obj, spec, sampler, blackbox)
-        mesh_ops.apply_shading_basis(obj, smooth_angle_deg=48.0, blackbox=blackbox)
+        shading = mesh_ops.apply_shading_basis(
+            obj,
+            smooth_angle_deg=law.smooth_angle_for(law.SurfaceClass.ORGANIC),
+            blackbox=blackbox)
         # Reduce to the LOD0 budget BEFORE unwrapping and baking. Doing it after would
         # throw away the UV layout and vertex colours the following stages author, and
         # doing it never leaves LOD0 32x over the flora ceiling - which is what the first

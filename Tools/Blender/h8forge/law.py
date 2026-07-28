@@ -130,7 +130,13 @@ LOD_BUDGETS = {
     Family.WRECKAGE: LodBudget(25_000, 8_000, 1_200, 12, 500),
     Family.FLORA: LodBudget(6_500, 1_800, 300, 2, 80),
     Family.FLORA_CLUSTER: LodBudget(14_000, 4_000, 700, 12, 200),
-    Family.FAUNA: LodBudget(35_000, 12_000, 2_000, 0, 0),  # VAT/impostor only
+    # Fauna: 3dmodel.md section 7 says "VAT/impostor only" for the far tier, which is a
+    # ROUTE statement, not a budget of zero. Encoding 0/0 made `limit(3)` return 0, so any
+    # fauna impostor read as over budget no matter how cheap it was -- a gate that can only
+    # fail is the same defect as a gate that can never fire. The band mirrors the
+    # comparable large-body classes; the VAT/impostor ROUTE requirement is enforced by the
+    # family bible and the prefab assembler, not by pretending no triangles are allowed.
+    Family.FAUNA: LodBudget(35_000, 12_000, 2_000, 12, 500),
     Family.GEOLOGY: LodBudget(18_000, 7_000, 1_200, 12, 250),
 }
 
@@ -198,7 +204,33 @@ def bevel_segments_for(quality_weight: float, hero: bool = False) -> int:
 
 # "Smoothing groups are not optional. A generator must group connected faces when
 #  their normal angle is below the smooth threshold..."
+#
+# 32 degrees is the HARD-SURFACE default: manufactured objects have real creases, and a
+# panel seam that shades smooth reads as rubber. Applying that same threshold to organic
+# tissue is a design error, not a conservative choice -- displaced organic surfaces
+# routinely exceed 32 degrees between adjacent faces, every one of those gets marked sharp,
+# and the asset renders as faceted plates. Measured on a branching coral: the studio render
+# was indistinguishable from the flat render because nearly every surface edge had been
+# classified hard.
+#
+# 3dmodel.md section 5 wants organics carrying "secondary silhouette noise ... nonuniform
+# cross-sections" while still reading as grown tissue, which only works if that noise
+# shades smoothly and only genuine breaks stay hard.
 SMOOTH_ANGLE_DEG = 32.0
+
+SMOOTH_ANGLE_BY_SURFACE = {
+    SurfaceClass.HARD_SURFACE: 32.0,
+    # Organic: only a torn edge, a broken tip or a plate rim should stay hard.
+    SurfaceClass.ORGANIC: 68.0,
+    # Geology sits between the two: strata steps and fracture planes are genuine hard
+    # breaks, but weathered mass should not facet.
+    SurfaceClass.GEOLOGIC: 46.0,
+}
+
+
+def smooth_angle_for(surface_class: "SurfaceClass") -> float:
+    """Angle threshold above which an edge is treated as a hard break."""
+    return SMOOTH_ANGLE_BY_SURFACE.get(surface_class, SMOOTH_ANGLE_DEG)
 
 
 # ---------------------------------------------------------------------------

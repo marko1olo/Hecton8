@@ -193,22 +193,33 @@ def bake_ambient_occlusion(
     view_layer.objects.active = obj
 
     scene.render.bake.use_selected_to_active = False
-    # `render.bake.distance` DOES NOT EXIST on Blender 4.5 -- measured: the attribute set
-    # is cage_extrusion / max_ray_distance / margin / margin_type / normal_space / ...
-    # The previous try/except AttributeError silently swallowed the assignment, so the AO
-    # bake ran with UNBOUNDED rays. That is not a missing nicety: unbounded rays let every
-    # branch occlude every other branch across the whole colony, which crushed a coral's
-    # AO mean to 0.078 and buried the local cavity detail the bible actually asks for
-    # ("low values in crevices, under plates, root clusters, and branch intersections").
+
+    # AO ray length lives on the WORLD, not on the bake settings. Two wrong answers were
+    # tried and measured before this one, so the trail is worth recording:
+    #   - `scene.render.bake.distance` does not exist on 4.5 at all. Wrapped in a bare
+    #     try/except AttributeError it silently swallowed the assignment.
+    #   - `scene.render.bake.max_ray_distance` exists but changes the AO statistics NOT AT
+    #     ALL -- its RNA scope is selected-to-active cage matching. It looked like the
+    #     rename and was not, which is worse than a missing attribute: it reads as a fix.
+    # The real knob is `scene.world.light_settings.distance` (Gather -> Distance).
     #
-    # Failing loudly rather than swallowing: if the attribute is ever renamed again, the
-    # black box records it instead of the pipeline quietly regressing.
-    if hasattr(scene.render.bake, "max_ray_distance"):
-        scene.render.bake.max_ray_distance = distance
-    elif blackbox is not None:
+    # It matters because unbounded rays turn local occlusion into a global sky term: every
+    # branch occludes every other across the whole colony, which crushed one coral's AO
+    # mean to 0.078 and buried exactly what the bible asks for -- "low values in crevices,
+    # under plates, root clusters, and branch intersections".
+    ao_distance_applied = False
+    world = scene.world
+    if world is None:
+        world = bpy.data.worlds.new("H8_ForgeBakeWorld")
+        scene.world = world
+    light_settings = getattr(world, "light_settings", None)
+    if light_settings is not None and hasattr(light_settings, "distance"):
+        light_settings.distance = distance
+        ao_distance_applied = True
+    if not ao_distance_applied and blackbox is not None:
         blackbox.note_invalid(
             "bake_ao", "AO_DISTANCE_UNSUPPORTED",
-            "scene.render.bake has no max_ray_distance; AO rays are unbounded and local "
+            "world.light_settings.distance unavailable; AO rays are unbounded and local "
             "cavity contrast will be lost")
 
     baked = True

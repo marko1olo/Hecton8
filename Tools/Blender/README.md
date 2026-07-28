@@ -65,6 +65,19 @@ is why one shading operator silently does nothing in this exact invocation.
 `generators/` — one asset family per module, no reimplemented thresholds:
 `coral_branching.py`, `kelp.py`, `rock.py`.
 
+Two `mesh_ops` helpers exist because a stage that can no-op must report a count, not a status:
+
+- `apply_shading_basis(obj)` shades at DATA level (no operator) and returns
+  `ShadingResult(smooth_polygons, sharp_edges, weighted_applied)`. Assert on `smooth_polygons`; the
+  operator route it replaced returned `{'CANCELLED'}` headless and shaded nothing. Trap 1 in
+  `BLENDER_API_TRAPS.md`.
+- `topology_report(obj)` returns `TopologyReport` with component count, boundary edges, non-manifold
+  edges and an estimated `irreducible_floor`. Call it when a budget is missed: Decimate collapses edges
+  but cannot delete a whole shell, so an object made of many small disconnected pieces has a floor no
+  number of passes will beat. "584 tris vs a 300 budget" teaches an author nothing; "76 disconnected
+  components" tells them to weld the tip clusters or use an impostor at that level. Currently
+  unreferenced — wire it into the budget-miss path rather than re-deriving the census by hand.
+
 Import style inside Blender, where the package is not on `sys.path`:
 
 ```python
@@ -136,6 +149,20 @@ Two orderings inside that sequence are load-bearing and each was learned by brea
   layout and vertex colours; never decimating left coral LOD0 at 206880 triangles against a 6500
   ceiling.
 
+## Known gaps
+
+Recorded rather than implied away. Full evidence in `BLENDER_API_TRAPS.md`.
+
+- **Coral LOD2 lands at 584 triangles against a 300 budget**, and the seam-drop retry in
+  `build_lod_chain` did not fire. `bpy.ops.uv.smart_project` sets no `edge.use_seam` flags (measured: 0 of
+  1005 on Suzanne), so `seams_split` was 0 and the retry was unreachable. That observation predates the
+  shading fix, which now marks sharp edges and gives `_split_uv_seams` real input — so re-run the coral
+  and read the black box before trusting either number. The underlying floor is topological regardless:
+  roughly 76 disconnected tip-cluster shells, and the bible's answer at LOD2 is an impostor or card.
+- **`topology_report` has no callers.** Its "the black box records a cause" purpose is unrealised.
+- **The AO bake does not restore `world.light_settings.distance`.** It now bounds its rays correctly, but
+  leaves the world's AO distance changed for the rest of the session, including later preview renders.
+
 ## Previews and the visual verification loop
 
 Sheets land in `Docs/AgentLogs/ForgePreviews/`. Naming is
@@ -166,9 +193,11 @@ correct, the attribute exists, the validator sees data, and the shader animates 
 rigid body. It is invisible in a lit render and only the raw channel tile shows it. That is why the
 channel sheet is not optional.
 
-Known artefact-management defect: `clear_render_dir` deletes by asset-name prefix, so rendering a
-second mode for the same asset wipes the first mode's sheet. `ForgePreviews` currently holds the coral
-flat and channel sheets and no studio sheet even though the generator rendered studio first.
+Step 1 is narrower than it looks, and the reason is worth keeping: `clear_render_dir` decides staleness
+by MTIME against process start, not by filename prefix. Prefix matching deleted the studio sheet when the
+flat pass ran under the same asset name — the file was created, then removed by the very stale-artifact
+rule meant to protect it, with no error anywhere. `ForgePreviews` still shows the evidence: a coral flat
+sheet and channel sheet with no studio sheet. Do not reintroduce prefix-only deletion.
 
 ## What this lane does not do
 

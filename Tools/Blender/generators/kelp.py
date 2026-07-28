@@ -71,10 +71,13 @@ GENERATOR_VERSION = "1.0.0"
 ATLAS_FAMILY = "kelp"
 ATLAS_SIZE = 1024
 
-# Material slots, 3dmodel.md section 6. Slot 3 (emissive) is deliberately absent:
-# kelp is photic tissue, so there is no bioluminescent organ to give a slot to,
-# and an unused declared slot is a validator failure in its own right.
-SLOT_ROLES = ("tissue", "cut_edge", "holdfast")
+# Material slots, 3dmodel.md section 6. Slot 3 is declared under that section's
+# "emissive/bioluminescent/DETAILS only when needed" clause and carries the
+# pneumatocyst bladder pigment -- the amber-orange accent the mandatory reference
+# ``forest_kelp.webp`` uses as its colour focal point. It is NOT emissive: kelp is
+# photic tissue, so vertex-colour G stays 0 everywhere. Every declared slot must
+# carry triangles or validation fails, so the bladder regions are real geometry.
+SLOT_ROLES = ("tissue", "cut_edge", "holdfast", "bladder")
 
 # Vertex class tags, carried per-vertex so the sway/harvest fields can tell
 # rigid root tissue from flexible frond tissue after welding has renumbered
@@ -457,14 +460,17 @@ class KelpForm:
         self.boss_radius = float(rng.uniform(0.062, 0.084))
         self.boss_height = float(rng.uniform(0.085, 0.125))
 
-        # Blades. Canopy cluster plus basal sporophylls, which is the real
-        # Macrocystis arrangement and also puts the long fronds where the sway
-        # leverage is highest.
-        self.canopy_blades = _qi(4, 9, self.quality)
-        self.basal_blades = _qi(1, 3, self.quality)
-        self.blade_length = float(rng.uniform(0.42, 0.68))
-        self.blade_width = float(rng.uniform(0.058, 0.092))
-        self.blade_thickness = float(rng.uniform(0.0045, 0.0075))
+        # Blades. Grammar taken from the mandatory reference ``forest_kelp.webp``,
+        # opened directly: the blades there are SHORT relative to the stipe, dense,
+        # curled, and distributed along the WHOLE length, giving a bottle-brush
+        # silhouette. An earlier draft here used a canopy cluster of long fronds;
+        # against the reference that reads as ribbons on a stick, which is the
+        # section 3 "loose vertical ribbon" failure wearing a different hat.
+        self.canopy_blades = _qi(8, 18, self.quality)
+        self.basal_blades = _qi(2, 4, self.quality)
+        self.blade_length = float(rng.uniform(0.17, 0.31))
+        self.blade_width = float(rng.uniform(0.042, 0.070))
+        self.blade_thickness = float(rng.uniform(0.0040, 0.0062))
 
     @property
     def blade_count(self) -> int:
@@ -492,6 +498,22 @@ class KelpForm:
             radius += amplitude * math.exp(
                 -((t - centre) ** 2) / max(1e-5, width * width * 0.5))
         return radius
+
+
+def _stipe_material_for(form):
+    """Stipe faces are tissue, except the pneumatocyst swellings, which are bladder.
+
+    The gas bladders are real geometry (see ``KelpForm.stipe_radius``), so giving them
+    their own slot means the amber accent lands on a bulge the silhouette already has,
+    rather than being painted onto a smooth tube.
+    """
+    def material_fn(i, j, rings, segments):
+        u = i / float(max(1, rings - 1))
+        for centre, width, _amplitude in form.swellings:
+            if abs(u - centre) < width * 0.62:
+                return law.MATERIAL_SLOT_EMISSIVE
+        return law.MATERIAL_SLOT_PRIMARY
+    return material_fn
 
 
 def _build_stipe(bm, layers, form, rows: int, segments: int, part_id: int):
@@ -522,13 +544,16 @@ def _build_stipe(bm, layers, form, rows: int, segments: int, part_id: int):
         scaled = radius * ellipse * ribs * rings * fine
         return (math.cos(theta) * scaled, math.sin(theta) * scaled)
 
-    bounds = _sweep_closed(
+    # Section 5: seam on the least visible rear side. For a current-bent stipe the
+    # rear is the lee face, which the player sees least because the plant leans away.
+    info = _sweep_closed(
         bm, uv_layer, geo_layer, cls_layer, part_layer,
         points=points, segments=segments, offset_fn=offset, part_id=part_id,
         vertex_class=CLS_STIPE,
-        material_fn=lambda i, j, r, s: law.MATERIAL_SLOT_PRIMARY,
-        geo_base=form.boss_height * 0.55, geo_lengths=lengths)
-    return bounds, points, lengths
+        material_fn=_stipe_material_for(form),
+        geo_base=form.boss_height * 0.55, geo_lengths=lengths,
+        seam_direction=form.current.copy())
+    return info, points, lengths
 
 
 def _build_holdfast(bm, layers, form, quality: float, part_start: int):
@@ -562,12 +587,15 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
         scaled = radius * lumps * fine
         return (math.cos(theta) * scaled, math.sin(theta) * scaled)
 
+    # The boss seam faces downstream and low, where the holdfast meets sediment and
+    # nothing is visible.
     islands.append(_sweep_closed(
         bm, uv_layer, geo_layer, cls_layer, part_layer,
         points=boss_points, segments=boss_segments, offset_fn=boss_offset,
         part_id=part_id, vertex_class=CLS_BOSS,
         material_fn=lambda i, j, r, s: law.MATERIAL_SLOT_TRIM,
-        geo_base=0.0, geo_lengths=boss_lengths))
+        geo_base=0.0, geo_lengths=boss_lengths,
+        seam_direction=form.current.copy()))
     part_id += 1
 
     finger_rows = _qi(5, 8, quality)
@@ -606,12 +634,15 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
             scaled = radius * knuckles * fine
             return (math.cos(theta) * scaled, math.sin(theta) * scaled * flatten)
 
+        # A haptera lies on the substrate, so its underside is the least visible
+        # surface there is.
         islands.append(_sweep_closed(
             bm, uv_layer, geo_layer, cls_layer, part_layer,
             points=points, segments=finger_segments, offset_fn=finger_offset,
             part_id=part_id, vertex_class=CLS_FINGER,
             material_fn=lambda i, j, r, s: law.MATERIAL_SLOT_TRIM,
-            geo_base=0.012, geo_lengths=lengths))
+            geo_base=0.012, geo_lengths=lengths,
+            seam_direction=Vector((0.0, 0.0, -1.0))))
         part_id += 1
 
     return islands, part_id
@@ -647,7 +678,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
     part_id = part_start
     attachments = []
 
-    rows = _qi(11, 17, quality)
+    rows = _qi(8, 12, quality)
     nu = _qi(4, 6, quality)
     segments = 2 * (nu - 1)
     # Serration teeth and blister count are the density knobs section 9 names:
@@ -659,16 +690,17 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
 
     stipe_rows = len(stipe_points)
 
-    # Canopy fronds cluster in the upper stipe, basal sporophylls sit low. That is
-    # the real arrangement and it also places the long fronds where the sway
-    # leverage is genuinely highest, instead of forcing the sway curve to lie.
+    # Blades run the whole stipe, densest in the upper half, as the reference shows.
+    # Spacing is a jittered even distribution rather than independent random draws, so
+    # no two blades land on one ring and leave a bald patch somewhere else.
     heights = []
     for k in range(form.canopy_blades):
         span = k / float(max(1, form.canopy_blades - 1)) if form.canopy_blades > 1 else 0.5
-        heights.append((0.44 + 0.54 * span + float(rng.uniform(-0.022, 0.022)), True))
+        base = 0.14 + 0.85 * (span ** 0.82)
+        heights.append((base + float(rng.uniform(-0.018, 0.018)), True))
     for k in range(form.basal_blades):
         span = k / float(max(1, form.basal_blades - 1)) if form.basal_blades > 1 else 0.5
-        heights.append((0.10 + 0.12 * span + float(rng.uniform(-0.015, 0.015)), False))
+        heights.append((0.055 + 0.085 * span + float(rng.uniform(-0.012, 0.012)), False))
 
     for index, (height_t, is_canopy) in enumerate(heights):
         height_t = min(0.985, max(0.055, height_t))
@@ -685,13 +717,19 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # Flow-facing asymmetry: fronds on the lee side grow longer because they
         # are not being scoured, and every frond trails downstream.
         lee = law.saturate(0.5 + 0.5 * outward.dot(form.current))
-        length = form.blade_length * (0.72 + 0.5 * lee) * \
-            (1.0 if is_canopy else 0.55) * float(rng.uniform(0.88, 1.14))
+        length = form.blade_length * (0.78 + 0.42 * lee) * \
+            (1.0 if is_canopy else 0.78) * float(rng.uniform(0.82, 1.22))
         width = form.blade_width * (0.85 + 0.3 * lee) * float(rng.uniform(0.9, 1.12))
         thickness = form.blade_thickness * float(rng.uniform(0.9, 1.1))
 
-        rise = float(rng.uniform(0.22, 0.40))
-        droop = float(rng.uniform(0.20, 0.42))
+        # Elevation: blades radiate at varied pitch -- some angled up, some straight
+        # out, some slumped. One shared rise/droop profile for every blade is what
+        # makes a procedural plant read as a manufactured object.
+        elevation = float(rng.uniform(-0.55, 0.95))
+        rise = float(rng.uniform(0.10, 0.30)) + max(0.0, elevation) * 0.42
+        droop = float(rng.uniform(0.14, 0.36)) + max(0.0, -elevation) * 0.55
+        # Curl: reference blades twist and hook rather than lying in one plane.
+        curl_side = float(rng.uniform(-0.42, 0.42))
         serr_phase_right = float(detail_rng.uniform(0.0, 1.0))
         serr_phase_left = float(detail_rng.uniform(0.0, 1.0))
         serr_amp = float(detail_rng.uniform(0.10, 0.19))
@@ -717,12 +755,15 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             u = step / float(rows - 1)
             # Start inside the stipe so the junction is a hidden union under the
             # sheath, per the section 3 weld/knuckle/hidden-union clause.
-            radial = outward * (-stipe_r * 0.55 + length * 0.34 * (u ** 0.8))
-            flow = form.current * (length * 0.80 * form.current_strength *
+            radial = outward * (-stipe_r * 0.55 + length * 0.62 * (u ** 0.8))
+            flow = form.current * (length * 0.52 * form.current_strength *
                                    1.45 * (u ** 1.4))
+            # Sideways curl, perpendicular to this blade's own outward direction.
+            sideways = Vector((-outward.y, outward.x, 0.0)) * \
+                (length * curl_side * (u ** 1.5))
             vertical = length * (rise * (u ** 0.55) - droop * (u ** 2.1))
-            points.append(Vector((attach.x + radial.x + flow.x,
-                                  attach.y + radial.y + flow.y,
+            points.append(Vector((attach.x + radial.x + flow.x + sideways.x,
+                                  attach.y + radial.y + flow.y + sideways.y,
                                   attach.z + vertical)))
         lengths = _arclengths(points)
 
@@ -779,19 +820,33 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
 
             return (half_width * cx, half_thickness * sy + fold)
 
-        def blade_material(i, j, r, s, n=nu, seg=segments):
-            # Rim columns straddle theta = 0 and theta = pi exactly.
+        def blade_material(i, j, r, s, n=nu, seg=segments,
+                           blister_list=blisters):
+            # Rim columns straddle theta = 0 and theta = pi exactly, which is why the
+            # ring layout pins them to integer indices instead of an angle test.
             if j in (0, seg - 1, n - 2, n - 1):
                 return law.MATERIAL_SLOT_CUT_EDGE
+            # Pneumatocyst blisters carry the amber bladder pigment the reference uses
+            # as its colour focal point. Upper face only, matching the geometry: the
+            # bulge is only raised where sin(theta) > 0.
+            if j < n - 1:
+                u = i / float(max(1, r - 1))
+                cx = math.cos(2.0 * math.pi * j / float(seg))
+                for b_u, b_cx, b_span, _b_amp in blister_list:
+                    if (abs(u - b_u) < b_span * 1.35 and abs(cx - b_cx) < 0.52):
+                        return law.MATERIAL_SLOT_EMISSIVE
             return law.MATERIAL_SLOT_PRIMARY
 
+        # A blade's underside faces away from the light and the swimmer above it, so
+        # the cut goes there rather than across the lit upper face.
         islands.append(_sweep_closed(
             bm, uv_layer, geo_layer, cls_layer, part_layer,
             points=points, segments=segments, offset_fn=blade_offset,
             part_id=part_id, vertex_class=CLS_BLADE,
             material_fn=blade_material,
             geo_base=form.boss_height * 0.55 + attach_length,
-            geo_lengths=lengths))
+            geo_lengths=lengths,
+            seam_direction=Vector((0.0, 0.0, -1.0))))
         attachments.append({
             "index": index,
             "heightT": round(height_t, 5),
@@ -816,130 +871,344 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
 
 
 # ---------------------------------------------------------------------------
-# Stage 5: UV atlas layout  --  3dmodel.md section 6
+# Stage 5: UVs  --  3dmodel.md section 6, 3DMODEL_FLORA_CORAL.md section 5
 # ---------------------------------------------------------------------------
+# Seam placement is authored (see _sweep_closed); the metric is solved. This stage
+# runs the solver, forces each island's V to follow the growth direction, equalises
+# texel density across islands, packs, and then MEASURES the result rather than
+# assuming the operators did what their names suggest.
 
-def _shelf_pack(rects, region: float, gutter: float):
-    """Height-sorted shelf pack. Returns placements or None if it does not fit.
 
-    ``3dmodel.md`` section 6: "Atlas packing must use MaxRects, Skyline, or
-    equivalent rectangle packing. Random shelf packing that leaves large holes is
-    rejected." Sorting by height descending before shelving is the classic
-    Shelf-Next-Fit-Decreasing-Height variant, which is what makes it deterministic
-    and tight rather than random.
+def _face_islands(mesh):
+    """Group polygons into islands by flood fill that refuses to cross a seam.
+
+    The seams were marked structurally, one pole-to-pole cut per part, so this
+    returns exactly one island per part without needing the part attribute -- and it
+    reports the truth about what the solver actually saw, which is the point.
     """
-    order = sorted(range(len(rects)), key=lambda i: (-rects[i][1], -rects[i][0], i))
-    placements = [None] * len(rects)
-    cursor_x = 0.0
-    cursor_y = 0.0
-    shelf_height = 0.0
-    for i in order:
-        width, height = rects[i]
-        if cursor_x + width > region:
-            cursor_x = 0.0
-            cursor_y += shelf_height + gutter
-            shelf_height = 0.0
-        if cursor_y + height > region:
-            return None
-        placements[i] = (cursor_x, cursor_y)
-        cursor_x += width + gutter
-        if height > shelf_height:
-            shelf_height = height
-    return placements
+    seam = {}
+    for edge in mesh.edges:
+        if edge.use_seam:
+            seam[tuple(sorted(edge.vertices))] = True
 
+    # edge key -> polygons sharing it
+    shared = {}
+    for polygon in mesh.polygons:
+        keys = []
+        count = len(polygon.vertices)
+        for k in range(count):
+            a = polygon.vertices[k]
+            b = polygon.vertices[(k + 1) % count]
+            keys.append(tuple(sorted((a, b))))
+        for key in keys:
+            shared.setdefault(key, []).append(polygon.index)
 
-def _pack_uv_islands(bm, uv_layer, part_layer, island_bounds, atlas_size: int):
-    """Fit every part's metre-space UV island into the atlas with one uniform scale.
-
-    The scale is UNIFORM and shared by every island. A per-island fit would make
-    each part a different texel density, which section 6 rejects ("Texel density
-    mismatch above 20 percent"), and a non-uniform stretch would manufacture the
-    aspect distortion the same section bans. Islands keep the arc-length
-    proportions the sweep gave them; only their position and their common scale
-    change.
-    """
-    padding_px = law.atlas_padding_for(atlas_size)
-    padding_uv = float(padding_px) / float(atlas_size)
-    region = 1.0 - 2.0 * padding_uv
-
-    keys = sorted(island_bounds.keys())
-    sizes = []
-    for key in keys:
-        u0, v0, u1, v1 = island_bounds[key]
-        sizes.append((max(1e-5, u1 - u0), max(1e-5, v1 - v0)))
-
-    total_area = sum(w * h for w, h in sizes)
-    scale = region / max(1e-6, math.sqrt(total_area)) * 0.92
-    placements = None
-    for _attempt in range(240):
-        scaled = [(w * scale, h * scale) for w, h in sizes]
-        placements = _shelf_pack(scaled, region, padding_uv)
-        if placements is not None:
-            break
-        scale *= 0.955
-    if placements is None:
-        raise RuntimeError("UV atlas packing failed to converge for "
-                           + str(len(keys)) + " islands")
-
-    offsets = {}
-    for position, key in enumerate(keys):
-        u0, v0, _u1, _v1 = island_bounds[key]
-        place_u, place_v = placements[position]
-        offsets[key] = (padding_uv + place_u - u0 * scale,
-                        padding_uv + place_v - v0 * scale)
-
-    used_area = 0.0
-    for face in bm.faces:
-        key = face[part_layer]
-        offset = offsets.get(key)
-        if offset is None:
+    islands = []
+    assigned = [-1] * len(mesh.polygons)
+    for polygon in mesh.polygons:
+        if assigned[polygon.index] >= 0:
             continue
-        for loop in face.loops:
-            u, v = loop[uv_layer].uv
-            loop[uv_layer].uv = (u * scale + offset[0], v * scale + offset[1])
-    for position, key in enumerate(keys):
-        used_area += sizes[position][0] * scale * sizes[position][1] * scale
+        island_index = len(islands)
+        stack = [polygon.index]
+        members = []
+        assigned[polygon.index] = island_index
+        while stack:
+            current = stack.pop()
+            members.append(current)
+            poly = mesh.polygons[current]
+            count = len(poly.vertices)
+            for k in range(count):
+                a = poly.vertices[k]
+                b = poly.vertices[(k + 1) % count]
+                key = tuple(sorted((a, b)))
+                if key in seam:
+                    continue
+                for neighbour in shared.get(key, ()):
+                    if assigned[neighbour] < 0:
+                        assigned[neighbour] = island_index
+                        stack.append(neighbour)
+        islands.append(members)
+    return islands
+
+
+def _orient_islands_to_growth(mesh, islands) -> int:
+    """Rotate each island so +V runs root-to-tip along the organism.
+
+    ``3DMODEL_FLORA_CORAL.md`` section 5: "Kelp blades use lengthwise UVs: V from
+    root to tip, U from left edge to right edge." A conformal solver has no idea
+    which way is "root"; it returns an arbitrarily rotated island. Left alone, every
+    blade would carry its texture at a random angle, and a lengthwise-anisotropic
+    kelp texture would run across the blade on roughly half of them.
+
+    The growth parameter is already known per vertex: it is the geodesic distance
+    stored during the sweep. Least-squares fitting geodesic against (u, v) gives the
+    UV-space direction of growth, and one rotation per island puts it on +V. This is
+    exact, cheap, and needs no guessing about blade orientation in world space.
+
+    Returns the number of islands rotated.
+    """
+    geodesic = mesh.attributes.get(GEO_LAYER)
+    if geodesic is None or geodesic.domain != "POINT":
+        return 0
+    values = [0.0] * len(mesh.vertices)
+    geodesic.data.foreach_get("value", values)
+
+    uv_layer = mesh.uv_layers.active
+    if uv_layer is None:
+        return 0
+    rotated = 0
+
+    for members in islands:
+        loops = []
+        for polygon_index in members:
+            polygon = mesh.polygons[polygon_index]
+            for loop_index in polygon.loop_indices:
+                loops.append(loop_index)
+        if len(loops) < 3:
+            continue
+
+        # Least squares for geodesic ~ a*u + b*v + c. The gradient (a, b) is the
+        # UV direction in which growth increases fastest.
+        sum_u = sum_v = sum_g = 0.0
+        for loop_index in loops:
+            u, v = uv_layer.data[loop_index].uv
+            sum_u += u
+            sum_v += v
+            sum_g += values[mesh.loops[loop_index].vertex_index]
+        count = float(len(loops))
+        mean_u = sum_u / count
+        mean_v = sum_v / count
+        mean_g = sum_g / count
+
+        suu = svv = suv = sug = svg = 0.0
+        for loop_index in loops:
+            u, v = uv_layer.data[loop_index].uv
+            du = u - mean_u
+            dv = v - mean_v
+            dg = values[mesh.loops[loop_index].vertex_index] - mean_g
+            suu += du * du
+            svv += dv * dv
+            suv += du * dv
+            sug += du * dg
+            svg += dv * dg
+        determinant = suu * svv - suv * suv
+        if abs(determinant) <= 1e-18:
+            continue
+        # Cramer's rule on the normal equations
+        # [suu suv; suv svv] [grad_u grad_v]^T = [sug svg]^T
+        grad_u = (sug * svv - svg * suv) / determinant
+        grad_v = (svg * suu - sug * suv) / determinant
+        magnitude = math.hypot(grad_u, grad_v)
+        if magnitude <= 1e-12:
+            continue
+
+        # Rotate so the growth gradient points along +V.
+        angle = math.pi * 0.5 - math.atan2(grad_v, grad_u)
+        cos_a = math.cos(angle)
+        sin_a = math.sin(angle)
+        for loop_index in loops:
+            u, v = uv_layer.data[loop_index].uv
+            du = u - mean_u
+            dv = v - mean_v
+            uv_layer.data[loop_index].uv = (mean_u + du * cos_a - dv * sin_a,
+                                            mean_v + du * sin_a + dv * cos_a)
+        rotated += 1
+    return rotated
+
+
+def _uv_metrics(mesh, atlas_size: int):
+    """Measured UV facts: texel density per island, worst aspect distortion, areas.
+
+    ``AGENTS.md`` ``[RULE] Never Trust Automated Assertions Alone``. ``uv.unwrap``,
+    ``average_islands_scale`` and ``pack_islands`` all return ``{'FINISHED'}`` on
+    meshes they did nothing useful to, so the numbers come from the mesh afterwards.
+    """
+    data = validate.extract_mesh_data(mesh)
+    if not data.uv_layers:
+        return None
+    uv0 = data.uv_layers[0][1]
+
+    worst = 0.0
+    over_hero = 0
+    over_distant = 0
+    zero_area = 0
+    distortions = []
+    for t in range(data.triangle_count):
+        l0 = data.tri_loops[t * 3]
+        l1 = data.tri_loops[t * 3 + 1]
+        l2 = data.tri_loops[t * 3 + 2]
+        s0, t0 = uv0[l0 * 2], uv0[l0 * 2 + 1]
+        s1, t1 = uv0[l1 * 2], uv0[l1 * 2 + 1]
+        s2, t2 = uv0[l2 * 2], uv0[l2 * 2 + 1]
+        area2 = abs((s1 - s0) * (t2 - t0) - (s2 - s0) * (t1 - t0))
+        if area2 <= law.DEGENERATE_TRIANGLE_AREA_EPS:
+            zero_area += 1
+            continue
+        distortion = validate.uv_aspect_distortion(
+            data.positions, uv0, data.tri_vertices, data.tri_loops, t)
+        if distortion == float("inf"):
+            zero_area += 1
+            continue
+        distortions.append(distortion)
+        if distortion > worst:
+            worst = distortion
+        if distortion > law.UV_STRETCH_MAX_HERO:
+            over_hero += 1
+        if distortion > law.UV_STRETCH_MAX_DISTANT:
+            over_distant += 1
+
+    distortions.sort()
+    total = len(distortions)
+
+    def percentile(fraction):
+        if not distortions:
+            return 0.0
+        index = min(total - 1, max(0, int(fraction * (total - 1))))
+        return distortions[index]
+
+    # Texel density per island, so the section 6 "mismatch above 20 percent" rule is
+    # a measured number and not an aspiration.
+    islands = _face_islands(mesh)
+    densities = []
+    uv_layer = mesh.uv_layers.active
+    for members in islands:
+        uv_area = 0.0
+        world_area = 0.0
+        for polygon_index in members:
+            polygon = mesh.polygons[polygon_index]
+            world_area += polygon.area
+            corners = [tuple(uv_layer.data[i].uv) for i in polygon.loop_indices]
+            for k in range(1, len(corners) - 1):
+                a, b, c = corners[0], corners[k], corners[k + 1]
+                uv_area += abs((b[0] - a[0]) * (c[1] - a[1]) -
+                               (c[0] - a[0]) * (b[1] - a[1])) * 0.5
+        if world_area > 1e-9 and uv_area > 1e-12:
+            densities.append(math.sqrt(uv_area / world_area) * atlas_size)
+
+    # Island pixel extents, measured with the VALIDATOR's island definition
+    # (UV-coordinate connectivity) rather than the seam flood fill, so these numbers
+    # are directly comparable to the gate that judges them. The two definitions differ:
+    # a seam makes one part into two UV-connected pieces.
+    gate_islands = validate._uv_islands(data, uv0)
+    island_px = []
+    for root in sorted(gate_islands.keys()):
+        box = gate_islands[root]
+        island_px.append((round((box[2] - box[0]) * atlas_size, 3),
+                          round((box[3] - box[1]) * atlas_size, 3)))
+    island_px.sort(key=lambda wh: min(wh))
+    below_min = sum(1 for w, h in island_px if min(w, h) < law.UV_MIN_ISLAND_PIXELS)
+
+    density_min = min(densities) if densities else 0.0
+    density_max = max(densities) if densities else 0.0
+    density_mean = (sum(densities) / len(densities)) if densities else 0.0
+    mismatch = ((density_max - density_min) / density_max) if density_max > 0 else 0.0
 
     return {
         "atlasSize": atlas_size,
         "atlasFamily": ATLAS_FAMILY,
-        "paddingPx": padding_px,
-        "islands": len(keys),
-        "uniformScaleUvPerMetre": round(scale, 6),
-        "texelDensityPxPerMetre": round(scale * atlas_size, 2),
-        "utilisationFraction": round(used_area, 5),
+        "paddingPx": law.atlas_padding_for(atlas_size),
+        "islands": len(islands),
+        "texelDensityPxPerMetreMin": round(density_min, 2),
+        "texelDensityPxPerMetreMax": round(density_max, 2),
+        "texelDensityPxPerMetreMean": round(density_mean, 2),
+        "texelDensityMismatchFraction": round(mismatch, 5),
+        "texelDensityMismatchLimit": law.UV_TEXEL_MISMATCH_MAX,
+        "aspectDistortionMax": round(worst, 5),
+        "aspectDistortionP50": round(percentile(0.50), 5),
+        "aspectDistortionP95": round(percentile(0.95), 5),
+        "aspectDistortionP99": round(percentile(0.99), 5),
+        "trianglesOverHeroLimit": over_hero,
+        "trianglesOverDistantLimit": over_distant,
+        "trianglesMeasured": total,
+        "zeroAreaUvTriangles": zero_area,
+        "gateIslands": len(gate_islands),
+        "gateIslandsBelowMinPixels": below_min,
+        "smallestGateIslandsPx": island_px[:6],
+        "heroLimit": law.UV_STRETCH_MAX_HERO,
+        "distantLimit": law.UV_STRETCH_MAX_DISTANT,
     }
 
 
-def _mark_uv_seams(bm, uv_layer) -> int:
-    """Flag edges whose two faces disagree about UV, so decimation preserves them.
+def _unwrap_and_pack(obj, atlas_size: int, blackbox=None):
+    """Conformal unwrap on the authored seams, growth-aligned, density-equalised, packed.
 
-    ``3dmodel.md`` section 7 requires decimation to preserve UV seams, and
-    ``mesh_ops._split_uv_seams`` implements that by splitting edges flagged
-    ``seam``. Nothing else in the pipeline sets that flag, so an unmarked seam is
-    silently collapsed at LOD1 and the texture tears across it.
+    Route: ``3dmodel.md`` section 6, first approved option -- "Conformal unwrap using
+    LSCM/ABF-style angle preservation for unique surfaces". Blender's
+    ``MINIMUM_STRETCH`` is the SLIM solver and ``ANGLE_BASED`` is ABF++; the first is
+    tried and the second is the fallback, because a solver that fails must not leave
+    the mesh with whatever UVs happened to be there.
     """
-    marked = 0
-    for edge in bm.edges:
-        faces = edge.link_faces
-        if len(faces) != 2:
-            continue
-        coords = {}
-        split = False
-        for face in faces:
-            for loop in face.loops:
-                if loop.vert not in edge.verts:
-                    continue
-                uv = tuple(round(value, 6) for value in loop[uv_layer].uv)
-                previous = coords.get(loop.vert)
-                if previous is None:
-                    coords[loop.vert] = uv
-                elif previous != uv:
-                    split = True
-        if split:
-            edge.seam = True
-            marked += 1
-    return marked
+    mesh = obj.data
+    if not mesh.uv_layers:
+        mesh.uv_layers.new(name="UVMap")
+    mesh.uv_layers.active_index = 0
+
+    mesh_ops._make_sole_active(obj)
+    bpy.ops.object.mode_set(mode="EDIT")
+    try:
+        bpy.ops.mesh.select_all(action="SELECT")
+        bpy.ops.uv.select_all(action="SELECT")
+        # ANGLE_BASED is ABF++, and the gate measures ANGLE anisotropy
+        # (sigma_max/sigma_min of the parameterisation), so an angle-preserving
+        # solver is the one that satisfies it. MINIMUM_STRETCH (SLIM) was tried
+        # first and measured worse on this metric -- p50 0.307, p95 2.355, max
+        # 20.4, with 4339 of 5864 triangles over the 15 percent hero ceiling --
+        # because it minimises symmetric-Dirichlet energy, trading angle for area.
+        # 3dmodel.md section 6 names the right family explicitly: "Conformal
+        # unwrap using LSCM/ABF-style angle preservation".
+        method = "ANGLE_BASED"
+        result = bpy.ops.uv.unwrap(method=method, margin=0.0,
+                                   correct_aspect=True)
+        if "FINISHED" not in result:
+            method = "CONFORMAL"
+            result = bpy.ops.uv.unwrap(method=method, margin=0.0,
+                                       correct_aspect=True)
+        if "FINISHED" not in result:
+            raise RuntimeError("uv.unwrap returned " + str(result) +
+                               " for both ANGLE_BASED and CONFORMAL")
+        # Equalise texel density across islands BEFORE packing. Section 6 rejects
+        # "Texel density mismatch above 20 percent between adjacent hard-surface
+        # panels"; the same discipline is what keeps a blade and the stipe it grows
+        # from resolving at the same scale.
+        bpy.ops.uv.average_islands_scale(scale_uv=False, shear=False)
+    finally:
+        bpy.ops.object.mode_set(mode="OBJECT")
+
+    islands = _face_islands(mesh)
+    rotated = _orient_islands_to_growth(mesh, islands)
+
+    padding_px = law.atlas_padding_for(atlas_size)
+    padding_uv = float(padding_px) / float(atlas_size)
+    mesh_ops._make_sole_active(obj)
+    bpy.ops.object.mode_set(mode="EDIT")
+    try:
+        bpy.ops.mesh.select_all(action="SELECT")
+        bpy.ops.uv.select_all(action="SELECT")
+        # rotate=False preserves the growth alignment just applied. margin_method
+        # ADD reserves the border in absolute UV units, which is what
+        # law.atlas_padding_for expresses.
+        bpy.ops.uv.pack_islands(rotate=False, scale=True, merge_overlap=False,
+                                margin_method="ADD", margin=padding_uv,
+                                shape_method="CONCAVE", pin=False,
+                                udim_source="CLOSEST_UDIM")
+    finally:
+        bpy.ops.object.mode_set(mode="OBJECT")
+
+    metrics = _uv_metrics(mesh, atlas_size)
+    if metrics is not None:
+        metrics["solver"] = method
+        metrics["islandsOriented"] = rotated
+        metrics["seamEdges"] = sum(1 for e in mesh.edges if e.use_seam)
+    if blackbox is not None:
+        blackbox.record(
+            "unwrap_and_pack", vertex_count=len(mesh.vertices),
+            triangle_count=mesh_ops.triangle_count(mesh),
+            warning="" if metrics is None else
+            "solver={s} islands={i} p95={p} max={m}".format(
+                s=method, i=metrics["islands"],
+                p=metrics["aspectDistortionP95"],
+                m=metrics["aspectDistortionMax"]))
+    return metrics
 
 
 # ---------------------------------------------------------------------------
@@ -958,13 +1227,28 @@ def _shared_materials():
     Slot roles follow section 6 exactly. There is no slot 3 because kelp has no
     emissive organ, and a declared-but-empty slot is itself a validation failure.
     """
+    # Pigment comes from the mandatory reference set, opened directly:
+    # ``forest_kelp.webp`` reads as dark olive-green stipes against luminous teal
+    # water, with saturated AMBER-ORANGE bladder clusters as the colour focal points;
+    # ``nice_biome.webp`` shows the same palette logic -- saturated green vegetation
+    # plus warm accents against cyan. The albedo here is therefore a healthy mid-tone
+    # olive, NOT the near-black the reference silhouettes appear to be: that darkness
+    # is backlighting through water, and baking it into base colour would double-darken
+    # in engine. 3dmodel.md section 12 forbids exactly that -- darkness must not stand
+    # in for material work.
+    #
+    # Translucency is authored too. Kelp is a thin wet membrane; without transmission a
+    # blade reads as painted cardboard, and section 10 asks the final-material shot to
+    # prove "wetness, translucency, pigment".
     specs = (
-        ("tissue", (0.075, 0.150, 0.075, 1.0), 0.42),
-        ("cut_edge", (0.115, 0.095, 0.052, 1.0), 0.30),
-        ("holdfast", (0.055, 0.048, 0.040, 1.0), 0.66),
+        # role, base colour, roughness, transmission-ish weight, sheen
+        ("tissue", (0.052, 0.128, 0.043, 1.0), 0.38, 0.28, 0.35),
+        ("cut_edge", (0.128, 0.140, 0.052, 1.0), 0.30, 0.42, 0.25),
+        ("holdfast", (0.048, 0.036, 0.026, 1.0), 0.72, 0.0, 0.10),
+        ("bladder", (0.402, 0.196, 0.030, 1.0), 0.26, 0.34, 0.45),
     )
     out = []
-    for role, colour, roughness in specs:
+    for role, colour, roughness, translucency, sheen in specs:
         name = law.NAME_MATERIAL.format(family=law.Family.FLORA.value, role=role)
         existing = bpy.data.materials.get(name)
         if existing is not None:
@@ -975,8 +1259,15 @@ def _shared_materials():
         if principled is not None:
             principled.inputs["Base Color"].default_value = colour
             principled.inputs["Roughness"].default_value = roughness
-            if "Metallic" in principled.inputs:
-                principled.inputs["Metallic"].default_value = 0.0
+            for socket, value in (("Metallic", 0.0),
+                                  ("Subsurface Weight", translucency),
+                                  ("Sheen Weight", sheen),
+                                  ("IOR", 1.36)):
+                if socket in principled.inputs:
+                    principled.inputs[socket].default_value = value
+            if "Subsurface Radius" in principled.inputs and translucency > 0.0:
+                principled.inputs["Subsurface Radius"].default_value = (
+                    0.020, 0.048, 0.016)
         out.append(material)
     return out
 
@@ -1063,11 +1354,21 @@ def _author_vertex_colours(obj, form, bb, *, ao_samples: int, ao_distance: float
     mesh = obj.data
 
     floor = _add_ao_substrate(form)
-    # The core now bounds the AO ray itself, so ``distance`` is honoured. It matters:
-    # unbounded rays let every blade occlude every other blade across the whole plant,
-    # which buries the local cavity detail 3DMODEL_FLORA_CORAL.md section 2 asks for
-    # ("low values in crevices, under plates, root clusters, and branch
-    # intersections") under a global sky-occlusion term.
+    # AO ray bound. The core passes ``distance`` to scene.render.bake.max_ray_distance,
+    # which is measurably inert for an AO bake -- that property's scope is
+    # selected-to-active cage matching. The knob that actually bounds an AO ray is on
+    # the world's light settings, and nothing else in the tree sets it, so it is set
+    # here rather than left at the 10 m default. Unbounded rays let every blade occlude
+    # every other blade across the whole plant, which is a global sky-occlusion term
+    # and not the local cavity detail 3DMODEL_FLORA_CORAL.md section 2 requires:
+    # "low values in crevices, under plates, root clusters, and branch intersections".
+    # This belongs in vertexcolor.bake_ambient_occlusion; it sits here only because
+    # this generator may not edit the core. A/B numbers are in the task report.
+    world = bpy.context.scene.world
+    if world is None:
+        world = bpy.data.worlds.new("H8KELP_World")
+        bpy.context.scene.world = world
+    world.light_settings.distance = ao_distance
     try:
         ao_result = vertexcolor.bake_ambient_occlusion(
             obj, samples=ao_samples, distance=ao_distance, blackbox=bb)
@@ -1242,34 +1543,27 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     part_layer = bm.faces.layers.int.new(PART_LAYER)
     layers = (uv_layer, geo_layer, cls_layer, part_layer)
 
-    island_bounds = {}
-    holdfast_islands, next_part = _build_holdfast(bm, layers, form, quality, 0)
-    for offset, bounds in enumerate(holdfast_islands):
-        island_bounds[offset] = bounds
+    holdfast_parts, next_part = _build_holdfast(bm, layers, form, quality, 0)
 
     stipe_rows = _qi(12, 26, quality)
     stipe_segments = _qi(7, 12, quality)
     stipe_part = next_part
-    stipe_bounds, stipe_points, stipe_lengths = _build_stipe(
+    stipe_info, stipe_points, stipe_lengths = _build_stipe(
         bm, layers, form, stipe_rows, stipe_segments, stipe_part)
-    island_bounds[stipe_part] = stipe_bounds
     next_part += 1
 
-    blade_islands, next_part, blade_records, blade_stats = _build_blades(
+    blade_parts, next_part, blade_records, blade_stats = _build_blades(
         bm, layers, form, quality, stipe_points, stipe_lengths, next_part)
-    for offset, bounds in enumerate(blade_islands):
-        island_bounds[stipe_part + 1 + offset] = bounds
+    expected_islands = len(holdfast_parts) + 1 + len(blade_parts)
 
     raw_faces = len(bm.faces)
     raw_verts = len(bm.verts)
     bb.record("geometry_built", vertex_count=raw_verts, triangle_count=raw_faces,
               family=law.Family.FLORA.value)
 
-    # -- 5. UVs and material IDs ------------------------------------------
-    atlas_report = _pack_uv_islands(bm, uv_layer, part_layer, island_bounds,
-                                    atlas_size)
+    # -- 4. topology rules: weld -------------------------------------------
     weld_stats = mesh_ops.weld_and_clean(bm, merge_distance=1e-4, blackbox=bb)
-    seams_marked = _mark_uv_seams(bm, uv_layer)
+    seams_marked = sum(1 for edge in bm.edges if edge.seam)
 
     mesh_name = law.NAME_MESH.format(family=law.Family.FLORA.value, name=name, lod=0)
     mesh = bpy.data.meshes.new(mesh_name)
@@ -1290,6 +1584,55 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     before_reduce = mesh_ops.triangle_count(mesh)
     after_reduce = mesh_ops.reduce_to_budget(
         obj, family=law.Family.FLORA, lod_index=0, blackbox=bb)
+
+    # Quadric collapse can leave zero-area faces behind it. weld_and_clean already ran
+    # once, BEFORE the decimation, so a second pass here is not redundant: without it
+    # those slivers reach the UV metric as infinities and the validator as
+    # degenerate_triangle failures, and they are indistinguishable from an authoring
+    # bug in the report.
+    if after_reduce < before_reduce:
+        post = mesh_ops.bmesh_from_object(obj)
+        post_clean = mesh_ops.weld_and_clean(post, merge_distance=1e-5, blackbox=bb)
+        mesh_ops.bmesh_to_object(post, obj)
+    else:
+        post_clean = {"verts_removed": 0, "faces_removed": 0,
+                      "degenerate_faces_deleted": 0, "loose_verts_deleted": 0}
+
+    # -- 5. UVs and material IDs ------------------------------------------
+    # After reduce_to_budget on purpose: unwrapping first and decimating second would
+    # hand the solver's result to a collapse pass that interpolates across it.
+    atlas_report = _unwrap_and_pack(obj, atlas_size, blackbox=bb)
+    if atlas_report is None:
+        raise RuntimeError("UV stage produced no UV layer to measure")
+    # Printed BEFORE the validation gate so an abort still shows the UV facts that
+    # caused it, rather than only the gate names.
+    print("  [uv] solver={s} islands={i}/{e} oriented={o} seams={sm} "
+          "density={dmin}..{dmax}px/m mismatch={mm} distortion p50={p50} "
+          "p95={p95} max={mx} overHero={oh}/{n} zeroArea={z}".format(
+              s=atlas_report["solver"], i=atlas_report["islands"],
+              e=expected_islands, o=atlas_report["islandsOriented"],
+              sm=atlas_report["seamEdges"],
+              dmin=atlas_report["texelDensityPxPerMetreMin"],
+              dmax=atlas_report["texelDensityPxPerMetreMax"],
+              mm=atlas_report["texelDensityMismatchFraction"],
+              p50=atlas_report["aspectDistortionP50"],
+              p95=atlas_report["aspectDistortionP95"],
+              mx=atlas_report["aspectDistortionMax"],
+              oh=atlas_report["trianglesOverHeroLimit"],
+              n=atlas_report["trianglesMeasured"],
+              z=atlas_report["zeroAreaUvTriangles"]))
+    # Assert on MEASURED COUNTS, not on the operators' return values: uv.unwrap,
+    # average_islands_scale and pack_islands all report FINISHED on meshes they did
+    # nothing useful to.
+    if atlas_report["islands"] != expected_islands:
+        raise RuntimeError(
+            "unwrap produced {a} islands, expected {e} (one per swept part); the "
+            "seam chain did not open every shell".format(
+                a=atlas_report["islands"], e=expected_islands))
+    if atlas_report["zeroAreaUvTriangles"] > 0:
+        raise RuntimeError(
+            "{n} triangles carry zero UV area after unwrap".format(
+                n=atlas_report["zeroAreaUvTriangles"]))
 
     # -- 6a. shading basis, then bakes ------------------------------------
     # The core owns the shading basis. Its ShadingResult is asserted rather than
@@ -1351,41 +1694,51 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
             lod0_mesh=lods[0].obj.data,
             visual_meshes=tuple(level.obj.data for level in lods[1:]))
 
-    validate.assert_or_abort(
-        [reports, chain_failures, collider_failures], blackbox=bb,
-        reason="kelp pre-save gate seed={s} quality={q}".format(s=seed, q=quality))
+    # -- 13a. proof artefacts, rendered BEFORE the save gate ---------------
+    # PROCEDURAL_ASSET_PIPELINE.md puts proof last, and for a PASSING asset it is.
+    # Rendering before the gate as well is what makes a REJECTED asset diagnosable:
+    # the save must abort on failure ("On validation failure the save is aborted"),
+    # but the same document requires the generator to "write a failure report", and a
+    # failure report for a visual asset with no image in it cannot be judged. The
+    # renders read the mesh; they never write an asset.
+    proof = {}
+    if want_preview:
+        proof = _render_proof(lods[0].obj, name=run_tag,
+                              resolution=preview_resolution)
+
+    gate_failures = validate._collect_failures(
+        [reports, chain_failures, collider_failures])
+    passed = not gate_failures
 
     # -- 12. save ---------------------------------------------------------
     os.makedirs(out_dir, exist_ok=True)
     export_objects = [level.obj for level in lods] + [empty for _n, empty in anchors]
     fbx_path = os.path.join(out_dir, "MESH_{f}_{n}.fbx".format(
         f=law.Family.FLORA.value, n=name))
+    blend_path = os.path.join(out_dir, "SRC_{f}_{n}.blend".format(
+        f=law.Family.FLORA.value, n=name))
+    if not passed:
+        # 3dmodel.md section 10: "Failure aborts save." No FBX, no .blend.
+        fbx_path = ""
+        blend_path = ""
     view_layer = bpy.context.view_layer
     for other in view_layer.objects:
         other.select_set(False)
     for target in export_objects:
         target.select_set(True)
     view_layer.objects.active = lods[0].obj
-    bpy.ops.export_scene.fbx(
-        filepath=fbx_path, use_selection=True, apply_unit_scale=True,
-        global_scale=1.0, apply_scale_options="FBX_SCALE_NONE",
-        axis_forward="-Z", axis_up="Y", object_types={"MESH", "EMPTY"},
-        use_mesh_modifiers=False, mesh_smooth_type="FACE", use_tspace=True,
-        # The exporter defaults to SRGB, which would gamma-encode masks that are
-        # DATA, not colour: a sway value of 0.5 would arrive in Unity as 0.74. LINEAR
-        # passes the authored 0..1 numbers through untouched.
-        colors_type="LINEAR", path_mode="STRIP", use_triangles=True,
-        bake_anim=False)
-
-    blend_path = os.path.join(out_dir, "SRC_{f}_{n}.blend".format(
-        f=law.Family.FLORA.value, n=name))
-    bpy.ops.wm.save_as_mainfile(filepath=blend_path, copy=True)
-
-    # -- 13. proof artefacts ----------------------------------------------
-    proof = {}
-    if want_preview:
-        proof = _render_proof(lods[0].obj, name=run_tag,
-                              resolution=preview_resolution)
+    if passed:
+        bpy.ops.export_scene.fbx(
+            filepath=fbx_path, use_selection=True, apply_unit_scale=True,
+            global_scale=1.0, apply_scale_options="FBX_SCALE_NONE",
+            axis_forward="-Z", axis_up="Y", object_types={"MESH", "EMPTY"},
+            use_mesh_modifiers=False, mesh_smooth_type="FACE", use_tspace=True,
+            # The exporter defaults to SRGB, which would gamma-encode masks that are
+            # DATA, not colour: a sway of 0.5 would arrive in Unity as 0.74. LINEAR
+            # passes the authored 0..1 numbers through untouched.
+            colors_type="LINEAR", path_mode="STRIP", use_triangles=True,
+            bake_anim=False)
+        bpy.ops.wm.save_as_mainfile(filepath=blend_path, copy=True)
 
     manifest = {
         "identity": identity.as_dict(),
@@ -1427,8 +1780,10 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
             "rawVertsBeforeWeld": raw_verts,
             "weld": weld_stats,
             "uvSeamEdgesMarked": seams_marked,
+            "stipeSeam": stipe_info,
             "trianglesBeforeBudgetReduce": before_reduce,
             "trianglesAfterBudgetReduce": after_reduce,
+            "postDecimationClean": post_clean,
             "budgetReduceFired": after_reduce < before_reduce,
             "branchUnion": "stipe base and blade sheaths are hidden unions beneath "
                            "the holdfast boss and the blade root embed; no "
@@ -1439,9 +1794,12 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
         "texelDensityTargets": {
             "heroHarvestable": law.TEXEL_DENSITY_HERO_FLORA,
             "commonInstanced": law.TEXEL_DENSITY_COMMON_FLORA,
-            "achieved": atlas_report["texelDensityPxPerMetre"],
-            "meetsHero": atlas_report["texelDensityPxPerMetre"] >=
+            "achievedMean": atlas_report["texelDensityPxPerMetreMean"],
+            "achievedMin": atlas_report["texelDensityPxPerMetreMin"],
+            "meetsHero": atlas_report["texelDensityPxPerMetreMin"] >=
                          law.TEXEL_DENSITY_HERO_FLORA,
+            "meetsCommon": atlas_report["texelDensityPxPerMetreMin"] >=
+                           law.TEXEL_DENSITY_COMMON_FLORA,
         },
         "uvRoutes": {
             "blades": "lengthwise: V from root to tip along the blade curve, U "
@@ -1462,6 +1820,10 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
              "material": materials[1].name},
             {"slot": law.MATERIAL_SLOT_TRIM, "role": SLOT_ROLES[2],
              "material": materials[2].name},
+            {"slot": law.MATERIAL_SLOT_EMISSIVE, "role": SLOT_ROLES[3],
+             "material": materials[3].name,
+             "note": "non-emissive amber bladder pigment under the section 6 "
+                     "'details' clause; vertex colour G stays 0"},
         ],
         "vertexColour": vcol_report,
         "vertexColourContract": list(law.ORGANIC_VCOL),
@@ -1498,11 +1860,14 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
                         "failures": [str(f) for f in r.failures],
                         "notEnforced": [str(w) for w in r.warnings]}
                        for r in reports],
-            "allPassed": all(r.passed for r in reports) and not chain_failures
-                         and not collider_failures,
+            "allPassed": passed,
+            "gateFailures": [str(f) for f in gate_failures],
+            "colliderFailures": [str(f) for f in collider_failures],
         },
-        "files": {"fbx": os.path.basename(fbx_path),
-                  "blend": os.path.basename(blend_path)},
+        "files": {"fbx": os.path.basename(fbx_path) if fbx_path else
+                         "NOT WRITTEN: validation aborted the save",
+                  "blend": os.path.basename(blend_path) if blend_path else
+                           "NOT WRITTEN: validation aborted the save"},
         "proof": proof,
         "blackBox": {"stepsRecorded": bb.total_recorded,
                      "lastAcceptedStage": bb.last_accepted_stage(),
@@ -1514,12 +1879,23 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
         "generationSeconds": round(time.time() - started, 2),
     }
 
-    manifest_path = os.path.join(out_dir, law.NAME_MANIFEST.format(
-        family=law.Family.FLORA.value, name=name) + ".json")
+    # A rejected asset gets a REJECTED_-prefixed failure report, never a manifest
+    # that a later stage could mistake for a shippable package.
+    manifest_path = os.path.join(out_dir, ("" if passed else "REJECTED_") +
+                                 law.NAME_MANIFEST.format(
+                                     family=law.Family.FLORA.value, name=name) +
+                                 ".json")
     with open(manifest_path, "w", encoding="utf-8") as handle:
         json.dump(manifest, handle, indent=1, sort_keys=False)
     manifest["files"]["manifest"] = os.path.basename(manifest_path)
     manifest["outDir"] = out_dir
+    if not passed:
+        for failure in gate_failures:
+            bb.note_invalid("gate:" + failure.gate, failure.gate,
+                            "x{c} {d}".format(c=failure.count, d=failure.detail))
+        manifest["blackBox"]["dump"] = bb.dump(
+            "kelp pre-save gate rejected seed={s} quality={q}".format(
+                s=seed, q=quality))
     return manifest
 
 
@@ -1545,6 +1921,15 @@ def _render_proof(obj, *, name: str, resolution: int) -> dict:
         name=name + "_studio", resolution=resolution, mode="studio",
         views=("front", "three_quarter", "side", "top"),
         surface_class=law.SurfaceClass.ORGANIC))
+    # mode="material" keeps the asset's OWN materials, which is the only shot that can
+    # show pigment. Section 10 requires both: a flat shot proving the silhouette is
+    # biological before texture detail, and a final-material shot proving "wetness,
+    # translucency, pigment or bioluminescence, scars, pores, and biome-correct
+    # coloration support the organism". A grey render satisfies the first only.
+    material = preview.render_contact_sheet(obj, preview.PreviewSpec(
+        name=name + "_material", resolution=resolution, mode="material",
+        views=("three_quarter", "front", "side", "low"),
+        surface_class=law.SurfaceClass.ORGANIC))
     channels = preview.render_channel_sheet(obj, preview.PreviewSpec(
         name=name + "_chan", resolution=resolution,
         surface_class=law.SurfaceClass.ORGANIC))
@@ -1565,6 +1950,7 @@ def _render_proof(obj, *, name: str, resolution: int) -> dict:
 
     out["flatSheet"] = flat.sheet_path
     out["studioSheet"] = studio.sheet_path
+    out["materialSheet"] = material.sheet_path
     out["channelSheet"] = channels.sheet_path
     out["channelTiles"] = list(channels.tile_paths)
     out["channelMeasurements"] = measurements
@@ -1697,11 +2083,23 @@ def _print_report(manifest: dict) -> None:
                                   c=topology["trianglesAfterBudgetReduce"])
                  if topology["budgetReduceFired"] else "not needed")))
     uv = manifest["uv"]
-    print("  uv atlas         {i} islands, {sz}px atlas, {p}px padding, "
-          "{d} px/m (hero target {h}), utilisation {u:.1%}".format(
-              i=uv["islands"], sz=uv["atlasSize"], p=uv["paddingPx"],
-              d=uv["texelDensityPxPerMetre"],
-              h=law.TEXEL_DENSITY_HERO_FLORA, u=uv["utilisationFraction"]))
+    print("  uv atlas         {i} islands ({o} growth-oriented), solver={s}, "
+          "{sz}px atlas, {p}px padding".format(
+              i=uv["islands"], o=uv["islandsOriented"], s=uv["solver"],
+              sz=uv["atlasSize"], p=uv["paddingPx"]))
+    print("  uv texel density {mn}..{mx} px/m (mean {me}), mismatch {ms:.1%} "
+          "vs limit {ml:.0%}; hero target {h} px/m".format(
+              mn=uv["texelDensityPxPerMetreMin"], mx=uv["texelDensityPxPerMetreMax"],
+              me=uv["texelDensityPxPerMetreMean"],
+              ms=uv["texelDensityMismatchFraction"],
+              ml=uv["texelDensityMismatchLimit"],
+              h=law.TEXEL_DENSITY_HERO_FLORA))
+    print("  uv distortion    p50={p50} p95={p95} p99={p99} max={mx}; over hero "
+          "{oh}/{n}, over distant {od}/{n}, zero-area {z}".format(
+              p50=uv["aspectDistortionP50"], p95=uv["aspectDistortionP95"],
+              p99=uv["aspectDistortionP99"], mx=uv["aspectDistortionMax"],
+              oh=uv["trianglesOverHeroLimit"], od=uv["trianglesOverDistantLimit"],
+              n=uv["trianglesMeasured"], z=uv["zeroAreaUvTriangles"]))
     for level in manifest["lods"]:
         print("  LOD{i}             {t} tris / budget {b}  {verdict}  "
               "({v} verts)".format(
@@ -1748,6 +2146,7 @@ def _print_report(manifest: dict) -> None:
     if proof:
         print("  flat sheet       " + proof["flatSheet"])
         print("  studio sheet     " + proof["studioSheet"])
+        print("  material sheet   " + proof["materialSheet"])
         print("  channel sheet    " + proof["channelSheet"])
     print("  manifest         " + manifest["files"].get("manifest", "?"))
     print("  fbx              " + manifest["files"]["fbx"])
