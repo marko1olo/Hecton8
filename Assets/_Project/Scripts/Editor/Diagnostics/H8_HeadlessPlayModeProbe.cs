@@ -1728,7 +1728,49 @@ namespace Hecton8.EditorTools.Diagnostics
                 ready && gameReady ? MomentVerdict.Pass : MomentVerdict.Fail,
                 $"allSystemsReady={ready} gameReady={gameReady} Dispatcher={IsAlive(GlobalRegistry.Dispatcher)} " +
                 $"TickManager={IsAlive(GlobalRegistry.TickManager)} Save={IsAlive(GlobalRegistry.Save)} " +
-                $"ObjectPool={IsAlive(GlobalRegistry.ObjectPool)} activeScene='{active.name}'");
+                $"ObjectPool={IsAlive(GlobalRegistry.ObjectPool)} activeScene='{active.name}' " +
+                $"{DescribeSceneActivationProgress()}");
+        }
+
+        /// <summary>
+        /// Names the activation step the boot actually stopped on.
+        ///
+        /// gameReady=False says the activation did not finish; it does not say WHERE it stopped, and that
+        /// distinction was the difference between "the world is a shell" and the truth. Reconstructing it
+        /// took a manual sweep of a 1.6 MB log for SetSceneActivationStep strings, which is not a thing
+        /// anyone should have to do twice.
+        ///
+        /// What that sweep found, in Logs/omega_route20.log: the phase reached "Step 7: Player Spawn" and
+        /// never printed Step 8. HectonPlayerSpawner waits for terrain readiness with maxWaitTime=60f
+        /// (HectonPlayerSpawner.cs:276) while the bootstrap's per-step NO-PROGRESS budget is
+        /// bootstrapTimeout=30f (GameBootstrapper.cs:614, applied by cts.CancelAfter at :7266) - and the
+        /// spawner's 0.5s "Terrain not ready; waiting" logs are not new named steps, so the deadline is
+        /// never pushed forward. The token cancels first, GameBootstrapper.cs:7365 ActivatePlayer() never
+        /// runs, and the player stays held by the Kinematic Arrest Gate, which is why 47,344 published
+        /// input overrides moved it zero millimetres. The spawner's own ForceFallbackSpawn() recovery is
+        /// unreachable for the same reason: 60 > 30.
+        ///
+        /// Both fields are private [SerializeField], which is precisely what SerializedObject reads - so
+        /// this needs no reflection and no edit to GameBootstrapper.cs.
+        /// </summary>
+        private static string DescribeSceneActivationProgress()
+        {
+            // Cold, once-per-run, editor-only diagnostic lookup. Not a hot path.
+            Hecton8.Bootstrap.GameBootstrapper bootstrapper =
+                UnityEngine.Object.FindAnyObjectByType<Hecton8.Bootstrap.GameBootstrapper>();
+            if (bootstrapper == null)
+                return "activationStep=<no GameBootstrapper instance found>";
+
+            SerializedObject serialized = new SerializedObject(bootstrapper);
+            SerializedProperty step = serialized.FindProperty("_debugSceneActivationStep");
+            SerializedProperty completed = serialized.FindProperty("_debugSceneActivationCompleted");
+
+            string stepText = step != null ? step.stringValue : "<field renamed or removed>";
+            string completedText = completed != null
+                ? (completed.boolValue ? "True" : "False")
+                : "<field renamed or removed>";
+
+            return $"activationStep='{stepText}' activationCompleted={completedText}";
         }
 
         /// <summary>
