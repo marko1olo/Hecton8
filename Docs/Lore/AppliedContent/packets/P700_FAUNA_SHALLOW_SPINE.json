@@ -1,0 +1,411 @@
+{
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "release_set_id": "RS700_FAUNA_SHALLOW_LAYER",
+ "canon_owner": [
+  "Docs/Lore/Lore_Bible.md",
+  "Docs/Lore/Canon_Locks.md"
+ ],
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false,
+  "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+ },
+ "packets": [
+  {
+   "packet_id": "P700_SHORE_SKIMMER",
+   "article_id": "hecton8.fauna.shore_skimmer",
+   "title_key": "LORE_P700_SHORE_SKIMMER_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.shore_skimmer",
+    "secondary": [
+     "unlock.first_surface_ascent"
+    ],
+    "poi_tags": [
+     "poi.shelf_buoy_line",
+     "poi.annex_p63_surface"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.shallow_reef"
+    ]
+   },
+   "image_targets": {
+    "codex": "narrow fast-bodied fish running a continuous line just under the surface, seen from below against bright surface light, no glow, no fantasy silhouette",
+    "scanner_thumbnail": "surface seen from three metres down, an unbroken feeding line breaking off at a green-tinged gap of water"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Shore Skimmer",
+     "scanner": "Surface-layer schooling forager, 0 to 8 metres. Confidence 84 percent. Hazard: none recorded. Limit: cannot resolve individuals above three metres per second.",
+     "in_game_wiki": "It will not go below eight metres, which makes its absence more useful than its presence.\n\nThe flock runs a continuous line along the surface, feeding on whatever the swell concentrates. Where that line stops dead and restarts forty metres on, the water in the gap has gone green and stripped. No skimmer will enter it, nor should a diver on intake.\n\nThe hazard is small and immediate. Anything that flickers gets struck, and a lamp held near the surface will draw the whole line into your faceplate for two seconds. That is long enough to lose the horizon with a full sling on.\n\nThey break formation about forty seconds before a squall, earlier than the Class-IV barometer manages. Nobody has worked out what they are reading.\n\nAssessment: follow the line, and treat the gap where it ends as closed water.",
+     "terminal": "SPECIMEN 44-S-016. CLASS: SURFACE CONDITION INDICATOR, UNMAINTAINED. STATION: SHELF BUOY LINE 3, SERVICE SUSPENDED 2146. USE: SUBSTITUTE OXYGEN READ, GRID 0 TO 8 M. CALIBRATION: NOT PERFORMED.",
+     "field_note": "Deep Reach wrote the flock into the form as an oxygen gauge and cancelled the buoy contract the same quarter. The flock is right more often than the last buoy was, so count where the line stops, not how many fish are in it.",
+     "audio": "-- whole line just came apart, no reason, flat water, and the deck barometer has not moved. Third time this month. Get the sling in and get in, Corran, I am not arguing with fish about weather --",
+     "external_site_article": "Aegir shelf crews report a fast surface-layer forager on HECTON-8 that holds to the upper eight metres and feeds in a continuous line along wind-concentrated swell. The line breaks around water with degraded surface oxygen, which makes the gaps in it legible at distance.\n\nField practice is to read the interruption rather than the flock, and to treat a gap in the line as unbreathable water rather than open water. Deep Reach records from Sector 44 classify the species as a surface condition indicator and note that the shelf buoy service it replaced was suspended in 2146.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P700_SILT_DRIFTER",
+   "article_id": "hecton8.fauna.silt_drifter",
+   "title_key": "LORE_P700_SILT_DRIFTER_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.silt_drifter",
+    "secondary": [
+     "unlock.first_intake_screen"
+    ],
+    "poi_tags": [
+     "poi.intake_screen",
+     "poi.sediment_flat"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.shallow_wreck"
+    ]
+   },
+   "image_targets": {
+    "codex": "broad flat-bodied bottom feeder ploughing a visible furrow across pale sediment, furrow bending toward a rectangular intake screen set in concrete",
+    "scanner_thumbnail": "sediment flat photographed from above, one furrow running straight and one bending in a long curve toward a screened opening"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Silt Drifter",
+     "scanner": "Benthic sediment feeder, 40 to 90 metres. Confidence 66 percent. Hazard: visibility loss on contact. Limit: no return through suspended sediment. Contact will be lost, not cleared.",
+     "in_game_wiki": "A drifter's furrow runs straight over open bottom and bends where something is still pulling water.\n\nIt feeds on what the current brings it, so the bend is a live intake at fifty to ninety metres, which means a module still under power forty-three years on. It is also the hazard: a screen strong enough to sort sediment will take a tether, and nothing down there has been inspected since.\n\nStartle it and it dumps the bottom into the water. A wide lamp will not cut that bloom, it will fill it. Drop to low beam, hold your bearing, and swim out of the lane rather than up.\n\nThe furrow always bends anticlockwise around the intake. Nothing in the current accounts for the direction.\n\nAssessment: read the bend, then work the screen from outside the lane.",
+     "terminal": "DOCUMENT 44-M-1180. CLASS: SEDIMENT MANAGEMENT, PASSIVE. SCOPE: INTAKE SCREENS 6 THROUGH 11, 40 TO 90 M. SCHEDULED DREDGE: SUPERSEDED. SCREEN INSPECTION: DEEMED CURRENT.",
+     "field_note": "Screen inspection deemed current means nobody has looked at one since 2147. If a drifter is holding a bend, that intake is still pulling, so keep the tether outside the lane and take the grating from the side.",
+     "external_site_article": "Salvage reporting from HECTON-8 describes a broad benthic feeder that grazes shelf sediment and produces a persistent surface furrow. Crews use the shape of the furrow as an indicator of local flow: straight tracks over open sediment, curved tracks where water is drawn through a submerged intake.\n\nContact provokes a heavy sediment bloom that defeats both lamp and sonar, and field practice calls for reduced beam and navigation on bearing until clear. Deep Reach records classify the species under sediment management and record intake screen inspection for the affected depth range as deemed current.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P700_WALL_GLIDER",
+   "article_id": "hecton8.fauna.wall_glider",
+   "title_key": "LORE_P700_WALL_GLIDER_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.wall_glider",
+    "secondary": [
+     "unlock.annex_p63_hull_survey"
+    ],
+    "poi_tags": [
+     "poi.hull_plate_seam",
+     "poi.cable_run",
+     "poi.annex_p63_exterior"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.shallow_wreck"
+    ]
+   },
+   "image_targets": {
+    "codex": "flat-bodied animal held against a riveted hull plate, following a cable run, faint dull sheen of a laid film trailing behind it, no glow",
+    "scanner_thumbnail": "hull plate at grazing light showing a film track that runs across a seam and doubles back short of a hairline fracture"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Wall Glider",
+     "scanner": "Surface-adherent grazer on manufactured plate. Confidence 77 percent. Hazard: conductive residue, low current. Limit: track age not resolvable. A dead track reads as a live one.",
+     "in_game_wiki": "It only travels on manufactured surface. Plate, cable run, conduit, handrail, never bare rock and never across an open fracture.\n\nThat refusal is a survey. Where a track runs unbroken, the plate under it is sound. Where it turns back on itself, the plate is opening.\n\nThe film it leaves is conductive. On energised plate it is live, and a factory-governor continuity check will run straight through it, so a hairline crack under a glider track tests sound. A tool laid flat on fresh film sticks for a second and blanks your gauge for ten.\n\nThey will not cross the yellow shift-lane paint on Annex decking. Most of that paint is forty-three years gone and they still will not.\n\nAssessment: trust the track over the continuity read, and stop where the track stops.",
+     "terminal": "DOCUMENT 44-H-0742. CLASS: STRUCTURAL MONITORING, BIOLOGICAL, ACCEPTED IN LIEU. COVERAGE: ANNEX P-63 HULL PLATE, 0 TO 100 M. FINDING: NO PRESSURE VARIANCE ON SURVEYED TRACK. UNSURVEYED TRACK: NOT REPORTED.",
+     "field_note": "The hull inspection they signed off was wherever the animals happened to crawl, and the plate they never crawled on was left off the report, which is the plate that let go. Where the track stops, stop.",
+     "external_site_article": "Reports from HECTON-8 shelf salvage describe a surface-adherent grazer that travels exclusively on manufactured surfaces, including hull plate, conduit and cable runs, and that does not cross fractures in the material it is holding. Crews read the extent of its tracks as an indication of intact plate.\n\nThe animal deposits a conductive residue along its route, which carries low current where the underlying structure remains energised. Because the residue bridges hairline fractures electrically, automated continuity testing returns a sound result across plate that is mechanically failing. Deep Reach records for Annex P-63 accept the resulting coverage in lieu of scheduled structural monitoring, and report no pressure variance on surveyed track without describing the unsurveyed remainder.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P700_IRON_MINNOW",
+   "article_id": "hecton8.fauna.iron_minnow",
+   "title_key": "LORE_P700_IRON_MINNOW_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.iron_minnow",
+    "secondary": [
+     "unlock.first_trace_seam"
+    ],
+    "poi_tags": [
+     "poi.trace_seam",
+     "poi.shelf_grid_marker"
+    ],
+    "biome_tags": [
+     "biome.photic_shelf",
+     "biome.shallow_reef"
+    ]
+   },
+   "image_targets": {
+    "codex": "dense school compressed into a flat horizontal band two metres thick over an exposed mineral seam, dull metallic particulate on the fish, wall behind them lost in the return",
+    "scanner_thumbnail": "sonar display where a flat band of school return saturates the gain and erases the rock face behind it"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Iron Minnow",
+     "scanner": "Dense schooling forager, ferrous particulate on integument. Confidence 91 percent. Hazard: none. Limit: school return masks structure at range. Reduce gain before reading a wall.",
+     "in_game_wiki": "The shape of the school is the reading, not the fish. Spread across open water they mean nothing. Compressed into a flat band two or three metres thick, they are holding the edge of an oxygen pocket, and a Class-IV can scrub in that water instead of burning reserve.\n\nAn empty band over a known seam is the opposite reading. The pocket has gone over, the water above will run green, and nothing has fed there in weeks.\n\nTheir scales carry ferrous grit, which is why they return so hard on scan that they erase whatever is behind them. Cut your gain before you read a wall through a school.\n\nEvery school over a seam counts out between eleven and thirteen hundred. Nobody knows why the number holds.\n\nAssessment: swim the top edge of a band, never through it.",
+     "terminal": "SAMPLE LOT 44-XO-0091. CLASS: TRACE ASSAY, INCIDENTAL. METHOD: SCHOOL DENSITY, SHELF GRID 0 TO 100 M. GRADE: TRACE, VIABLE AT MARGIN. TONNAGE BASIS: CARRIED FORWARD TO CLAIM SCHEDULE.",
+     "field_note": "The tonnage your lien is measured against was estimated by counting these off a shelf grid in 2146, and the assay has never been re-run. Follow the band for air. Do not trust it for ore.",
+     "external_site_article": "HECTON-8 shelf surveys record a small schooling forager carrying ferrous particulate on the body surface, which produces an unusually strong acoustic and scan return for the animal's size. Crews report using school geometry as an environmental read: a compressed horizontal band marks a local oxygen concentration, and an absent band over a known mineral seam marks one that has failed.\n\nThe same return saturates instruments at close range and obscures structure behind the school. Deep Reach records from Sector 44 classify the species as an incidental trace assay method and carry school density figures forward into claim tonnage without a later re-survey.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  }
+ ]
+}

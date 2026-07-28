@@ -1,0 +1,115 @@
+{
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "release_set_id": "RS707_ALPHA_LEVIATHAN",
+ "canon_owner": [
+  "Docs/Lore/Lore_Bible.md",
+  "Docs/Lore/Canon_Locks.md"
+ ],
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false,
+  "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+ },
+ "packets": [
+  {
+   "packet_id": "P707_ALPHA_LEVIATHAN_FILE",
+   "article_id": "hecton8.artifact.alpha_leviathan_file",
+   "title_key": "LORE_P707_ALPHA_LEVIATHAN_FILE_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.recover.alpha_leviathan_file",
+    "secondary": [
+     "unlock.first_prey_blackout",
+     "unlock.hull_stress_without_contact"
+    ],
+    "poi_tags": [
+     "poi.records_office",
+     "poi.open_crossing"
+    ],
+    "biome_tags": [
+     "biome.deep_abyss",
+     "biome.drowned_factories"
+    ]
+   },
+   "image_targets": {
+    "codex": "a recovered paper file under a work lamp, three sections blacked out to the margin, a classification stamp across the header, one section left untouched, no animal visible anywhere in frame",
+    "scanner_thumbnail": "instrument panel showing a bearing line with no range value, hull stress warning lit beside an empty contact list"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Alpha Leviathan: Convergence File",
+     "scanner": "Contact unresolved. Material unknown. Confidence 94 to 12 percent in nine seconds. Hazard: hull stress rising, no contact logged. Limit: bearing returned without range.",
+     "in_game_wiki": "Nine separate sightings were merged under one designation because the loss form has one line for cause.\n\nSEC 2 MORPHOLOGY, SEC 4 MASS AND SPAN - WITHHELD (RCO/hv)\nSEC 6 ACOUSTIC - CARRIER BELOW 40 Hz AT 1340 m; UPPER BOUND WITHHELD\nSEC 7 ROUTE IMPACT - HEADING ONLY, TEXT ENDS LINE 214\nSEC 9 CONTACT EVENTS - SEE APPENDIX K\nSEC 11 SURVIVOR STATEMENTS - RETAINED IN FULL\nSEC 12 SPECIES MATCH - INCONCLUSIVE, 9 OF 9\n\nWhat survives is instrument behaviour. Hull stress alarms fire with nothing on sonar, and the bearing that returns carries no range. Flow turns across a corridor before anything is in it.\n\nBefore any of that, the water goes quiet. Small feeders in earshot stop together and stay stopped, and the quiet has a direction: it reaches one end of a corridor first. That end is where it started.\n\nAppendix K is referenced four times and is not enclosed. Assessment: when the feeders drop out, log the bearing of the silence and leave on any other bearing.",
+     "terminal": "DOCUMENT 7734-C. DESIGNATION: ALPHA LEVIATHAN, CONVERGENCE. CLASS: TRANSIT ADVISORY, RECURRING. SECTIONS 2, 4, 6, 7 WITHHELD BY ASSET SILENCE BOARD, REV 11. SECTION 11 RETAINED: NO APPLICABLE REMOVAL CODE. LOSSES FILED: PRESSURE VARIANCE.",
+     "field_note": "I don't trust Section 9 - a bearing with no range is a frightened crew reading a hull alarm and calling it a contact. The quiet is the only line in there worth a shift's pay, so learn what your corridor sounds like full before you need to hear it go empty.",
+     "external_site_article": "Salvage crews working the Aegir wrecks circulate a partial Deep Reach document filed under the designation ALPHA LEVIATHAN. The copies in circulation agree mainly in what is absent from them: morphology, mass and span, and the upper bound of the acoustic carrier are withheld in every copy, and the referenced appendix is enclosed in none.\n\nWhat survives redaction is instrument behaviour rather than observation. Hull stress alarms without sonar contact, bearings recorded without range, flow disturbance ahead of any visible source, and a sustained drop in small-animal noise before either. Survivor statements are retained in full and are contaminated by hypoxia and nitrogen narcosis, which is the stated reason they were not entered as evidence. Deep Reach carries the designation as a transit advisory and files the associated losses as pressure variance.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  }
+ ]
+}
