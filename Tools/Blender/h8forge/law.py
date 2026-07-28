@@ -219,6 +219,14 @@ SMOOTH_ANGLE_DEG = 32.0
 HARD_SURFACE_VCOL = ("edge_wear", "oxidation", "baked_ao", "emission_mask")
 ORGANIC_VCOL = ("sway_amplitude", "biolum_phase", "baked_ao", "family_specific")
 
+# The four channels are PACKED into one attribute, not four named layers. Both the
+# writer and every validator must agree on this single name, or a contract check that
+# derives layer names from the tuples above rejects every asset the forge produces --
+# which is exactly what happened before this constant existed.
+VCOL_ATTRIBUTE_NAME = "Col"
+VCOL_DATA_TYPE = "BYTE_COLOR"   # matches the bible's Color | UNorm8 x4 vertex stream
+VCOL_DOMAIN = "CORNER"          # per-loop, so a split UV seam keeps distinct values
+
 VCOL_CONTRACT = {
     SurfaceClass.HARD_SURFACE: HARD_SURFACE_VCOL,
     SurfaceClass.ORGANIC: ORGANIC_VCOL,

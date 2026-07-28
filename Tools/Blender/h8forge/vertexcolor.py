@@ -37,7 +37,7 @@ from mathutils import Vector
 from . import law
 from .blackbox import BlackBox
 
-FINAL_ATTRIBUTE = "Col"
+FINAL_ATTRIBUTE = law.VCOL_ATTRIBUTE_NAME
 _SCRATCH_AO_ATTRIBUTE = "H8_AO_Scratch"
 
 
@@ -273,6 +273,21 @@ class SwayField:
     min_value: float
     max_value: float
     stiffness_exponent: float
+    expected_max: float = 1.0
+
+    @property
+    def relative_spread(self) -> float:
+        """Observed spread as a fraction of the band this organism is allowed to use.
+
+        Rigid organisms legitimately occupy a narrow band. 3DMODEL_FLORA_CORAL.md
+        section 2 caps "Rigid mineralized coral" at 0 to 32/255, so a CORRECT mineralised
+        coral has an absolute spread of at most 0.125. Judging it against an absolute
+        threshold marks every compliant rigid asset as broken -- which is what an earlier
+        version of this check did, and it flagged a coral whose gradient was visibly fine
+        in the channel render.
+        """
+        band = max(1e-6, self.expected_max)
+        return (self.max_value - self.min_value) / band
 
     @property
     def is_uniform(self) -> bool:
@@ -282,8 +297,11 @@ class SwayField:
         generator: the mesh looks correct, the attribute exists, the validator sees
         data, and the shader animates the whole organism as a rigid body swinging
         from nothing. Flagging it here is cheaper than discovering it in-engine.
+
+        Measured relative to the permitted band so stiffness and brokenness are not
+        confused for each other.
         """
-        return (self.max_value - self.min_value) < 0.25
+        return self.relative_spread < 0.25
 
 
 def build_sway_field(
@@ -293,6 +311,7 @@ def build_sway_field(
     max_flexible_length: float,
     stiffness_exponent: float,
     rigid_cap: Optional[float] = None,
+    distances: Optional[list] = None,
 ) -> SwayField:
     """Sway amplitude per vertex from the bible's leverage formula.
 
@@ -306,16 +325,25 @@ def build_sway_field(
     still preserving a gradient inside it, so the shader has something to work with
     and the uniformity gate does not misfire on legitimately stiff coral.
     """
+    use_supplied = distances is not None and len(distances) == len(mesh.vertices)
     values = []
-    for vertex in mesh.vertices:
-        distance = (vertex.co - anchor_position).length
+    for index, vertex in enumerate(mesh.vertices):
+        # A caller that knows the branch topology should pass GEODESIC distance along the
+        # skeleton. Straight-line distance from the anchor is wrong for anything that
+        # bends back toward its own root: a drooping frond tip can sit physically close
+        # to the holdfast while being far along the stem, and Euclidean distance then
+        # tells the shader that tip is rigid.
+        distance = distances[index] if use_supplied else (vertex.co - anchor_position).length
         amplitude = law.sway_amplitude(distance, max_flexible_length, stiffness_exponent)
         if rigid_cap is not None:
             amplitude = amplitude * rigid_cap
         values.append(amplitude)
 
+    expected_max = rigid_cap if rigid_cap is not None else 1.0
+
     if not values:
-        return SwayField([], law.SWAY_ANCHOR, law.SWAY_ANCHOR, 0.0, 0.0, stiffness_exponent)
+        return SwayField([], law.SWAY_ANCHOR, law.SWAY_ANCHOR, 0.0, 0.0,
+                         stiffness_exponent, expected_max)
 
     return SwayField(
         values=values,
@@ -324,6 +352,7 @@ def build_sway_field(
         min_value=min(values),
         max_value=max(values),
         stiffness_exponent=stiffness_exponent,
+        expected_max=expected_max,
     )
 
 

@@ -319,6 +319,52 @@ class LodLevel:
         return self.triangles <= self.budget
 
 
+def reduce_to_budget(
+    obj: bpy.types.Object,
+    *,
+    family: law.Family,
+    lod_index: int = 0,
+    headroom: float = 0.94,
+    blackbox: Optional[BlackBox] = None,
+) -> int:
+    """Decimate an object down to its LOD budget, returning the final triangle count.
+
+    Needed because the correct authoring route for organic surfaces is high-density
+    sculpt THEN reduce: displacing a mesh that is already at budget resolution produces
+    mush, while displacing a subdivided mesh and decimating afterwards keeps the
+    silhouette the displacement created. ``3dmodel.md`` section 7 names Quadric Edge
+    Collapse as the default allowed algorithm for exactly this.
+
+    ``headroom`` leaves a small margin under the ceiling so a later triangulation or
+    seam split cannot push a compliant asset back over it.
+    """
+    budget = law.LOD_BUDGETS[family].limit(lod_index)
+    target = max(4, int(budget * max(0.1, min(1.0, headroom))))
+    start = triangle_count(obj.data)
+
+    for _attempt in range(8):
+        current = triangle_count(obj.data)
+        if current <= target:
+            break
+        modifier = obj.modifiers.new(name="H8_BudgetDecimate", type="DECIMATE")
+        modifier.decimate_type = "COLLAPSE"
+        modifier.ratio = max(0.01, min(0.99, (target / float(current)) * 0.96))
+        modifier.use_collapse_triangulate = True
+        _make_sole_active(obj)
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+    final = triangle_count(obj.data)
+    if blackbox is not None:
+        blackbox.record(
+            "reduce_to_budget", family=family.value, triangle_count=final,
+            vertex_count=len(obj.data.vertices),
+            warning="" if final <= budget else
+            "still over budget {f}>{b} from {s}".format(f=final, b=budget, s=start),
+            failure_code="" if final <= budget else "BUDGET_UNREACHABLE",
+        )
+    return final
+
+
 def _split_uv_seams(obj: bpy.types.Object) -> int:
     """Split the mesh along UV seams and sharp edges so decimation preserves them.
 

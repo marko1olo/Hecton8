@@ -406,7 +406,16 @@ namespace Hecton8.Editor.Structures
             RequireProperty(so, "stableId").stringValue = spec.Name;
             RequireProperty(so, "description").stringValue = "Generated pressure-rated hard-surface module baked by ModuleArchitect1712.";
             RequireProperty(so, "family").enumValueIndex = (int)spec.Family;
-            RequireProperty(so, "ghostPrefab").objectReferenceValue = finalPrefab;
+            // ghostPrefab MUST stay null. BuildableData.cs:89 documents it as a legacy
+            // field that "Runtime builder holography ignores", and the static gate
+            // BuilderHolographyTools.NoNonZeroGhostPrefabRefs walks every .asset/.prefab
+            // /.unity under Assets/_Project and FAILS unless every ghostPrefab line is
+            // {fileID: 0}. The placement preview instantiates nothing: it is
+            // Graphics.DrawProceduralIndirect over a 36-vertex cube in
+            // Hecton_ConstructionDearLieHologram.shader, sized from
+            // BaseModuleTemplate.ProxyBoundsSize. Assigning the final prefab here made
+            // every fabricated module break that audit.
+            RequireProperty(so, "ghostPrefab").objectReferenceValue = null;
             RequireProperty(so, "finalPrefab").objectReferenceValue = finalPrefab;
             RequireProperty(so, "moduleTemplate").objectReferenceValue = moduleTemplate;
             RequireProperty(so, "powerRating").floatValue = spec.PowerRatingWatts;

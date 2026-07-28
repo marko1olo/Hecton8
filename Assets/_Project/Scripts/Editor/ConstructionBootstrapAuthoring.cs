@@ -2304,9 +2304,40 @@ namespace Hecton8.Editor
 
             SerializedObject so = new SerializedObject(asset);
             SerializedProperty listProp = so.FindProperty("allModules");
-            listProp.arraySize = modules.Length;
+
+            // MERGE, never truncate. `listProp.arraySize = modules.Length` dropped every
+            // row this tool does not own, and ModuleCatalog_Starter is a SHARED list:
+            // ModuleArchitect1712 appends its fabricated modules and the construction
+            // catalog repair appends the habitat recipes. Truncating back to the five
+            // starter entries deleted both with no error and no symptom except a module
+            // quietly vanishing from the build browser -- so re-running
+            // "Rebuild Starter Construction Kit" silently undid other tools' work.
+            //
+            // Existing order is preserved: ModuleCatalog.GetAt/GetViewableAt hand that
+            // order straight to the browser UI, so reordering would shuffle the player's
+            // build menu.
+            int existingCount = listProp.arraySize;
             for (int i = 0; i < modules.Length; i++)
-                listProp.GetArrayElementAtIndex(i).objectReferenceValue = modules[i];
+            {
+                BuildableData module = modules[i];
+                if (module == null)
+                    continue;
+
+                bool alreadyPresent = false;
+                for (int existing = 0; existing < existingCount; existing++)
+                {
+                    if (listProp.GetArrayElementAtIndex(existing).objectReferenceValue == module)
+                    {
+                        alreadyPresent = true;
+                        break;
+                    }
+                }
+                if (alreadyPresent)
+                    continue;
+
+                listProp.InsertArrayElementAtIndex(listProp.arraySize);
+                listProp.GetArrayElementAtIndex(listProp.arraySize - 1).objectReferenceValue = module;
+            }
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(asset);
             return asset;

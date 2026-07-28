@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Hecton8.Building;
 using Hecton8.Construction;
 using NUnit.Framework;
@@ -22,11 +22,11 @@ namespace Hecton8.Tests.Editor
 
             validData = ScriptableObject.CreateInstance<BuildableData>();
             validData.name = "ValidModule";
-            typeof(BuildableData).GetField("finalPrefab", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(validData, mockPrefab);
+            typeof(BuildableData).GetField("finalPrefab", BindingFlags.Public | BindingFlags.Instance).SetValue(validData, mockPrefab);
 
             invalidPrefabData = ScriptableObject.CreateInstance<BuildableData>();
             invalidPrefabData.name = "InvalidPrefabModule";
-            typeof(BuildableData).GetField("finalPrefab", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(invalidPrefabData, null);
+            typeof(BuildableData).GetField("finalPrefab", BindingFlags.Public | BindingFlags.Instance).SetValue(invalidPrefabData, null);
 
             var allModulesList = new System.Collections.Generic.List<BuildableData> { validData, invalidPrefabData };
             typeof(ModuleCatalog).GetField("allModules", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(catalog, allModulesList);
