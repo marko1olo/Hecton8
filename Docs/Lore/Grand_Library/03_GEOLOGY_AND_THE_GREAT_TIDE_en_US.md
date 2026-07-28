@@ -26,15 +26,22 @@ The line that travelled was the creep line. Aegir Continuity Holdings copied it 
 
 ## 2. The Vertical Ocean
 
-HECTON-8 is not one ocean. It is a vertical machine.
+The Black Keel guide is organised by sounding station, not by zone name, because the zone names change with whoever is billing. Log `BK-BATHY-12` is the working page for the Sector 44 approach:
 
-The photic shelf near the surface is the readable layer: broken habitat crowns, buoy scars, pale biological mats, storm-cut ledges and enough Ran light to make crews overconfident. Below it, the Cable Reef holds old power trunks, data umbilicals, platform ribs and iron-kelp growth wrapped around anything that once leaked current. It is where infrastructure first stops looking dead and starts behaving like habitat.
+```text
+BK-BATHY-12   SOUNDING LOG / SECTOR 44 APPROACH / PASS 3
+STN    DEPTH m   BOTTOM   NOTE
+S-01        60   hard     habitat crown, buoy scar field, Ran light still usable
+S-04       310   soft     cable trunk fouled the weight; iron-kelp on the line
+S-07       880   none     platform rib 12 m off vertical; no return from beneath it
+S-11     1 640   FALSE    density boundary. weight stopped. logged HARD in pass 1
+S-14     2 950   hard     exchanger tower base; clutter high, range gate useless
+S-19     4 410   film     mineral film over process hardware; no clean rock in 6 casts
+```
 
-The Brine Canyons are stranger. Dense salt rivers sit inside the water as if the ocean has grown a second floor. Tools can stop sinking on an invisible surface. Bodies can hang where maps say nothing should hang. Sonar can strike a density boundary and return a room that is not there. The canyons do not lie with intention. They simply make instruments tell partial truths.
+`S-11` is the entry that gets read aloud to new crews. A dropped tool stops sinking at 1 640 m and hangs on nothing. Sonar strikes the same brine boundary and hands back a bulkhead. Pass 1 recorded it as hard bottom in the same hand that later crossed it out, and the correction is dated eleven days later. Between those two dates the log was the chart.
 
-Below them, the Machine Fields carry the old industrial depth: exchanger towers, compressor galleries, rail pits, receiver rooms, broken service yards and the remains of automated work. Sound is crowded there. A quiet contact can be more suspicious than a loud one.
-
-The Atlas Basin is not a clean bottom. It is a heat-fed, pressure-cut archive where rock, process hardware, pressure glass, conductive biofilm and old maintenance paths grew into each other. Solid seafloor appears in ridges, shelves and fault lips, then vanishes into vent scars and mineral film. This is where the setting stops being a map and starts being a system.
+Deeper stations describe industry instead of geology. `S-14` sits in exchanger towers, compressor galleries and rail pits where the acoustic clutter runs so high that a quiet contact is the one worth worrying about. `S-19` is where the casts stop working: rock, process hardware, pressure glass, conductive film and old maintenance paths have grown into one another, and the weight comes back with mineral crust on it rather than sediment. The guide gives that station no bottom classification at all. It writes `film` and moves on.
 
 ## 3. Fault Heat And Bad Foundations
 

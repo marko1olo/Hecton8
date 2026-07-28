@@ -104,6 +104,9 @@ INDEX_TITLES = {
 RTL_LOCALES = {"ar_SA", "he_IL"}
 SOURCE_AUTHORITY_STATUS = "source_authority"
 DRAFT_MACHINE_OR_LLM_STATUS = "draft_machine_or_llm"
+CONTENT_CLASS_IN_WORLD = "in_world_artifact"
+CONTENT_CLASS_PRODUCTION = "production_metadata"
+CONTENT_CLASS_ABSENT = "ABSENT"
 
 
 @dataclass(frozen=True)
@@ -114,6 +117,9 @@ class PublicationCheckStats:
     disabled_generated_pages: int
     integrity_issues: int
     sample_issues: tuple[str, ...]
+    denied_pages: int = 0
+    denied_pages_present: int = 0
+    undeclared_content_class_packets: tuple[str, ...] = ()
 
 
 def is_surface_enabled(packet: dict, surface_key: str) -> bool:
@@ -250,6 +256,177 @@ def resolve_spoiler_tier(packet: dict, cluster_spoiler_tiers: dict) -> str:
     if packet_id in cluster_spoiler_tiers:
         return cluster_spoiler_tiers[packet_id]
     return "0"
+
+def resolve_content_class(packet: dict) -> str:
+    metadata = packet.get("metadata", {})
+    if isinstance(metadata, dict) and "content_class" in metadata:
+        declared = safe_text(metadata["content_class"]).strip()
+        if declared:
+            return declared
+    explicit = safe_text(packet.get("content_class")).strip()
+    if explicit:
+        return explicit
+    return CONTENT_CLASS_ABSENT
+
+
+def is_in_world_content_class(content_class: str) -> bool:
+    return content_class == CONTENT_CLASS_IN_WORLD
+
+
+def is_production_content_class(content_class: str) -> bool:
+    return content_class == CONTENT_CLASS_PRODUCTION
+
+
+def is_undeclared_content_class(content_class: str) -> bool:
+    return not is_in_world_content_class(content_class) and not is_production_content_class(content_class)
+
+
+def has_player_surface(packet: dict) -> bool:
+    return any(is_surface_enabled(packet, surface_key) for _folder, surface_key, _surface_title in SURFACES)
+
+
+def is_page_publish_allowed(content_class: str, path: Path) -> bool:
+    """DEFAULT-DENY publish gate for player-facing surfaces.
+
+    A packet must positively declare `content_class: in_world_artifact` to reach
+    in_game_wiki or external_site. `production_metadata` is always denied. An
+    absent or unrecognized class is denied for a page that does not exist yet and
+    left alone when the page is already on disk, so the gate can never delete the
+    existing corpus on its first run; removal is a separate reviewable step.
+    """
+
+    if is_in_world_content_class(content_class):
+        return True
+    if is_production_content_class(content_class):
+        return False
+    return path.exists()
+
+
+def undeclared_content_class_label(packet: dict, content_class: str) -> str:
+    return f"{safe_text(packet.get('packet_id'))} content_class={content_class}"
+
+
+def print_undeclared_content_class_warnings(labels: tuple[str, ...] | list[str], limit: int = 25) -> None:
+    if not labels:
+        return
+
+    labels = list(labels)
+    print(
+        f"WARNING: content_class not declared on {len(labels)} packet(s) with a player surface; "
+        "new pages denied, existing pages left in place."
+    )
+    for label in labels[:limit]:
+        print(f"WARNING: undeclared publish class: {label}")
+    remaining = len(labels) - limit
+    if remaining > 0:
+        print(f"WARNING: +{remaining} more undeclared packet(s); run --report-classification for the full list.")
+
+
+def content_class_report_rows(base: Path, packets: list[dict]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for packet in sorted(packets, key=lambda item: safe_text(item.get("packet_id"))):
+        packet_id = safe_text(packet.get("packet_id"))
+        content_class = resolve_content_class(packet)
+        surfaces: list[str] = []
+        slots = 0
+        on_disk = 0
+        publish_slots = 0
+        deny_slots = 0
+        deny_present = 0
+
+        for folder, surface_key, _surface_title in SURFACES:
+            if not is_surface_enabled(packet, surface_key):
+                continue
+
+            surfaces.append(surface_key)
+            for locale in TARGET_LOCALES:
+                path = base / folder / locale / f"{packet_id}.md"
+                exists = path.exists()
+                slots += 1
+                on_disk += 1 if exists else 0
+                if is_page_publish_allowed(content_class, path):
+                    publish_slots += 1
+                    continue
+
+                deny_slots += 1
+                deny_present += 1 if exists else 0
+
+        if not surfaces:
+            decision = "no_player_surface"
+        elif deny_slots == 0:
+            decision = "publish"
+        elif publish_slots == 0:
+            decision = "deny"
+        else:
+            decision = "mixed"
+
+        if is_in_world_content_class(content_class):
+            reason = "declared_in_world_artifact"
+        elif is_production_content_class(content_class):
+            reason = "production_metadata_denied"
+        else:
+            reason = "undeclared_default_deny_new_pages"
+
+        rows.append(
+            {
+                "packet_id": packet_id,
+                "content_class": content_class,
+                "decision": decision,
+                "reason": reason,
+                "surfaces": ";".join(surfaces),
+                "page_slots": str(slots),
+                "pages_on_disk": str(on_disk),
+                "publish_slots": str(publish_slots),
+                "deny_slots": str(deny_slots),
+                "denied_present": str(deny_present),
+            }
+        )
+    return rows
+
+
+def render_content_class_report(base: Path, packets: list[dict]) -> str:
+    rows = content_class_report_rows(base, packets)
+    id_width = max((len(row["packet_id"]) for row in rows), default=len("packet_id"))
+    class_width = max((len(row["content_class"]) for row in rows), default=len("content_class"))
+    lines = [
+        f"applied_lore_content_class_report packets={len(rows)}",
+        "gate: only content_class=in_world_artifact publishes to in_game_wiki/external_site; "
+        "production_metadata is denied; an undeclared class denies a new page and retains an existing one.",
+        "",
+    ]
+
+    for row in rows:
+        lines.append(
+            f"{row['packet_id']:<{id_width}}  content_class={row['content_class']:<{class_width}}  "
+            f"decision={row['decision']:<17} reason={row['reason']:<32} "
+            f"page_slots={row['page_slots']:>3} on_disk={row['pages_on_disk']:>3} "
+            f"publish={row['publish_slots']:>3} deny={row['deny_slots']:>3} "
+            f"denied_present={row['denied_present']:>3} surfaces={row['surfaces'] or 'none'}"
+        )
+
+    in_world = sum(1 for row in rows if row["reason"] == "declared_in_world_artifact")
+    production = sum(1 for row in rows if row["reason"] == "production_metadata_denied")
+    undeclared = sum(1 for row in rows if row["reason"] == "undeclared_default_deny_new_pages")
+    lines.extend(
+        (
+            "",
+            f"totals_content_class: in_world_artifact={in_world} production_metadata={production} undeclared={undeclared}",
+            "totals_packet_decision: "
+            + " ".join(
+                f"{decision}={sum(1 for row in rows if row['decision'] == decision)}"
+                for decision in ("publish", "deny", "mixed", "no_player_surface")
+            ),
+            f"totals_page_slots: total={sum(int(row['page_slots']) for row in rows)} "
+            f"publish={sum(int(row['publish_slots']) for row in rows)} "
+            f"deny={sum(int(row['deny_slots']) for row in rows)} "
+            f"denied_present={sum(int(row['denied_present']) for row in rows)} "
+            f"on_disk={sum(int(row['pages_on_disk']) for row in rows)}",
+            "mode: report only; no files written and no pages deleted.",
+            "",
+        )
+    )
+    return "\n".join(lines)
+
 
 def localization_frontmatter_matches(existing: str, rendered: str) -> bool:
     return frontmatter_localization_state(existing) == frontmatter_localization_state(rendered)
@@ -713,12 +890,17 @@ def check_publication_freshness(
     base = root / "Docs" / "Lore" / "AppliedContent"
     selected_packets = [packet for packet in packets if packet_matches_glob(safe_text(packet.get("packet_id")), packet_glob)]
     cluster_spoiler_tiers = cluster_spoiler_tier_map(base)
-    counts = {"checked": 0, "stale": 0, "missing": 0, "disabled": 0, "integrity": 0}
+    counts = {"checked": 0, "stale": 0, "missing": 0, "disabled": 0, "integrity": 0, "denied": 0, "denied_present": 0}
     issues: list[str] = []
     expected_paths: set[Path] = set()
+    undeclared_labels: list[str] = []
 
     for packet in selected_packets:
         packet_id = safe_text(packet.get("packet_id"))
+        content_class = resolve_content_class(packet)
+        if is_undeclared_content_class(content_class) and has_player_surface(packet):
+            undeclared_labels.append(undeclared_content_class_label(packet, content_class))
+
         localized_by_locale = packet.get("localized", {})
         if not isinstance(localized_by_locale, dict):
             raise ValueError(f"Packet localized must be object: {packet_id}")
@@ -734,6 +916,15 @@ def check_publication_freshness(
                     if is_generated_disabled_page(path, packet_id, surface_key):
                         counts["disabled"] += 1
                         issues.append(f"disabled-generated: {path.relative_to(root).as_posix()}")
+                    continue
+
+                if not is_page_publish_allowed(content_class, path):
+                    # Gate denial. Stay in expected_paths so the orphan pass never treats a
+                    # retained page as deletable; page removal is a separate reviewable step.
+                    counts["denied"] += 1
+                    if path.exists():
+                        counts["denied_present"] += 1
+                    expected_paths.add(path.resolve())
                     continue
 
                 rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
@@ -771,24 +962,39 @@ def check_publication_freshness(
         disabled_generated_pages=counts["disabled"],
         integrity_issues=counts["integrity"],
         sample_issues=tuple(issues[:40]),
+        denied_pages=counts["denied"],
+        denied_pages_present=counts["denied_present"],
+        undeclared_content_class_packets=tuple(undeclared_labels),
     )
 
 
-def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[int, int, int, int]:
+def export_pages(
+    root: Path,
+    overwrite: bool,
+    packet_glob: str = "",
+    gate_stats: dict[str, object] | None = None,
+) -> tuple[int, int, int, int]:
     packets = collect_packets(root, packet_glob)
     base = root / "Docs" / "Lore" / "AppliedContent"
     written = 0
     skipped = 0
     removed_disabled = 0
     indexes_written = 0
+    denied_pages = 0
+    denied_pages_present = 0
     cluster_spoiler_tiers = cluster_spoiler_tier_map(base)
     expected_paths: set[Path] = set()
+    undeclared_labels: list[str] = []
 
     for packet in packets:
         packet_id = safe_text(packet.get("packet_id"))
 
         if not packet_matches_glob(packet_id, packet_glob):
             continue
+
+        content_class = resolve_content_class(packet)
+        if is_undeclared_content_class(content_class) and has_player_surface(packet):
+            undeclared_labels.append(undeclared_content_class_label(packet, content_class))
 
         localized_by_locale = packet.get("localized", {})
         if not isinstance(localized_by_locale, dict):
@@ -804,6 +1010,15 @@ def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[in
                 if not is_surface_enabled(packet, surface_key):
                     if remove_generated_disabled_page(path, packet_id, surface_key):
                         removed_disabled += 1
+                    continue
+
+                if not is_page_publish_allowed(content_class, path):
+                    # Gate denial: no write. Stay in expected_paths so the orphan sweep below
+                    # never deletes a retained page; page removal is a separate reviewable step.
+                    denied_pages += 1
+                    if path.exists():
+                        denied_pages_present += 1
+                    expected_paths.add(path.resolve())
                     continue
 
                 rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
@@ -835,6 +1050,11 @@ def export_pages(root: Path, overwrite: bool, packet_glob: str = "") -> tuple[in
         write_localization_status_index(base, packets)
         write_publication_surface_index(base, packets)
         write_publication_cluster_index(base, packets)
+
+    if gate_stats is not None:
+        gate_stats["denied_pages"] = denied_pages
+        gate_stats["denied_pages_present"] = denied_pages_present
+        gate_stats["undeclared_content_class_packets"] = tuple(undeclared_labels)
     return written, skipped, removed_disabled, indexes_written
 
 
@@ -844,14 +1064,34 @@ def main() -> int:
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing localized markdown pages.")
     parser.add_argument("--packet-glob", default="", help="Glob to filter packets to export")
     parser.add_argument("--check", action="store_true", help="Fail if generated publication files are stale or missing.")
+    parser.add_argument(
+        "--report-classification",
+        action="store_true",
+        help="List each packet content_class and its publish/deny decision without writing anything.",
+    )
     args = parser.parse_args()
+    if args.report_classification:
+        root = Path(args.root).resolve()
+        packets = collect_packets(root, args.packet_glob)
+        selected_packets = [
+            packet for packet in packets if packet_matches_glob(safe_text(packet.get("packet_id")), args.packet_glob)
+        ]
+        print(render_content_class_report(root / "Docs" / "Lore" / "AppliedContent", selected_packets), end="")
+        return 0
+
     if args.check:
         stats = check_publication_freshness(Path(args.root).resolve(), args.packet_glob)
+        print_undeclared_content_class_warnings(stats.undeclared_content_class_packets)
         print(
             f"applied_lore_publication_check checked_files={stats.checked_files} "
             f"stale_files={stats.stale_files} missing_files={stats.missing_files} "
             f"disabled_generated_pages={stats.disabled_generated_pages} "
             f"integrity_issues={stats.integrity_issues}"
+        )
+        print(
+            f"applied_lore_publish_gate denied_pages={stats.denied_pages} "
+            f"denied_pages_present={stats.denied_pages_present} "
+            f"undeclared_packets={len(stats.undeclared_content_class_packets)}"
         )
         if stats.sample_issues:
             print("sample_issues:")
@@ -861,10 +1101,22 @@ def main() -> int:
             return 1
         return 0
 
-    written, skipped, removed_disabled, indexes_written = export_pages(Path(args.root).resolve(), args.overwrite, args.packet_glob)
+    gate_stats: dict[str, object] = {}
+    written, skipped, removed_disabled, indexes_written = export_pages(
+        Path(args.root).resolve(),
+        args.overwrite,
+        args.packet_glob,
+        gate_stats,
+    )
+    print_undeclared_content_class_warnings(gate_stats.get("undeclared_content_class_packets", ()))
     print(
         f"applied_lore_pages_written={written} skipped_existing={skipped} "
         f"removed_disabled={removed_disabled} index_pages_written={indexes_written}"
+    )
+    print(
+        f"applied_lore_publish_gate denied_pages={gate_stats.get('denied_pages', 0)} "
+        f"denied_pages_present={gate_stats.get('denied_pages_present', 0)} "
+        f"undeclared_packets={len(gate_stats.get('undeclared_content_class_packets', ()))}"
     )
     return 0
 

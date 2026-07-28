@@ -478,7 +478,11 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
             stem_radius=stem_radius,
             bend=_rng_range(rng, 0.10, 0.30),
             lean=lean,
-            tilt_deg=_rng_range(rng, 9.0, 34.0),
+            # The reference caps read as tilted, not tipped over; 8-26 degrees covers what
+            # nice_biome.webp and beauty.webp show. The upper bound also matters
+            # geometrically: the tilt displaces the hub ring tangentially by
+            # R_hub * sin(tilt), and that offset shears the final stem band.
+            tilt_deg=_rng_range(rng, 8.0, 26.0),
             # Bounded by the HUB radius, not the cap radius. At 0.10-0.32 of the cap
             # radius the offset reached 50 mm against a 20 mm hub, so the stem's top ring
             # and the cap's hub ring barely overlapped and the transition band was a
@@ -565,14 +569,18 @@ def _stem_axis(plan: StemPlan, samples: int) -> List[Tuple[Vector, Vector, float
         # can carry it (measured sigma ratio 21.9 on that one band). Clustering resolves
         # the flare axially the same way the tear clamp resolves a bite angularly.
         #
-        # COSINE (Chebyshev) spacing, clustering at BOTH ends. A one-sided power warp
-        # traded one defect for another: exponent 2.0 fixed the foot and left a final
-        # band spanning 30% of the stem, and the fan transition into the cap hub then sat
-        # on a 38 mm axial step whose triangles were collinear to 0.1 mm in 65 mm --
-        # sigma 10.07 against the 3.30 outlier ceiling. Clustering both ends resolves the
-        # holdfast flare AND shortens the neck-to-hub step to a few millimetres, so the
-        # transition triangles are small in both directions instead of needles.
-        t = 0.5 * (1.0 - math.cos(math.pi * i / float(samples - 1)))
+        # Cluster toward the FOOT only, exponent 1.35. Three spacings were measured:
+        #   uniform   -- the whole holdfast flare fell in one band, a 2.5:1 cone crease
+        #                that no strip unwrap can carry (sigma 21.9);
+        #   power 2.0 -- fixed the foot, left a final band spanning 30% of the stem
+        #                (132 mm against a 6.6 mm circumferential step);
+        #   cosine    -- clustered both ends, and that made the HUB band worse, not
+        #                better: the cap is tilted up to 26 degrees, so the hub ring sits
+        #                ~10 mm tangentially off the stem ring, and shrinking the axial
+        #                step to 4 mm left the band dominated by that tangential offset.
+        # 1.35 with 18 rings resolves the flare while keeping the final step around 20 mm,
+        # which is twice the tilt offset rather than half of it.
+        t = (i / float(samples - 1)) ** 1.35
         # Vertical rise slightly eased so the neck is not a straight ramp.
         rise = plan.height * (t ** 0.94)
         lateral = lean * (plan.height * plan.bend * (t ** 1.85))
@@ -631,8 +639,14 @@ def _stem_profile_radius(plan: StemPlan, t: float, theta: float) -> float:
     foot_span = 0.22
     if t < foot_span:
         k = (1.0 - t / foot_span) ** 2.0
-        flare = 1.0 + 0.95 * k
-        fingers = 1.0 + 0.34 * k * math.cos(plan.finger_count * theta
+        flare = 1.0 + 0.62 * k
+        # The finger amplitude is bounded by SHEAR, not by taste. A high-amplitude
+        # angular modulation on a ring whose radius is also changing fast axially skews
+        # the band quads hard: at 0.34 one foot quad measured edge scales spanning
+        # 0.181..0.399, a genuine 2.2x anisotropy on 51 mm2 of visible surface, which is
+        # a real stretch failure rather than a sliver artefact. The holdfast still reads
+        # as a splayed, lobed pad at 0.20.
+        fingers = 1.0 + 0.20 * k * math.cos(plan.finger_count * theta
                                             + plan.finger_phase)
         radius *= flare * fingers
     return max(radius, plan.stem_radius * 0.22)
@@ -835,7 +849,17 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
     island_top = island_base + 4
 
     # ---- stem rings, last ring == cap hub ring --------------------------
-    hub_ring = [cap_point(hub_u, j, True) for j in range(segments)]
+    stem_segments, ratio = stem_segment_count(segments)
+    # The hub ring is COARSE, like the rest of the stem. The coarse->fine refinement was
+    # originally here, in the neck, and that was the wrong place: the hub ring is tilted
+    # up to 34 degrees and its plane cuts the stem ring's plane, so on one side the two
+    # rings nearly coincide and the fan triangles came out collinear to a few microns
+    # over tens of millimetres -- a zero-area world triangle mapped to a healthy UV one,
+    # i.e. sigma_min = 0 (measured 58.0, then 19.1, then 14.6 against a 3.3 ceiling as
+    # each contributing cause was removed). Refining on the cap UNDERSIDE instead puts
+    # the irregular topology on a wide, shallow surface whose quads are about 2.5:1,
+    # where a fan cannot produce a sliver.
+    hub_ring = [cap_point(hub_u, jc * ratio, True) for jc in range(stem_segments)]
 
     ring_indices: List[List[int]] = []
     ring_circumference: List[float] = []
@@ -851,17 +875,16 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
     # sigma_max/sigma_min hit 6100. A per-ring v cannot shear by construction.
     stem_v: List[float] = []
     previous_ring: Optional[List[Vector]] = None
-    stem_segments, ratio = stem_segment_count(segments)
     # The coarse angles are a strict SUBSET of the fine ones -- coarse jc lines up with
-    # fine jc*ratio -- which is what lets the transition band into the hub connect
-    # without leaving a T-vertex.
+    # fine jc*ratio -- which is what lets the cap-underside refinement connect without
+    # leaving a T-vertex.
     thetas_stem = [math.pi + math.tau * jc / float(stem_segments)
                    for jc in range(stem_segments)]
 
     for i, (position, tangent, t, arclength) in enumerate(axis):
         is_hub = (i == len(axis) - 1)
-        angles = thetas if is_hub else thetas_stem
-        count = len(angles)
+        angles = thetas_stem
+        count = stem_segments
         if is_hub:
             points = hub_ring
         else:
@@ -891,7 +914,7 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
                 # better, because the deficit is geometric, not a sampling artefact.
                 mean_radius = max(1e-4, ring_circumference[-1] / math.tau
                                   if ring_circumference else 0.01)
-                clearance = min((hub_ring[j * ratio] - points[j]).dot(tip_tangent)
+                clearance = min((hub_ring[j] - points[j]).dot(tip_tangent)
                                 for j in range(count))
                 deficit = 0.45 * mean_radius - clearance
                 if deficit > 0.0:
@@ -913,10 +936,8 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
         if previous_ring is None:
             stem_v.append(0.0)
         else:
-            step = ratio if is_hub else 1
-            advance = sum(
-                (points[jc * step] - previous_ring[jc]).length
-                for jc in range(len(previous_ring))) / float(len(previous_ring))
+            advance = sum((points[jc] - previous_ring[jc]).length
+                          for jc in range(count)) / float(count)
             stem_v.append(stem_v[-1] + advance)
         previous_ring = points
 
@@ -969,8 +990,23 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
                 for value in ring_arc[i]]
                for i in range(len(ring_indices))]
 
-    # Coarse-to-coarse bands.
-    for i in range(len(ring_indices) - 2):
+    # v is per-RING everywhere except the FINAL band. Accumulating v per column over many
+    # rings makes neighbouring columns diverge and shear (that mistake measured sigma
+    # 6100), but the last band is a single step into a hub ring tilted up to 34 degrees
+    # and offset off the axis, so the real advance genuinely varies about 3:1 around the
+    # ring. Forcing one scalar there claims a uniform advance the surface does not have,
+    # which is itself shear -- measured 8.4 to 12.6 across three seeds, all of it in that
+    # one band. Per-column v is wrong when accumulated and right for a single step.
+    last_band = len(ring_indices) - 2
+    hub_advance = [
+        (accum.positions[ring_indices[-1][j]]
+         - accum.positions[ring_indices[last_band][j]]).length
+        for j in range(stem_segments)
+    ]
+    for i in range(len(ring_indices) - 1):
+        # Band index in the label so a measurement names the exact band, not just "the
+        # stem". Locating a defect by band was worth several rounds of guessing.
+        accum.region = "stem_band_{0:02d}".format(i)
         lower = ring_indices[i]
         upper = ring_indices[i + 1]
         for j in range(stem_segments):
@@ -979,55 +1015,37 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
             # of the ring instead of wrapping back to -C_ref/2, or the last quad spans
             # the whole island and inverts.
             wrap = reference_circumference if k == 0 else 0.0
+            if i == last_band:
+                v_up_j = stem_v[i] + hub_advance[j]
+                v_up_k = stem_v[i] + hub_advance[k]
+            else:
+                v_up_j = stem_v[i + 1]
+                v_up_k = stem_v[i + 1]
             accum.quad(
                 lower[j], lower[k], upper[k], upper[j], SLOT_STEM,
                 ((island_stem, strip_u[i][j], stem_v[i]),
                  (island_stem, strip_u[i][k] + wrap, stem_v[i]),
-                 (island_stem, strip_u[i + 1][k] + wrap, stem_v[i + 1]),
-                 (island_stem, strip_u[i + 1][j], stem_v[i + 1])))
-
-    accum.region = "transition"
-    # Transition band: coarse penultimate ring -> fine cap hub ring. Each coarse vertex
-    # fans across the `ratio` fine vertices it spans, then one bridging triangle carries
-    # the coarse edge. Every fine vertex is used exactly once, so the shell stays
-    # manifold and no T-vertex is left for the decimator to collapse badly.
-    coarse_index = len(ring_indices) - 2
-    coarse = ring_indices[coarse_index]
-    fine = ring_indices[-1]
-    v_coarse = stem_v[coarse_index]
-    v_fine = stem_v[-1]
-    for jc in range(stem_segments):
-        kc = (jc + 1) % stem_segments
-        wrap_c = reference_circumference if kc == 0 else 0.0
-        base = jc * ratio
-        for m in range(ratio):
-            a = (base + m) % segments
-            b = (base + m + 1) % segments
-            wrap_a = reference_circumference if a < base else 0.0
-            wrap_b = reference_circumference if b <= base else 0.0
-            accum.face(
-                (coarse[jc], fine[b], fine[a]), SLOT_STEM,
-                ((island_stem, strip_u[coarse_index][jc], v_coarse),
-                 (island_stem, strip_u[-1][b] + wrap_b, v_fine),
-                 (island_stem, strip_u[-1][a] + wrap_a, v_fine)))
-        end = (base + ratio) % segments
-        wrap_end = reference_circumference if end <= base else 0.0
-        accum.face(
-            (coarse[jc], coarse[kc], fine[end]), SLOT_STEM,
-            ((island_stem, strip_u[coarse_index][jc], v_coarse),
-             (island_stem, strip_u[coarse_index][kc] + wrap_c, v_coarse),
-             (island_stem, strip_u[-1][end] + wrap_end, v_fine)))
+                 (island_stem, strip_u[i + 1][k] + wrap, v_up_k),
+                 (island_stem, strip_u[i + 1][j], v_up_j)))
 
     accum.region = "cap_underside"
     # ---- cap underside: hub ring outward to the rim ----------------------
-    bottom_rings: List[List[int]] = [ring_indices[-1]]
-    bottom_arc = [[0.0] * segments]
-    previous_points = hub_ring
+    # Ring 0 is the COARSE hub ring shared with the stem; every ring beyond it is at full
+    # cap resolution, so the first band is the coarse->fine refinement. Radial arc
+    # distance from the hub, plus the hub's own radius, gives a geodesic polar map. The
+    # hub arc offset keeps the innermost ring off the polar singularity so no UV triangle
+    # collapses to zero area.
+    hub_arc = hub_u * plan.cap_radius
+    bottom_rings: List[List[int]] = []
+    bottom_arc: List[List[float]] = []
+    previous_points = None
     accumulated = [0.0] * segments
     for u in bottom_us[1:]:
         points = [cap_point(u, j, True) for j in range(segments)]
         for j in range(segments):
-            accumulated[j] += (points[j] - previous_points[j]).length
+            reference = previous_points[j] if previous_points is not None \
+                else hub_ring[j // ratio]
+            accumulated[j] += (points[j] - reference).length
         bottom_arc.append(list(accumulated))
         indices = [
             accum.vert(points[j], stem_length + accumulated[j], 1.0,
@@ -1037,10 +1055,32 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
         bottom_rings.append(indices)
         previous_points = points
 
-    # Radial arc distance from the hub, plus the hub's own radius, gives a geodesic
-    # polar map for the underside. Hub arc offset keeps the innermost ring off the
-    # polar singularity, so no UV triangle collapses to zero area.
-    hub_arc = hub_u * plan.cap_radius
+    # Refinement band: coarse hub ring -> first full-resolution underside ring. Each
+    # coarse vertex fans across the `ratio` fine vertices it spans, then one bridging
+    # triangle carries the coarse edge, so every fine vertex is used exactly once and the
+    # shell stays manifold with no T-vertex for the decimator to collapse badly.
+    hub_indices = ring_indices[-1]
+    first_fine = bottom_rings[0]
+    for jc in range(stem_segments):
+        kc = (jc + 1) % stem_segments
+        base = jc * ratio
+        coarse_uv = _polar_uv(island_bottom, thetas, (base,), (hub_arc,))[0]
+        next_coarse_uv = _polar_uv(island_bottom, thetas, (kc * ratio,), (hub_arc,))[0]
+        for m in range(ratio):
+            a = (base + m) % segments
+            b = (base + m + 1) % segments
+            accum.face(
+                (hub_indices[jc], first_fine[b], first_fine[a]), SLOT_CAP,
+                (coarse_uv,
+                 _polar_uv(island_bottom, thetas, (b,), (hub_arc + bottom_arc[0][b],))[0],
+                 _polar_uv(island_bottom, thetas, (a,), (hub_arc + bottom_arc[0][a],))[0]))
+        end = (base + ratio) % segments
+        accum.face(
+            (hub_indices[jc], hub_indices[kc], first_fine[end]), SLOT_CAP,
+            (coarse_uv, next_coarse_uv,
+             _polar_uv(island_bottom, thetas, (end,),
+                       (hub_arc + bottom_arc[0][end],))[0]))
+
     for i in range(len(bottom_rings) - 1):
         inner = bottom_rings[i]
         outer = bottom_rings[i + 1]
@@ -1473,6 +1513,17 @@ def _make_reunwrap(atlas_size: int, notes: List[str]):
     padding = law.atlas_padding_for(atlas_size) / float(atlas_size)
 
     def reunwrap(obj: bpy.types.Object, lod_index: int) -> None:
+        # Decimation leaves slivers, and a sliver's UV triangle can come back with zero
+        # area, which makes calc_tangents emit a zero-length tangent and trips
+        # GATE_TANGENT_LENGTH_OUT_OF_RANGE (observed at LOD2 on seed 4127). Cleaning the
+        # degenerate geometry BEFORE unwrapping removes the cause instead of unwrapping
+        # around it. Safe at LOD1/LOD2 only, which is why it lives here and not in the
+        # LOD0 path: LOD0's per-vertex sway/harvest arrays are index-aligned and a merge
+        # there would desynchronise them.
+        bm = mesh_ops.bmesh_from_object(obj)
+        mesh_ops.weld_and_clean(bm, merge_distance=1e-4)
+        mesh_ops.bmesh_to_object(bm, obj)
+
         mesh_ops._make_sole_active(obj)
         bpy.ops.object.mode_set(mode="EDIT")
         try:
