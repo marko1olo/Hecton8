@@ -552,6 +552,9 @@ class TestAppliedLoreTargetedExporter(unittest.TestCase):
                 "packet_id": "P_FRESH_CORRUPT",
                 "release_set_id": "RS_TEST",
                 "article_id": "test.fresh_corrupt",
+                # Default-deny publish gate: without a positive in-world declaration no page is written, so
+                # there would be nothing on disk for the corruption check to find.
+                "content_class": "in_world_artifact",
                 "localized": complete_localized(),
             }
             packet["localized"]["fr_FR"]["external_site_article"] = (

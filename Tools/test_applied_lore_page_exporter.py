@@ -42,6 +42,9 @@ def page_export_packet() -> dict:
         "article_id": "test.page",
         "_source_path": str(Path("Docs") / "Lore" / "AppliedContent" / "packets" / "RS_TEST.packets.json"),
         "surface_mask": 16,
+        # The publish gate is default-deny: a packet must positively declare itself in-world before it may
+        # reach in_game_wiki or external_site. Real in-world packets carry this, so the fixture carries it.
+        "content_class": "in_world_artifact",
         "unlock": {
             "primary": "unlock.test.page",
             "poi_tags": ["poi.correct", "poi.second"],
@@ -196,6 +199,51 @@ class TestAppliedLorePageExporter(unittest.TestCase):
             self.assertIn("orphan-generated: Docs/Lore/AppliedContent/in_game_wiki/en_US/P_ORPHAN.md", stats.sample_issues)
             self.assertEqual(removed_disabled, 1)
             self.assertEqual(unlinked, [orphan])
+
+    def test_publish_gate_denies_production_metadata_and_allows_in_world(self):
+        """The gate that stops the project publishing its own design docs to the player.
+
+        P217_IN_GAME_WIKI_UNLOCK_TIER_RULES - the in-game wiki's own unlock rules, published in the wiki, in
+        15 locales, as a thing the player unlocks - is why this exists. Without a permanent test the gate is
+        one refactor away from silently reopening.
+        """
+        for content_class, expect_pages in (
+            ("in_world_artifact", True),
+            ("production_metadata", False),
+            ("in_world", False),  # unrecognized value is not a positive declaration
+        ):
+            with self.subTest(content_class=content_class):
+                with temporary_directory() as tmp:
+                    root = Path(tmp)
+                    packet = page_export_packet()
+                    packet["content_class"] = content_class
+                    with patch("AppliedLorePageExporter.collect_packets", return_value=[packet]), patch(
+                        "AppliedLorePageExporter.navigation_cluster_graph_rows",
+                        return_value=[],
+                    ):
+                        written, _skipped, removed_disabled, _indexes = export_pages(root, overwrite=True)
+
+                    # Nothing is ever deleted by the gate; denial only withholds creation.
+                    self.assertEqual(removed_disabled, 0)
+                    if expect_pages:
+                        self.assertGreater(written, 0)
+                    else:
+                        self.assertEqual(written, 0)
+
+    def test_publish_gate_reads_declaration_from_metadata_block(self):
+        """resolve_source_voice looks in metadata before the packet root; the gate must match that order."""
+        with temporary_directory() as tmp:
+            root = Path(tmp)
+            packet = page_export_packet()
+            del packet["content_class"]
+            packet["metadata"] = {"content_class": "in_world_artifact"}
+            with patch("AppliedLorePageExporter.collect_packets", return_value=[packet]), patch(
+                "AppliedLorePageExporter.navigation_cluster_graph_rows",
+                return_value=[],
+            ):
+                written, _skipped, _removed, _indexes = export_pages(root, overwrite=True)
+
+            self.assertGreater(written, 0)
 
     def test_export_pages_counts_only_changed_indexes(self):
         with temporary_directory() as tmp:
