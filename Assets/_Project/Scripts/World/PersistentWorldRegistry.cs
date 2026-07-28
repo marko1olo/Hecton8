@@ -30,6 +30,39 @@ namespace Hecton8.World
         public const ulong CollectionMutationGuardMask = 1UL << 49;
     }
 
+    /// <summary>
+    /// Outcome of <see cref="VaultBackedList{T}.TryClearClassified"/>. The point of the split is that a
+    /// vault write-lock refusal is not one condition: some members of the refusal set clear themselves
+    /// within a frame and some never will. A caller that cannot tell them apart either retries forever on
+    /// a defect or destroys data on a race.
+    /// </summary>
+    internal static class VaultBackedListClearOutcome
+    {
+        /// <summary>The write lock was granted on the first attempt.</summary>
+        public const byte Cleared = 0;
+
+        /// <summary>Refused once with a stale descriptor, then granted after the descriptor was re-read.</summary>
+        public const byte ClearedAfterHandleRefresh = 1;
+
+        /// <summary>The list was never initialized against a vault. Terminal.</summary>
+        public const byte RefusedNotCreated = 2;
+
+        /// <summary>Lock contention, compaction fence, live defrag or an outstanding alias. RETRYABLE.</summary>
+        public const byte RefusedContention = 3;
+
+        /// <summary>The cached generation drifted and re-reading the descriptor did not recover it. Terminal.</summary>
+        public const byte RefusedStaleGeneration = 4;
+
+        /// <summary>Missing metadata, owner mismatch or a lost block index. Terminal.</summary>
+        public const byte RefusedStructural = 5;
+
+        /// <summary>True only for the one class where waiting a frame can change the answer.</summary>
+        public static bool IsRetryable(byte outcome)
+        {
+            return outcome == RefusedContention;
+        }
+    }
+
     [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AbsoluteUniversePosition
@@ -1259,6 +1292,107 @@ namespace Hecton8.World
             }
         }
 
+        /// <summary>
+        /// Clears the list and, when the vault refuses, classifies the refusal instead of collapsing it
+        /// into one opaque <c>false</c>.
+        ///
+        /// <see cref="Clear"/> can only fail through <c>IDataVault.TryAcquireWriteLock</c>
+        /// (GlobalDataVault.cs:1814), and that refusal set is MIXED. Contention refusals - compaction
+        /// fence in flight (GlobalDataVault.cs:1824/1833/1873/1928/1999), a mutation guard held by a live
+        /// defrag (1839/1934), an outstanding writer or pinned alias (1861/1921), a locked block
+        /// (1885/1952), a busy block mutation gate (1901) - all clear themselves and are worth retrying.
+        /// A generation mismatch (1850) is PERMANENT here, because <see cref="Initialize"/> is the only
+        /// code that ever reads a generation descriptor while relocation and resize keep bumping
+        /// <c>meta.Version</c> (GlobalDataVault.cs:5106/5168/5236/6041): one defrag slice over this buffer
+        /// would otherwise brick every later write for the rest of the process. The remainder - missing
+        /// metadata (1845), owner mismatch (1856/1868), a lost block index (1879/1940) - is structural and
+        /// must not be retried.
+        ///
+        /// Callers that blind-retry a permanent refusal ship a facade; callers that treat contention as
+        /// terminal throw away whatever the caller was about to persist. The outcome byte lets the caller
+        /// do neither.
+        /// </summary>
+        public bool TryClearClassified(out byte outcome)
+        {
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
+            {
+                outcome = VaultBackedListClearOutcome.RefusedNotCreated;
+                return false;
+            }
+
+            if (Clear())
+            {
+                outcome = VaultBackedListClearOutcome.Cleared;
+                return true;
+            }
+
+            byte countProbe = ProbeGenerationDrift(vault, _countBufferId, _countHandle.Generation);
+            byte itemsProbe = ProbeGenerationDrift(vault, _itemsBufferId, _itemsHandle.Generation);
+            if (countProbe == GenerationProbeUnknown || itemsProbe == GenerationProbeUnknown)
+            {
+                // The vault cannot report a generation for the buffer at all, so its metadata entry is
+                // gone. Nothing a later frame does brings it back.
+                outcome = VaultBackedListClearOutcome.RefusedStructural;
+                return false;
+            }
+
+            if (countProbe == GenerationProbeDrifted || itemsProbe == GenerationProbeDrifted)
+            {
+                if (TryRefreshGenerationHandles(vault) && Clear())
+                {
+                    outcome = VaultBackedListClearOutcome.ClearedAfterHandleRefresh;
+                    return true;
+                }
+
+                outcome = VaultBackedListClearOutcome.RefusedStaleGeneration;
+                return false;
+            }
+
+            // Both descriptors are live, so the write lock lost a race rather than hitting a defect.
+            outcome = VaultBackedListClearOutcome.RefusedContention;
+            return false;
+        }
+
+        /// <summary>Live generation matches the cached descriptor.</summary>
+        private const byte GenerationProbeMatched = 0;
+
+        /// <summary>Live generation differs from the cached descriptor; the descriptor is stale.</summary>
+        private const byte GenerationProbeDrifted = 1;
+
+        /// <summary>The vault has no metadata entry for the buffer at all.</summary>
+        private const byte GenerationProbeUnknown = 2;
+
+        private static byte ProbeGenerationDrift(IDataVault vault, BufferID bufferId, uint cachedGeneration)
+        {
+            // TryGetBufferGeneration reads the live metadata entry without creating, growing or locking
+            // anything (GlobalDataVault.cs:2467), so it is safe on a failure path mid-save.
+            if (!vault.TryGetBufferGeneration(bufferId, out uint liveGeneration))
+                return GenerationProbeUnknown;
+
+            return liveGeneration == cachedGeneration ? GenerationProbeMatched : GenerationProbeDrifted;
+        }
+
+        /// <summary>
+        /// Re-reads both generation descriptors in place. This deliberately does NOT go through
+        /// <see cref="Initialize"/>: Initialize disposes and reallocates, which would discard the very
+        /// payload the caller is trying to persist. TryGetGenerationHandle only reads existing metadata.
+        /// </summary>
+        private bool TryRefreshGenerationHandles(IDataVault vault)
+        {
+            if (!vault.TryGetGenerationHandle(_itemsBufferId, out VaultGenerationHandle<T> refreshedItems) ||
+                !vault.TryGetGenerationHandle(_countBufferId, out VaultGenerationHandle<int> refreshedCount) ||
+                refreshedItems.BufferID == 0u ||
+                refreshedCount.BufferID == 0u)
+            {
+                return false;
+            }
+
+            _itemsHandle = refreshedItems;
+            _countHandle = refreshedCount;
+            return true;
+        }
+
         public bool AddNoResize(T value)
         {
             IDataVault vault = _vault;
@@ -1291,6 +1425,59 @@ namespace Hecton8.World
                 if (mutationGuarded)
                     vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
+        }
+
+        /// <summary>
+        /// Appends and, when the append is refused, classifies the refusal with the same three-way split as
+        /// <see cref="TryClearClassified"/>.
+        ///
+        /// <see cref="AddNoResize"/> returns <c>false</c> for seven distinct reasons and only ONE of them is
+        /// a full list: not created, no vault, a refused collection mutation guard (transient - a live
+        /// defrag holds it), the items handle failing to resolve, the count handle failing to resolve
+        /// (either is a stale descriptor or a compaction fence in flight), a zero-length count buffer, and
+        /// the genuine <c>length &gt;= _capacity</c>. Callers that read the bare bool as "out of capacity"
+        /// mis-diagnose six conditions out of seven.
+        ///
+        /// The caller must test <c>Length &gt;= Capacity</c> itself BEFORE calling this, so a true overflow
+        /// is never reported here.
+        /// </summary>
+        public bool TryAddNoResizeClassified(T value, out byte outcome)
+        {
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
+            {
+                outcome = VaultBackedListClearOutcome.RefusedNotCreated;
+                return false;
+            }
+
+            if (AddNoResize(value))
+            {
+                outcome = VaultBackedListClearOutcome.Cleared;
+                return true;
+            }
+
+            byte countProbe = ProbeGenerationDrift(vault, _countBufferId, _countHandle.Generation);
+            byte itemsProbe = ProbeGenerationDrift(vault, _itemsBufferId, _itemsHandle.Generation);
+            if (countProbe == GenerationProbeUnknown || itemsProbe == GenerationProbeUnknown)
+            {
+                outcome = VaultBackedListClearOutcome.RefusedStructural;
+                return false;
+            }
+
+            if (countProbe == GenerationProbeDrifted || itemsProbe == GenerationProbeDrifted)
+            {
+                if (TryRefreshGenerationHandles(vault) && AddNoResize(value))
+                {
+                    outcome = VaultBackedListClearOutcome.ClearedAfterHandleRefresh;
+                    return true;
+                }
+
+                outcome = VaultBackedListClearOutcome.RefusedStaleGeneration;
+                return false;
+            }
+
+            outcome = VaultBackedListClearOutcome.RefusedContention;
+            return false;
         }
 
         public void RemoveAtSwapBack(int index)
@@ -2774,11 +2961,19 @@ namespace Hecton8.World
         // structurally CANNOT emit any: _worldTelemetryRing is allocated by InitializeVaultBackedStorage,
         // the very method that did not run, so WriteWorldTelemetry() no-ops at its IsCreated guard.
         // This managed byte is the only failure signal that escapes that branch.
+        //
+        // SaveSnapshotFailureDeltaAppendRefused was split out of SaveSnapshotFailureCapacityOverflow.
+        // VaultBackedList.AddNoResize returns false for six reasons that are NOT overflow - not created, no
+        // vault, a refused collection mutation guard, either handle failing to resolve, a zero-length count
+        // buffer - so folding it into the overflow code told the operator to raise maxTrackedItems for a
+        // vault refusal that more capacity cannot fix. Overflow is now tested separately, before the append
+        // is attempted, which is also why branch 4 can no longer fire for a non-capacity reason.
         internal const byte SaveSnapshotFailureNone = 0;
         internal const byte SaveSnapshotFailureStorageNotCreated = 1;
         internal const byte SaveSnapshotFailureTombstoneStaging = 2;
         internal const byte SaveSnapshotFailureSnapshotClear = 3;
         internal const byte SaveSnapshotFailureCapacityOverflow = 4;
+        internal const byte SaveSnapshotFailureDeltaAppendRefused = 5;
 
         [StructLayout(LayoutKind.Explicit, Size = 72)]
         private struct PagedSectorHashWindow
@@ -2967,6 +3162,8 @@ namespace Hecton8.World
         private VaultBackedList<int> _tombstoneDecayExpiredIndices;
         private VaultBackedList<PersistentWorldDeltaRecord> _saveSnapshotDeltas;
         private byte _lastSaveSnapshotFailureCode;
+        private byte _lastSaveSnapshotClearOutcome;
+        private byte _lastSaveSnapshotAppendOutcome;
         private VaultBackedArray<PoolSlotData> _poolSlotData;
         private VaultBackedHashMap<ulong, int> _guidToPoolIndex;
         private VaultBackedHashMap<uint, EntityDataRecord> _entityStateByInstanceUid;
@@ -4885,6 +5082,8 @@ namespace Hecton8.World
         internal bool CaptureSaveSnapshot()
         {
             _lastSaveSnapshotFailureCode = SaveSnapshotFailureNone;
+            _lastSaveSnapshotClearOutcome = VaultBackedListClearOutcome.Cleared;
+            _lastSaveSnapshotAppendOutcome = VaultBackedListClearOutcome.Cleared;
 
             if (!_saveSnapshotDeltas.IsCreated || !_deltaRecords.IsCreated)
             {
@@ -4916,7 +5115,8 @@ namespace Hecton8.World
 
             if (!TryClearSaveSnapshotDeltas())
             {
-                // TryClearSaveSnapshotDeltas() already wrote its own capacity-mismatch telemetry.
+                // TryClearSaveSnapshotDeltas() already wrote its own write-lock-contention or
+                // stale-generation ring entry, with the outcome byte in the entry flags.
                 _lastSaveSnapshotFailureCode = SaveSnapshotFailureSnapshotClear;
                 UpdateDiagnostics();
                 return false;
@@ -4933,8 +5133,9 @@ namespace Hecton8.World
                 if (!TryResolveDeltaRecord(_deltaRecords[i], out PersistentWorldDeltaRecord expandedRecord))
                     continue;
 
-                if (_saveSnapshotDeltas.Length >= _saveSnapshotDeltas.Capacity ||
-                    !_saveSnapshotDeltas.AddNoResize(expandedRecord))
+                // Genuine overflow is tested on its own, so the append refusal below can no longer be
+                // mislabelled as "raise maxTrackedItems".
+                if (_saveSnapshotDeltas.Length >= _saveSnapshotDeltas.Capacity)
                 {
                     _lastSaveSnapshotFailureCode = SaveSnapshotFailureCapacityOverflow;
                     WriteWorldTelemetry(
@@ -4949,6 +5150,29 @@ namespace Hecton8.World
                     UpdateDiagnostics();
                     return false;
                 }
+
+                if (!_saveSnapshotDeltas.TryAddNoResizeClassified(expandedRecord, out byte appendOutcome))
+                {
+                    _lastSaveSnapshotAppendOutcome = appendOutcome;
+                    _lastSaveSnapshotFailureCode = SaveSnapshotFailureDeltaAppendRefused;
+                    WriteWorldTelemetry(
+                        appendOutcome == VaultBackedListClearOutcome.RefusedStaleGeneration
+                            ? WorldTelemetryStaleGeneration
+                            : WorldTelemetryWriteLockContention,
+                        WorldRegistrySaveSnapshotDeltasBuffer,
+                        0u,
+                        _saveSnapshotDeltas.Length,
+                        _saveSnapshotDeltas.Capacity,
+                        _currentPlayerChunk,
+                        expandedRecord.InstanceUid,
+                        appendOutcome);
+                    TryClearSaveSnapshotDeltas();
+                    UpdateDiagnostics();
+                    return false;
+                }
+
+                if (appendOutcome == VaultBackedListClearOutcome.ClearedAfterHandleRefresh)
+                    _lastSaveSnapshotAppendOutcome = appendOutcome;
             }
 
             UpdateDiagnostics();
@@ -4961,6 +5185,41 @@ namespace Hecton8.World
         /// attribute a save-snapshot failure to an exact branch instead of one opaque reason string.
         /// </summary>
         internal byte LastSaveSnapshotFailureCode => _lastSaveSnapshotFailureCode;
+
+        /// <summary>
+        /// <see cref="VaultBackedListClearOutcome"/> byte from the last snapshot-clear attempt. Reported by
+        /// SaveManager so a save loss names the vault refusal class instead of "could not be cleared".
+        /// </summary>
+        internal byte LastSaveSnapshotClearOutcome => _lastSaveSnapshotClearOutcome;
+
+        /// <summary>
+        /// <see cref="VaultBackedListClearOutcome"/> byte from the last snapshot delta-append attempt.
+        /// </summary>
+        internal byte LastSaveSnapshotAppendOutcome => _lastSaveSnapshotAppendOutcome;
+
+        /// <summary>
+        /// True when the last <see cref="CaptureSaveSnapshot"/> failure was a vault write refusal that
+        /// clears itself - a compaction fence, a live defrag holding the collection mutation guard, an
+        /// outstanding writer or a pinned alias. Those are benign and routine; the correct response is to
+        /// re-stage on a later frame, NOT to report the player's progress as lost.
+        ///
+        /// Everything else - storage never allocated, tombstone staging refused, a descriptor that stayed
+        /// stale after being re-read, missing vault metadata, a real capacity overflow - is terminal and
+        /// returns false here. This property is the ONLY thing that may gate a retry.
+        /// </summary>
+        internal bool IsLastSaveSnapshotFailureRetryable
+        {
+            get
+            {
+                if (_lastSaveSnapshotFailureCode == SaveSnapshotFailureSnapshotClear)
+                    return VaultBackedListClearOutcome.IsRetryable(_lastSaveSnapshotClearOutcome);
+
+                if (_lastSaveSnapshotFailureCode == SaveSnapshotFailureDeltaAppendRefused)
+                    return VaultBackedListClearOutcome.IsRetryable(_lastSaveSnapshotAppendOutcome);
+
+                return false;
+            }
+        }
 
         internal int SaveSnapshotCount => _saveSnapshotDeltas.IsCreated ? _saveSnapshotDeltas.Length : 0;
 
@@ -9919,22 +10178,56 @@ namespace Hecton8.World
                 : default;
         }
 
+        /// <summary>
+        /// Clears the save-snapshot staging list and records WHY the vault refused when it refuses.
+        ///
+        /// The old body reported every refusal as <c>WorldTelemetryCapacityMismatch</c>, which is a
+        /// misattribution: <c>Clear()</c> only touches the 1-element count buffer and never inspects
+        /// capacity, so a lock-contention or stale-descriptor refusal was being logged as "the buffer is
+        /// full" and SaveManager repeated that lie to the player.
+        /// </summary>
         private bool TryClearSaveSnapshotDeltas()
         {
             if (!_saveSnapshotDeltas.IsCreated)
+            {
+                _lastSaveSnapshotClearOutcome = VaultBackedListClearOutcome.RefusedNotCreated;
                 return false;
+            }
 
-            if (_saveSnapshotDeltas.Clear())
+            bool cleared = _saveSnapshotDeltas.TryClearClassified(out byte outcome);
+            _lastSaveSnapshotClearOutcome = outcome;
+            if (cleared)
+            {
+                if (outcome == VaultBackedListClearOutcome.ClearedAfterHandleRefresh)
+                {
+                    // Not a failure: the descriptor had gone stale under a relocation and was re-read.
+                    // Still worth a ring entry, because a drifting descriptor means this buffer moved
+                    // while a save was staging.
+                    WriteWorldTelemetry(
+                        WorldTelemetryStaleGeneration,
+                        WorldRegistrySaveSnapshotDeltasCountBuffer,
+                        0u,
+                        _saveSnapshotDeltas.Length,
+                        _saveSnapshotDeltas.Capacity,
+                        _currentPlayerChunk,
+                        0u,
+                        outcome);
+                }
+
                 return true;
+            }
 
             WriteWorldTelemetry(
-                WorldTelemetryCapacityMismatch,
-                WorldRegistrySaveSnapshotDeltasBuffer,
+                outcome == VaultBackedListClearOutcome.RefusedStaleGeneration
+                    ? WorldTelemetryStaleGeneration
+                    : WorldTelemetryWriteLockContention,
+                WorldRegistrySaveSnapshotDeltasCountBuffer,
                 0u,
                 _saveSnapshotDeltas.Length,
                 _saveSnapshotDeltas.Capacity,
                 _currentPlayerChunk,
-                0u);
+                0u,
+                outcome);
             return false;
         }
 

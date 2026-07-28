@@ -1902,6 +1902,7 @@ namespace Hecton8.World
             TryUnregisterCullingHotSwapListener();
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             CompleteFloraSwayFieldJobForTeardown(uploadAfterComplete: true);
+            CompleteRemainingFloraNativeJobsForTeardown();
             _instanceCullingService = null;
             _playerRuntimeContext = null;
             _submarineRuntimeContext = null;
@@ -1933,6 +1934,7 @@ namespace Hecton8.World
             TryUnregisterCullingHotSwapListener();
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             CompleteFloraSwayFieldJobForTeardown(uploadAfterComplete: true);
+            CompleteRemainingFloraNativeJobsForTeardown();
             _instanceCullingService = null;
             _playerRuntimeContext = null;
             _submarineRuntimeContext = null;
@@ -2109,14 +2111,19 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
-            CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: true);
-            TryFinalizeFloraSwayFieldJobNoWait(uploadAfterComplete: true);
-            CompleteCascadePhaseSeedJob(underwater: false, forceComplete: false, uploadAfterComplete: true);
-            CompleteCascadePhaseSeedJob(underwater: true, forceComplete: false, uploadAfterComplete: true);
+            CompleteWakeDecayJobInLateFrameWindow();
+            CompleteFloraSwayFieldJobInLateFrameWindow(uploadAfterComplete: true);
+            CompleteCascadePhaseSeedJobInLateFrameWindow(underwater: false);
+            CompleteCascadePhaseSeedJobInLateFrameWindow(underwater: true);
             FlushQueuedCascadePhaseSeedVisualSync(underwater: false);
             FlushQueuedCascadePhaseSeedVisualSync(underwater: true);
-            TryFinalizeHeadlessParasiteSimulation();
+            CompleteHeadlessParasiteSimulationInLateFrameWindow();
             FlushQueuedTickVisualWork();
+            // FlushQueuedTickVisualWork is where ProcessProceduralWakeTick schedules the sway field chain, so the
+            // join has to come after it, not just before. Every flush below reads GlobalDataVault memory that
+            // shares the single alias AtomicSafetyHandle with FieldValues, and the next frame's pre-simulation
+            // defrag reads it too, so the chain is not allowed to leave this window.
+            CompleteFloraSwayFieldJobInLateFrameWindow(uploadAfterComplete: true);
             FlushWakeTrailResourceRefreshVisualSync();
             FlushWakeTrailTextureClearVisualSync();
             FlushWakeTrailTickVisualSync();
@@ -3391,10 +3398,36 @@ namespace Hecton8.World
                     radius));
         }
 
+        /// <summary>
+        /// True when no scheduled flora job still holds the procedural wake vault buffer.
+        /// AccumulateFloraForcesJob reads WakeSources, so the main thread must not mutate that buffer while the
+        /// sway field chain is in flight. Pure check with no completion and no upload, for the public service
+        /// entry points that can be called from any lane.
+        /// </summary>
+        private bool IsWakeBufferSafeForMainThreadMutation()
+        {
+            if (_floraSwayFieldBuildScheduled)
+                return false;
+
+            return CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: false);
+        }
+
+        /// <summary>
+        /// Owner-lane variant used by the procedural wake tick, which already owns the non-blocking sway field
+        /// finalize and its deferred upload. Never blocks: a chain still in flight defers the tick one frame.
+        /// </summary>
+        private bool TryAcquireWakeBufferForProceduralWakeTick()
+        {
+            if (_floraSwayFieldBuildScheduled && !TryFinalizeFloraSwayFieldJobNoWait(uploadAfterComplete: true))
+                return false;
+
+            return CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: false);
+        }
+
         /// <inheritdoc />
         public void EmitWake(in WakeGeneratedSignal signal)
         {
-            if (!CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: false))
+            if (!IsWakeBufferSafeForMainThreadMutation())
                 return;
 
             QueueProceduralWake(in signal);
@@ -3403,7 +3436,7 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void ClearWakeBuffer()
         {
-            if (!CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: false))
+            if (!IsWakeBufferSafeForMainThreadMutation())
                 return;
 
             if (TryResolveProceduralWakeBuffer(out NativeArray<WakeSource> wakeSources))
@@ -3446,7 +3479,7 @@ namespace Hecton8.World
 
         private void ProcessProceduralWakeTick(float deltaTime)
         {
-            if (!CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: false))
+            if (!TryAcquireWakeBufferForProceduralWakeTick())
                 return;
 
             DrainWakeGeneratedSignals();
@@ -3781,6 +3814,33 @@ namespace Hecton8.World
 
             if (!completed)
                 return false;
+
+            _wakeDecayScheduled = false;
+            return true;
+        }
+
+        /// <summary>
+        /// Joins the wake decay job inside the dispatcher-owned late-frame swap window.
+        /// WakeDecayJob writes the same GlobalDataVault-aliased procedural wake buffer that
+        /// AccumulateFloraForcesJob reads, and all vault aliases share one AtomicSafetyHandle, so a wake decay
+        /// job that outlives the frame reproduces the DecayFloraForcesJob.FieldValues safety fault from the other
+        /// end of the same buffer.
+        /// </summary>
+        private bool CompleteWakeDecayJobInLateFrameWindow()
+        {
+            if (CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: true))
+                return true;
+
+            DispatcherJobSwap.BeginLateFrameSwapWindow();
+            try
+            {
+                if (!DispatcherJobSwap.TryComplete(ref _wakeDecayHandle, forceComplete: true))
+                    return false;
+            }
+            finally
+            {
+                DispatcherJobSwap.EndLateFrameSwapWindow();
+            }
 
             _wakeDecayScheduled = false;
             return true;
@@ -4227,6 +4287,11 @@ namespace Hecton8.World
             float3 ambientCurrent = ResolveFloraSwayAmbientCurrent();
             float framePhase = simulationFrame * math.lerp(0.0075f, 0.0275f, qualityCurve);
 
+            // FieldValues and WakeSources are GlobalDataVault aliases. Declare the real graph instead of relying on
+            // the caller having drained the previous chain: the sway build handle covers the prior frame's
+            // decay/accumulate/upload pass over FieldValues, and the wake decay handle covers WakeSources.
+            JobHandle fieldDependency = JobHandle.CombineDependencies(_floraSwayFieldBuildHandle, _wakeDecayHandle);
+
             JobHandle decayHandle = new DecayFloraForcesJob
             {
                 FieldValues = fieldValues,
@@ -4237,7 +4302,7 @@ namespace Hecton8.World
                 DeltaTime = deltaTime,
                 DecayRate = _floraSwaySpringDecayRate,
                 ResetField = resetField ? (byte)1 : (byte)0
-            }.Schedule(nodeCount, FloraSwayFieldJobBatchSize);
+            }.Schedule(nodeCount, FloraSwayFieldJobBatchSize, fieldDependency);
 
             JobHandle accumulateHandle = new AccumulateFloraForcesJob
             {
@@ -4288,6 +4353,7 @@ namespace Hecton8.World
                 Flags = flags
             }.Schedule(accumulateHandle);
 
+            JobHandle.ScheduleBatchedJobs();
             _floraSwayFieldBuildScheduled = true;
             _floraSwayFieldPendingFlags = flags;
             _floraSwayFieldPendingActiveWakeCount = activeWakeCount;
@@ -4312,6 +4378,31 @@ namespace Hecton8.World
             return FinishFloraSwayFieldJob(uploadAfterComplete);
         }
 
+        /// <summary>
+        /// Joins the flora sway field chain inside the dispatcher-owned late-frame swap window.
+        /// The chain runs on GlobalDataVault aliases, and every vault alias shares one AtomicSafetyHandle
+        /// (H8Memory.CreateNativeArrayView), so a chain that outlives the frame makes every main-thread vault
+        /// access in the project throw InvalidOperationException. The late-frame window owns the join instead.
+        /// </summary>
+        private bool CompleteFloraSwayFieldJobInLateFrameWindow(bool uploadAfterComplete)
+        {
+            if (TryFinalizeFloraSwayFieldJobNoWait(uploadAfterComplete))
+                return true;
+
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _floraSwayFieldBuildHandle, forceComplete: true))
+                    return false;
+            }
+            finally
+            {
+                DispatcherJobFence.EndLateFrameSwapWindow();
+            }
+
+            return FinishFloraSwayFieldJob(uploadAfterComplete);
+        }
+
         private bool CompleteFloraSwayFieldJobForTeardown(bool uploadAfterComplete)
         {
             if (!_floraSwayFieldBuildScheduled)
@@ -4321,6 +4412,31 @@ namespace Hecton8.World
                 return false;
 
             return FinishFloraSwayFieldJob(uploadAfterComplete);
+        }
+
+        /// <summary>
+        /// Joins the remaining flora native jobs before teardown releases the vault buffers they hold.
+        /// ParasiteGrowthJob writes the parasite node buffer and PopulateCascadePhaseSeedsJob writes the cascade
+        /// phase seed buffers, all of which ReleaseFloraAuxiliaryVaultBuffers frees. Releasing under a live job
+        /// is a use-after-free, so teardown owns an explicit post-simulation completion window here.
+        /// </summary>
+        private void CompleteRemainingFloraNativeJobsForTeardown()
+        {
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                CompleteCascadePhaseSeedJob(underwater: false, forceComplete: true, uploadAfterComplete: false);
+                CompleteCascadePhaseSeedJob(underwater: true, forceComplete: true, uploadAfterComplete: false);
+                if (_parasiteGrowthScheduled &&
+                    DispatcherJobSwap.TryComplete(ref _parasiteGrowthHandle, forceComplete: true))
+                {
+                    _parasiteGrowthScheduled = false;
+                }
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private bool ForceCompleteFloraSwayFieldBuildInPostSimulationWindow()
@@ -6357,6 +6473,36 @@ namespace Hecton8.World
             ApplyHeadlessParasiteStateFromNodes();
         }
 
+        /// <summary>
+        /// Joins ParasiteGrowthJob inside the dispatcher-owned late-frame swap window.
+        /// The job writes the GlobalDataVault-aliased parasite node buffer, and every vault alias shares one
+        /// AtomicSafetyHandle, so letting it run past the frame poisons unrelated main-thread vault access in the
+        /// next frame's pre-simulation phase exactly the way the sway field chain did.
+        /// </summary>
+        private void CompleteHeadlessParasiteSimulationInLateFrameWindow()
+        {
+            if (!_parasiteGrowthScheduled)
+                return;
+
+            TryFinalizeHeadlessParasiteSimulation();
+            if (!_parasiteGrowthScheduled)
+                return;
+
+            DispatcherJobSwap.BeginLateFrameSwapWindow();
+            try
+            {
+                if (!DispatcherJobSwap.TryComplete(ref _parasiteGrowthHandle, forceComplete: true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobSwap.EndLateFrameSwapWindow();
+            }
+
+            _parasiteGrowthScheduled = false;
+            ApplyHeadlessParasiteStateFromNodes();
+        }
+
         private void ApplyHeadlessParasiteStateFromNodes()
         {
             ClearModuleParasiteStateBack();
@@ -7856,6 +8002,27 @@ namespace Hecton8.World
             JobHandle.ScheduleBatchedJobs();
         }
 
+        /// <summary>
+        /// Joins a cascade phase seed job inside the dispatcher-owned late-frame swap window.
+        /// PopulateCascadePhaseSeedsJob writes GlobalDataVault-aliased phase seed memory that shares its
+        /// AtomicSafetyHandle with every other vault buffer, so it must not survive the frame it was scheduled in.
+        /// </summary>
+        private bool CompleteCascadePhaseSeedJobInLateFrameWindow(bool underwater)
+        {
+            if (CompleteCascadePhaseSeedJob(underwater, forceComplete: false, uploadAfterComplete: true))
+                return true;
+
+            DispatcherJobSwap.BeginLateFrameSwapWindow();
+            try
+            {
+                return CompleteCascadePhaseSeedJob(underwater, forceComplete: true, uploadAfterComplete: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndLateFrameSwapWindow();
+            }
+        }
+
         private bool CompleteCascadePhaseSeedJob(bool underwater, bool forceComplete, bool uploadAfterComplete)
         {
             if (underwater)
@@ -8524,6 +8691,21 @@ namespace Hecton8.World
             if (_wakeTrailDisabled)
                 return;
 
+            // Resolve the compute shader BEFORE allocating any GPU or vault memory. The latch below is permanent,
+            // so allocating first stranded two ARGBHalf RenderTextures, two structured GraphicsBuffers and the
+            // WakeTrailStampCommands vault buffer for the lifetime of the component on every project that ships
+            // without Hecton_VegetationWakeTrailSim.compute assigned.
+            TryAutoAssignWakeTrailSimulationCompute();
+            if (_wakeTrailSimulationCompute == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
+#endif
+                _wakeTrailDisabled = true;
+                ReleaseWakeTrailResources();
+                return;
+            }
+
             if (_wakeTrailRead == null)
                 _wakeTrailRead = CreateWakeTrailTexture("__VegetationWakeTrail_A");
 
@@ -8538,17 +8720,6 @@ namespace Hecton8.World
                 _wakeTrailStampCommandBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WakeTrailStampCommand>(WakeTrailStampCommandCapacity); // COLD ALLOC: GraphicsBuffer[4] - queued vegetation wake-trail stamp buffer B for compute dispatch - owner: FloraInteractionManager
             if (_activeWakeTrailStampCommandBuffer == null)
                 _activeWakeTrailStampCommandBuffer = _wakeTrailStampCommandBufferA;
-
-            TryAutoAssignWakeTrailSimulationCompute();
-            if (_wakeTrailSimulationCompute == null)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
-#endif
-                _wakeTrailDisabled = true;
-                QueueWakeTrailGlobals();
-                return;
-            }
 
             if (_wakeTrailSimulationKernel < 0)
             {
@@ -8590,7 +8761,9 @@ namespace Hecton8.World
             _activeWakeTrailStampCommandBuffer = null;
             _wakeTrailStampCommandUploadBufferIndex = 0;
 
-            _wakeTrailStampCommandsHandle = default;
+            // Dropping the handle only forgets it; the vault arena keeps the allocation and it survives scene
+            // unload. Release it through the vault so the owner list actually shrinks.
+            ReleaseFloraVaultBuffer(ref _wakeTrailStampCommandsHandle);
 
             _pendingWakeTrailScrollUv = Vector2.zero;
             _queuedWakeTrailStampCount = 0;
@@ -9406,6 +9579,9 @@ namespace Hecton8.World
         {
             ReleaseFloraVaultBuffer(ref _oceanFlowSamplePositionsHandle);
             ReleaseFloraVaultBuffer(ref _oceanFlowSampleResultsHandle);
+            // OnDestroy nulls _wakeDataVault before ReleaseWakeTrailResources runs, so the stamp command buffer
+            // has to be released here while the vault reference is still live.
+            ReleaseFloraVaultBuffer(ref _wakeTrailStampCommandsHandle);
             ReleaseFloraVaultBuffer(ref _parasiteNodesHandle);
             ReleaseFloraVaultBuffer(ref _cascadeReactiveTemplateMaskHandle);
             ReleaseFloraVaultBuffer(ref _defensiveSporeBurstTemplateMaskHandle);

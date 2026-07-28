@@ -5187,12 +5187,33 @@ namespace Hecton8.SaveSystem
         /// branch-distinct player/diag reason and a grep-token log line. Every output is a const string
         /// selected by a switch on a byte, so this stays allocation-free on the save staging cadence.
         /// One grep locates any occurrence in a run log: SAVEFAIL_WORLDSNAPSHOT_
+        ///
+        /// <paramref name="retryableCauseExhausted"/> separates the two vault-refusal endings, because they
+        /// need opposite advice. A contention refusal that outlived the retry budget genuinely is worth
+        /// another save attempt; a descriptor that stayed stale after being re-read is a defect and telling
+        /// the player to retry would be a lie.
         /// </summary>
         private static void ResolvePersistentWorldSnapshotFailureText(
             byte snapshotFailureCode,
+            bool retryableCauseExhausted,
             out string reason,
             out string logReason)
         {
+            if (retryableCauseExhausted)
+            {
+                switch (snapshotFailureCode)
+                {
+                    case PersistentWorldRegistry.SaveSnapshotFailureSnapshotClear:
+                        reason = "The memory vault stayed busy for every save attempt; nothing was saved. Try saving again in a moment.";
+                        logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_SNAPSHOT_CLEAR_CONTENDED - GlobalDataVault.TryAcquireWriteLock refused the save-snapshot count buffer on every attempt in the retry budget. The refusal is the self-clearing kind (compaction fence, live defrag mutation guard, outstanding writer or pinned alias), so nothing is corrupt and no world data was lost - the save simply never staged. See the SAVEVAULT_REFUSAL lines above for the per-attempt outcome bytes.";
+                        return;
+                    case PersistentWorldRegistry.SaveSnapshotFailureDeltaAppendRefused:
+                        reason = "The memory vault stayed busy for every save attempt; nothing was saved. Try saving again in a moment.";
+                        logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_DELTA_APPEND_CONTENDED - the save-snapshot delta append was refused by the vault on every attempt in the retry budget while the buffer still had room. Not a capacity problem; raising maxTrackedItems will not help. See the SAVEVAULT_REFUSAL lines above.";
+                        return;
+                }
+            }
+
             switch (snapshotFailureCode)
             {
                 case PersistentWorldRegistry.SaveSnapshotFailureStorageNotCreated:
@@ -5204,12 +5225,16 @@ namespace Hecton8.SaveSystem
                     logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_TOMBSTONE_STAGING - StageResourceNodeTombstonesForSave() rejected the capture. Inspect the resource-node tombstone and deleted-instance buffer capacities in the world telemetry ring.";
                     return;
                 case PersistentWorldRegistry.SaveSnapshotFailureSnapshotClear:
-                    reason = "Persistent world snapshot buffer could not be cleared; world state cannot be saved.";
-                    logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_SNAPSHOT_CLEAR - TryClearSaveSnapshotDeltas() rejected the capture. The save-snapshot delta buffer refused a Clear(); see the capacity-mismatch entry in the world telemetry ring.";
+                    reason = "The world-snapshot memory buffer is in a bad state; world state cannot be saved.";
+                    logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_SNAPSHOT_CLEAR - TryClearSaveSnapshotDeltas() rejected the capture and the refusal is NOT the self-clearing kind. GlobalDataVault.TryAcquireWriteLock refused the save-snapshot count buffer on a stale generation descriptor, a missing metadata entry or an owner mismatch. The SAVEVAULT_REFUSAL line above carries the outcome byte and the world telemetry ring holds the matching StaleGeneration/WriteLockContention entry.";
                     return;
                 case PersistentWorldRegistry.SaveSnapshotFailureCapacityOverflow:
                     reason = "Persistent world snapshot exceeded its capacity; world state cannot be saved.";
                     logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_CAPACITY_OVERFLOW - the save-snapshot delta buffer overflowed while expanding delta records. Raise PersistentWorldRegistry.maxTrackedItems or reduce tracked world deltas.";
+                    return;
+                case PersistentWorldRegistry.SaveSnapshotFailureDeltaAppendRefused:
+                    reason = "The world-delta memory buffer is in a bad state; world state cannot be saved.";
+                    logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_DELTA_APPEND_REFUSED - AddNoResize was refused by the vault while the buffer still had room, so this is NOT a capacity problem and raising maxTrackedItems will not help. The refusal is not the self-clearing kind; the SAVEVAULT_REFUSAL line above names the class.";
                     return;
                 default:
                     // Includes SaveSnapshotFailureNone: CaptureSaveSnapshot() returned false without
@@ -5221,6 +5246,61 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        /// <summary>
+        /// Maximum <see cref="PersistentWorldRegistry.CaptureSaveSnapshot"/> attempts inside one save
+        /// operation. A vault write refusal caused by a compaction fence, a live defrag holding the
+        /// collection mutation guard, or an outstanding writer/alias is released by its holder within a
+        /// frame, so re-staging on the next frame is the honest response. Bounded, because a refusal that
+        /// survives three frames is no longer "a defrag slice landed on the save tick" and must surface.
+        /// </summary>
+        private const int MaxPersistentWorldSnapshotAttempts = 3;
+
+        /// <summary>
+        /// Names the vault refusal class behind a world-snapshot capture failure, on the failure path only.
+        ///
+        /// This is the single reading that discriminates the two possible causes of a
+        /// SAVEFAIL_WORLDSNAPSHOT_SNAPSHOT_CLEAR: a transient contention refusal (routine, retryable) and a
+        /// permanently stale generation descriptor or lost metadata (a defect). It is correct under both.
+        /// Formatted string on a terminal-failure path, never on the save staging cadence.
+        /// </summary>
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPersistentWorldSnapshotVaultRefusal(
+            PersistentWorldRegistry persistentWorldRegistry,
+            int attempt,
+            bool willRetry)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (persistentWorldRegistry == null)
+                return;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            int generationMissCount = vault != null ? vault.GenerationHandleMissCount : -1;
+            int lastDefragFlags = vault != null ? vault.LastDefragFlags : -1;
+            uint vaultGenerationId = vault != null ? vault.VaultGenerationID : 0u;
+            int lastFaultBufferId = -1;
+            if (vault is GlobalDataVault concreteVault &&
+                concreteVault.TryGetVaultTelemetrySnapshot(0, out VaultTelemetrySnapshot telemetry))
+            {
+                lastFaultBufferId = telemetry.LastFaultBufferID;
+            }
+
+            LogErrorBestEffort(
+                "[SaveManager] SAVEVAULT_REFUSAL branch=" +
+                persistentWorldRegistry.LastSaveSnapshotFailureCode.ToString() +
+                " clearOutcome=" + persistentWorldRegistry.LastSaveSnapshotClearOutcome.ToString() +
+                " appendOutcome=" + persistentWorldRegistry.LastSaveSnapshotAppendOutcome.ToString() +
+                " retryable=" + (persistentWorldRegistry.IsLastSaveSnapshotFailureRetryable ? "1" : "0") +
+                " attempt=" + attempt.ToString() +
+                "/" + MaxPersistentWorldSnapshotAttempts.ToString() +
+                " willRetry=" + (willRetry ? "1" : "0") +
+                " vaultGenerationMissCount=" + generationMissCount.ToString() +
+                " vaultLastFaultBufferId=" + lastFaultBufferId.ToString() +
+                " vaultLastDefragFlags=" + lastDefragFlags.ToString() +
+                " vaultGenerationId=" + vaultGenerationId.ToString() +
+                ". Outcome bytes: 0=cleared 1=clearedAfterHandleRefresh 2=notCreated 3=contention(retryable) 4=staleGeneration 5=structural.");
+#endif
+        }
+
         private bool TryCapturePersistentWorldSnapshot(
             string slotName,
             byte slotIndex,
@@ -5229,12 +5309,34 @@ namespace Hecton8.SaveSystem
             long elapsedMilliseconds,
             ref NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltaSnapshot,
             ref NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshotOwner,
-            ref bool snapshotPauseActive)
+            ref bool snapshotPauseActive,
+            int attempt,
+            out bool willRetry)
         {
+            willRetry = false;
             if (persistentWorldRegistry != null)
             {
                 if (!persistentWorldRegistry.CaptureSaveSnapshot())
                 {
+                    // A vault write refusal is not a lost world. GlobalDataVault.TryAcquireWriteLock
+                    // refuses while a compaction fence is in flight, while a live defrag holds the
+                    // collection mutation guard, and while a writer or pinned alias is outstanding - all
+                    // benign and all released within a frame. Reporting that as a terminal capture failure
+                    // is how a player loses everything because a defrag slice landed on their save tick.
+                    // The registry decides retryability; a permanently stale descriptor or lost vault
+                    // metadata is NOT retryable and still falls through to the loud terminal failure.
+                    bool retryable = persistentWorldRegistry.IsLastSaveSnapshotFailureRetryable;
+                    bool attemptsRemain = attempt + 1 < MaxPersistentWorldSnapshotAttempts;
+                    willRetry = retryable && attemptsRemain;
+                    LogPersistentWorldSnapshotVaultRefusal(persistentWorldRegistry, attempt, willRetry);
+                    if (willRetry)
+                    {
+                        // Leave the snapshot pause held and the operation InProgress: the caller re-stages
+                        // on the next frame inside the same save operation, so the save contract is
+                        // unchanged and no status/event lane needs a new member.
+                        return false;
+                    }
+
                     // Attribute the loss to the exact registry branch. A single shared reason string
                     // meant a total loss of player progress could only be diagnosed by byte-decoding
                     // the slot_N.diag UTF-16 payload, and even then named none of the four branches.
@@ -5243,6 +5345,7 @@ namespace Hecton8.SaveSystem
                     // All const strings selected by a switch: no concat, no interpolation, no boxing.
                     ResolvePersistentWorldSnapshotFailureText(
                         persistentWorldRegistry.LastSaveSnapshotFailureCode,
+                        retryable,
                         out string reason,
                         out string logReason);
                     const uint failureCode = 3u;
@@ -5504,10 +5607,50 @@ namespace Hecton8.SaveSystem
                 ModSaveStateStore.PopulateSaveData(data);
                 Stopwatch divergenceSnapshotTimer = Stopwatch.StartNew();
 
-                if (!TryCapturePersistentWorldSnapshot(
-                    slotName, slotIndex, operationId, persistentWorldRegistry, totalTimer.ElapsedMilliseconds,
-                    ref persistentWorldDeltaSnapshot, ref persistentWorldDeltaSnapshotOwner, ref snapshotPauseActive))
+                // Bounded re-stage on a transient vault refusal. The vault refuses a write lock while a
+                // compaction fence is in flight, while a live defrag holds the collection mutation guard,
+                // and while a writer or pinned alias is outstanding; every one of those is released by its
+                // holder, so the only correct response is to try again on a later frame. Anything the
+                // registry does not mark retryable reports terminally on its first attempt - TryCapture
+                // only returns willRetry for the self-clearing class, so no failure can exit here silently.
+                bool persistentWorldSnapshotCaptured = false;
+                for (int snapshotAttempt = 0; snapshotAttempt < MaxPersistentWorldSnapshotAttempts; snapshotAttempt++)
                 {
+                    if (snapshotAttempt > 0)
+                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
+
+                    if (TryCapturePersistentWorldSnapshot(
+                        slotName, slotIndex, operationId, persistentWorldRegistry, totalTimer.ElapsedMilliseconds,
+                        ref persistentWorldDeltaSnapshot, ref persistentWorldDeltaSnapshotOwner, ref snapshotPauseActive,
+                        snapshotAttempt, out bool retryPersistentWorldSnapshot))
+                    {
+                        persistentWorldSnapshotCaptured = true;
+                        break;
+                    }
+
+                    if (!retryPersistentWorldSnapshot)
+                        return;
+                }
+
+                if (!persistentWorldSnapshotCaptured)
+                {
+                    // Unreachable while the loop's final attempt always reports terminally, and it stays
+                    // loud on purpose: a silent return here would be the same total-loss-without-a-message
+                    // defect this retry lane exists to remove.
+                    const string exhaustedReason = "World snapshot staging never completed; nothing was saved. Try saving again in a moment.";
+                    const string exhaustedLogReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_RETRY_EXHAUSTED - the snapshot retry loop ended without a capture and without a terminal report. MaxPersistentWorldSnapshotAttempts and the TryCapturePersistentWorldSnapshot willRetry contract have drifted out of agreement.";
+                    const uint exhaustedFailureCode = 3u;
+                    Exception exhaustedCleanupException = null;
+                    HandleSaveFailure(
+                        slotName,
+                        slotIndex,
+                        operationId,
+                        exhaustedReason,
+                        exhaustedLogReason,
+                        exhaustedFailureCode,
+                        totalTimer.ElapsedMilliseconds,
+                        ref exhaustedCleanupException,
+                        ref snapshotPauseActive);
                     return;
                 }
 
