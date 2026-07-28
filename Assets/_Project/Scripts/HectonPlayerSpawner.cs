@@ -152,7 +152,20 @@ public class HectonPlayerSpawner : MonoBehaviour
     [Tooltip("Production Player.prefab source. Must resolve to GUID 1c4db7a430141e5408e01b6ce4ed19d7 when assigned through Unity.")]
     [SerializeField] private GameObject productionPlayerPrefab;
 
-    [Tooltip("Player Rigidbody reference assigned through the Inspector.")]
+    // RUNTIME-RESOLVED CACHE, NOT A TUNING VALUE, and normally NOT authored. The old tooltip named the
+    // Inspector as THE source of this reference; on every route that can be measured statically it is
+    // not a source at all. This spawner's GUID (560e83b763132d2418e071332d17b172) appears in 0 of the
+    // 27 text scenes and 0 of the 962 prefabs, and Awake writes this field from three runtime routes.
+    //
+    // It stays [SerializeField] deliberately rather than becoming a plain private field: the production
+    // world scene is serialized ForceBinary, so a hex-text GUID search cannot prove absence there, and
+    // Awake DOES honour an authored seed when it passes production authority validation. Dropping the
+    // attribute on unprovable absence would silently discard such a seed.
+    //
+    // Awake resolution order: (1) this serialized seed, kept only if TryAcceptProductionPlayerRigidbody
+    // accepts it; (2) IPlayerRuntimeContext.PlayerRigidbody; (3) GameBootstrapper current player
+    // transform; (4) cold Instantiate of productionPlayerPrefab.
+    [Tooltip("Optional production player Rigidbody seed. Normally resolved at runtime, not authored.")]
     [SerializeField] private Rigidbody playerRigidbody;
 
     // ══════════════════════════════════════════════════════════════
@@ -288,14 +301,22 @@ public class HectonPlayerSpawner : MonoBehaviour
         }
 
         IPlayerRuntimeContext playerContext = ResolveProductionPlayerContext();
+
+        // Whether a reference EXISTED and this method threw it away, versus never having one at all.
+        // The two states are indistinguishable from `playerRigidbody == null` alone, and the fallback
+        // log below used to report the second one unconditionally - including when the first was true.
+        bool serializedRigidbodyRejected = false;
+
         if (playerRigidbody != null && !TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             LogSpawnerError(
-                "[HectonPlayerSpawner] Assigned Rigidbody is not the production player authority root. " +
-                "Movement, interaction, and physics components are required.",
+                "[HectonPlayerSpawner] Assigned Rigidbody is not the production player authority root: " +
+                ProductionPlayerAuthorityUtility.DescribeProductionPlayerAuthorityFailure(
+                    playerRigidbody.gameObject),
                 this);
 #endif
+            serializedRigidbodyRejected = true;
             playerRigidbody = null;
             _playerMovement = null;
         }
@@ -304,13 +325,22 @@ public class HectonPlayerSpawner : MonoBehaviour
             playerRigidbody = playerContext.PlayerRigidbody;
         if (_playerMovement == null && playerContext != null)
             _playerMovement = playerContext.PlayerMovement;
-        // ── Popytka avtomaticheskogo poiska, esli Inspector-ssylka ne zadana ──
+        // Fall back to the bootstrap current-player route. Two routes have already been tried above.
         if (playerRigidbody == null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // This branch is reached from three distinct states and the old message named only one of
+            // them - "Rigidbody is not assigned in the Inspector" - as though it were the cause. That is
+            // actively wrong in the case the code produces itself: when an assigned reference FAILED
+            // authority validation and was cleared above, the log told the reader to go populate an
+            // inspector field that had already been populated. All three branches are compile-time
+            // string constants, so naming the true state allocates nothing.
             LogSpawner(
-                "[HectonPlayerSpawner] Rigidbody is not assigned in the Inspector. " +
-                "Trying to resolve the current player through GameBootstrapper.");
+                serializedRigidbodyRejected
+                    ? "[HectonPlayerSpawner] Serialized Rigidbody failed production authority validation and was cleared. Trying to resolve the current player through GameBootstrapper."
+                    : playerContext == null
+                        ? "[HectonPlayerSpawner] No serialized Rigidbody and no player runtime context was available. Trying to resolve the current player through GameBootstrapper."
+                        : "[HectonPlayerSpawner] No serialized Rigidbody and the player runtime context supplied none. Trying to resolve the current player through GameBootstrapper.");
 #endif
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransformRoot) &&
@@ -375,10 +405,12 @@ public class HectonPlayerSpawner : MonoBehaviour
         if (playerRigidbody == null)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Named two routes when four were actually attempted, so a reader chasing this error was
+            // told the prefab-instantiate route had not been tried.
             LogSpawnerError(
-                "[HectonPlayerSpawner] Player Rigidbody not found. " +
-                "Inspector reference and bootstrap lookup both failed. " +
-                "Spawn is impossible.",
+                "[HectonPlayerSpawner] Player Rigidbody not found. All four routes failed: serialized " +
+                "seed, IPlayerRuntimeContext, GameBootstrapper current player, and cold Instantiate of " +
+                "productionPlayerPrefab. Spawn is impossible.",
                 this);
 #endif
             enabled = false;

@@ -961,8 +961,31 @@ namespace Hecton8.Construction
         private const int PlacementOverlapCapacity = 24;
         private const uint ExtractorOverflowDropWarningHash = 0x6DAE28B7u;
         private const uint ExtractorOverflowDropContextHash = 0xD9113EF2u;
+        private const uint ExtractorOwnerMissingWarningHash = 0x5B1907C4u;
+        private const uint ExtractorOwnerMissingRegisterContextHash = 0x9E42D7A6u;
+        private const uint ExtractorOwnerMissingPlacementContextHash = 0xC30F81B5u;
         // COLD ALLOC: Collider[24] — placement/resource-node overlap buffer — owner: AutonomousExtractorModule
         private static readonly SpatialQueryHit[] PlacementSpatialBuffer = new SpatialQueryHit[PlacementOverlapCapacity];
+
+        private static bool s_ownerMissingRegisterReported;
+        private static bool s_ownerMissingPlacementReported;
+
+        /// <summary>
+        /// Clears cross-session static state. With "Enter Play Mode Options" domain reload disabled the
+        /// latches below would survive into the next session and suppress the missing-owner report that is
+        /// this type's only evidence of a dead owner, and the overlap buffer would keep managed
+        /// <see cref="SpatialQueryHit.Owner"/> references to destroyed nodes past the entry the last query
+        /// wrote. Same hook and same reason as DeepDrillModule.cs:32-39 in this folder.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_ownerMissingRegisterReported = false;
+            s_ownerMissingPlacementReported = false;
+
+            for (int i = 0; i < PlacementSpatialBuffer.Length; i++)
+                PlacementSpatialBuffer[i] = default;
+        }
 
         [Header("Placement")]
         [SerializeField, Range(0.5f, 6f)]
