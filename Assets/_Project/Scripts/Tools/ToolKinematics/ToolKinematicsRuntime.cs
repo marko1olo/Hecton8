@@ -1058,8 +1058,15 @@ namespace Hecton8.Tools.ToolKinematics
             ReleaseVaultHandles();
             ClearHandles();
             _dataVault = vault;
-            if (isActiveAndEnabled)
-                TryBootstrapRuntime();
+            if (!isActiveAndEnabled)
+                return;
+
+            TryBootstrapRuntime();
+
+            // A hot-swap callback is the only entry point that survives ClearRuntimeBuckets, so it is
+            // also the only place a tick lane that failed to come back can still be reported.
+            _tickRegistrationMissReported = 0;
+            ReportTickRegistrationMissOnce();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1084,6 +1091,8 @@ namespace Hecton8.Tools.ToolKinematics
                         TryRegisterFixed();
                         TryRegisterPostFixed();
                         TryRegisterCold();
+                        _tickRegistrationMissReported = 0;
+                        ReportTickRegistrationMissOnce();
                     }
 
                     break;
@@ -1501,28 +1510,47 @@ namespace Hecton8.Tools.ToolKinematics
         }
 #endif
 
+        /// <summary>
+        /// Re-arms the dispatcher fixed lane. Deliberately NOT gated on <c>_fixedRegistered</c>, and the
+        /// flag is only ever RAISED on a successful insert. All three tick lanes are emptied behind this
+        /// owner's back by <c>GlobalRegistry.ClearRuntimeBuckets</c> (GlobalRegistry.cs:6984-6997, which
+        /// clears <c>_fixedTickables</c>/<c>_coldTickables</c> and calls
+        /// <c>SystemDispatcher.ClearAllLanes</c>), reached from any unsuppressed scene unload, and that
+        /// path touches no service slot so it notifies nobody. A latched early return therefore made the
+        /// drop permanent. The surviving entry point is the hot-swap listener bucket, which
+        /// <c>ClearRuntimeBuckets</c> does NOT clear (<c>_hotSwapListeners</c>, GlobalRegistry.cs:311):
+        /// a DataVault replacement reaches <c>ApplyDataVaultRebind</c> -> <c>TryBootstrapRuntime</c> ->
+        /// here. Repeat attempts are free and cannot double-register - the buckets are
+        /// <c>RegistryBucket&lt;T&gt;</c> whose <c>TryRegister</c> rejects a duplicate via
+        /// <c>Contains</c> (RegistryBucket.cs:112/115) and rolls the dispatcher lane back on failure
+        /// (GlobalRegistry.cs:6515-6519). Assigning the result instead of raising it would clear a flag
+        /// that must stay set, stranding the live lane entry with no owner willing to unregister it.
+        /// </summary>
         private void TryRegisterFixed()
         {
-            if (_fixedRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+            if (GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player))
+                _fixedRegistered = true;
         }
 
         private void TryRegisterPostFixed()
         {
-            if (_postFixedRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Player);
+            if (GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Player))
+                _postFixedRegistered = true;
         }
 
         private void TryRegisterCold()
         {
-            if (_coldRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _coldRegistered = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+            if (GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player))
+                _coldRegistered = true;
         }
 
         private void TryRegisterHotSwap()
