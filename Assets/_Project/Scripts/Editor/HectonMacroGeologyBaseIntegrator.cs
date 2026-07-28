@@ -56,8 +56,30 @@ namespace Hecton8.Editor
                 return;
             }
 
-            // Find or Create Macro Geology Base Node
-            HectonSandboxAbyssalShelfMapMagicNode macroBaseNode = EnsureGenerator<HectonSandboxAbyssalShelfMapMagicNode>(graph, -660f, -80f, out bool created);
+            // Find the Macro Geology Base node - and do NOT create one if it is absent.
+            //
+            // The previous EnsureGenerator path called Generator.Create, which hands the new node its own
+            // field initialisers: HectonSandboxAbyssalShelfMapMagicNode.cs:42-43 declare
+            // highWorldY = 2000f and lowWorldY = -5000f, a 7000 m span. The authored graph carries
+            // lowWorldY = -10000f, a 12000 m span (decoded from the graph's serialised value table, and
+            // confirmed at runtime: the validator in that node reported an expected span of 12000 m on
+            // every generated tile). So creating the node silently authored a 7000 m world that disagrees
+            // with the world the graph actually generates, and SyncTerrainHeightToGeologySpan below would
+            // then faithfully cement that fabricated span onto the scene as if it were authored.
+            //
+            // A missing macro geology node is an authoring gap. This tool links and syncs; it does not get
+            // to invent the vertical extent of the world.
+            HectonSandboxAbyssalShelfMapMagicNode macroBaseNode = FindFirst<HectonSandboxAbyssalShelfMapMagicNode>(graph);
+            if (macroBaseNode == null)
+            {
+                Debug.LogError(
+                    "[HectonMacroGeologyBaseIntegrator] No Macro Geology Base node in " +
+                    $"{GraphPath}, and this tool will not create one: a new node carries the code-default " +
+                    "Y-span (High 2000 / Low -5000 = 7000m), not the authored span. Add " +
+                    "'Hecton/Macro Geology Base' in the MapMagic graph editor, set High Y m / Low Y m to " +
+                    "the authored world span, save the graph, then run this again. Nothing was changed.");
+                return;
+            }
 
             // Unlink Tectonic Node if it is linked to something else
             if (graph.IsLinked(tectonicNode))
@@ -68,7 +90,10 @@ namespace Hecton8.Editor
 
             // Link Macro Geology Base Node to Tectonic Node
             graph.Link(macroBaseNode, tectonicNode);
-            Debug.Log($"[HectonMacroGeologyBaseIntegrator] Linked Macro Geology Base Node to Tectonic Node. Created node: {created}");
+            Debug.Log(
+                "[HectonMacroGeologyBaseIntegrator] Linked the existing Macro Geology Base Node to the " +
+                $"Tectonic Node (authored span {macroBaseNode.highWorldY - macroBaseNode.lowWorldY:F1}m, " +
+                $"low {macroBaseNode.lowWorldY:F1}m).");
 
             EditorUtility.SetDirty(graph);
             AssetDatabase.SaveAssets();
@@ -92,16 +117,19 @@ namespace Hecton8.Editor
         //  authored 12000 m of relief is rendered into 250 m of terrain - a 48x vertical collapse,
         //  which is also why an authored trenchDepthMeters of 5000 cannot possibly appear.
         //
-        //  This tool writes the authored span onto the scene object. It NEVER hardcodes the span:
-        //  it reads highWorldY/lowWorldY back out of the graph, so the graph stays the single
-        //  source of truth and this tool cannot drift away from it.
+        //  This tool writes the authored span onto the scene object. It NEVER hardcodes the span: it
+        //  reads highWorldY/lowWorldY back out of the graph EACH OBJECT ACTUALLY GENERATES FROM
+        //  (MapMagicObject.graph, MapMagicObject.cs:38), including that graph's biome sub-graphs, so
+        //  the graph stays the single source of truth and this tool cannot write one world's vertical
+        //  extent onto a different world.
+        //
+        //  IMPORTANT - what this does NOT do: it changes globals.height, which is the value MapMagic
+        //  applies as TerrainData.size.y on the NEXT generate (HeightOut.cs:265/435/455/496/521). It
+        //  does not resize TerrainData assets already baked at 250 m. If the tiles in the scene are
+        //  pinned/saved rather than generated on load, the terrain stays 250 m until a regenerate, and
+        //  a run of this tool alone is not proof that the world got taller.
         // ══════════════════════════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Writes the graph-authored geology Y-span onto every MapMagicObject in the currently open
-        /// scenes. Operates only on what is already loaded - it deliberately does not open or close
-        /// scenes, so it cannot discard unsaved work.
-        /// </summary>
         /// <summary>
         /// Reports what the sync WOULD change, and writes nothing.
         ///
@@ -118,17 +146,6 @@ namespace Hecton8.Editor
         [MenuItem("Hecton8/World/MapMagic/Sync Terrain Height To Geology Span - REPORT ONLY", priority = 180)]
         public static void ReportTerrainHeightVersusGeologySpan()
         {
-            if (!TryResolveAuthoredGeologySpan(out float lowWorldY, out float highWorldY, out string spanError))
-            {
-                Debug.LogError($"[HectonMacroGeologyBaseIntegrator] REPORT ABORTED - {spanError}");
-                return;
-            }
-
-            float span = highWorldY - lowWorldY;
-            Debug.Log(
-                $"[HectonMacroGeologyBaseIntegrator] REPORT authored geology: lowWorldY={lowWorldY:F1}m " +
-                $"highWorldY={highWorldY:F1}m span={span:F1}m");
-
             MapMagicObject[] mapMagicObjects = UnityEngine.Object.FindObjectsByType<MapMagicObject>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
@@ -155,6 +172,25 @@ namespace Hecton8.Editor
                         mapMagicObject);
                     continue;
                 }
+
+                if (!TryResolveSpanForMapMagicObject(
+                        mapMagicObject,
+                        out float lowWorldY,
+                        out float highWorldY,
+                        out string spanError))
+                {
+                    Debug.LogError(
+                        $"[HectonMacroGeologyBaseIntegrator] REPORT '{mapMagicObject.name}' has no resolvable " +
+                        $"authored span - the sync would skip it. {spanError}",
+                        mapMagicObject);
+                    continue;
+                }
+
+                float span = highWorldY - lowWorldY;
+                Debug.Log(
+                    $"[HectonMacroGeologyBaseIntegrator] REPORT '{mapMagicObject.name}' authored geology: " +
+                    $"lowWorldY={lowWorldY:F1}m highWorldY={highWorldY:F1}m span={span:F1}m",
+                    mapMagicObject);
 
                 float currentHeight = mapMagicObject.globals.height;
                 float currentBaseY = mapMagicObject.transform.position.y;
@@ -194,15 +230,15 @@ namespace Hecton8.Editor
                 "'Sync Terrain Height To Geology Span' to apply.");
         }
 
+        /// <summary>
+        /// Writes each MapMagicObject's own graph-authored geology Y-span onto that object, for every
+        /// MapMagicObject in the currently open scenes. Operates only on what is already loaded - it
+        /// deliberately does not open or close scenes, so it cannot discard unsaved work, and it saves only
+        /// the scenes it dirtied itself.
+        /// </summary>
         [MenuItem("Hecton8/World/MapMagic/Sync Terrain Height To Geology Span")]
         public static void SyncTerrainHeightToGeologySpan()
         {
-            if (!TryResolveAuthoredGeologySpan(out float lowWorldY, out float highWorldY, out string spanError))
-            {
-                Debug.LogError($"[HectonMacroGeologyBaseIntegrator] {spanError}");
-                return;
-            }
-
             MapMagicObject[] mapMagicObjects = UnityEngine.Object.FindObjectsByType<MapMagicObject>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
@@ -215,41 +251,94 @@ namespace Hecton8.Editor
                 return;
             }
 
+            // Tracks the objects THIS tool changed, so the save pass below writes only the scenes this tool
+            // dirtied. The previous version saved any owning scene whose isDirty was set, which silently
+            // committed the operator's unrelated unsaved edits in an additively-loaded scene and could
+            // re-save the same scene once per MapMagicObject in it.
+            bool[] changedByThisTool = new bool[mapMagicObjects.Length];
             int changed = 0;
+            int failed = 0;
             for (int i = 0; i < mapMagicObjects.Length; i++)
             {
-                if (!ApplyGeologySpanToMapMagicObject(mapMagicObjects[i], lowWorldY, highWorldY))
+                MapMagicObject mapMagicObject = mapMagicObjects[i];
+                if (mapMagicObject == null)
                     continue;
 
+                // Resolved per object: the span belongs to the graph THAT object generates from, and two
+                // MapMagicObjects in the open scenes can legitimately run different graphs.
+                if (!TryResolveSpanForMapMagicObject(
+                        mapMagicObject,
+                        out float lowWorldY,
+                        out float highWorldY,
+                        out string spanError))
+                {
+                    failed++;
+                    Debug.LogError(
+                        $"[HectonMacroGeologyBaseIntegrator] '{mapMagicObject.name}' SKIPPED - {spanError}",
+                        mapMagicObject);
+                    continue;
+                }
+
+                if (!ApplyGeologySpanToMapMagicObject(mapMagicObject, lowWorldY, highWorldY))
+                    continue;
+
+                changedByThisTool[i] = true;
                 changed++;
 
-                // Save the scene that actually owns this object rather than iterating a global scene
+                // Mark the scene that actually owns this object rather than iterating a global scene
                 // list, so an additively-loaded terrain owner is saved correctly and no unrelated
                 // scene is written.
-                Scene owningScene = mapMagicObjects[i].gameObject.scene;
+                Scene owningScene = mapMagicObject.gameObject.scene;
                 if (owningScene.IsValid())
                     EditorSceneManager.MarkSceneDirty(owningScene);
             }
 
             if (changed == 0)
             {
+                if (failed >= mapMagicObjects.Length)
+                {
+                    Debug.LogError(
+                        $"[HectonMacroGeologyBaseIntegrator] NOTHING was synced: all {failed} MapMagicObject(s) " +
+                        "failed to resolve an authored geology span (errors above). This is a failure, not a " +
+                        "no-op - do not read it as 'already correct'.");
+                    return;
+                }
+
                 Debug.Log(
-                    "[HectonMacroGeologyBaseIntegrator] All MapMagicObjects already match the authored " +
-                    $"geology span ({highWorldY - lowWorldY:F1}m base {lowWorldY:F1}m). Nothing written.");
+                    "[HectonMacroGeologyBaseIntegrator] No MapMagicObject needed a change; every one that " +
+                    $"resolved a span already matches it. Skipped {failed} that could not resolve one. " +
+                    "Nothing written.");
                 return;
             }
 
             for (int i = 0; i < mapMagicObjects.Length; i++)
             {
+                if (!changedByThisTool[i])
+                    continue;
+
                 Scene owningScene = mapMagicObjects[i].gameObject.scene;
-                if (owningScene.IsValid() && owningScene.isDirty)
+                if (!owningScene.IsValid() || !owningScene.isDirty)
+                    continue;
+
+                bool alreadySaved = false;
+                for (int j = 0; j < i; j++)
+                {
+                    if (changedByThisTool[j] &&
+                        mapMagicObjects[j].gameObject.scene.handle == owningScene.handle)
+                    {
+                        alreadySaved = true;
+                        break;
+                    }
+                }
+
+                if (!alreadySaved)
                     EditorSceneManager.SaveScene(owningScene);
             }
 
             Debug.Log(
-                $"[HectonMacroGeologyBaseIntegrator] Synced {changed} MapMagicObject(s) to the authored " +
-                "geology span and saved the owning scene(s). Terrain regenerates on next load; no " +
-                "regeneration is forced here.");
+                $"[HectonMacroGeologyBaseIntegrator] Synced {changed} MapMagicObject(s) to their authored " +
+                $"geology span and saved the owning scene(s); {failed} skipped. Terrain regenerates on next " +
+                "load; no regeneration is forced here.");
         }
 
         /// <summary>
@@ -262,13 +351,6 @@ namespace Hecton8.Editor
             int exitCode = 0;
             try
             {
-                if (!TryResolveAuthoredGeologySpan(out float lowWorldY, out float highWorldY, out string spanError))
-                {
-                    Debug.LogError($"[HectonMacroGeologyBaseIntegrator] {spanError}");
-                    EditorApplication.Exit(1);
-                    return;
-                }
-
                 Scene scene = EditorSceneManager.OpenScene(WorldScenePath, OpenSceneMode.Single);
 
                 MapMagicObject[] mapMagicObjects = UnityEngine.Object.FindObjectsByType<MapMagicObject>(
@@ -285,10 +367,34 @@ namespace Hecton8.Editor
                 }
 
                 int changed = 0;
+                int failed = 0;
                 for (int i = 0; i < mapMagicObjects.Length; i++)
                 {
-                    if (ApplyGeologySpanToMapMagicObject(mapMagicObjects[i], lowWorldY, highWorldY))
+                    MapMagicObject mapMagicObject = mapMagicObjects[i];
+                    if (mapMagicObject == null)
+                        continue;
+
+                    if (!TryResolveSpanForMapMagicObject(
+                            mapMagicObject,
+                            out float lowWorldY,
+                            out float highWorldY,
+                            out string spanError))
+                    {
+                        failed++;
+                        Debug.LogError(
+                            $"[HectonMacroGeologyBaseIntegrator] '{mapMagicObject.name}' SKIPPED - {spanError}",
+                            mapMagicObject);
+                        continue;
+                    }
+
+                    if (ApplyGeologySpanToMapMagicObject(mapMagicObject, lowWorldY, highWorldY))
+                    {
                         changed++;
+                        Debug.Log(
+                            $"[HectonMacroGeologyBaseIntegrator] '{mapMagicObject.name}' synced to authored " +
+                            $"span {highWorldY - lowWorldY:F1}m, base {lowWorldY:F1}m.",
+                            mapMagicObject);
+                    }
                 }
 
                 if (changed > 0)
@@ -299,8 +405,12 @@ namespace Hecton8.Editor
 
                 Debug.Log(
                     $"[HectonMacroGeologyBaseIntegrator] Headless sync complete. Changed {changed} of " +
-                    $"{mapMagicObjects.Length} MapMagicObject(s). Authored span " +
-                    $"{highWorldY - lowWorldY:F1}m, base {lowWorldY:F1}m.");
+                    $"{mapMagicObjects.Length} MapMagicObject(s); {failed} could not resolve an authored span.");
+
+                // A build gate reads the exit code, not the log. An object whose span could not be resolved
+                // was NOT synced, so the sync is unproven and must not exit 0.
+                if (failed > 0)
+                    exitCode = 1;
             }
             catch (Exception exception)
             {
@@ -312,31 +422,136 @@ namespace Hecton8.Editor
         }
 
         /// <summary>
-        /// Reads highWorldY/lowWorldY from the graph. Every macro geology node in the graph must
-        /// agree; a disagreement is reported instead of silently picking the first one, because
-        /// picking a stale duplicate would bake the wrong world height into the scene.
+        /// Resolves the authored span for ONE MapMagicObject from the graph that object actually
+        /// generates from (<see cref="MapMagicObject.graph"/>, MapMagicObject.cs:38).
+        ///
+        /// The span used to come from the <see cref="GraphPath"/> constant while the value was written to
+        /// whatever MapMagicObject happened to be in the open scenes. Those are two independent things: if
+        /// the object runs a different graph, the tool writes one world's vertical extent onto another
+        /// world and reports success. Hardcoded graph paths in this project do drift - CreateSandboxV2.cs:26
+        /// still assigns "Assets/_Project/Data/World/Sandbox/HECTON_PROCEDURAL_GEOLOGY_GRAPH.asset", which
+        /// no longer exists at that path, so it silently assigns null.
         /// </summary>
-        private static bool TryResolveAuthoredGeologySpan(out float lowWorldY, out float highWorldY, out string error)
+        private static bool TryResolveSpanForMapMagicObject(
+            MapMagicObject mapMagicObject,
+            out float lowWorldY,
+            out float highWorldY,
+            out string error)
+        {
+            lowWorldY = 0f;
+            highWorldY = 0f;
+
+            Graph objectGraph = mapMagicObject != null ? mapMagicObject.graph : null;
+            if (objectGraph != null)
+            {
+                string label = $"graph '{AssetDatabase.GetAssetPath(objectGraph)}' assigned to '{mapMagicObject.name}'";
+                return TryResolveAuthoredGeologySpan(objectGraph, label, out lowWorldY, out highWorldY, out error);
+            }
+
+            // A MapMagicObject with no graph generates nothing, so it has no authored span of its own. Read
+            // the constant path so the operator still sees numbers, but say plainly that they did not come
+            // from the object being written - a silent fallback here is exactly how the wrong world's height
+            // gets cemented.
+            Debug.LogWarning(
+                $"[HectonMacroGeologyBaseIntegrator] '{(mapMagicObject != null ? mapMagicObject.name : "<null>")}' " +
+                $"has no graph assigned, so its authored span cannot be read from it. Falling back to {GraphPath}, " +
+                "which this object does NOT generate from - treat the result as unverified.",
+                mapMagicObject);
+
+            Graph fallbackGraph = AssetDatabase.LoadAssetAtPath<Graph>(GraphPath);
+            return TryResolveAuthoredGeologySpan(
+                fallbackGraph,
+                $"fallback graph {GraphPath}",
+                out lowWorldY,
+                out highWorldY,
+                out error);
+        }
+
+        /// <summary>
+        /// Reads highWorldY/lowWorldY from <paramref name="rootGraph"/> and every biome sub-graph under it.
+        /// Every macro geology node found must agree; a disagreement is reported instead of silently
+        /// picking the first one, because picking a stale duplicate would bake the wrong world height into
+        /// the scene.
+        ///
+        /// Sub-graphs are included because the previous version scanned only the root generator array and
+        /// said so in its own error text. That made "no macro geology node" ambiguous between "absent" and
+        /// "present one level down", and a node inside a biome sub-graph generates real terrain.
+        /// </summary>
+        private static bool TryResolveAuthoredGeologySpan(
+            Graph rootGraph,
+            string graphLabel,
+            out float lowWorldY,
+            out float highWorldY,
+            out string error)
         {
             lowWorldY = 0f;
             highWorldY = 0f;
             error = null;
 
-            Graph graph = AssetDatabase.LoadAssetAtPath<Graph>(GraphPath);
-            if (graph == null)
+            if (rootGraph == null)
             {
-                error = $"Graph asset not found at {GraphPath}; cannot resolve the authored geology span.";
+                error = $"Graph not found ({graphLabel}); cannot resolve the authored geology span.";
                 return false;
             }
 
-            Generator[] generators = graph.generators;
-            if (generators == null)
+            if (rootGraph.generators == null)
             {
-                error = $"Graph {GraphPath} has a null generator array; cannot resolve the authored geology span.";
+                error = $"Graph has a null generator array ({graphLabel}); cannot resolve the authored geology span.";
                 return false;
             }
 
             int found = 0;
+            if (!AccumulateGeologySpan(rootGraph, graphLabel, ref found, ref lowWorldY, ref highWorldY, out error))
+                return false;
+
+            foreach (Graph subGraph in rootGraph.SubGraphs(recursively: true))
+            {
+                if (!AccumulateGeologySpan(subGraph, graphLabel, ref found, ref lowWorldY, ref highWorldY, out error))
+                    return false;
+            }
+
+            if (found == 0)
+            {
+                error =
+                    $"No HectonSandboxAbyssalShelfMapMagicNode in {graphLabel}, including its biome " +
+                    "sub-graphs. There is no authored geology span to write.";
+                return false;
+            }
+
+            // Mirrors the runtime clamp in HectonSandboxAbyssalShelfMapMagicNode.Generate
+            // (HighWorldY = math.max(highWorldY, lowWorldY + 1f)) so the value written to the scene is
+            // the value the generator actually normalises against, not the raw authored field.
+            highWorldY = Mathf.Max(highWorldY, lowWorldY + 1f);
+
+            float span = highWorldY - lowWorldY;
+            if (!float.IsFinite(span) || span <= 0f || !float.IsFinite(lowWorldY))
+            {
+                error = $"Authored geology span is not usable (low {lowWorldY}, high {highWorldY}). Refusing to write it.";
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Folds one graph's macro geology nodes into the running span. <paramref name="found"/> carries
+        /// across graphs so a node in the root and a node in a sub-graph are compared against each other,
+        /// not resolved independently.
+        /// </summary>
+        private static bool AccumulateGeologySpan(
+            Graph graph,
+            string graphLabel,
+            ref int found,
+            ref float lowWorldY,
+            ref float highWorldY,
+            out string error)
+        {
+            error = null;
+
+            Generator[] generators = graph != null ? graph.generators : null;
+            if (generators == null)
+                return true;
+
             for (int i = 0; i < generators.Length; i++)
             {
                 if (!(generators[i] is HectonSandboxAbyssalShelfMapMagicNode node))
@@ -354,32 +569,12 @@ namespace Hecton8.Editor
                     Mathf.Abs(node.highWorldY - highWorldY) > HeightMatchToleranceMeters)
                 {
                     error =
-                        $"Graph {GraphPath} contains {found} macro geology nodes with DISAGREEING Y-spans " +
-                        $"(first {lowWorldY:F1}..{highWorldY:F1}, this one {node.lowWorldY:F1}..{node.highWorldY:F1}). " +
-                        "Refusing to guess which one is authoritative - resolve the duplicate in the graph first.";
+                        $"{graphLabel} contains {found} macro geology nodes with DISAGREEING Y-spans " +
+                        $"(first {lowWorldY:F1}..{highWorldY:F1}, this one in '{graph.name}' " +
+                        $"{node.lowWorldY:F1}..{node.highWorldY:F1}). Refusing to guess which one is " +
+                        "authoritative - resolve the duplicate in the graph first.";
                     return false;
                 }
-            }
-
-            if (found == 0)
-            {
-                error =
-                    $"No HectonSandboxAbyssalShelfMapMagicNode in {GraphPath}. NOTE: only the root graph is " +
-                    "scanned; if the macro geology node lives inside a biome sub-graph the span must be read " +
-                    "from there instead.";
-                return false;
-            }
-
-            // Mirrors the runtime clamp in HectonSandboxAbyssalShelfMapMagicNode.Generate
-            // (HighWorldY = math.max(highWorldY, lowWorldY + 1f)) so the value written to the scene is
-            // the value the generator actually normalises against, not the raw authored field.
-            highWorldY = Mathf.Max(highWorldY, lowWorldY + 1f);
-
-            float span = highWorldY - lowWorldY;
-            if (!float.IsFinite(span) || span <= 0f || !float.IsFinite(lowWorldY))
-            {
-                error = $"Authored geology span is not usable (low {lowWorldY}, high {highWorldY}). Refusing to write it.";
-                return false;
             }
 
             return true;
@@ -428,22 +623,6 @@ namespace Hecton8.Editor
                 EditorUtility.SetDirty(mapMagicObject);
 
             return changed;
-        }
-
-        private static T EnsureGenerator<T>(Graph graph, float x, float y, out bool created) where T : Generator
-        {
-            T existing = FindFirst<T>(graph);
-            if (existing != null)
-            {
-                created = false;
-                return existing;
-            }
-
-            T generator = (T)Generator.Create(typeof(T));
-            generator.guiPosition = new Vector2(x, y);
-            graph.Add(generator);
-            created = true;
-            return generator;
         }
 
         private static T FindFirst<T>(Graph graph)

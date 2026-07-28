@@ -24,12 +24,24 @@ namespace Hecton8.AI.Cognition
         public const BufferID CombatDamageSignal = BufferID.ShinobuApexBrainVault_CombatDamageSignal;
         public const BufferID PanicSignal = BufferID.ShinobuApexBrainVault_PanicSignal;
         public const BufferID InfluenceNodes = BufferID.ShinobuApexBrainVault_InfluenceNodes;
-        public const BufferID TelemetryRing = BufferID.SystemDispatcherMasterPresentationSuppression;
-        public const BufferID TelemetryCursor = BufferID.SystemDispatcherDomainFenceHandles;
-#if UNITY_EDITOR
-        public const BufferID CsvScratch = BufferID.SystemDispatcherFenceTelemetry;
-#endif
-        public const BufferID AmbushNodeScratch = BufferID.SystemDispatcherFenceTelemetryCursor;
+
+        // NO RESERVED ID: SHINOBU_61 reserved exactly eleven BufferID members in
+        // H8Memory.cs:2227-2237 (ShinobuApexBrainVault_ApexState 70609 .. _InfluenceNodes 70619).
+        // TelemetryRing, TelemetryCursor, CsvScratch and AmbushNodeScratch were never given
+        // reservations. They previously aliased BufferID.SystemDispatcherMasterPresentationSuppression
+        // (70626), SystemDispatcherDomainFenceHandles (70627), SystemDispatcherFenceTelemetry (70628)
+        // and SystemDispatcherFenceTelemetryCursor (70629) - the four buffers the master frame
+        // dispatcher claims at SystemDispatcher.cs:2192-2221 with different element types
+        // (DispatcherPresentationSuppressionDTO, JobHandle, DispatcherFenceTelemetryEntry, int).
+        // Whichever side called EnsureGenerationHandle first won the row range and the other side's
+        // GlobalDataVault.ValidateType stride/alignment/type-hash check failed. Reached from the
+        // editor menu path AI/Cognition/Editor/LeviathanCortexTunerWindow.cs:106, that order is
+        // reversed and the DISPATCHER loses its presentation-suppression buffer, its per-domain
+        // JobHandle fence array, its fence telemetry ring and its fence telemetry cursor.
+        // The aliases are removed. The four handles are therefore never acquired, which makes
+        // ApexBrainVaultHandles.IsCreated() false and ApexBrainVault.TryAcquireHandles return false.
+        // Do not re-point these at any existing BufferID member - reserve new members in
+        // Assets/_Project/Scripts/Core/Memory/H8Memory.cs first.
     }
 
     /// <summary>
@@ -244,28 +256,12 @@ namespace Hecton8.AI.Cognition
                 ApexBrainConstants.InfluenceNodeCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
-            handles.AmbushNodeScratch = vault.EnsureGenerationHandle<float3>(
-                ApexBrainVaultBufferIds.AmbushNodeScratch,
-                ApexBrainConstants.InfluenceNodeCapacity,
-                SystemID.AICognition,
-                NativeArrayOptions.UninitializedMemory);
-            handles.TelemetryRing = vault.EnsureGenerationHandle<ApexTelemetryEntry>(
-                ApexBrainVaultBufferIds.TelemetryRing,
-                ApexBrainConstants.TelemetryCapacity,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.EnsureGenerationHandle<int>(
-                ApexBrainVaultBufferIds.TelemetryCursor,
-                1,
-                SystemID.AICognition,
-                NativeArrayOptions.ClearMemory);
-#if UNITY_EDITOR
-            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(
-                ApexBrainVaultBufferIds.CsvScratch,
-                ApexBrainConstants.CsvScratchBytes,
-                SystemID.AICognition,
-                NativeArrayOptions.UninitializedMemory);
-#endif
+            // AmbushNodeScratch, TelemetryRing, TelemetryCursor and CsvScratch are intentionally NOT
+            // acquired: see the NO RESERVED ID note on ApexBrainVaultBufferIds above. Allocating them
+            // meant claiming BufferID 70626-70629, which the master frame dispatcher owns at
+            // SystemDispatcher.cs:2192-2221. Those four handles stay default, so the IsCreated() check
+            // below fails and this vault cannot hydrate at all until real BufferID members are reserved
+            // in Assets/_Project/Scripts/Core/Memory/H8Memory.cs.
 
             if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers))
                 return false;
@@ -758,13 +754,12 @@ namespace Hecton8.AI.Cognition
                 vault.TryGetGenerationHandle<ApexProximitySignal>(ApexBrainVaultBufferIds.ProximitySignal, out handles.ProximitySignals) &&
                 vault.TryGetGenerationHandle<MockCombatDamageSignal>(ApexBrainVaultBufferIds.CombatDamageSignal, out handles.CombatDamageSignals) &&
                 vault.TryGetGenerationHandle<ApexPanicSignal>(ApexBrainVaultBufferIds.PanicSignal, out handles.PanicSignals) &&
-                vault.TryGetGenerationHandle<ApexInfluenceNode>(ApexBrainVaultBufferIds.InfluenceNodes, out handles.InfluenceNodes) &&
-                vault.TryGetGenerationHandle<float3>(ApexBrainVaultBufferIds.AmbushNodeScratch, out handles.AmbushNodeScratch) &&
-                vault.TryGetGenerationHandle<ApexTelemetryEntry>(ApexBrainVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
-                vault.TryGetGenerationHandle<int>(ApexBrainVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor);
-#if UNITY_EDITOR
-            acquired &= vault.TryGetGenerationHandle<byte>(ApexBrainVaultBufferIds.CsvScratch, out handles.CsvScratch);
-#endif
+                vault.TryGetGenerationHandle<ApexInfluenceNode>(ApexBrainVaultBufferIds.InfluenceNodes, out handles.InfluenceNodes);
+
+            // AmbushNodeScratch, TelemetryRing, TelemetryCursor and CsvScratch have no reserved
+            // BufferID member (see ApexBrainVaultBufferIds). Reading them by their old aliases probed
+            // dispatcher-owned buffers 70626-70629, so those probes are removed and the handles stay
+            // default. IsCreated() consequently reports false for every caller of this method.
             return acquired;
         }
 
