@@ -3,29 +3,36 @@
 
 > **Source:** Black Keel field intake manual, with Marauder margin notes recovered from suit cameras.  
 > **Speaker:** Official custody instruction interrupted by working-room habit.  
-> **Reviewer Note:** HECTON-8 turns ownership into a surface condition. Paint, cuts, tags and silence all say who is allowed to touch what.
+> **Reviewer Note:** Manual body is Black Keel intake, clause numbering intact. Handwriting in the margins came off two suit cameras and is reproduced without correction.
 
 ---
 
 ## 1. The Mark Before The Object
 
-Dry salvage begins with coordinates. On HECTON-8, coordinates drift.
+Manual clause 1.2 opens with an instruction nobody argues with: describe by mark, not by position.
 
-Pressure moves wreckage. Silt hides thresholds. A room that was "north of the pump stack" in one survey can become "under the pump stack" after a quake, a brine slump or one bad recovery pull. Objects lose their rooms. Rooms lose their names. Maps remain useful, but only until the ocean edits them.
+Sector 44 was surveyed with the pump stack as its local reference. A room logged as north of the pump stack in 2146 sits under it now, because the spine slumped at some point in the intervening forty-three years and moved roughly nine metres of deck with it. The survey line is not wrong about anything. It is just describing a shape that has since been folded.
 
-That is why workers trust marks before descriptions. A stripe on a hatch, a scratched line on a rail, a custody tag clipped to a valve cage, a strip of dead tether tied around a handle: these are not decoration. They are local truth. They say somebody stood there, made a judgment and expected another human being to read it later with bad light, bad air and limited patience.
+So the marks get trusted first. A stripe on a hatch, a scratched line on a rail, a custody tag clipped to a valve cage, a strip of dead tether knotted round a handle. Each one means a person stood at that exact metal, made a call, and expected somebody later to read it through a fogged visor with a fan running down.
 
-A Marauder who ignores marks is not brave. They are expensive.
+Margin, first camera: *ignore the marks and you pay for the room twice.*
 
 ## 2. Official Custody Tags
 
-Black Keel custody tags are designed to survive wet hands and legal arguments.
+Clause 2.1 specifies six fields and a countersign block. Five fields is not a tag. It is a note, and a note is not payable.
 
-A proper tag carries claim origin, intake time, hazard class, provisional owner, evidence status and the person or drone that first registered it. The tag can be physical, acoustic, optical or embedded in a local access node, but the meaning is the same: this thing has entered somebody's chain of responsibility. It may not be owned cleanly. It may not be safe. It may not even be worth moving. But it has been noticed, and noticed things on HECTON-8 become arguments.
+    BLACK KEEL CUSTODY TAG   BK-CT-2190-11-3308
+    CLAIM ORIGIN      RAN-B:H8 / Sector 44 / Bay 3 / valve cage, port rail
+    INTAKE TIME       2190-11-04  0641 ship
+    HAZARD CLASS      2 - lattice fracture noted, not sampled
+    PROVISIONAL OWN   Aegir Reclamation Pool
+    EVIDENCE STATUS   RETAINED / Quarantine Review Gate
+    REGISTERED BY     tender arm 3, Black Keel
+    COUNTERSIGN       --------
 
-Deep Reach used cleaner tags, at least in the places still maintained. Their marks assumed a future shift would arrive, read the record, replace the seal and correct the database. Black Keel tags assume the future shift may be a debtor with a cracked visor and a cutter running hot. They are blunt because blunt survives.
+The countersign block is blank on most of them. A claim-tender registers whatever its arm can reach and stamps the hour off its own clock, and no living witness is required for the tag to bind. The tag on 3308 is still clipped to the port rail. The cage it describes has been dragged two metres clear of that rail by something with more patience than the tender, and the drag scar runs through the deck paint underneath.
 
-Official tags do not make the world honest. They make dishonesty easier to prove.
+Deep Reach tags were cleaner where the district was still maintained. They were written for a shift that would arrive next month, read the record, replace the seal and correct the database. Intake tags are written for a debtor with a cracked visor and a cutter running hot, so they are stamped deep, printed large, and say very little.
 
 ## 3. Marauder Marks
 

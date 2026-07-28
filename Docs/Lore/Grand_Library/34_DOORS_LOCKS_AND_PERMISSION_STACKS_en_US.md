@@ -45,16 +45,29 @@ PRESS is the layer that decides whether the frame kills whoever cycles it. OWNER
 
 ## 3. Forced Entry
 
-Every forced door leaves a story in the metal.
+A forced frame keeps the tool that opened it.
 
-Cut marks show impatience, but also tool type, hand angle and whether the person cutting expected pressure behind the panel. Pried frames show panic. Burned hinges show someone had time and hated the lock personally. A clean override can be more suspicious than a rough breach because it means the system believed the intruder belonged there.
+An induction cutter leaves a bead with a rolled lip and cooks the paint back two hand-widths. Pry work walks the frame out of square, and square never comes back, so the seal never seats again and the next crew inherits a room they cannot close. Burned hinges mean somebody had time. The mark worth reading twice is a clean override, because it means the stack believed whoever stood there belonged.
 
-Black Keel values these marks. A broken door can prove a route, a death, a claim dispute or a contamination path. It can also prove that the player destroyed the only record that would have made the recovery valuable. The ocean is not the only thing that punishes brute force. Paperwork does too, just later and with better memory.
+Intake pays for these marks. It also prices them:
 
-## 4. Door Culture
+    BLACK KEEL BREACH FINDING BK-BF-2190-0417
+    FRAME             44-3-D07
+    ENTRY METHOD      induction cut, hinge side, two passes
+    NODE STATE        OWNER-REL FAIL, CUSTODY FAIL at time of entry
+    RECOVERED         1 valve cage / 2 cassettes / 1 suit locker, empty
+    CLAIM CLASS       interference with silenced asset
+    ASSESSED          0.9 tonne-window
+    SIGNED            M. IBARRA / KEELMARK MUTUAL / ADJ 6
 
-People who work under pressure develop manners around doors.
+The cut took eleven minutes. The claim class was chosen afterwards, in an office, by a man who has never had to guess what is standing behind a plate. Second pass of the cutter also took out the latch reed, and the reed was the only part that could have shown whether the frame was closed before the water reached it or after.
 
-Do not stand in the swing arc. Do not crowd a hatch that is still thinking. Do not mock a slow lock; slow locks have saved more lives than fast workers. If a door hisses, everybody listens. If a door opens too easily, nobody steps through first without checking why. A worker who says "hold" near a pressure frame is obeyed before being questioned.
+## 4. Manners At A Frame
 
-Marauders leave marks for each other when they dare: one line for bad air, two for wet floor, a crossed notch for living fauna beyond, a small dot under the handle for "worth opening quietly." Black Keel does not recognize these marks. That is part of why they matter.
+Clause 4.1 is the only clause in DR-ACP-9 written in the second person. Intake left it in:
+
+> Do not stand in the swing arc. Do not crowd a frame that is still cycling. Do not hurry a slow latch.
+
+The rest was never in any primer. If a frame hisses, everybody listens. Nobody steps through first when a frame opens easier than its plate says it should. "Hold" gets obeyed before it gets explained, and the explanation is usually a gauge.
+
+Marauders cut their own marks when they can spare the current: one line for bad air, two for wet floor, a crossed notch for living fauna beyond, a small dot under the handle for worth opening quietly. BK-BF-2190-0417 has no field for any of it.

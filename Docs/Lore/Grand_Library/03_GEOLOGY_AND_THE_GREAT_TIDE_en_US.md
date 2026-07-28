@@ -2,20 +2,27 @@
 # GEOLOGY, PRESSURE, AND THE GREAT TIDE
 
 > **Source:** Deep Reach geotechnical surveys, Keelmark loss desk notes, Black Keel bathymetric field guide.  
-> **Scope:** Why HECTON-8 was dangerous before Deep Reach, what the Great Tide physically was, and how geology still shapes play in 2190.  
-> **Reader note:** The disaster was not fake physics, and it was not a clean act of nature. The useful truth is worse: real water, real stone, real pressure, and people who priced the margins.
+> **Scope:** Why HECTON-8 was dangerous before Deep Reach, what the Great Tide physically was, and how geology still shapes route work in 2190.  
+> **Compiler note:** Sheet numbers here are quoted from the Deep Reach geotechnical series (`DR-GT`) and the Keelmark loss desk file series (`KM-LD`). Sheets DR-GT-118 through DR-GT-140 are held under `Asset Silence Board` seal, and the loss desk notes that cite them are not, which is why parts of this guide are a quotation of a quotation. Depths are metres below datum. Pressure follows the site rule of 1 MPa per 100 m.
 
 ---
 
 ## 1. The Moon Was Already Working
 
-HECTON-8 did not wake up angry in 2147.
+The oldest sheet in the series predates the first hull. `DR-GT-004` was assembled from probe telemetry before anyone had stood on the ice, and it is one page:
 
-The moon had been working for a long time: flexing under Aegir's tides, grinding fault rock under cold ocean, moving heat through fractures, trapping dense brine in canyons, and turning pressure into chemistry. The colony was built inside that work, not on top of it. Deep Reach did not create the hazard. It industrialized a hazard that had a schedule older than human law.
+```text
+DR-GT-004   PRE-OCCUPATION FLEX SURVEY / RAN-B:H8
+FLEX AMPLITUDE, WEST SHELF MARGIN : 0.7 m per Aegir cycle
+FAULT CREEP, SETS F-12 TO F-19    : 4 mm per year, monotonic
+DENSE BRINE FLOOR, CANYON 3       : standing; stable to instrument limit
+HEAT TRANSPORT                    : along fracture sets, not through bulk rock
+RECOMMENDATION                    : survey continues; no exclusion advised
+```
 
-That matters because the old public argument was too convenient. If the Great Tide was only an "unforeseen natural event," no office had to answer for decisions made before the water moved. If it was only an Atlas anomaly, geology became background and liability could be buried inside machine failure. Both stories are smaller than the truth.
+Nothing on that page is wrong. The moon was already flexing under Aegir, grinding fault rock under cold water, moving heat through cracks and holding dense brine on the canyon floors, and it had been doing all of it on a schedule older than the charter that priced it.
 
-The moon supplied the force. The company supplied the exposure.
+The line that travelled was the creep line. Aegir Continuity Holdings copied it into lease exhibit `ACH-LX-9` as `FAULT CREEP: 4 mm / decade`. One unit changed. The exhibit was never corrected and the survey was never withdrawn, so both pages remain valid and only one of them describes the rock.
 
 ## 2. The Vertical Ocean
 

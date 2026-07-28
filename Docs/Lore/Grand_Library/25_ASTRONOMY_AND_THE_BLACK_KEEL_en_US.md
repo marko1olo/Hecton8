@@ -47,13 +47,13 @@ The practical result is a habit. Station staff open a failure by naming its cate
 
 ## 5. The View From The Lower Decks
 
-The lower observation deck is smaller than recruitment footage suggests. The glass is thick, old, and repaired in arcs where pressure stress or micrometeoroid chips made the insurers nervous. People stand there before descent because pretending not to look is worse.
+The lower observation deck is smaller than the berth diagram shows. The glass is thick, old, and repaired in arcs where pressure stress and micrometeoroid chipping made the insurers ask for a schedule. Contractors stand there before a descent because standing somewhere else is worse.
 
-HECTON-8 fills the view with water and weather. No continent. No island. No reassuring edge. Storm systems roll across the moon in bruised bands. Gaps open, close, and open again, showing black ocean through gray atmosphere. Sometimes Aegir's light catches the upper cloud and turns the whole limb pale; sometimes the moon below is only a dark mass with instrument tags pinned to it.
+HECTON-8 fills the view with water and weather. No continent, no island, no reassuring edge. Storm systems roll across the moon in bruised bands, and the gaps between them open and close and open, showing black ocean through grey atmosphere. Aegir's light catches the upper cloud and pales the whole limb; an hour later the moon is a dark mass with instrument tags pinned to it.
 
-The sight does not work like a clean horror beat. It does something slower. It turns distance into fact. Sector 44 is not a story under that water. It is a coordinate inside a pressure column. A vanished crawler is not a monster tale. It is a route marker with no return ping. A pending descent is not bravery. It is a line on a schedule that has already decided what counts as proof.
+The tags are the part that lands. Sector 44 reads on that glass as a coordinate inside a pressure column, at a depth, under a hold state. MEC-30 reads as a route marker with no return ping and a manifest that closed itself. A pending descent reads as a line on the witness schedule, and the schedule was published before anyone asked who was going.
 
-People leave small marks on the rail: scratched initials, suit numbers, debt fractions, jokes too short to be funny. The cleaners remove the obvious ones. The rest stay because the station is old and because everyone knows the rail will be used again tomorrow.
+Contractors leave marks on the rail: scratched initials, suit numbers, lien fractions, jokes too short to be funny. The housekeeping cycle takes the obvious ones off. The rest stay, because the station is old and the rail will be used again on the next window.
 
 ## 6. Witness, Shadow, And Claim
 
@@ -61,18 +61,13 @@ Black Keel's most important instruments are not the ones that make the sky beaut
 
 A claim ping needs a clear witness path. A suit death needs a timestamp that survives dispute. A sealed container needs a custody chain across launch, descent, recovery, quarantine, and transfer. A route packet needs to know which relay saw it and which shadow almost swallowed it. When Aegir blocks the line, when Skarn dirties the spectrum, when HECTON's weather throws a plume into the wrong corridor, the event may still happen. It simply becomes harder to prove.
 
-That difference matters to everyone below. A Marauder can survive a dive and lose the claim because the witness path broke. A crew can die correctly and still wait in the ledger because the packet arrived under partial shadow. Atlas can be right about a failure and still sound uncertain to an outside receiver because the route stripped context from the transmission.
+That difference decides outcomes below. A contractor can survive a dive and lose the claim because the witness path broke mid-pass. A crew can die exactly as the procedure describes and still sit unresolved in the ledger because the packet arrived under partial shadow. A returned Atlas fragment can be accurate about a failure and read as uncertain to an outside receiver, because the route stripped the context fields out before delivery.
 
-The sky is not background. It is part of the legal system.
+## 7. Hold Codes
 
-## 7. What The Player Should Read In Orbit
+The board carries eight hold codes, and every descent is granted or refused against them.
 
-Before the ocean, the player should feel the orbit doing work.
+`H-SHADOW` no clean witness path. `H-SCATTER` optical confidence below threshold. `H-SURGE` shielded hardware only. `H-PLUME` ocean surface state refuses the corridor. `H-LAG` guidance offset outside insured ellipse. `H-QUAR` quarantine class unresolved. `H-CUST` custody chain incomplete. `H-MASS` no tonne-window allocation available.
 
-The Black Keel should not read as a safe hub with a dramatic window. It should read as a strained machine that turns people into recorded descents. Its alerts, maps, and clutter should point to real pressures: next witness pass, blocked relay, pressure weather, quarantine hold, cargo category, debt chain, descent permission, disputed recovery.
+Seven of the eight describe the sky, the water or the paperwork. The eighth describes whether there is room in the manifest. On the archive's own reporting, `H-MASS` is the code most often cleared and the code least often written down as a cause, because clearing it costs a signature and nothing else.
 
-The astronomy should not be lore wallpaper. It should explain why communication drops, why a launch is delayed, why a salvage claim can be true but unusable, why an orbital platform can be close enough to see the storm and still too far away to help.
-
-The last thing a Marauder sees before descent is not the whole ocean. It is the ocean cut into windows: legal windows, weather windows, signal windows, debt windows. The Black Keel sends people through those openings because that is what it was built to do.
-
-Whether they come back is a different system.

@@ -3,15 +3,15 @@
 
 > **Source:** Deep Reach Extraterrestrial Development Combine, Public Engineering Archive 2190 revision.  
 > **Speaker:** Automated Propulsion Records, Black Keel custody mirror.  
-> **Reviewer Note:** No ship in this file outruns light. The trick is uglier: build a route that can spend decades, heat, bodies and law without calling it loss.
+> **Reviewer Note:** The public propulsion archive, 2190 revision. No vessel in it outruns light, and the route sheets show what is spent instead.
 
 ---
 
 ## 1. What Nearlight Means
 
-Humanity did not solve distance. It learned to finance it.
+No entry in this archive describes a vessel that shortens a route. Every entry describes what a route costs and who signed for it.
 
-A nearlight vessel does not tear space, fold space, enter a higher layer or send rescue through a magic channel. It accelerates for a long time, rides a surveyed corridor, protects a fragile payload from radiation and time, and then begs a receiver system to spend the energy required to stop it. Ran to Aegir is close on a stellar map and brutal on a human calendar: roughly ten and a half light-years, with no shortcut hidden between the numbers.
+A nearlight vessel accelerates for a long time, rides a surveyed corridor, protects a fragile payload against radiation and time, then asks a receiver system to spend the energy required to stop it. Ran to Aegir measures roughly ten and a half light-years, and the route sheet for that lane runs to nine pages, of which one page is propulsion and eight are permissions.
 
 The old public brochures call this “interstellar access.” The ship crews call it route debt. Every arrival is a chain of bills paid in advance: launch window, beam time, pellet stream, shadow-shield service, navigation witness, receiver slot, quarantine lane, cargo custody and insurance signature.
 
