@@ -36,6 +36,7 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Power
 {
@@ -57,6 +58,7 @@ namespace Hecton8.Power
         private int _billedDrainCount;
         private bool _registeredUpdatable;
         private bool _registeredHotSwap;
+        private bool _watchingSceneLoad;
         private bool _shutdown;
 
         /// <summary>Domain reload is disabled on this project, so every static must be reset explicitly.</summary>
@@ -66,7 +68,12 @@ namespace Hecton8.Power
             s_active = null;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        // AfterSceneLoad, not BeforeSceneLoad: SystemDispatcher publishes itself from
+        // OnEnable -> InitializeService (SystemDispatcher.cs:1957, :2099), so at
+        // BeforeSceneLoad the dispatcher slot is still empty and
+        // GlobalRegistry.TryRegisterUpdatable would refuse
+        // (TryEnsureDispatcherRegistration, GlobalRegistry.cs:7058).
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
             if (!Application.isPlaying || s_active != null)
@@ -82,6 +89,7 @@ namespace Hecton8.Power
             _shutdown = false;
             TryRegisterHotSwapListener();
             TryRegisterTick();
+            ArmSceneLoadRetryIfUnregistered();
             Application.quitting -= ShutdownActive;
             Application.quitting += ShutdownActive;
         }
@@ -217,10 +225,10 @@ namespace Hecton8.Power
         }
 
         /// <summary>
-        /// Re-arms the dispatcher registration when the dispatcher slot is replaced at runtime.
-        /// This is also how the initial registration lands: the BeforeSceneLoad bootstrap runs
-        /// before the bootstrapper publishes the dispatcher, so the first attempt legitimately
-        /// fails and this callback is the retry.
+        /// Re-arms the dispatcher registration when the dispatcher slot is REPLACED at runtime.
+        /// This callback cannot carry the initial registration: GlobalRegistry.cs:7407 queues a
+        /// rebound only when the slot already held a service, so the first dispatcher publication
+        /// notifies nobody. Scene-load retry covers that case instead.
         /// </summary>
         /// <param name="serviceSlot">Registry slot that changed.</param>
         /// <param name="previousService">Previous service instance.</param>
@@ -236,6 +244,8 @@ namespace Hecton8.Power
             UnregisterTick();
             if (currentService != null)
                 TryRegisterTick();
+
+            ArmSceneLoadRetryIfUnregistered();
         }
 
         private void TryRegisterTick()
@@ -244,6 +254,41 @@ namespace Hecton8.Power
                 return;
 
             _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, TickLayer);
+            if (_registeredUpdatable)
+                DisarmSceneLoadRetry();
+        }
+
+        /// <summary>
+        /// Subscribes the scene-load retry while the tick lane is still unclaimed. A consumer that
+        /// silently failed to register would reproduce the exact defect this class exists to fix,
+        /// so the retry is not optional. It costs one delegate on a rare event and unsubscribes
+        /// itself the moment registration succeeds.
+        /// </summary>
+        private void ArmSceneLoadRetryIfUnregistered()
+        {
+            if (_registeredUpdatable || _watchingSceneLoad || _shutdown)
+                return;
+
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            _watchingSceneLoad = true;
+        }
+
+        private void DisarmSceneLoadRetry()
+        {
+            if (!_watchingSceneLoad)
+                return;
+
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            _watchingSceneLoad = false;
+        }
+
+        private void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+        {
+            if (_shutdown)
+                return;
+
+            TryRegisterTick();
         }
 
         private void UnregisterTick()
@@ -272,7 +317,7 @@ namespace Hecton8.Power
             _registeredHotSwap = false;
         }
 
-        /// <summary>Releases the dispatcher lane, the hot-swap lane, and the quit subscription.</summary>
+        /// <summary>Releases the dispatcher lane, the hot-swap lane, the scene-load retry, and the quit subscription.</summary>
         public void Dispose()
         {
             if (_shutdown)
@@ -280,6 +325,7 @@ namespace Hecton8.Power
 
             _shutdown = true;
             Application.quitting -= ShutdownActive;
+            DisarmSceneLoadRetry();
             UnregisterTick();
             TryUnregisterHotSwapListener();
             _carriedResidualWattSeconds = 0f;
