@@ -308,11 +308,21 @@ namespace Hecton8.EditorTools.Diagnostics
             // The driver needs its full schedule inside the gameplay window. Extending the window is
             // safe; silently truncating the driver is not, because a truncated schedule produces
             // NOT_EXERCISED rows that look like a product gap instead of a harness budget.
+            //
+            // This can raise an explicitly passed -h8GameplaySeconds, so it says so out loud: an argument
+            // that is quietly ignored is worse than one that is loudly overridden, and the extra seconds
+            // also come out of -h8TimeoutSeconds.
             if (_worldDriverEnabled)
             {
                 double required = H8_HeadlessWorldDriver.TotalBudgetSeconds + 4.0;
                 if (_gameplaySeconds < required)
+                {
+                    Debug.Log(
+                        $"{Marker} WORLDDRIVER gameplay window raised {_gameplaySeconds:F0}s -> " +
+                        $"{required:F0}s to fit the driver schedule; pass -h8SkipWorldDriver to keep the " +
+                        "shorter window and leave Swim/Resource/Tool/CraftRepairBuild NOT_EXERCISED");
                     _gameplaySeconds = required;
+                }
             }
 
             _artifactPath = ReadStringArg("-h8RouteArtifact", ResolveDefaultArtifactPath());

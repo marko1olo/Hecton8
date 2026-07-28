@@ -112,6 +112,7 @@ namespace Hecton8.EditorTools.Diagnostics
         private const double ResourceDepleteBudgetSeconds = 6.0;
         private const double ResourcePickupBudgetSeconds = 6.0;
         private const double CraftBudgetSeconds = 14.0;
+        private const double CraftEvaluationIntervalSeconds = 0.5;
 
         /// <summary>Total wall time the schedule can consume before it reports what it has and stops.</summary>
         internal const double TotalBudgetSeconds =
@@ -167,15 +168,33 @@ namespace Hecton8.EditorTools.Diagnostics
         private static Hecton8.Crafting.Fabricator _fabricator;
         private static Hecton8.Scavenging.ResourceNode _node;
         private static ScavengePopulator _populator;
-        private static bool _interactionLookupDone;
-        private static bool _fabricatorLookupDone;
+        private static int _interactionLookupAttempts;
+        private static int _fabricatorLookupAttempts;
+
+        /// <summary>
+        /// PlayerInteraction is not a registry slot, so it can only be found by scene search, and a
+        /// search that runs every tick is a scene traversal every tick. Bounded retries cover "the player
+        /// root was not fully assembled on the first attempt" without turning into a per-frame cost.
+        /// </summary>
+        private const int MaxInteractionLookupAttempts = 8;
+        private const int MaxPopulatorLookupAttempts = 8;
+        private const int MaxFabricatorLookupAttempts = 8;
+
+        /// <summary>
+        /// SlowTick is a ~2 Hz owner lane. Calling it once per editor tick would run its cull pass 30x
+        /// faster than the owner intends and could unload the very chunk the driver just populated, so the
+        /// forced drain is capped.
+        /// </summary>
+        private const int MaxForcedPopulatorSlowTicks = 4;
 
         // ── swim observations ─────────────────────────────────────────────────────────────────────
         private static bool _swimBaselineTaken;
         private static float _oxygenAtStart;
         private static float _pressureAtStart;
-        private static float _depthMin;
-        private static float _depthMax;
+        // Sentinels a candidate can always beat, per COMMON_SENSE.md: a min-fold seeded with 0 would report
+        // 0 m as the shallowest depth ever reached even if the player never left 40 m.
+        private static float _depthMin = float.MaxValue;
+        private static float _depthMax = float.MinValue;
         private static float _maxMovementIntent;
         private static float _maxImmersion;
         private static float _oxygenLast;
@@ -190,6 +209,8 @@ namespace Hecton8.EditorTools.Diagnostics
         private static bool _nodeFromWorld;
         private static bool _spawnPointRegistered;
         private static bool _populatorReady;
+        private static int _populatorLookupAttempts;
+        private static int _forcedPopulatorSlowTicks;
         private static int _populatorNodesAtRegister;
         private static float _nodeHealthAtToolUse;
         private static float _nodeHealthAfterToolUse;
@@ -212,6 +233,7 @@ namespace Hecton8.EditorTools.Diagnostics
         // ── craft observations ────────────────────────────────────────────────────────────────────
         private static int _visibleRecipeCount;
         private static int _craftableRecipeCount;
+        private static double _craftEvaluatedAt;
         private static bool _craftStarted;
         private static bool _craftAccepted;
         private static bool _craftObservedRunning;
@@ -257,6 +279,7 @@ namespace Hecton8.EditorTools.Diagnostics
             _phaseStartedAt = 0.0;
             _startedAt = 0.0;
             _enabled = false;
+            _stopped = false;
             _switchedToPlayerInput = false;
             _discreteSequence = 0u;
             _droppedDiscreteSignals = 0;
@@ -279,8 +302,8 @@ namespace Hecton8.EditorTools.Diagnostics
             _fabricator = null;
             _node = null;
             _populator = null;
-            _interactionLookupDone = false;
-            _fabricatorLookupDone = false;
+            _interactionLookupAttempts = 0;
+            _fabricatorLookupAttempts = 0;
 
             _swimBaselineTaken = false;
             _oxygenAtStart = 0f;
@@ -300,6 +323,8 @@ namespace Hecton8.EditorTools.Diagnostics
             _nodeFromWorld = false;
             _spawnPointRegistered = false;
             _populatorReady = false;
+            _populatorLookupAttempts = 0;
+            _forcedPopulatorSlowTicks = 0;
             _populatorNodesAtRegister = 0;
             _nodeHealthAtToolUse = 0f;
             _nodeHealthAfterToolUse = 0f;
@@ -320,6 +345,7 @@ namespace Hecton8.EditorTools.Diagnostics
 
             _visibleRecipeCount = 0;
             _craftableRecipeCount = 0;
+            _craftEvaluatedAt = 0.0;
             _craftStarted = false;
             _craftAccepted = false;
             _craftObservedRunning = false;
@@ -335,6 +361,7 @@ namespace Hecton8.EditorTools.Diagnostics
         internal static void Begin()
         {
             _enabled = true;
+            _stopped = false;
             _startedAt = EditorApplication.timeSinceStartup;
             EnterPhase(DrivePhase.Settle);
         }
@@ -381,7 +408,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 _intent = default;
                 CoreDeterminismSignals.ClearInputOverride();
                 LatchAllUnlatched(RowVerdict.Fail, ex.GetType().Name, ex.Message);
-                _phase = DrivePhase.Done;
+                _stopped = true;
             }
         }
 
@@ -608,14 +635,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     _toolManager = player.ToolManager;
             }
 
-            if (!_interactionLookupDone)
-            {
-                // Cold, one-shot, read-only: PlayerInteraction is not a registry slot, and CurrentHovered
-                // is the only thing wanted from it.
-                _interaction = UnityEngine.Object.FindFirstObjectByType<Hecton8.Interaction.PlayerInteraction>(
-                    FindObjectsInactive.Exclude);
-                _interactionLookupDone = true;
-            }
+            TryResolveInteraction();
 
             IInputService input = GlobalRegistry.RegisteredInput;
             if (input != null && !_switchedToPlayerInput)
@@ -691,7 +711,13 @@ namespace Hecton8.EditorTools.Diagnostics
             if (!_swimBaselineTaken)
                 return;
 
-            float depthSpan = _depthMax > _depthMin ? _depthMax - _depthMin : 0f;
+            // Sentinel-safe: _depthMin seeds at float.MaxValue and _depthMax at float.MinValue, so an
+            // unsampled fold reads as ordered-backwards rather than as a 6.8e38 metre span. Reporting the
+            // sentinel as a measurement is exactly the silent-degeneracy trap this project keeps hitting.
+            bool depthSampled = _depthMax >= _depthMin;
+            float depthMinShown = depthSampled ? _depthMin : 0f;
+            float depthMaxShown = depthSampled ? _depthMax : 0f;
+            float depthSpan = depthSampled ? _depthMax - _depthMin : 0f;
             float oxygenDelta = Mathf.Abs(_oxygenLast - _oxygenAtStart);
             float pressureDelta = Mathf.Abs(_pressureLast - _pressureAtStart);
             bool intentReachedMovement = _maxMovementIntent >= MinMovementIntent01;
@@ -707,7 +733,8 @@ namespace Hecton8.EditorTools.Diagnostics
             _detail.Append("driver published ").Append(_publishedOverrides)
                 .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
                 .Append(" immersionMax=").Append(F(_maxImmersion))
-                .Append(" depth=").Append(F(_depthMin)).Append("..").Append(F(_depthMax))
+                .Append(" depthSampled=").Append(depthSampled)
+                .Append(" depth=").Append(F(depthMinShown)).Append("..").Append(F(depthMaxShown))
                 .Append(" span=").Append(F(depthSpan))
                 .Append("m oxygen ").Append(F(_oxygenAtStart)).Append("->").Append(F(_oxygenLast))
                 .Append(" pressure ").Append(F(_pressureAtStart)).Append("->").Append(F(_pressureLast))
@@ -782,8 +809,13 @@ namespace Hecton8.EditorTools.Diagnostics
             // The populator drains its queue on ISlowTickable cadence. SlowTick() is public and is the
             // owner's own entry point, so calling it forces the drain without reaching inside.
             ScavengePopulator populator = _populator;
-            if (populator != null && populator.IsServiceReady)
+            if (populator != null &&
+                populator.IsServiceReady &&
+                _forcedPopulatorSlowTicks < MaxForcedPopulatorSlowTicks)
+            {
+                _forcedPopulatorSlowTicks++;
                 populator.SlowTick();
+            }
 
             if (TryAdoptNearbyWorldNode())
             {
@@ -859,6 +891,10 @@ namespace Hecton8.EditorTools.Diagnostics
         {
             if (_populator == null)
             {
+                if (_populatorLookupAttempts >= MaxPopulatorLookupAttempts)
+                    return;
+
+                _populatorLookupAttempts++;
                 _populator = UnityEngine.Object.FindFirstObjectByType<ScavengePopulator>(FindObjectsInactive.Exclude);
                 if (_populator == null)
                     return;
@@ -1017,7 +1053,8 @@ namespace Hecton8.EditorTools.Diagnostics
             bool toolSpentItself = _durabilityReadable && durabilityDelta >= MinDurabilityDelta;
 
             _detail.Clear();
-            _detail.Append("equipped slot ").Append(_equippedSlotIndex)
+            _detail.Append("equipConfirmed=").Append(_toolEquipped)
+                .Append(" slot ").Append(_equippedSlotIndex)
                 .Append(" via the PLIN ToolSlot").Append(_requestedToolSlot + 1)
                 .Append(" signal (tool=").Append(current != null ? current.GetType().Name : "null")
                 .Append("), then held PrimaryFire on the input snapshot for ")
@@ -1058,7 +1095,10 @@ namespace Hecton8.EditorTools.Diagnostics
             Hecton8.Scavenging.ResourceNode node = _node;
             if (node == null)
             {
-                EnterPhase(DrivePhase.Craft);
+                // A node that depleted and then went away is the SUCCESS path, not a missing node: the
+                // loot prefab outlives it. Skipping straight to Craft here would discard a pickup that is
+                // sitting in the world waiting to be interacted with.
+                EnterPhase(_nodeDepleted ? DrivePhase.ResourcePickup : DrivePhase.Craft);
                 return;
             }
 
@@ -1110,7 +1150,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 if (!_latched[RowResource])
                 {
                     _detail.Clear();
-                    _detail.Append("node depleted via ApplyCutDamage")
+                    _detail.Append("node depleted")
                         .Append(_nodeFromWorld ? " (existing world node)" : " (driver-registered scatter point)")
                         .Append("; its PickupItem was hovered by PlayerInteraction's own raycast and the ")
                         .Append("PLIN Interact command was consumed - ItemAcquiredSignal sourceKind=")
@@ -1123,6 +1163,8 @@ namespace Hecton8.EditorTools.Diagnostics
                 EnterPhase(DrivePhase.Craft);
                 return;
             }
+
+            TryResolveInteraction();
 
             if (_sawPickupHover && !_interactPublished)
                 _interactPublished = PublishDiscreteCommand(PlayerInputSignalCommands.Interact);
@@ -1139,7 +1181,15 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append(", ItemAcquiredSignal(ManualPickup) observed=false after ")
                     .Append(F((float)PhaseElapsed)).Append("s");
 
-                if (!_sawPickupHover)
+                if (_interaction == null)
+                {
+                    _detail.Append(" - INSTRUMENT LIMIT: no PlayerInteraction component was found in ")
+                        .Append(MaxInteractionLookupAttempts)
+                        .Append(" scene searches, so hover could not be observed at all. This row's ")
+                        .Append("verdict is unknown, not negative");
+                    Latch(RowResource, RowVerdict.NotExercised);
+                }
+                else if (!_sawPickupHover)
                 {
                     _detail.Append(" - PlayerInteraction never hovered a PickupItem, so either depletion ")
                         .Append("produced no loot prefab or the drop is outside reach / off the ")
@@ -1183,19 +1233,25 @@ namespace Hecton8.EditorTools.Diagnostics
                 return;
             }
 
-            if (!_fabricatorLookupDone)
+            if (_fabricator == null && _fabricatorLookupAttempts < MaxFabricatorLookupAttempts)
             {
+                _fabricatorLookupAttempts++;
                 _fabricator = UnityEngine.Object.FindFirstObjectByType<Hecton8.Crafting.Fabricator>(
                     FindObjectsInactive.Exclude);
-                _fabricatorLookupDone = true;
             }
 
             Hecton8.Crafting.Fabricator fabricator = _fabricator;
             if (fabricator == null)
             {
+                if (PhaseElapsed < CraftBudgetSeconds &&
+                    _fabricatorLookupAttempts < MaxFabricatorLookupAttempts)
+                {
+                    return;
+                }
+
                 _detail.Clear();
-                _detail.Append("no live Fabricator component in any loaded scene, so no recipe can be ")
-                    .Append("started");
+                _detail.Append("no live Fabricator component found in ").Append(_fabricatorLookupAttempts)
+                    .Append(" scene searches, so no recipe can be started");
                 Latch(RowCraft, RowVerdict.Blocked);
                 EnterPhase(DrivePhase.Done);
                 return;
@@ -1203,6 +1259,19 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (!_craftStarted)
             {
+                // CanCraft walks every ingredient of every recipe against inventory. Re-asking 60 times a
+                // second for 14 seconds is a real cost for an answer that only changes when fabricator
+                // power or inventory changes, so the sweep runs on a throttle.
+                double now = EditorApplication.timeSinceStartup;
+                if (_craftEvaluatedAt > 0.0 &&
+                    now - _craftEvaluatedAt < CraftEvaluationIntervalSeconds &&
+                    PhaseElapsed < CraftBudgetSeconds)
+                {
+                    return;
+                }
+
+                _craftEvaluatedAt = now;
+
                 System.Collections.Generic.IReadOnlyList<Hecton8.Crafting.RecipeData> recipes =
                     fabricator.AvailableRecipes;
                 _visibleRecipeCount = recipes != null ? recipes.Count : 0;
@@ -1272,6 +1341,20 @@ namespace Hecton8.EditorTools.Diagnostics
         // ─────────────────────────────────────────────────────────────────────────────────────────
         //  verdict plumbing
         // ─────────────────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Cold, bounded, read-only lookup of the hover owner. CurrentHovered is the only thing wanted
+        /// from it, and it is read, never written.
+        /// </summary>
+        private static void TryResolveInteraction()
+        {
+            if (_interaction != null || _interactionLookupAttempts >= MaxInteractionLookupAttempts)
+                return;
+
+            _interactionLookupAttempts++;
+            _interaction = UnityEngine.Object.FindFirstObjectByType<Hecton8.Interaction.PlayerInteraction>(
+                FindObjectsInactive.Exclude);
+        }
 
         /// <summary>
         /// Reads the player's eye pose as VALUES. No Transform is retained, and nothing is written back:
