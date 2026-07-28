@@ -29,10 +29,12 @@ namespace Hecton8.QA.Headless
         private const string FlagRelativePath = "Temp/H8_HEADLESS_SIMULATION.flag";
         private const string CsvRelativePath = "Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv";
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json";
+        private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_SIMULATION_RUNNER.txt";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
         private const int BlackboxFrameCapacity = 300;
         private const int BlackboxEntrySizeBytes = 64;
         private const int MemoryWindowDays = 10;
+        private const int MaxConsecutiveMemoryWindowFailures = 3;
         private const int MaxSignalsDrainedPerFrame = 128;
         private const int MaxDailyAuditsPerFrostTick = 4;
         private const int DefaultTargetDays = 100;
@@ -83,6 +85,7 @@ namespace Hecton8.QA.Headless
         private int _completedDays;
         private int _memoryWindowCursor;
         private int _memoryWindowCount;
+        private int _memoryWindowFailureStreak;
         private int _blackboxCursor;
         private int _progressionSignalCount;
         private int _crashSignalCount;
@@ -521,10 +524,29 @@ namespace Hecton8.QA.Headless
             _lastMemoryBytes = nativeBytes;
             _lastH8MemoryBytes = h8Bytes;
 
-            if (DetectTenDayMemoryGrowth(nativeBytes, h8Bytes, h8Allocations))
+            if (DetectTenDayMemoryGrowth(nativeBytes, h8Bytes, h8Allocations, out bool memoryWindowUnavailable))
             {
+                // A leak verdict is worthless without the owner-level allocation table, so dump it before quitting.
+                TryDumpH8MemoryTable();
                 FailAndQuit(1, LeakHash, "[LEAK_DETECTED]");
                 return;
+            }
+
+            // A vault write refusal means the memory window could not be sampled, NOT that memory leaked.
+            // Transient refusals (compaction fence, mutation guard, generation bump) are tolerated for a
+            // bounded number of consecutive days so one defrag tick cannot abort a 100-day run.
+            if (memoryWindowUnavailable)
+            {
+                _memoryWindowFailureStreak++;
+                if (_memoryWindowFailureStreak >= MaxConsecutiveMemoryWindowFailures)
+                {
+                    FailAndQuit(1, DataVaultUnavailableHash, "[MEMORY_WINDOW_UNAVAILABLE]");
+                    return;
+                }
+            }
+            else
+            {
+                _memoryWindowFailureStreak = 0;
             }
 
             IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
@@ -578,10 +600,18 @@ namespace Hecton8.QA.Headless
             return true;
         }
 
-        private bool DetectTenDayMemoryGrowth(long nativeBytes, long h8Bytes, int h8Allocations)
+        private bool DetectTenDayMemoryGrowth(
+            long nativeBytes,
+            long h8Bytes,
+            int h8Allocations,
+            out bool sampleUnavailable)
         {
+            sampleUnavailable = false;
             if (!EnsureVaultBuffersCold())
-                return true;
+            {
+                sampleUnavailable = true;
+                return false;
+            }
 
             int slot = _memoryWindowCursor % MemoryWindowDays;
             int nextCursor = _memoryWindowCursor + 1;
@@ -595,7 +625,10 @@ namespace Hecton8.QA.Headless
                     nextCount,
                     nativeBytes,
                     out bool nativeGrowth))
-                return true;
+            {
+                sampleUnavailable = true;
+                return false;
+            }
 
             if (!WriteMemoryWindowLongSample(
                     in _memoryWindowH8BytesHandle,
@@ -605,7 +638,10 @@ namespace Hecton8.QA.Headless
                     nextCount,
                     h8Bytes,
                     out bool h8Growth))
-                return true;
+            {
+                sampleUnavailable = true;
+                return false;
+            }
 
             if (!WriteMemoryWindowIntSample(
                     in _memoryWindowAllocationCountsHandle,
@@ -615,7 +651,10 @@ namespace Hecton8.QA.Headless
                     nextCount,
                     h8Allocations,
                     out bool allocationGrowth))
-                return true;
+            {
+                sampleUnavailable = true;
+                return false;
+            }
 
             _memoryWindowCursor = nextCursor;
             _memoryWindowCount = nextCount;
@@ -1054,6 +1093,22 @@ namespace Hecton8.QA.Headless
         {
             if (type == LogType.Log)
                 _logSpamCount++;
+        }
+
+        private static void TryDumpH8MemoryTable()
+        {
+            try
+            {
+                string dumpPath = ResolveProjectPath(H8MemoryDumpRelativePath);
+                EnsureParentDirectory(dumpPath);
+                H8Memory.DumpAllocationTableText(dumpPath);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
 
         private IDataVault CacheDataVaultCold()
