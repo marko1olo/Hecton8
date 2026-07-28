@@ -1144,6 +1144,25 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
                 ordered = sorted(edge.link_faces, key=lambda f: f.calc_area(),
                                  reverse=True)
                 doomed.extend(ordered[2:])
+            # NOT REPAIRED HERE, and the reason is the finding: bowtie VERTICES. There is
+            # exactly one at every LOD - two independent face fans meeting at a single
+            # point with no shared edge, which neither `len(v.link_faces)` nor a
+            # non-manifold EDGE query can see. FBX cannot express it either, so it looked
+            # like the answer. It is not: repairing it removed four faces at LOD2 (286 ->
+            # 282) and the round trip still lost exactly one triangle. The repair was
+            # reverted rather than kept, because a change that costs real geometry and buys
+            # nothing measurable does not get to stay.
+            #
+            # THE INVARIANT THAT MATTERS, and the reason none of the three hypotheses was
+            # ever going to work: the loss is ALWAYS EXACTLY ONE TRIANGLE regardless of
+            # what the mesh contains - 287 -> 286, then 286 -> 285, then 282 -> 281, with
+            # the volume delta tracking at 2.43 / 2.44 / 2.16%. A topological defect scales
+            # with the defect count. A constant does not. So the cause is structural to
+            # this export/import path on this mesh rather than a countable flaw in it, and
+            # the next person should instrument export_unity.verify_fbx_roundtrip to name
+            # WHICH polygon is missing instead of guessing at classes of defect. Kelp
+            # passes this same gate on all six assets, so the gate itself is sound.
+
             if doomed:
                 bmesh.ops.delete(level_bm, geom=list(dict.fromkeys(doomed)),
                                  context="FACES")

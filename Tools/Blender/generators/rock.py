@@ -59,9 +59,14 @@ _BLENDER_TOOLS = os.path.dirname(_HERE)
 if _BLENDER_TOOLS not in sys.path:
     # AGENTS.md [RULE] Relative Path Requirement: derived from __file__, never typed.
     sys.path.insert(0, _BLENDER_TOOLS)
+if _HERE not in sys.path:
+    # `blender -P script` does NOT put the script's own directory on sys.path, so a
+    # sibling module in generators/ is unimportable without this line.
+    sys.path.insert(0, _HERE)
 
 from h8forge import export_unity, law, mesh_ops, preview, vertexcolor  # noqa: E402
 from h8forge.blackbox import BlackBox, GenerationAborted         # noqa: E402
+import silhouette_probe                                          # noqa: E402
 
 try:
     from h8forge import validate as h8validate                   # noqa: E402
@@ -137,6 +142,23 @@ WITNESS_GRAIN_WAVELENGTH_M = 0.075
 WITNESS_PIT_WAVELENGTH_M = 0.052
 WITNESS_PIT_DEPTH_M = 0.011
 
+# The MATERIAL grain stays at the figures above -- they are the triplanar texture's scale
+# witness and the manifest declares triplanar as the primary material route. The GEOMETRIC
+# grain is a different quantity and it was silently conflated with them.
+#
+# Measured: a band-limited field can only be carried by a mesh whose sample spacing is at most
+# half its wavelength. At the geology triangle budgets the achievable spacing is 0.027 m
+# (boulder), 0.064 m (outcrop) and 0.128 m (cliff chunk), so the shortest representable
+# wavelengths are 0.054 / 0.129 / 0.257 m. Asking the mesh for a 0.075 m grain is therefore
+# impossible on everything except the boulder, at ANY lattice arrangement inside the budget --
+# and an unrepresentable field does not simply vanish, it aliases into low-frequency wobble,
+# which reads as a soft plastic surface. Sub-Nyquist detail belongs in the normal map.
+#
+# So the geometric wavelength is derived per asset from the spacing the lattice actually
+# achieved, and recorded in the manifest so the scale-witness claim stays truthful about which
+# scales live in geometry and which live in the material.
+GEOMETRIC_GRAIN_NYQUIST_FACTOR = 2.4
+
 # Beds are capped so a tall chunk cannot demand more rings than its triangle budget
 # can carry. Recorded in the manifest when it binds.
 MAX_BEDS = 42
@@ -145,7 +167,7 @@ MIN_BEDS = 3
 # Fraction of the LOD0 budget the base lattice may consume before fractures, vugs and
 # chip bevels add their geometry. The remainder is headroom for those stages; the
 # authored high-density sculpt is reduced by mesh_ops.reduce_to_budget afterwards.
-LATTICE_BUDGET_SHARE = 0.30
+LATTICE_BUDGET_SHARE = 0.55
 
 # High-density authoring multiplier. mesh_ops.reduce_to_budget docstring: "the correct
 # authoring route for organic surfaces is high-density sculpt THEN reduce". Same law
@@ -160,6 +182,23 @@ LATTICE_BUDGET_SHARE = 0.30
 # because its detail IS the discontinuity. So the lattice is built at budget and LOD0 is
 # barely decimated -- reduction is pushed into LOD1/LOD2 where losing a ledge is correct.
 SCULPT_DENSITY_MULTIPLIER = 1.05
+
+# Silhouette acceptance, from `silhouette_probe`. These are MEASURED control values from a
+# run of `silhouette_probe.py --controls` on this Blender build, not chosen thresholds:
+# a smooth icosphere and a noise-displaced icosphere spread their outline turning evenly and
+# score around 0.09-0.14, while a random convex polytope concentrates it into a few arrises
+# and scores 0.79. `3DMODEL_GEOLOGY_ROCKS.md` section 9 rejects an asset where "no geological
+# process is visible in silhouette", and that is the gate these numbers make executable.
+#
+# The FLOOR is set above the potato with margin, not at the polytope: a real weathered rock
+# is not a gemstone, and demanding 0.79 would push the generator back into the faceted-
+# gemstone failure this file has already produced once. A gate that can only be passed by
+# the wrong answer is worse than no gate.
+SILHOUETTE_CONTROL_SPHERE = 0.094
+SILHOUETTE_CONTROL_POTATO = 0.137
+SILHOUETTE_CONTROL_POLYTOPE = 0.789
+SILHOUETTE_POTATO_FLOOR = 0.20      # at or below this the outline IS a potato: FAIL
+SILHOUETTE_TARGET_FLOOR = 0.30      # below this the fractures are weak: WARN
 
 
 # ---------------------------------------------------------------------------
@@ -229,6 +268,195 @@ class AnisotropicField:
     def sample(self, points: np.ndarray) -> np.ndarray:
         """Values in roughly [-1, 1] for an (n, 3) array of positions."""
         return np.sin(points @ self._k.T + self._phase) @ self._amp
+
+
+# ---------------------------------------------------------------------------
+# Joint set: the plan outline as a POLYGON, not a sum of sinusoids
+# ---------------------------------------------------------------------------
+
+@dataclass
+class JointSet:
+    """Through-going joint planes, stored as a convex support function in plan.
+
+    THIS is the fix for "the fractures do not read in silhouette", and the reason it is a
+    change of shape grammar rather than a parameter tune:
+
+    The previous plan outline was ``1 + sum of four sinusoids``. That function is smooth
+    everywhere by construction, so the plan outline was a smooth closed curve and there was
+    no flat facet anywhere on the body for a fracture to bound. The fracture stage did make
+    real planar cuts -- ``bisect_plane`` plus ``holes_fill``, not displacement -- but every
+    cut had been shrunk to a 1-4.5 percent quantile bite after an earlier round produced a
+    "faceted gemstone" by cutting too deep. Measured on the silhouette probe, the result was
+    turn concentration 0.325 against 0.137 for a displaced icosphere and 0.789 for a convex
+    polytope: turning spread over many small rim nicks, which reads as a ragged lump.
+
+    Retuning the cut size cannot fix that, because the two failures are a false dichotomy:
+    deep global half-space cuts erase the strata, shallow ones are invisible. The way out is
+    to put the planar structure in the BASE FORM, where it coexists with the bedding instead
+    of competing with it. Geologically that is also the truthful model -- a rock mass breaks
+    along two or three through-going joint SETS, the joints cut every bed, and the beds then
+    weather back by different amounts between them. Reference
+    ``CLIFFS AND WATER PREVIOUSLY IN DEVELOPMENT.jpg`` shows exactly that: vertical arrises
+    running the full height of the mass with bedding ledges stepping across them.
+
+    Support function of the convex polygon whose faces are the lines ``p . n_k = d_k``::
+
+        r(theta) = min over k of  d_k / cos(theta - phi_k),  taken where cos > 0
+
+    Sharp arrises are not sampled, they are CONSTRUCTED: ``ring_angles`` puts a lattice
+    vertex exactly on every corner azimuth, so two flat faces meet at a real dihedral edge
+    rather than at a rounded chord. A corner sampled by luck is a corner that disappears at
+    LOD1.
+    """
+
+    azimuths: np.ndarray
+    offsets: np.ndarray
+    corner_azimuths: np.ndarray
+    strike_count: int
+
+    @property
+    def face_count(self) -> int:
+        return int(self.azimuths.shape[0])
+
+    @classmethod
+    def from_rng(cls, rng: np.random.Generator, process: str) -> "JointSet":
+        """Two or three conjugate sets plus cross joints, then a bounded-polygon repair."""
+        # Basalt columns are polygonal in plan with a strong 5-6 face habit; sedimentary
+        # blocks break on fewer, wider joint faces.
+        sets = 3 if process == "basalt" else 2
+        primary = float(rng.uniform(0.0, math.pi))
+        separation = float(rng.uniform(math.radians(52.0), math.radians(84.0)))
+
+        azimuths = []
+        for s in range(sets):
+            strike = primary + s * separation
+            jitter = float(rng.uniform(-0.14, 0.14))
+            azimuths.append(strike + jitter)
+            azimuths.append(strike + math.pi + float(rng.uniform(-0.14, 0.14)))
+        for _ in range(int(rng.integers(1, 3))):
+            azimuths.append(float(rng.uniform(0.0, 2.0 * math.pi)))
+
+        azimuths = np.array([a % (2.0 * math.pi) for a in azimuths])
+        azimuths = np.array(sorted(set(np.round(azimuths, 6))))
+
+        # Two MEASURED spike sources, both fixed by bounding the azimuth gap. A corner
+        # between adjacent faces separated by an angle g sits at radius d / cos(g / 2), so
+        # the gap is not a cosmetic parameter -- it is the corner radius:
+        #
+        #   g = 128 deg (the first attempt's ceiling) -> corner at 2.28 d, a needle
+        #   g =  78 deg                               -> corner at 1.27 d, a rock corner
+        #   g =  26 deg (the floor below)             -> corner at 1.03 d, a shallow bend
+        #
+        # Iteration 1's silhouette carried exactly that needle: a 1-2 px wafer protruding
+        # several percent of the extent in two of four views. It reads as a mesh error rather
+        # than as geology and it aliases, so the ceiling is 78 degrees and adjacent faces
+        # closer than 26 degrees are merged away -- two nearly parallel joint faces are one
+        # joint, and keeping both only manufactures a sliver.
+        keep = [float(azimuths[0])]
+        for angle in azimuths[1:]:
+            if float(angle) - keep[-1] >= math.radians(26.0):
+                keep.append(float(angle))
+        if (keep[0] + 2.0 * math.pi) - keep[-1] < math.radians(26.0) and len(keep) > 3:
+            keep.pop()
+        azimuths = np.array(keep)
+
+        for _repair in range(12):
+            gaps = np.diff(np.concatenate([azimuths, [azimuths[0] + 2.0 * math.pi]]))
+            worst = int(np.argmax(gaps))
+            if gaps[worst] < math.radians(78.0):
+                break
+            insert = (azimuths[worst] + gaps[worst] * 0.5) % (2.0 * math.pi)
+            azimuths = np.array(sorted(set(np.round(
+                np.concatenate([azimuths, [insert]]), 6))))
+
+        offsets = rng.uniform(0.76, 1.06, size=azimuths.shape[0])
+        joint = cls(azimuths=azimuths, offsets=offsets,
+                    corner_azimuths=np.zeros(0), strike_count=sets)
+        joint.corner_azimuths = joint._solve_corners()
+        return joint
+
+    def _solve_corners(self) -> np.ndarray:
+        """Azimuths where two ACTIVE faces meet.
+
+        A face pair that is adjacent in normal-azimuth order is not automatically adjacent
+        on the polygon: another face can cut their intersection off entirely. So the
+        candidate is solved analytically and then TESTED against the support function --
+        keeping an inactive corner would place a lattice vertex outside the solid and produce
+        a spike.
+        """
+        corners = []
+        count = self.azimuths.shape[0]
+        for i in range(count):
+            j = (i + 1) % count
+            a1, a2 = float(self.azimuths[i]), float(self.azimuths[j])
+            d1, d2 = float(self.offsets[i]), float(self.offsets[j])
+            determinant = math.cos(a1) * math.sin(a2) - math.sin(a1) * math.cos(a2)
+            if abs(determinant) < 1e-6:
+                continue
+            x = (d1 * math.sin(a2) - d2 * math.sin(a1)) / determinant
+            y = (d2 * math.cos(a1) - d1 * math.cos(a2)) / determinant
+            radius = math.hypot(x, y)
+            if radius < 1e-6:
+                continue
+            theta = math.atan2(y, x) % (2.0 * math.pi)
+            if abs(radius - self.radius(theta)) > 1e-4 * max(1.0, radius):
+                continue                      # cut off by a third face; not a real corner
+            corners.append(theta)
+        return np.array(sorted(set(np.round(corners, 6))))
+
+    def radius(self, theta: float, face_scales: Optional[np.ndarray] = None) -> float:
+        """Support radius at an azimuth, in units of the body's base radius."""
+        best = float("inf")
+        for k in range(self.azimuths.shape[0]):
+            cosine = math.cos(theta - float(self.azimuths[k]))
+            if cosine <= 1e-4:
+                continue
+            offset = float(self.offsets[k])
+            if face_scales is not None:
+                offset *= float(face_scales[k])
+            candidate = offset / cosine
+            if candidate < best:
+                best = candidate
+        # Unbounded is impossible after the gap repair, but a finite floor here is cheaper
+        # than trusting that: an inf would propagate into every vertex position silently.
+        return best if best < 1e6 else 1.0
+
+    def ring_angles(self, fill_target: int) -> np.ndarray:
+        """Corner azimuths plus enough fill angles to resolve grain and grooves.
+
+        Fill vertices inside a face are collinear in plan, so quadric collapse removes them
+        cheaply at LOD1/LOD2 while the corner vertices survive as boundary-like features --
+        the arris outlives the decimation, which is the whole reason the corners are exact.
+        """
+        angles = list(self.corner_azimuths)
+        wanted = max(len(angles) * 2, int(fill_target))
+        for i in range(wanted):
+            angles.append((i / float(wanted)) * 2.0 * math.pi)
+        angles = sorted(set(np.round(np.array(angles) % (2.0 * math.pi), 5)))
+        # Drop a fill angle that lands on top of a corner: two vertices at the same azimuth
+        # and the same radius is a zero-area quad, i.e. a degenerate-triangle gate failure
+        # manufactured at build time.
+        cleaned = []
+        for angle in angles:
+            if cleaned and angle - cleaned[-1] < 1e-3:
+                continue
+            cleaned.append(angle)
+        if cleaned and (cleaned[0] + 2.0 * math.pi) - cleaned[-1] < 1e-3:
+            cleaned.pop()
+        return np.array(cleaned)
+
+    def as_dict(self) -> dict:
+        return {
+            "faceCount": self.face_count,
+            "conjugateSets": self.strike_count,
+            "faceAzimuthsDeg": [round(math.degrees(a), 2) for a in self.azimuths],
+            "faceOffsetsRadiusFraction": [round(float(o), 4) for o in self.offsets],
+            "cornerAzimuthsDeg": [round(math.degrees(a), 2)
+                                  for a in self.corner_azimuths],
+            "note": "plan outline is the support function of this convex polygon; ring "
+                    "vertices land exactly on the corner azimuths so the arris is "
+                    "constructed, not sampled",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -309,6 +537,19 @@ class Stratigraphy:
     landmark_azimuth_rad: float
     landmark_arc_rad: float
     bed_thickness_capped: bool
+    joints: Optional[JointSet] = None
+    # Per-bed, per-joint-face inset. Shape (bedCount, faceCount). This is what stops the
+    # joint polygon from reading as an extruded prism: each bed weathers its own faces back
+    # by a different amount, so the vertical arris JOGS at every bed contact. The corner
+    # AZIMUTH is untouched, so the arris stays geometrically sharp while ceasing to be
+    # perfectly straight -- which is what the reference cliff photograph actually shows.
+    face_inset: Optional[np.ndarray] = None
+
+    def face_scales_for_bed(self, bed_index: int) -> Optional[np.ndarray]:
+        if self.face_inset is None:
+            return None
+        index = min(max(0, bed_index), self.face_inset.shape[0] - 1)
+        return self.face_inset[index]
 
     def radius_scale_at(self, h: float) -> float:
         """Piecewise bed profile with a sharp step at every interface.
@@ -344,23 +585,37 @@ class Stratigraphy:
                 return bed.hardness
         return self.beds[-1].hardness if self.beds else 1.0
 
-    def plan_shape(self, theta: float, h: float) -> float:
-        """Irregular closed plan outline. Never a circle, never self-intersecting.
-
-        Each bed carries its own phase offset, so consecutive beds do not share one
-        outline extruded vertically. That per-bed difference is what makes a stack read
-        as separately deposited beds instead of a single lathe-turned solid.
-        """
-        bed_phase = 0.0
+    def bed_at(self, h: float):
         for bed in self.beds:
             if bed.base_h <= h <= bed.top_h:
-                bed_phase = bed.plan_phase
-                break
+                return bed
+        return self.beds[-1] if self.beds else None
+
+    def plan_shape(self, theta: float, h: float) -> float:
+        """Plan outline: joint-polygon support radius, with a weak roughening term.
+
+        The joint polygon is the structure. The harmonic term that used to BE the outline is
+        kept only as a residual at a tenth of its old amplitude, so a face is not
+        mathematically perfect -- ``3dmodel.md`` section 12 rejects "perfect cylinders" as
+        loudly as it rejects blobs -- while staying flat enough to hold a straight run in
+        silhouette. Measured budget for that residual: at 0.9 percent of radius it is 13 mm
+        on a 1.45 m outcrop, about 1.5 px in a 768 px silhouette render, so it roughens the
+        surface without curving the outline.
+        """
+        bed = self.bed_at(h)
+        bed_phase = bed.plan_phase if bed is not None else 0.0
         twisted = theta + self.plan_twist_rad * (h / max(1e-6, self.height_m)) + bed_phase
-        value = 1.0
-        for amp, phase, order in zip(self.plan_harmonics, self.plan_phases, self.plan_orders):
-            value += amp * math.sin(order * twisted + phase)
-        return max(0.42, value)
+
+        if self.joints is not None:
+            scales = self.face_scales_for_bed(bed.index if bed is not None else 0)
+            value = self.joints.radius(theta, scales)
+        else:
+            value = 1.0
+        residual = 0.0
+        for amp, phase, order in zip(self.plan_harmonics, self.plan_phases,
+                                     self.plan_orders):
+            residual += amp * math.sin(order * twisted + phase)
+        return max(0.30, value * (1.0 + residual))
 
     def drift(self, h: float) -> tuple:
         """Slow lean/offset of the bed centres, so the stack is not a plumb column."""
@@ -406,7 +661,16 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
     count = max(MIN_BEDS, min(MAX_BEDS, ideal_count))
     capped = ideal_count > MAX_BEDS
 
-    weights = rng.uniform(0.55, 1.55, size=count)
+    # Bed-thickness HETEROGENEITY scales with bed count, and this is a size-class defect repair.
+    # At 0.55-1.55 the thickest bed is under 3x the thinnest, which is fine for the 4-6 beds a
+    # boulder gets and wrong for the 42 a cliff chunk gets: the studio sheet read as corrugated
+    # cardboard, a stack of near-identical pancakes, which is the "poker chips" failure this
+    # file's history already records at this size class. A real sequence has a few dominant
+    # competent beds carrying many thin partings, so the spread widens as the count rises.
+    spread = min(1.0, count / float(MAX_BEDS))
+    low = 0.55 - 0.22 * spread
+    high = 1.55 + 1.15 * spread
+    weights = rng.uniform(low, high, size=count)
     if process == "basalt":
         # Columnar basalt breaks in tall, near-uniform units rather than graded beds.
         weights = 0.65 + 0.35 * weights
@@ -486,18 +750,41 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
     # So the horizontal step is clamped against the bed's own thickness: a step wider than
     # roughly half the riser height turns a bedding ledge into a near-horizontal shelf that
     # both self-intersects and reads as a mushroom cap.
+    # Tightened from 0.55 to 0.30 of the riser height. At 0.55 a 0.34 m bed could legally step
+    # 0.19 m of radius, and combined with the extra proud amount an overhanging bed receives
+    # that produced thin curled lips -- the iteration-6 studio sheet read them as peeled sheet
+    # metal along the flanks, which is the "clean sci-fi plastic" failure wearing a different
+    # hat. A bedding ledge whose tread approaches its riser is a mushroom cap, not a shelf.
     for index in range(1, len(beds)):
-        max_step = (beds[index].thickness * 0.55) / max(1e-6, size.radius_m)
+        max_step = (beds[index].thickness * 0.30) / max(1e-6, size.radius_m)
         difference = beds[index].radius_scale - beds[index - 1].radius_scale
         if abs(difference) > max_step:
             beds[index].radius_scale = (beds[index - 1].radius_scale
                                         + math.copysign(max_step, difference))
 
-    orders = np.array(sorted(rng.choice(np.arange(2, 9), size=4, replace=False)))
-    harmonics = rng.uniform(0.045, 0.135, size=4) / (1.0 + 0.35 * (orders - 2))
+    orders = np.array(sorted(rng.choice(np.arange(3, 11), size=4, replace=False)))
+    # Amplitude cut ~10x: this term used to define the outline and now only roughens the
+    # joint faces. See Stratigraphy.plan_shape for the measured pixel budget.
+    harmonics = rng.uniform(0.004, 0.013, size=4) / (1.0 + 0.20 * (orders - 3))
     phases = rng.uniform(0.0, 2.0 * math.pi, size=4)
     drift_amp = rng.uniform(-0.16, 0.16, size=(3, 2)) * size.radius_m
     drift_phase = rng.uniform(0.0, 2.0 * math.pi, size=(3, 2))
+
+    joints = JointSet.from_rng(rng, process)
+    # Per-bed weathering of each joint face. Competent beds hold their face near the joint
+    # plane; soft beds recede further. Derived from the bed's own hardness so the inset and
+    # the strata story cannot disagree.
+    face_inset = np.empty((len(beds), joints.face_count))
+    for bed in beds:
+        for k in range(joints.face_count):
+            soft = 1.0 - bed.hardness
+            # The random component is deliberately smaller than the hardness-driven one so
+            # the inset reads as a COHERENT per-bed recession rather than as a random fringe.
+            # At +-1.6 percent the silhouette grew a sawtooth rim of unrelated few-centimetre
+            # nicks, which is the "many small nicks" failure the metric is built to reject.
+            face_inset[bed.index, k] = (1.0
+                                        - soft * float(rng.uniform(0.024, 0.080))
+                                        + float(rng.uniform(-0.009, 0.009)))
 
     return Stratigraphy(
         beds=beds,
@@ -513,6 +800,8 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
         landmark_azimuth_rad=float(rng.uniform(0.0, 2.0 * math.pi)),
         landmark_arc_rad=float(rng.uniform(1.15, 2.10)),
         bed_thickness_capped=capped,
+        joints=joints,
+        face_inset=face_inset,
     )
 
 
@@ -532,6 +821,17 @@ class LatticeDensity:
     lattice_triangles: int
 
 
+def geometric_grain_wavelength(density: "LatticeDensity") -> float:
+    """Shortest surface-grain wavelength this lattice can actually carry, in metres.
+
+    Keyed off the COARSER of the two achieved spacings, because a field is under-sampled as
+    soon as either axis is too coarse for it -- averaging the two would let a fine vertical
+    spacing hide a coarse circumferential one, which is exactly the state the outcrop was in.
+    """
+    coarsest = max(density.achieved_ring_spacing_m, density.achieved_segment_spacing_m)
+    return max(WITNESS_GRAIN_WAVELENGTH_M, coarsest * GEOMETRIC_GRAIN_NYQUIST_FACTOR)
+
+
 def solve_density(strata: Stratigraphy, size: SizeClass, quality: float,
                   beds: int) -> LatticeDensity:
     """Pick ring/segment counts from an absolute target edge length, then cap by budget.
@@ -544,15 +844,37 @@ def solve_density(strata: Stratigraphy, size: SizeClass, quality: float,
     18,000 triangles, and pretending otherwise would ship an over-budget LOD0.
     """
     q = law.saturate(quality)
-    ring_spacing = 0.105 + (0.030 - 0.105) * q
-    segment_spacing = 0.150 + (0.046 - 0.150) * q
-
     circumference = 2.0 * math.pi * size.radius_m
-    rings_ideal = int(round(size.height_m / ring_spacing)) + 1
-    rings_ideal = max(beds * 2 + 1, min(430, rings_ideal))
-    segments_ideal = max(12, min(96, int(round(circumference / segment_spacing))))
-
     sculpt_budget = int(size.budget(0) * LATTICE_BUDGET_SHARE * SCULPT_DENSITY_MULTIPLIER)
+
+    # BALANCED spacing, derived rather than guessed, and this is a measured defect repair.
+    #
+    # The two spacings used to be picked independently from quality (0.105->0.030 vertical and
+    # 0.150->0.046 circumferential) and then shrunk together by a sqrt factor when the budget
+    # bound. On the outcrop that produced 0.0661 m vertical against 0.2071 m circumferential --
+    # a 3.1x anisotropy -- and the circumferential figure is the one that matters, because a
+    # 0.075 m grain field on 0.207 m samples is 2.8x UNDER-SAMPLED. The grain has therefore
+    # never been representable: it aliased into a low-frequency wobble, which is a large part of
+    # why the flanks render as smooth plastic rather than as stone.
+    #
+    # For a uniform lattice, quads = height * circumference / s^2, so the achievable spacing at
+    # a given triangle budget is a closed form. Measured against the geology rows:
+    #   boulder     circumference  2.51 m -> 0.0270 m spacing, Nyquist wavelength 0.0540 m
+    #   outcrop     circumference  9.11 m -> 0.0644 m spacing, Nyquist wavelength 0.1288 m
+    #   cliff chunk circumference 19.48 m -> 0.1282 m spacing, Nyquist wavelength 0.2565 m
+    # Balancing alone buys a 3x finer circumferential resolution at the same triangle count.
+    balanced = math.sqrt(size.height_m * circumference / max(1.0, sculpt_budget * 0.5))
+    coarse = balanced * 2.4
+    spacing = coarse + (balanced - coarse) * q
+
+    rings_ideal = int(round(size.height_m / spacing)) + 1
+    rings_ideal = max(beds * 2 + 1, min(430, rings_ideal))
+    # Ceiling raised from 96: at 96 the outcrop was capped well short of the balanced spacing,
+    # so the cap and not the budget was deciding the circumferential resolution.
+    segments_ideal = max(12, min(220, int(round(circumference / spacing))))
+    ring_spacing = spacing
+    segment_spacing = spacing
+
     rings, segments = rings_ideal, segments_ideal
     lattice_tris = 2 * (rings - 1) * segments
     bound = False
@@ -602,9 +924,23 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     # either clamped away to nothing or self-intersecting. Keeping grain small and
     # absolute is also what the geology bible wants: strata are the dominant term and fine
     # noise stays weak, or the asset becomes the "noise sphere" the pipeline bible rejects.
-    grain_amp = WITNESS_GRAIN_WAVELENGTH_M * (0.05 + 0.09 * q)
+    # Amplitude raised ~2.7x once the base form became planar, and the reason is a real
+    # rejection, not a preference. At 0.05-0.14 of the grain wavelength the displacement is
+    # 1.05 cm on a 2.9 m body -- 0.36 percent of extent. That was invisible against the old
+    # smooth-lobed form and it is WORSE than invisible against flat joint faces: a mirror-flat
+    # facet with a crisp arris reads as a machined hull panel, which `TASTE.md` rejects on
+    # sight as "clean sci-fi plastic" and `3dmodel.md` section 12 rejects as "clean sterile
+    # sci-fi". Measured on the iteration-3 studio sheet: the summit facet rendered as polished
+    # plastic and the bedding grooves as milled slots.
+    #
+    # Real fracture facets are flat at the metre scale and rough at the centimetre scale --
+    # that is the scale hierarchy, not a contradiction of it. 0.16-0.38 of the wavelength is
+    # 2.9 cm here, 1.0 percent of extent, still an order of magnitude under the bed relief so
+    # the strata stay dominant, and still far under the `local_edge * 0.70` fold limit.
+    grain_wavelength = geometric_grain_wavelength(density)
+    grain_amp = grain_wavelength * (0.16 + 0.22 * q)
     grain = AnisotropicField(
-        rng, WITNESS_GRAIN_WAVELENGTH_M,
+        rng, grain_wavelength,
         octaves=2 if q < 0.5 else 3,
         bedding_normal=np.array([frame.normal.x, frame.normal.y, frame.normal.z]),
         anisotropy=3.4 if process == "sedimentary" else 2.1,
@@ -615,7 +951,15 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
         anisotropy=1.35,
     )
 
-    segments = density.segments
+    # Azimuths are NOT uniform any more: the joint-polygon corner azimuths are in the list
+    # exactly, and the rest is fill. Every ring shares the list, which is what keeps the
+    # bridge loop regular and puts the arris on a genuine edge chain running the full height.
+    if strata.joints is not None:
+        angle_list = strata.joints.ring_angles(density.segments)
+    else:
+        angle_list = np.array([(s / float(density.segments)) * 2.0 * math.pi
+                               for s in range(density.segments)])
+    segments = int(angle_list.shape[0])
     base_h = -size.height_m * 0.5
 
     # Ring heights are driven by the BED STRUCTURE, not by uniform height spacing.
@@ -677,25 +1021,26 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
             if candidate.base_h <= h <= candidate.top_h:
                 bed_phase = candidate.plan_phase
                 break
-        # Close the top over the last 14 percent of the height instead of capping a
-        # full-width ring. A wide flat cap poked into a fan renders as a radial starburst
-        # of thin triangles -- clearly visible as an artifact in the first contact sheet,
-        # and the kind of thing an artist rejects on sight.
+        # Only a token taper now. The summit used to shrink 70 percent over the last 14
+        # percent of the height, which domed the top and is a large part of why the profile
+        # silhouette read as a loaf: a dome has no straight run and no rim. The top is now
+        # defined by `truncate_summit`, an oblique planar cut, so all this has to do is
+        # avoid a knife-edge rim in the event that the cut declines to fire.
         taper = 1.0
-        if t > 0.86:
-            local = (t - 0.86) / 0.14
-            taper = 1.0 - 0.70 * (local * local * (3.0 - 2.0 * local))
+        if t > 0.92:
+            local = (t - 0.92) / 0.08
+            taper = 1.0 - 0.14 * (local * local * (3.0 - 2.0 * local))
         for s in range(segments):
-            theta = (s / float(segments)) * 2.0 * math.pi
+            theta = float(angle_list[s])
             shape = strata.plan_shape(theta, h)
             notch = strata.landmark_sector_weight(theta, h)
-            # Break the lens symmetry: a bed that recedes by the same amount all the way
-            # round reads as a turned plate, which is what the isolation render showed even
-            # after the step was clamped. Real beds weather back unevenly, so the recess is
-            # modulated around the circumference by the bed's own phase.
-            asymmetry = 1.0 + 0.16 * math.sin(3.0 * theta + bed_phase * 4.0)                 + 0.09 * math.sin(5.0 * theta - bed_phase * 2.0)
-            radius = (size.radius_m * shape * radius_scale * asymmetry * taper
-                      * (1.0 - 0.30 * notch))
+            # The old circumferential `asymmetry` term (16 percent + 9 percent of radius,
+            # i.e. 23 cm on this outcrop) is DELETED. It existed to break the lens symmetry
+            # of a bed that recedes uniformly, and the joint polygon plus per-bed per-face
+            # inset does that far better -- while the sinusoid actively re-curved every flat
+            # face it was applied to, which is the defect under repair.
+            radius = (size.radius_m * shape * radius_scale * taper
+                      * (1.0 - 0.44 * notch))
             direction = frame.e1 * math.cos(theta) + frame.e2 * math.sin(theta)
             point = direction * radius + frame.normal * h
             point.x += drift_u
@@ -723,7 +1068,10 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     # top can dome and the base can dish -- a flat lid reads as a sliced cylinder.
     bottom = bm.faces.new(tuple(reversed(verts[0:segments])))
     top = bm.faces.new(tuple(verts[(rings - 1) * segments:rings * segments]))
-    for face, sign, amount in ((top, 1.0, 0.055), (bottom, -1.0, 0.030)):
+    # Dome amounts cut from 0.055/0.030 to 0.012/0.022. The top dome is now the summit
+    # truncation's job; leaving a 5.5 percent dome there would either survive the cut as a
+    # rounded cap or be thrown away, and in the first case it is the loaf silhouette again.
+    for face, sign, amount in ((top, 1.0, 0.012), (bottom, -1.0, 0.022)):
         poked = bmesh.ops.poke(bm, faces=[face], offset=0.0,
                                center_mode="MEAN_WEIGHTED", use_relative_offset=False)
         for vert in poked["verts"]:
@@ -790,11 +1138,309 @@ class FracturePlane:
     origin: np.ndarray
     normal: np.ndarray
     kind: str
+    volume_spent: float = 0.0
+    volume_start: float = 0.0
+
+
+# One shared ceiling for EVERY half-space removal on the body, summit truncation included.
+# Iteration 1 gave the summit cut and the shear cuts a 30 percent budget each, so the body
+# could legally lose 60 percent of its volume to planes -- and it did: the side silhouette
+# came out a wide thin wedge with an aspect ratio near 2.6 where the size class asks for
+# about 1.4. A rock that has lost most of itself is a flake, and the references
+# (``UNDERWATER PREVIOUSLY IN DEVELOPMENT.jpg``) show blocky non-equant boulders, not flakes.
+CUT_VOLUME_BUDGET_FRACTION = 0.34
+
+# A cut is a GRAZE if the volume it removes, divided by the facet it creates, is shallower
+# than this fraction of the asset's longest extent. Grazing cuts are the feather-edge source:
+# they leave a wafer wedge with a near-zero dihedral, which shades black, aliases, and reads
+# as a mesh defect. Depth = removed_volume / facet_area is the honest measure of "did this
+# cut take a corner off or did it skim the surface", and it is scale-free.
+CUT_MIN_MEAN_DEPTH_FRACTION = 0.022
+
+
+def _facet_area(faces: list) -> float:
+    return float(sum(f.calc_area() for f in faces if f.is_valid))
+
+
+def _plane_clamp(bm: bmesh.types.BMesh, normal: np.ndarray, offset: float,
+                 roughness: Optional[AnisotropicField] = None,
+                 roughness_amp: float = 0.0) -> list:
+    """Fold the half-space outside a plane ONTO the plane. Returns the new facet faces.
+
+    This replaces the bisect/holes_fill/poke route, and the reason is a rejection that was
+    already on record in this file before I repeated it. Measured, in order:
+
+      iteration 4: `holes_fill` returns an n-gon that `triangulate` ear-clips into a fan whose
+        vertices are ALL on the rim. Zero interior vertices, so the roughening pass had nothing
+        to move and every large facet stayed a mirror-flat plane -- `TASTE.md` "clean sci-fi
+        plastic", rejected on sight.
+      iteration 5: poking the facet to create interior vertices rendered as a RADIAL STARBURST
+        pinwheel on the summit, because every triangle in a poke fan shares one high-valence
+        centre and the roughening gives each a different normal. `build_body`'s own comments
+        record that exact artifact being rejected once already, so retuning it would be the
+        same-failure escalation `AGENTS.md` forbids.
+
+    Clamping has none of those failure modes because it adds NO topology. Every vertex outside
+    the half-space is projected along the plane normal onto it; the lattice's own regular quad
+    grid becomes the facet's tessellation, complete with interior vertices. Consequences that
+    make this correct rather than merely convenient:
+
+      - no `holes_fill`, so no chance of bridging unrelated rims into a membrane;
+      - no new boundary edges, so the shell stays closed by construction;
+      - no fan, so no starburst and no ear-clipped slivers;
+      - the roughening is applied DURING the projection, so the facet is never flat at any
+        point in the pipeline;
+      - a clamp is a convex operation, so it cannot produce an overhanging spall. The concavity
+        in this asset comes from the landmark notch and the per-bed insets instead, which is
+        where it was already coming from.
+
+    The cost is paid honestly: rings that were far outside land close together on the plane, so
+    the facet carries some elongated quads. Those are valid geometry, the weld tolerance is
+    orders of magnitude below their spacing, and quadric collapse removes them at LOD1.
+    """
+    plane_normal = Vector((float(normal[0]), float(normal[1]), float(normal[2])))
+    plane_normal.normalize()
+
+    outside = []
+    for vert in bm.verts:
+        distance = vert.co.dot(plane_normal) - offset
+        if distance > 0.0:
+            outside.append((vert, distance))
+    if not outside:
+        return []
+
+    points = np.array([[v.co.x, v.co.y, v.co.z] for v, _d in outside])
+    if roughness is not None and roughness_amp > 0.0:
+        # Sample the field at the PROJECTED position, not the original one, or two vertices
+        # that land on the same spot get different offsets and the facet tears.
+        projected = points - np.outer(
+            np.array([d for _v, d in outside]),
+            np.array([plane_normal.x, plane_normal.y, plane_normal.z]))
+        offsets = roughness.sample(projected) * roughness_amp
+    else:
+        offsets = np.zeros(len(outside))
+
+    clamped = set()
+    for index, (vert, distance) in enumerate(outside):
+        vert.co -= plane_normal * distance
+        vert.co += plane_normal * float(offsets[index])
+        clamped.add(vert.index)
+
+    facet = []
+    for face in bm.faces:
+        if all(v.index in clamped for v in face.verts):
+            face.material_index = law.MATERIAL_SLOT_CUT_EDGE
+            # 3DMODEL_GEOLOGY_ROCKS.md section 4: do not smooth a chipped plane into a blob.
+            face.smooth = False
+            for edge in face.edges:
+                edge.smooth = False
+            facet.append(face)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    return facet
+
+
+def truncate_summit(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigraphy,
+                    size: SizeClass, rng: np.random.Generator, quality: float,
+                    blackbox: BlackBox) -> Optional[FracturePlane]:
+    """Remove the top of the mass with ONE oblique plane, leaving a sloping summit facet.
+
+    The front and side silhouettes of a ground-standing rock are dominated by its PROFILE,
+    and a profile that tapers smoothly to a domed apex is the loaf read no amount of plan
+    detail can rescue. Every geology reference frame in
+    ``Docs/mandatory if you work on systems that user sees ...`` shows the opposite: cliff
+    tops are planar shelves or sharp ridges, and the seafloor boulders in
+    ``UNDERWATER PREVIOUSLY IN DEVELOPMENT.jpg`` are angular blocks with flat top faces.
+
+    Deliberately a big cut, unlike the shear fractures: one plane taking 14-30 percent of
+    the height cannot produce the "faceted gemstone" failure, which needed FIVE half-spaces
+    intersecting near the centroid. The bedding-relief cost is bounded and paid knowingly --
+    the beds below the cut are untouched, and the cut face is where the bedding TRACE gets
+    re-imprinted by `imprint_bedding_on_cuts`.
+
+    The tilt is bounded away from both the bedding normal (a cut parallel to the beds would
+    read as a sawn slab) and from vertical (which would be a flank cut, not a summit).
+    """
+    q = law.saturate(quality)
+    normal = np.array([frame.normal.x, frame.normal.y, frame.normal.z])
+    e1 = np.array([frame.e1.x, frame.e1.y, frame.e1.z])
+    e2 = np.array([frame.e2.x, frame.e2.y, frame.e2.z])
+
+    tilt = math.radians(float(rng.uniform(20.0, 52.0)))
+    azimuth = float(rng.uniform(0.0, 2.0 * math.pi))
+    lateral = e1 * math.cos(azimuth) + e2 * math.sin(azimuth)
+    plane_normal = normal * math.cos(tilt) + lateral * math.sin(tilt)
+    plane_normal /= max(1e-9, np.linalg.norm(plane_normal))
+
+    coords = np.array([[v.co.x, v.co.y, v.co.z] for v in bm.verts])
+    distances = coords @ plane_normal
+    volume_before = abs(bm.calc_volume(signed=True))
+
+    # Quantile, not an absolute height: the body is tilted by the bedding dip and drifted
+    # laterally, so a fixed height would clip a different fraction on every seed. Lightened
+    # from 0.70-0.86 to 0.80-0.91 once the summit and the shear cuts started sharing one
+    # volume budget -- at the old value the summit alone could eat a third of the rock.
+    keep = float(rng.uniform(0.80 + 0.02 * q, 0.91))
+    offset = float(np.quantile(distances, keep))
+    # The plane must ALWAYS sit below the highest point by a real margin, whatever the quantile
+    # happened to select. Measured on the 7.6 m cliff chunk: a quantile-only offset left the
+    # poked top cap intact above the plane, so the summit rendered as the radial starburst fan
+    # that this file's history already records being rejected once. A quantile is a statement
+    # about the vertex POPULATION and the cap is a handful of vertices, so on a tall body with
+    # thousands of flank vertices the quantile can land under it.
+    ceiling = float(distances.max()) - size.longest_extent_m * 0.045
+    offset = min(offset, ceiling)
+    ripple = AnisotropicField(
+        rng, WITNESS_GRAIN_WAVELENGTH_M * 4.0, octaves=2, waves_per_octave=5,
+        bedding_normal=np.array([frame.normal.x, frame.normal.y, frame.normal.z]),
+        anisotropy=2.2)
+    faces = _plane_clamp(bm, plane_normal, offset, ripple,
+                         WITNESS_GRAIN_WAVELENGTH_M * (0.22 + 0.26 * q))
+    if not faces:
+        blackbox.record("truncate_summit", warning="summit plane produced no cut face",
+                        failure_code="SUMMIT_CUT_NONE")
+        return None
+
+    volume_after = abs(bm.calc_volume(signed=True))
+    spent = volume_before - volume_after
+    area = _facet_area(faces)
+    depth = spent / max(1e-9, area)
+    blackbox.record("truncate_summit", vertex_count=len(bm.verts),
+                    triangle_count=len(bm.faces),
+                    warning="tilt {t:.1f} deg, keep {k:.3f}, {r:.1%} of volume, "
+                            "facet {a:.4f} m2, mean depth {d:.4f} m, {f} tris".format(
+                                t=math.degrees(tilt), k=keep,
+                                r=spent / max(1e-9, volume_before), a=area, d=depth,
+                                f=len(faces)))
+    plane = FracturePlane(plane_normal * offset, plane_normal, "summit_truncation")
+    plane.volume_spent = spent
+    plane.volume_start = volume_before
+    return plane
+
+
+def imprint_bedding_on_cuts(bm: bmesh.types.BMesh, frame: BeddingFrame,
+                            strata: Stratigraphy, size: SizeClass,
+                            blackbox: BlackBox) -> int:
+    """Step the fracture faces at every bed contact. Returns vertices moved.
+
+    A planar cut through bedded stone erases the bedding relief on the face it creates,
+    which is the real cost of using cuts at all, and it is why the previous author shrank
+    them to invisibility. Nature does not pay that cost: a joint face in a bedded sequence
+    steps in and out by a few millimetres to a centimetre as it crosses each bed, because
+    each bed's fracture toughness differs. That step is what makes a fracture face read as
+    broken bedded stone instead of as a saw cut.
+
+    Implemented as a displacement ALONG THE FACE NORMAL of slot-1 geometry only, keyed to
+    the bed the vertex sits in. Amplitude is 6-14 mm -- large enough to catch a grazing
+    highlight and to put a visible notch on the outline where the cut face meets the
+    silhouette, small enough that it cannot re-round the facet or self-intersect.
+    """
+    if not strata.beds:
+        return 0
+    step_m = min(0.014, max(0.004, size.longest_extent_m * 0.0045))
+
+    # Accumulate PER VERTEX, apply ONCE. Iterating faces and moving each vertex inside the
+    # loop moved every shared vertex once per incident cut face: a vertex on the arris between
+    # three fracture facets was displaced 3x the intended step, up to 42 mm, which both
+    # over-shot the authored amplitude and is a self-intersection risk. Averaging the incident
+    # face normals is also the geometrically right direction on an arris -- a single face's
+    # normal would drag the shared edge sideways out of both planes.
+    accumulated = {}
+    for face in bm.faces:
+        if face.material_index != law.MATERIAL_SLOT_CUT_EDGE:
+            continue
+        face_normal = face.normal.copy()
+        if face_normal.length <= 1e-9:
+            continue
+        face_normal.normalize()
+        for vert in face.verts:
+            entry = accumulated.get(vert.index)
+            if entry is None:
+                accumulated[vert.index] = [vert, face_normal.copy(), 1]
+            else:
+                entry[1] += face_normal
+                entry[2] += 1
+
+    moved = 0
+    for vert, normal_sum, _count in accumulated.values():
+        if normal_sum.length <= 1e-9:
+            continue
+        bed = strata.bed_at(vert.co.dot(frame.normal))
+        if bed is None:
+            continue
+        # Hardness drives the sign: a competent bed stands proud of the joint face, a soft
+        # parting is recessed into it. Same field the stain channel reads, so the geometry and
+        # the colour agree by construction.
+        amount = (bed.hardness - 0.5) * 2.0 * step_m
+        vert.co += normal_sum.normalized() * amount
+        moved += 1
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    blackbox.record("imprint_bedding_on_cuts", vertex_count=len(bm.verts),
+                    triangle_count=len(bm.faces),
+                    warning="{n} fracture-face vertices stepped at +-{s:.4f} m".format(
+                        n=moved, s=step_m),
+                    failure_code="" if moved else "CUT_FACE_IMPRINT_NONE")
+    return moved
+
+
+def collapse_thin_wedges(bm: bmesh.types.BMesh, blackbox: BlackBox, stage: str,
+                         min_inradius_m: float = 6e-4, passes: int = 3) -> int:
+    """Collapse wafer-thin triangles that are NOT small enough for the degenerate gate.
+
+    ``collapse_slivers`` keys on AREA against ``law.DEGENERATE_TRIANGLE_AREA_EPS`` (1e-7 m2),
+    so it cannot see a triangle 3 cm long and 0.5 mm wide -- area 7.5e-6 m2, seventy times the
+    epsilon, and geometrically a wafer. Those are the feather edges a plane cut leaves wherever
+    it grazes the surface tangentially, and they showed in the iteration-1 and iteration-2
+    silhouettes as 1-2 px needles protruding several percent of the extent. A needle aliases,
+    shades black, and reads as a mesh error.
+
+    Thinness is measured as the inradius ``area / semiperimeter``, which is a LENGTH and so
+    directly comparable to a physical tolerance, unlike an aspect ratio. Collapsing (rather
+    than deleting) is the same discipline as ``collapse_slivers``: deleting opens a hole,
+    filling the hole makes another sliver, and the two chase each other.
+    """
+    removed = 0
+    for _attempt in range(max(1, passes)):
+        targets = []
+        seen = set()
+        for face in bm.faces:
+            if not face.is_valid or len(face.verts) < 3:
+                continue
+            edges = [e for e in face.edges if e.is_valid]
+            if len(edges) < 3:
+                continue
+            perimeter = sum(e.calc_length() for e in edges)
+            if perimeter <= 1e-9:
+                continue
+            if face.calc_area() / (perimeter * 0.5) >= min_inradius_m:
+                continue
+            shortest = min(edges, key=lambda e: e.calc_length())
+            if shortest.index in seen:
+                continue
+            seen.add(shortest.index)
+            targets.append(shortest)
+        if not targets:
+            break
+        bmesh.ops.collapse(bm, edges=targets, uvs=True)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        removed += len(targets)
+    left = 0
+    for face in bm.faces:
+        edges = [e for e in face.edges if e.is_valid]
+        perimeter = sum(e.calc_length() for e in edges)
+        if perimeter > 1e-9 and face.calc_area() / (perimeter * 0.5) < min_inradius_m:
+            left += 1
+    blackbox.record("collapse_thin_wedges:" + stage, triangle_count=len(bm.faces),
+                    vertex_count=len(bm.verts),
+                    warning="{r} wedges collapsed, {l} remain under {m:.5f} m "
+                            "inradius".format(r=removed, l=left, m=min_inradius_m))
+    return left
 
 
 def cut_fractures(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigraphy,
                   size: SizeClass, rng: np.random.Generator, quality: float,
-                  process: str, blackbox: BlackBox) -> list:
+                  process: str, blackbox: BlackBox,
+                  volume_already_spent: float = 0.0,
+                  volume_reference: float = 0.0) -> list:
     """Planar cuts with sharp exposed faces, assigned to the fracture material slot.
 
     ``3dmodel.md`` section 6 reserves "Slot 1: exposed cut, bevel, edge, scar, or
@@ -808,9 +1454,17 @@ def cut_fractures(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigrap
     body in half and deleting a lobe.
     """
     q = law.saturate(quality)
-    conjugate = 1 + int(round(1.5 * q))
-    if size.name == "cliff-chunk":
-        conjugate += 1
+    # FEW cuts, each one big enough to see. Two failures bracket this parameter and both are
+    # recorded here so neither gets re-tried:
+    #   five half-spaces at keep 0.80-0.93, all passing near the centroid -> a faceted
+    #   gemstone with every bed gone;
+    #   five half-spaces at keep 0.955-0.990 -> a 1-4.5 percent quantile shave per cut,
+    #   invisible in silhouette (measured: turn concentration 0.325, against 0.137 for a
+    #   displaced icosphere and 0.789 for a convex polytope, with the turning spread over
+    #   many small rim nicks rather than concentrated in a few arrises).
+    # The escape is neither amplitude: it is COUNT plus PLACEMENT. Two or three cuts, each
+    # taking a real corner, on a body that is already polygonal in plan.
+    conjugate = 2 if size.name == "boulder" else 2 + int(round(q))
     if process == "basalt":
         conjugate += 1
 
@@ -818,14 +1472,19 @@ def cut_fractures(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigrap
     e1 = np.array([frame.e1.x, frame.e1.y, frame.e1.z])
     e2 = np.array([frame.e2.x, frame.e2.y, frame.e2.z])
 
-    shear_dip = math.radians(float(rng.uniform(58.0, 74.0)))
-    base_azimuth = float(rng.uniform(0.0, 2.0 * math.pi))
+    # Dip band 34-62 degrees from the BEDDING PLANE, i.e. the plane normal keeps a real
+    # component both along and across bedding. The old 58-74 band produced near-vertical
+    # planes whose facets only showed in plan view; a spall scar has to slope, or the front
+    # and side silhouettes -- the two views that decide whether a rock reads -- never see it.
     planes = []
+    base_azimuth = float(rng.uniform(0.0, 2.0 * math.pi))
     for i in range(conjugate):
         sign = 1.0 if i % 2 == 0 else -1.0
-        azimuth = base_azimuth + (i // 2) * float(rng.uniform(1.05, 2.35)) + (0.0 if sign > 0 else math.pi * 0.5)
+        shear_dip = math.radians(float(rng.uniform(34.0, 62.0)))
+        azimuth = (base_azimuth + i * float(rng.uniform(1.55, 2.60))
+                   + (0.0 if sign > 0 else math.pi * 0.35))
         lateral = e1 * math.cos(azimuth) + e2 * math.sin(azimuth)
-        plane_normal = lateral * math.sin(shear_dip) + normal * (sign * math.cos(shear_dip))
+        plane_normal = lateral * math.cos(shear_dip) + normal * (sign * math.sin(shear_dip))
         plane_normal /= max(1e-9, np.linalg.norm(plane_normal))
         planes.append(FracturePlane(np.zeros(3), plane_normal, "conjugate_shear"))
 
@@ -836,70 +1495,109 @@ def cut_fractures(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigrap
         parting_normal = -parting_normal
     planes.append(FracturePlane(normal * soft.top_h, parting_normal, "bedding_parting"))
 
-    # A fracture TRUNCATES A CORNER. It does not slice the body.
-    #
-    # Measured failure that forced this: at keep_fraction 0.80-0.93 applied five times
-    # over, each cut removing 7-20 percent of the remaining vertices along a different
-    # normal, the result was the intersection of five half-spaces -- the rendered outcrop
-    # was a faceted gemstone with 4-5 huge clean planes and every bed gone. The strata are
-    # the asset; the fractures are an accent on them. Hence a shallow per-cut bite AND a
-    # hard cap on cumulative removal.
-    original_verts = len(bm.verts)
-    removal_budget = int(original_verts * 0.14)
-    removed_total = 0
+    # Budget in VOLUME, not in vertex count. Vertex count is a proxy for nothing: the
+    # lattice is denser near the ledges, so an identical geometric bite spent a different
+    # share of the old 14-percent vertex budget on every seed, which is why the cut depth
+    # had to be shrunk until it always fitted. Volume is the quantity the eye actually
+    # judges, it is scale-free, and `bm.calc_volume` measures it directly.
+    # Reference volume is the body BEFORE the summit truncation, passed in, so the summit
+    # and the shear cuts draw on one shared ceiling. Measuring it here instead would reset
+    # the denominator after the summit had already spent part of the rock.
+    volume_start = volume_reference if volume_reference > 0.0 \
+        else abs(bm.calc_volume(signed=True))
+    volume_budget = volume_start * CUT_VOLUME_BUDGET_FRACTION
+    volume_removed = max(0.0, volume_already_spent)
+    min_depth = size.longest_extent_m * CUT_MIN_MEAN_DEPTH_FRACTION
 
     created = []
-    for plane in planes:
-        if removed_total >= removal_budget:
+    for index, plane in enumerate(planes):
+        if volume_removed >= volume_budget:
             blackbox.record("fracture_budget_reached",
-                            warning="stopped after {n} of {t} verts removed".format(
-                                n=removed_total, t=original_verts))
+                            warning="stopped after {r:.1%} of volume removed".format(
+                                r=volume_removed / max(1e-9, volume_start)))
             break
         coords = np.array([[v.co.x, v.co.y, v.co.z] for v in bm.verts])
         distances = coords @ plane.normal
-        keep_fraction = float(rng.uniform(0.955, 0.990))
+        # First cut is the deep spall; later ones are progressively lighter, so the body
+        # cannot converge on the intersection of many equal half-spaces.
+        if plane.kind == "bedding_parting":
+            keep_fraction = float(rng.uniform(0.91, 0.96))
+        elif index == 0:
+            keep_fraction = float(rng.uniform(0.80, 0.88))
+        else:
+            keep_fraction = float(rng.uniform(0.87, 0.94))
         cut_at = float(np.quantile(distances, keep_fraction))
-        removed_estimate = int((distances > cut_at).sum())
-        if removed_estimate < 3 or removed_total + removed_estimate > removal_budget:
+        if int((distances > cut_at).sum()) < 3:
             continue
-        removed_total += removed_estimate
 
-        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
-        result = bmesh.ops.bisect_plane(
-            bm, geom=geom, dist=1e-6,
-            plane_co=Vector((float(plane.normal[0] * cut_at),
-                             float(plane.normal[1] * cut_at),
-                             float(plane.normal[2] * cut_at))),
-            plane_no=Vector((float(plane.normal[0]), float(plane.normal[1]),
-                             float(plane.normal[2]))),
-            use_snap_center=False, clear_outer=True, clear_inner=False)
+        before = abs(bm.calc_volume(signed=True))
+        snapshot = bm.copy()
+        facet_ripple = AnisotropicField(
+            rng, WITNESS_GRAIN_WAVELENGTH_M * 4.0, octaves=2, waves_per_octave=5,
+            bedding_normal=normal, anisotropy=2.2)
+        faces = _plane_clamp(bm, plane.normal, cut_at, facet_ripple,
+                             WITNESS_GRAIN_WAVELENGTH_M * (0.20 + 0.24 * q))
+        after = abs(bm.calc_volume(signed=True))
+        spent = before - after
+        area = _facet_area(faces)
+        depth = spent / max(1e-9, area)
 
-        cut_edges = [g for g in result.get("geom_cut", ())
-                     if isinstance(g, bmesh.types.BMEdge) and g.is_valid]
-        if not cut_edges:
+        reject = ""
+        if not faces:
+            reject = "no facet"
+        elif volume_removed + spent > volume_budget:
+            reject = "over the {b:.0%} shared volume budget".format(
+                b=CUT_VOLUME_BUDGET_FRACTION)
+        elif depth < min_depth:
+            reject = ("grazing cut: mean depth {d:.4f} m under the {m:.4f} m floor, "
+                      "which is the feather-edge source".format(d=depth, m=min_depth))
+        if reject:
+            # ROLL BACK rather than accept a bad cut. Skipping a cut on an ESTIMATE -- which
+            # the vertex-count version did -- means the check never sees what the cut
+            # actually did; that estimate was wrong by enough that the cuts ended up at a
+            # 1 percent quantile. Measure, then keep or revert.
+            bm.clear()
+            bm.from_mesh(_bmesh_to_temp_mesh(snapshot))
+            snapshot.free()
+            blackbox.record("fracture_rejected:" + plane.kind, warning=reject)
             continue
-        filled = bmesh.ops.holes_fill(bm, edges=cut_edges, sides=0)
-        new_faces = [f for f in filled.get("faces", ()) if f.is_valid]
-        if not new_faces:
-            continue
-        triangulated = bmesh.ops.triangulate(bm, faces=new_faces)
-        faces = [f for f in triangulated.get("faces", new_faces) if f.is_valid] or new_faces
-        for face in faces:
-            face.material_index = law.MATERIAL_SLOT_CUT_EDGE
-            # Do not smooth a chipped plane into a soft blob
-            # (``3DMODEL_GEOLOGY_ROCKS.md`` section 4).
-            face.smooth = False
-            for edge in face.edges:
-                edge.smooth = False
+        snapshot.free()
+        volume_removed += spent
         plane.origin = plane.normal * cut_at
+        plane.volume_spent = spent
+        plane.volume_start = volume_start
         created.append(plane)
+        blackbox.record("fracture_cut:" + plane.kind,
+                        vertex_count=len(bm.verts), triangle_count=len(bm.faces),
+                        warning="keep {k:.3f}, {s:.1%} of volume, facet {a:.4f} m2, "
+                                "mean depth {d:.4f} m, {f} tris".format(
+                                    k=keep_fraction, s=spent / max(1e-9, volume_start),
+                                    a=area, d=depth, f=len(faces)))
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     blackbox.record("cut_fractures", vertex_count=len(bm.verts),
                     triangle_count=len(bm.faces),
-                    warning="" if created else "no fracture plane took effect",
+                    warning="{n} planes cut, {r:.1%} of volume removed".format(
+                        n=len(created), r=volume_removed / max(1e-9, volume_start))
+                    if created else "no fracture plane took effect",
                     failure_code="" if created else "FRACTURE_NONE")
     return created
+
+
+def _bmesh_to_temp_mesh(bm: bmesh.types.BMesh) -> bpy.types.Mesh:
+    """Materialise a bmesh into a throwaway datablock so it can be read back in.
+
+    ``BMesh`` has no assignment operator, and ``bm.from_mesh`` is the only route back, so a
+    rollback has to go through a temporary datablock. The block is removed on the next call,
+    keeping exactly one alive -- leaking one datablock per rejected cut would inflate the
+    .blend and, worse, leave orphan meshes that `purge_scene` counts as users.
+    """
+    existing = bpy.data.meshes.get("H8_RockRollback")
+    if existing is not None:
+        bpy.data.meshes.remove(existing)
+    mesh = bpy.data.meshes.new("H8_RockRollback")
+    bm.to_mesh(mesh)
+    return mesh
 
 
 # ---------------------------------------------------------------------------
@@ -933,23 +1631,74 @@ def carve_partings(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigra
     for bed in softest:
         half_width = min(bed.thickness * 0.42,
                          size.longest_extent_m * (0.010 + 0.008 * q))
-        depth = size.longest_extent_m * (0.012 + 0.016 * q)
+        # Depth cut ~2.8x. At 0.012-0.028 of extent this was 8 cm on the outcrop, and once the
+        # body became blocky that stopped reading as a weathered parting and started reading as
+        # a milled trench: the iteration-6 studio sheet showed a wide straight black slot with
+        # parallel walls running the length of the mass in three of four views. A parting is a
+        # groove, not a channel; the AO channel is what is supposed to make it read dark, not
+        # the depth.
+        depth = size.longest_extent_m * (0.004 + 0.006 * q)
         centre = (bed.base_h + bed.top_h) * 0.5
+
+        # A CONSTANT-depth, constant-width groove cut all the way round a body whose faces
+        # are now flat is a MILLED SLOT, and it rendered as one: the iteration-3 studio sheet
+        # showed straight parallel channels with square shoulders, indistinguishable from
+        # panel gaps or heat-sink fins. `TASTE.md` rejects "clean sci-fi plastic" and
+        # "decorative sci-fi panels" on sight. The operation was acceptable on the old lumpy
+        # body only because the body hid it.
+        #
+        # A weathered parting is exposed WHERE IT IS EXPOSED: deep in one sector, pinched out
+        # in another, and interrupted where a competent lens bridges it. So depth, width and
+        # continuity are all modulated around the azimuth by a seeded harmonic set, and the
+        # groove is gated off entirely below a threshold.
+        orders = rng.choice(np.arange(2, 7), size=3, replace=False)
+        phases = rng.uniform(0.0, 2.0 * math.pi, size=3)
+        weights = rng.uniform(0.45, 1.0, size=3)
+        weights = weights / weights.sum()
+        gate_bias = float(rng.uniform(-0.18, 0.22))
+
+        def exposure(theta: float) -> float:
+            value = 0.0
+            for order, phase, weight in zip(orders, phases, weights):
+                value += weight * math.sin(order * theta + phase)
+            # Map roughly [-1, 1] to [0, 1] and then gate: below the threshold the parting is
+            # simply not developed at that azimuth.
+            level = law.saturate(0.5 + 0.5 * value + gate_bias)
+            if level < 0.30:
+                return 0.0
+            level = (level - 0.30) / 0.70
+            return level * level * (3.0 - 2.0 * level)
+
         moved = 0
+        exposed_arc = 0
         for vert in bm.verts:
             h = vert.co.dot(frame.normal)
-            offset = abs(h - centre)
-            if offset >= half_width:
-                continue
-            falloff = 1.0 - (offset / half_width)
-            falloff = falloff * falloff * (3.0 - 2.0 * falloff)
             radial = vert.co - frame.normal * h
             if radial.length <= 1e-6:
                 continue
-            vert.co -= radial.normalized() * (depth * falloff)
+            theta = math.atan2(radial.dot(frame.e2), radial.dot(frame.e1))
+            gate = exposure(theta)
+            if gate <= 0.0:
+                continue
+            exposed_arc += 1
+            # Width tracks exposure too: a pinching-out parting narrows as it shallows, which
+            # is what removes the constant-section machined read.
+            local_width = half_width * (0.45 + 0.55 * gate)
+            offset = abs(h - centre)
+            if offset >= local_width:
+                continue
+            falloff = 1.0 - (offset / local_width)
+            falloff = falloff * falloff * (3.0 - 2.0 * falloff)
+            vert.co -= radial.normalized() * (depth * gate * falloff)
             moved += 1
         if moved:
             seams.append(SeamPlane(centre, normal, half_width, "bedding_parting_groove"))
+            blackbox.record("parting_groove",
+                            warning="bed {b}: depth {d:.4f} m, half width {w:.4f} m, "
+                                    "{m} verts moved, exposed on {e} of {t} sampled "
+                                    "azimuth positions".format(
+                                        b=bed.index, d=depth, w=half_width, m=moved,
+                                        e=exposed_arc, t=len(bm.verts)))
 
     blackbox.record("carve_partings", vertex_count=len(bm.verts),
                     triangle_count=len(bm.faces),
@@ -1069,11 +1818,29 @@ def punch_vugs(bm: bmesh.types.BMesh, size: SizeClass, rng: np.random.Generator,
         radius = target_radius * float(rng.uniform(0.72, 1.28))
         thickness = max(1e-4, inradius - radius)
         depth = radius * float(rng.uniform(0.45, 0.85))
+        rim_verts = {v.index for v in face.verts}
         first = bmesh.ops.inset_individual(
             bm, faces=[face], thickness=thickness * 0.45, depth=-depth,
             use_even_offset=True, use_interpolate=True, use_relative_offset=False)
-        if not first.get("faces"):
+        pocket_faces = [f for f in first.get("faces", ()) if f.is_valid]
+        if not pocket_faces:
             continue
+
+        # `inset_individual` on a quad produces a RECTANGULAR pocket with parallel sides.
+        # On the old lumpy surface that was hidden; on flat joint faces the iteration-3
+        # studio sheet showed them as recessed service panels -- exactly the "decorative
+        # sci-fi panels" `TASTE.md` rejects. A wave-drilled vug or a basalt vesicle is
+        # irregular, so the new pocket vertices are jittered in all three axes by up to a
+        # third of the pocket radius. Bounded by the pocket radius rather than by an absolute
+        # figure so it cannot punch through the far wall on a small vug.
+        jitter = radius * 0.34
+        for pocket in pocket_faces:
+            for vert in pocket.verts:
+                if vert.index in rim_verts:
+                    continue        # keep the surrounding surface where the body put it
+                vert.co += Vector((float(rng.uniform(-jitter, jitter)),
+                                   float(rng.uniform(-jitter, jitter)),
+                                   float(rng.uniform(-jitter, jitter))))
         punched += 1
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
@@ -1121,7 +1888,8 @@ def _boundary_loops(boundary_edges: list) -> list:
 
 def close_open_boundaries(bm: bmesh.types.BMesh, blackbox: BlackBox,
                           stage: str, passes: int = 5,
-                          tiny_perimeter_m: float = 0.012) -> int:
+                          tiny_perimeter_m: float = 0.012,
+                          stubborn_perimeter_fraction: float = 0.06) -> int:
     """Fill every open rim until the shell is closed. Returns remaining boundary edges.
 
     ``3DMODEL_GEOLOGY_ROCKS.md`` section 2: "Solid rocks and vents must be manifold
@@ -1134,6 +1902,22 @@ def close_open_boundaries(bm: bmesh.types.BMesh, blackbox: BlackBox,
     an open shell, hence ``inconsistent_winding``) and let AO rays into the interior,
     pinning the B channel minimum at exactly 0.0.
     """
+    # The stubborn-rim bound is a FRACTION of the body's own bounding diagonal, not an absolute
+    # length. An absolute 0.30 m closed the 0.4 m boulder and the 2.9 m outcrop and left the
+    # 7.6 m cliff chunk failing at 8 boundary edges, because its repair-artefact rims are
+    # proportionally larger. A tolerance that only holds for one size class is the same defect
+    # as a threshold copied from another family.
+    if bm.verts:
+        xs = [v.co.x for v in bm.verts]
+        ys = [v.co.y for v in bm.verts]
+        zs = [v.co.z for v in bm.verts]
+        diagonal = math.sqrt((max(xs) - min(xs)) ** 2 + (max(ys) - min(ys)) ** 2
+                             + (max(zs) - min(zs)) ** 2)
+    else:
+        diagonal = 1.0
+    stubborn_perimeter_m = max(tiny_perimeter_m * 2.0,
+                               diagonal * stubborn_perimeter_fraction)
+
     for _attempt in range(max(1, passes)):
         boundary = [e for e in bm.edges if len(e.link_faces) == 1]
         if not boundary:
@@ -1161,6 +1945,26 @@ def close_open_boundaries(bm: bmesh.types.BMesh, blackbox: BlackBox,
             filled = bmesh.ops.holes_fill(bm, edges=alive, sides=0)
             new_faces = [f for f in filled.get("faces", ()) if f.is_valid]
             if not new_faces:
+                # `holes_fill` REFUSES a non-simple rim -- one that touches itself at a vertex,
+                # which is what scattered sliver removal leaves behind. Measured: the basalt
+                # outcrop and the cliff chunk each froze at 19 and 8 boundary edges through six
+                # repair passes, because every pass handed the same unfillable loop to the same
+                # operator. Retrying that is the same-failure escalation `AGENTS.md` forbids;
+                # changing the operator is the strategy change it demands.
+                #
+                # Collapsing the rim to a point always closes it. It costs a small patch of
+                # surface, so it is bounded by rim perimeter against the asset extent: a rim
+                # this small is a repair artefact, and a rim larger than the bound is a real
+                # hole that must reach the gate rather than be quietly pinched shut.
+                if perimeter < stubborn_perimeter_m:
+                    bmesh.ops.collapse(bm, edges=alive, uvs=True)
+                    progressed = True
+                    if blackbox is not None:
+                        blackbox.record(
+                            "stubborn_rim_collapsed:" + stage,
+                            warning="holes_fill refused a {n}-edge rim of {p:.4f} m "
+                                    "perimeter; collapsed instead".format(
+                                        n=len(alive), p=perimeter))
                 continue
             progressed = True
             triangulated = bmesh.ops.triangulate(bm, faces=new_faces)
@@ -1739,8 +2543,6 @@ def inspect_topology(mesh: bpy.types.Mesh) -> dict:
             boundary += 1
         elif links > 2:
             non_manifold += 1
-    degenerate = sum(1 for f in bm.faces
-                     if f.calc_area() <= law.DEGENERATE_TRIANGLE_AREA_EPS)
     loose = sum(1 for v in bm.verts if not v.link_faces)
 
     # Connected components, so an "island below minimum volume" (section 2) is a number
@@ -1761,6 +2563,28 @@ def inspect_topology(mesh: bpy.types.Mesh) -> dict:
                     seen.add(other.index)
                     stack.append(other)
     bm.free()
+
+    # Degenerates are counted on LOOP TRIANGLES with the validator's own formula, not on bmesh
+    # faces with `calc_area`. Two reasons, and the first is a measured miss:
+    #
+    #   A quad with one near-collinear corner has a perfectly healthy AREA, so a per-face check
+    #   passes it, while its loop-triangle split produces one healthy triangle and one sliver.
+    #   `h8forge.validate` reads loop triangles and reported exactly that -- cross length
+    #   9.73e-08 against the 1e-07 epsilon -- while this gate reported zero degenerates on the
+    #   same mesh. Two checks over the same asset disagreeing because one of them measured a
+    #   representation Unity never sees.
+    #
+    #   `3dmodel.md` section 10 states the test as `length(cross(b - a, c - a)) > epsilon`,
+    #   which is TWICE the triangle area, so comparing `calc_area()` to the same epsilon is also
+    #   a factor-of-two mismatch against the bible's own wording.
+    mesh.calc_loop_triangles()
+    degenerate = 0
+    for tri in mesh.loop_triangles:
+        a = mesh.vertices[tri.vertices[0]].co
+        b = mesh.vertices[tri.vertices[1]].co
+        c = mesh.vertices[tri.vertices[2]].co
+        if (b - a).cross(c - a).length <= law.DEGENERATE_TRIANGLE_AREA_EPS:
+            degenerate += 1
 
     volume = signed_volume(mesh)
     return {
@@ -1835,6 +2659,8 @@ class VariantResult:
     post_fracture_topology: dict = field(default_factory=dict)
     channel_readback: dict = field(default_factory=dict)
     channel_area_stats: dict = field(default_factory=dict)
+    silhouette: list = field(default_factory=list)
+    silhouette_summary: dict = field(default_factory=dict)
 
 
 def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str,
@@ -1875,9 +2701,34 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         return _debug_render(bm, name, size, out_dir, preview_resolution,
                              "lattice", result)
 
-    # Stage 4: family topology rules.
-    fractures = cut_fractures(bm, frame, strata, size, rng, q, process, blackbox)
+    # Stage 4: family topology rules. Summit truncation FIRST, because it removes the
+    # domed apex and the shear cuts should place their facets on the mass that survives --
+    # cutting a corner and then deleting it with the summit plane wastes the bite.
+    volume_before_cuts = abs(bm.calc_volume(signed=True))
+    summit = truncate_summit(bm, frame, strata, size, rng, q, blackbox)
+    close_open_boundaries(bm, blackbox, "post_summit")
+    fractures = cut_fractures(
+        bm, frame, strata, size, rng, q, process, blackbox,
+        volume_already_spent=summit.volume_spent if summit is not None else 0.0,
+        volume_reference=volume_before_cuts)
+    if summit is not None:
+        fractures.append(summit)
     close_open_boundaries(bm, blackbox, "post_fracture")
+    # Re-imprint the bedding onto every cut face. Without this a planar cut is the one
+    # stage that DESTROYS strata, which is what made the previous author shrink the cuts
+    # until they were invisible; with it, a cut face carries the bed contacts as steps and
+    # the two features stop competing.
+    imprint_bedding_on_cuts(bm, frame, strata, size, blackbox)
+    # The separate facet-roughening pass that used to run here is DELETED, not disabled:
+    # `_plane_clamp` applies the conchoidal ripple during the projection itself, so a second
+    # pass would double the amplitude and start eating the flatness that is the entire point of
+    # a fracture facet.
+    #
+    # Every clamped facet still feathers toward zero thickness where the plane grazes the
+    # surface. Those wafer wedges are above the degenerate-area epsilon and below any usable
+    # thickness, and they showed as 1-2 px needles in the iteration-1 and iteration-2
+    # silhouettes.
+    collapse_thin_wedges(bm, blackbox, "post_fracture")
     if debug_stage == "fracture":
         return _debug_render(bm, name, size, out_dir, preview_resolution,
                              "fracture", result)
@@ -1896,8 +2747,18 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     if debug_stage == "chip":
         return _debug_render(bm, name, size, out_dir, preview_resolution,
                              "chip", result)
-    # Chipping is the last topology stage, and clamped bevels leave slivers where three
-    # chip widths meet. Clean again or the degenerate-triangle gate fires on LOD0.
+    # COLLAPSE the chip slivers BEFORE the cleaner gets to delete them. Measured on the basalt
+    # outcrop, which uses a 0.72x narrower nominal chip on a fine lattice: `weld_and_clean`
+    # reported "deleted 448 zero-area faces" at this point, and deleting 448 faces opens 448
+    # worth of rim. `close_open_boundaries` then froze at 40 unclosable boundary edges through
+    # six repair passes, because the rims left by scattered deletions are pinched, non-simple
+    # loops that `holes_fill` refuses outright.
+    #
+    # `collapse_slivers` exists precisely for this and its own docstring says so -- "Deleting a
+    # degenerate face, which is what a cleaner does, opens a hole" -- but it was running AFTER
+    # the weld, so the holes already existed by the time it could have prevented them.
+    # Collapsing merges the sliver's two nearest vertices and the surrounding fan stays closed.
+    collapse_slivers(bm, blackbox, "post_chip_pre_weld")
     mesh_ops.weld_and_clean(bm, blackbox=blackbox)
     # ...and that cleanup DELETES those slivers, which opens fresh holes: measured 3
     # boundary edges surviving to LOD0 after the chip pass. Closure has to be the last
@@ -1911,6 +2772,20 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     bmesh.ops.triangulate(bm, faces=bm.faces[:])
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     collapse_slivers(bm, blackbox, "post_triangulate")
+    # `collapse_thin_wedges` deliberately does NOT run here, and this is a measured deletion
+    # rather than an omission. It ran here once and collapsed **2590** faces, because after the
+    # chip pass the thinnest triangles in the mesh are the CHAMFER STRIPS -- a 2.4 mm chip with
+    # bevel segments has triangles well under the 0.6 mm inradius floor. It ate the bevels, and
+    # deleting them opened 43 boundary edges of which 3 survived to LOD0 and failed the
+    # closed-shell gate.
+    #
+    # This is the same defect class as a merge distance set above the thinnest feature, which
+    # the forge rule file names as the trap that erased the strata: a cleanup threshold below an
+    # AUTHORED feature deletes the feature. The wedges this pass exists to remove are created by
+    # the plane clamps, so the correct and only place for it is `post_fracture`, where it
+    # collapsed exactly one face -- surgical, which is what a cleanup should look like.
+    # Closure must still be the last topology operation.
+    open_edges = close_open_boundaries(bm, blackbox, "post_triangulate")
 
     # Force OUTWARD winding by measurement, not by trusting recalc_face_normals.
     # Measured: after the cut/fill/inset stages this body came out at signed volume
@@ -1952,6 +2827,8 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         "beddingDipDeg": round(frame.dip_deg, 3),
         "beddingAzimuthDeg": round(frame.dip_azimuth_deg, 3),
         "landmarkBed": strata.landmark_bed,
+        "jointSet": strata.joints.as_dict() if strata.joints is not None else {},
+        "summitTruncated": any(p.kind == "summit_truncation" for p in fractures),
     }
 
     mesh = bpy.data.meshes.new(law.NAME_MESH.format(
@@ -2021,7 +2898,15 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
 
     # Stage 6: bake AO into a scratch attribute FIRST -- bpy.ops.object.bake writes ALL
     # channels of its target, so composing R/G/A before the bake destroys them.
-    ao_distance = min(1.20, max(0.12, 0.085 * size.longest_extent_m))
+    # AO ray length is a CAVITY-SCALE choice, not an asset-scale one.
+    # `3DMODEL_GEOLOGY_ROCKS.md` section 4 asks channel B for "cavity darkness", and a ray
+    # length much longer than the cavity measures sky visibility instead: a 5 cm parting
+    # groove blocks only a small solid angle of a 25 cm hemisphere, so it barely darkens.
+    # Measured on the iteration-3 bake at 0.247 m: AO mean 0.880 with the grooves and vugs
+    # rendering as faint grey rather than as dark. The features that must read are the
+    # 3-6 cm parting grooves, the 2-5 cm vugs and the bed overhangs, so the ray length is
+    # sized to those and only loosely to the body.
+    ao_distance = min(0.35, max(0.08, 0.045 * size.longest_extent_m))
     ao_samples = int(round(24 + 104 * q))
     # The REAL AO ray bound. `scene.render.bake.distance` does not exist on 4.5 and
     # `max_ray_distance` was measured to change AO statistics not at all (its RNA scope is
@@ -2047,35 +2932,100 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     result.channels = fields.compose(obj, ao_values)
     vertexcolor.remove_scratch_attributes(obj.data)
 
-    result.topology = inspect_topology(obj.data)
-
     # Stage 8: LOD chain.
     lods = mesh_ops.build_lod_chain(obj, family=law.Family.GEOLOGY, name=name,
                                     quality_weight=q, levels=3, preserve_seams=True,
                                     blackbox=blackbox)
     for level in lods:
         target = int(size.budget(level.index))
-        if level.index > 0 and level.triangles > target:
-            tighten_to_target(level.obj, target, blackbox,
-                              "lod{i}_size_row".format(i=level.index))
+        if level.index > 0:
+            # CLEAN FIRST, TIGHTEN LAST. The reverse order was a real budget failure, not a
+            # style preference: measured on seed 1713, LOD1 came out of `tighten_to_target`
+            # at or under 3000 and was then reported at 3042, LOD2 at 715 against 600. The
+            # cleanup runs `weld_and_clean`, whose `fill_boundary_loops` defaults to True, so
+            # it ADDS fill triangles after the decimator has finished and nothing measures
+            # the result again. Decimation has to be the last operation that touches the
+            # count, or the count in the manifest is not the count that was decimated.
+            #
             # No hole-closing on the far LODs: 3dmodel.md section 7 accepts "coarse
-            # silhouette or proxy shell" at LOD2, so adding fill geometry there to chase
-            # manifoldness would push a decimated proxy back over a hard budget. LOD0
-            # remains the strict manifold solid.
+            # silhouette or proxy shell" at LOD2, so chasing manifoldness there would push a
+            # decimated proxy back over a hard budget. LOD0 remains the strict manifold solid.
             clean_object(level.obj, blackbox, "post_lod{i}".format(i=level.index),
                          merge_distance=2e-3, close=False)
+            if mesh_ops.triangle_count(level.obj.data) > target:
+                tighten_to_target(level.obj, target, blackbox,
+                                  "lod{i}_size_row".format(i=level.index))
         # Every LOD passes through weld_and_clean/_split_uv_seams, each of which calls
         # recalc_face_normals, so each level needs its own winding check.
         ensure_outward_winding(level.obj, blackbox,
                                "lod{i}".format(i=level.index))
+        # Per-LOD census, so a far-LOD validator failure reports a CAUSE instead of a symptom.
+        # `h8forge.validate` reports `inconsistent_winding` on LOD1/LOD2 and
+        # `recalc_face_normals` cannot fix it, which means the geometry is locally
+        # non-orientable -- a duplicate face or a fin, both of which show up as an edge with
+        # more than two faces. Without this census the failure is an unexplained triangle
+        # index; the forge rule file's standing lesson is that reasoning from a plausible
+        # mechanism instead of reading the number survived two commits once already.
+        census_lod = mesh_ops.topology_report(level.obj)
         result.lods.append({
             "index": level.index,
             "object": level.obj.name,
             "triangles": mesh_ops.triangle_count(level.obj.data),
+            "components": census_lod.components,
+            "boundaryEdges": census_lod.boundary_edges,
+            "nonManifoldEdges": census_lod.nonmanifold_edges,
             "lawFamilyBudget": law.LOD_BUDGETS[law.Family.GEOLOGY].limit(level.index),
             "geologySizeRowBudget": law.geology_budget_for(size.law_key).limit(level.index),
             "effectiveBudget": target,
         })
+
+    # LOD0 leaves `build_lod_chain` with n-gons, because `weld_and_clean` fills boundary loops
+    # and `holes_fill` emits an n-gon. An n-gon is not a defect by itself, but its loop-triangle
+    # split can be, and the exported FBX plus Unity's importer both see triangles. Triangulating
+    # here makes the authored topology identical to what the engine receives, and the sliver
+    # collapse then has something to measure. LOD1/LOD2 are deliberately excluded: they are at
+    # their budget ceiling and added fill geometry would push them over.
+    #
+    # The three cleanups ALTERNATE to a fixed point rather than running once each, and that is a
+    # measured requirement, not defensive coding. Collapsing a sliver can strand an open rim;
+    # filling that rim can produce another sliver; welding a rim can leave an edge with three
+    # faces. Running each once left 3 boundary edges on the boulder, 9 plus 4 non-manifold on the
+    # cliff chunk and 36 on the basalt outcrop -- three of four matrix configurations aborting on
+    # the closed-shell gate while the outcrop that had been iterated on passed.
+    #
+    # This is NOT the same-failure escalation `AGENTS.md` forbids: that rule bans retrying an
+    # operation under unchanged constraints. Here each pass runs against the OUTPUT of the other
+    # two, so the state genuinely changes between passes, and the loop exits on a measured
+    # condition rather than on a pass count.
+    lod0_bm = bmesh.new()
+    lod0_bm.from_mesh(lods[0].obj.data)
+    bmesh.ops.triangulate(lod0_bm, faces=lod0_bm.faces[:])
+    bmesh.ops.recalc_face_normals(lod0_bm, faces=lod0_bm.faces[:])
+    for attempt in range(6):
+        # Tiny merge distance: this is a topology repair, not a decimation, and the authored
+        # features here are millimetre-scale chamfers.
+        mesh_ops.weld_and_clean(lod0_bm, merge_distance=1e-5, blackbox=blackbox)
+        slivers_left = collapse_slivers(lod0_bm, blackbox,
+                                        "lod0_final_{a}".format(a=attempt))
+        boundary_left = close_open_boundaries(lod0_bm, blackbox,
+                                             "lod0_final_{a}".format(a=attempt))
+        nonmanifold_left = sum(1 for e in lod0_bm.edges if len(e.link_faces) > 2)
+        if slivers_left == 0 and boundary_left == 0 and nonmanifold_left == 0:
+            break
+    lod0_bm.to_mesh(lods[0].obj.data)
+    lods[0].obj.data.update()
+    lod0_bm.free()
+    ensure_outward_winding(lods[0].obj, blackbox, "lod0_final")
+    result.lods[0]["triangles"] = mesh_ops.triangle_count(lods[0].obj.data)
+
+    # Topology census AFTER the LOD chain, measured on the LOD0 object that will actually be
+    # exported. It used to run before `build_lod_chain`, and that is a stale measurement: the
+    # chain rebuilds LOD0's datablock through `_split_uv_seams` and `weld_and_clean`, so my own
+    # "zero degenerate faces" gate was passing on a mesh that no longer existed while
+    # `h8forge.validate` -- which reads the real one -- reported a degenerate triangle at
+    # 8.1e-08 against the 1e-07 epsilon. Two checks over two different states of the same asset,
+    # one of them reporting on geometry that was never saved.
+    result.topology = inspect_topology(lods[0].obj.data)
 
     # Stage 9: collision proxy, independent of the visual LODs. The prehull duplicate that
     # used to sit here worked around the concave-input crash in
@@ -2099,21 +3049,59 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     except Exception as error:                                   # pragma: no cover
         result.channel_area_stats = {"error": str(error)}
 
+    # The DECISIVE proof shot for this family, rendered BEFORE the gates on purpose so a
+    # gate can read it. Every other preview mode is LIT, and a lit render lets shading imply
+    # facets the outline does not have -- the same way a normal map fakes relief -- so it
+    # cannot answer `3DMODEL_GEOLOGY_ROCKS.md` section 9's "no geological process is visible
+    # in silhouette". This is the alpha coverage mask plus outline statistics, and it runs on
+    # the LOD0 object that will actually be exported.
+    #
+    # Calibrated in-process against controls (`silhouette_probe --controls`):
+    #   smooth icosphere        turn concentration 0.094
+    #   displaced icosphere     0.137   <- the procedural-rock potato
+    #   random convex polytope  0.789   <- pure flat facets and sharp arrises
+    if want_preview:
+        silhouette = silhouette_probe.render_silhouette(
+            lods[0].obj, name=name, output_dir=out_dir,
+            resolution=preview_resolution,
+            views=("front", "side", "three_quarter", "low"))
+        result.sheets["silhouette"] = silhouette.sheet_path
+        result.silhouette = [m.as_dict() for m in silhouette.metrics]
+        result.silhouette_summary = {
+            "meanTurnTop10Fraction": round(silhouette.mean_top10, 4),
+            "meanCornerCount": round(silhouette.mean_corners, 2),
+            "meanConvexity": round(silhouette.mean_convexity, 4),
+            "controlSphereTop10": SILHOUETTE_CONTROL_SPHERE,
+            "controlPotatoTop10": SILHOUETTE_CONTROL_POTATO,
+            "controlPolytopeTop10": SILHOUETTE_CONTROL_POLYTOPE,
+            "potatoFloor": SILHOUETTE_POTATO_FLOOR,
+            "targetFloor": SILHOUETTE_TARGET_FLOOR,
+        }
+
     # Stage 11: validation BEFORE save.
     result.gates = hard_gates(result, size)
     if h8validate is not None:
         try:
-            reports = [h8validate.validate_mesh(
-                level.obj.data, family=law.Family.GEOLOGY, lod_index=level.index,
-                surface_class=law.SurfaceClass.GEOLOGIC, blackbox=blackbox,
-                hero=False, triplanar=True) for level in lods]
+            # Labelled PER LOD. The flattened list hid which level failed, and
+            # "inconsistent_winding on triangle 1735" is unactionable without knowing
+            # whether it came from the authored solid or from a decimated proxy -- the two
+            # have completely different fixes and only one of them is a defect.
+            result.validator_failures = []
+            for level in lods:
+                report = h8validate.validate_mesh(
+                    level.obj.data, family=law.Family.GEOLOGY, lod_index=level.index,
+                    surface_class=law.SurfaceClass.GEOLOGIC, blackbox=blackbox,
+                    hero=False, triplanar=True)
+                result.validator_failures.extend(
+                    "LOD{i} {g}: {d}".format(i=level.index, g=f.gate, d=f.detail)
+                    for f in h8validate._collect_failures([report]))
             if collider.obj is not None:
-                reports.append(h8validate.validate_collider(
+                collider_report = h8validate.validate_collider(
                     collider.obj.data, family=law.Family.GEOLOGY, blackbox=blackbox,
-                    lod0_mesh=lods[0].obj.data))
-            result.validator_failures = [
-                "{0}: {1}".format(f.gate, f.detail)
-                for f in h8validate._collect_failures(reports)]
+                    lod0_mesh=lods[0].obj.data)
+                result.validator_failures.extend(
+                    "COLLIDER {g}: {d}".format(g=f.gate, d=f.detail)
+                    for f in h8validate._collect_failures([collider_report]))
         except Exception as error:                      # pragma: no cover
             result.validator_failures = ["validator raised: " + str(error)]
 
@@ -2163,6 +3151,28 @@ def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, out_dir: st
         views=("three_quarter", "front", "side", "low"))
     sheet = preview.render_contact_sheet(obj, spec)
     result.sheets["debug_" + stage] = sheet.sheet_path
+
+    # The silhouette test belongs in the isolation instrument too, and cheaply: this path
+    # skips the AO bake, the unwrap, the LOD chain and validation, so it answers "did this
+    # stage change the OUTLINE" in seconds instead of minutes.
+    silhouette = silhouette_probe.render_silhouette(
+        obj, name="{n}_DEBUG_{s}".format(n=name, s=stage), output_dir=out_dir,
+        resolution=resolution, views=("front", "side", "three_quarter", "low"))
+    result.sheets["debug_silhouette_" + stage] = silhouette.sheet_path
+    result.silhouette = [m.as_dict() for m in silhouette.metrics]
+    result.silhouette_summary = {
+        "meanTurnTop10Fraction": round(silhouette.mean_top10, 4),
+        "meanCornerCount": round(silhouette.mean_corners, 2),
+        "meanConvexity": round(silhouette.mean_convexity, 4),
+        "controlSphereTop10": 0.094, "controlPotatoTop10": 0.137,
+        "controlPolytopeTop10": 0.789,
+    }
+    print("[rock] DEBUG silhouette {s}: ".format(s=stage)
+          + json.dumps(result.silhouette_summary))
+    for entry in result.silhouette:
+        print("[rock] DEBUG SIL {v}: top10={t} corners={c} convexity={x} fuzz={f}".format(
+            v=entry["view"], t=entry["turnTop10Fraction"], c=entry["cornerCount"],
+            x=entry["convexity"], f=entry["fuzzFraction"]))
     result.lods.append({"index": 0, "object": obj.name,
                         "triangles": mesh_ops.triangle_count(obj.data),
                         "lawFamilyBudget": law.LOD_BUDGETS[law.Family.GEOLOGY].limit(0),
@@ -2226,7 +3236,7 @@ def collapse_slivers(bm: bmesh.types.BMesh, blackbox: BlackBox, stage: str,
 
 
 def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str,
-                 merge_distance: float = 1e-3, close: bool = True) -> dict:
+                 merge_distance: float = 1e-4, close: bool = True) -> dict:
     """Weld + drop degenerates on an object, via the core's bmesh cleaner.
 
     Needed after every topology-changing stage, not just once. ``bmesh.ops.bevel`` with
@@ -2244,11 +3254,21 @@ def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str,
     # opens a hole, holes_fill closes the hole with another sliver, and the next clean
     # deletes that -- clean and close chasing each other, with LOD1/LOD2 going over budget
     # from the added fill geometry. AGENTS.md [RULE] Same-failure escalation calls for a
-    # different mechanism, not another pass. At a 1 mm merge distance the two sides of a
-    # sliver hole become one vertex, so the hole ceases to exist instead of being patched.
-    # 1 mm is ~9x below the 9 mm chip width measured on this asset, so nothing authored is
-    # at risk.
-    stats = mesh_ops.weld_and_clean(bm, merge_distance=1e-4, blackbox=blackbox)
+    # different mechanism, not another pass. At the merge distance the two sides of a sliver
+    # hole become one vertex, so the hole ceases to exist instead of being patched.
+    #
+    # Thinnest features to clear: the 20 mm minimum ledge rise, the ~7 mm resolution-capped
+    # chip width, and the 4 mm minimum bedding imprint step on a fracture face. The 0.1 mm
+    # default is 40x below the smallest of those; the far-LOD call sites pass 2 mm, which is
+    # still half the imprint step and is applied only to already-decimated geometry. This is
+    # the check the forge rule file demands -- "check your merge distance against your
+    # thinnest feature" -- because a merge above the thinnest feature is what DELETED the
+    # interpenetrating bed plates and erased the strata in an earlier round.
+    # The `merge_distance` ARGUMENT used to be accepted and then ignored -- the call below
+    # was hardcoded to 1e-4 while callers passed 2e-3 for the far LODs and reasonably assumed
+    # it took effect. A parameter accepted and dropped is the same defect class as a gate that
+    # cannot fire, and it is why the far-LOD weld never did what its call site claimed.
+    stats = mesh_ops.weld_and_clean(bm, merge_distance=merge_distance, blackbox=blackbox)
     stats["degenerate_left"] = collapse_slivers(bm, blackbox, stage)
     if close:
         stats["boundary_edges_left"] = close_open_boundaries(
@@ -2414,6 +3434,32 @@ def hard_gates(result: VariantResult, size: SizeClass) -> list:
                      + " every stored channel varies; flat channels: {f}".format(
                          f=flat or "none"))
 
+    # 3DMODEL_GEOLOGY_ROCKS.md section 9: "No geological process is visible in silhouette."
+    # This is that rejection gate, made executable against measured controls rather than
+    # against an opinion. It stays silent when previews are disabled instead of failing --
+    # a gate that cannot be evaluated must not masquerade as a pass OR as a failure.
+    summary = result.silhouette_summary
+    if not summary:
+        lines.append("SKIP silhouette metric not measured (previews disabled)")
+    else:
+        measured = float(summary.get("meanTurnTop10Fraction", 0.0))
+        corners = float(summary.get("meanCornerCount", 0.0))
+        if measured <= SILHOUETTE_POTATO_FLOOR:
+            verdict = "FAIL"
+        elif measured < SILHOUETTE_TARGET_FLOOR:
+            verdict = "WARN"
+        else:
+            verdict = "PASS"
+        lines.append("{v} silhouette turn concentration {m:.4f} (potato control "
+                     "{p}, polytope control {q}, floor {f}); mean {c:.1f} arrises "
+                     "per view".format(v=verdict, m=measured,
+                                       p=SILHOUETTE_CONTROL_POTATO,
+                                       q=SILHOUETTE_CONTROL_POLYTOPE,
+                                       f=SILHOUETTE_POTATO_FLOOR, c=corners))
+        lines.append(("PASS" if corners >= 3.0 else "FAIL")
+                     + " at least 3 outline arrises per view on average ({c:.1f})".format(
+                         c=corners))
+
     shading = result.shading
     if shading is None:
         lines.append("FAIL shading basis never ran")
@@ -2540,6 +3586,8 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
         "h8forgeValidatorImported": h8validate is not None,
         "proofArtifacts": result.sheets,
         "channelMeasurements": result.channel_stats,
+        "silhouetteMetrics": result.silhouette,
+        "silhouetteSummary": result.silhouette_summary,
         "fbx": result.fbx_path,
         "unityPrefabAssembly": "NOT PERFORMED. .prefab/.mat/.asset creation is Unity-only "
                                "per AGENTS.md Evidence Law; this generator emits mesh + "
@@ -2689,6 +3737,11 @@ def main(argv: list) -> int:
             elapsed = time.perf_counter() - started
             print("")
             print("[rock] === {n} ===  {e:.1f}s".format(n=result.name, e=elapsed))
+            if "beds" not in result.counts:
+                # --debug-stage returns before the detail census exists. Printing it anyway
+                # raised KeyError and lost the silhouette numbers the isolation run was for.
+                print("[rock] (debug stage: no detail census)")
+                continue
             print("[rock] beds={b} dip={d:.1f}deg fractures={f} veins={v} "
                   "partings={p} vugs={g}".format(
                       b=result.counts["beds"], d=result.counts["beddingDipDeg"],
@@ -2709,10 +3762,12 @@ def main(argv: list) -> int:
                           g=result.counts["chipBevelSegments"]))
             for level in result.lods:
                 print("[rock] LOD{i}: {t} tris | law {lb} | geology row {gb} | "
-                      "effective {eb}".format(
+                      "effective {eb} | components {c} boundary {b} nonmanifold {n}".format(
                           i=level["index"], t=level["triangles"],
                           lb=level["lawFamilyBudget"], gb=level["geologySizeRowBudget"],
-                          eb=level["effectiveBudget"]))
+                          eb=level["effectiveBudget"],
+                          c=level.get("components"), b=level.get("boundaryEdges"),
+                          n=level.get("nonManifoldEdges")))
             print("[rock] collider: {t} tris / {m} ceiling ({k})".format(
                 t=result.collider_triangles, m=law.COLLIDER_CONVEX_TRI_MAX,
                 k=result.collider_kind))
@@ -2743,6 +3798,15 @@ def main(argv: list) -> int:
                           hi=entry["max"], me=entry["mean"],
                           cv=entry["coverageFraction"], g=entry["hasGradient"],
                           s=entry["subjectVisible"]))
+            if result.silhouette_summary:
+                print("[rock] silhouette: " + json.dumps(result.silhouette_summary))
+                for entry in result.silhouette:
+                    print("[rock] SIL {v}: top10={t} corners={c} convexity={x} "
+                          "complexity={p} fuzz={f} hullGap={g}".format(
+                              v=entry["view"], t=entry["turnTop10Fraction"],
+                              c=entry["cornerCount"], x=entry["convexity"],
+                              p=entry["complexity"], f=entry["fuzzFraction"],
+                              g=entry["hullGapRms"]))
             for line in result.gates:
                 print("[rock] GATE " + line)
             if result.validator_failures:
