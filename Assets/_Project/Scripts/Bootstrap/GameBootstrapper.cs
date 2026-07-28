@@ -8002,6 +8002,34 @@ namespace Hecton8.Bootstrap
                 Hecton8.Progression.ProgressionRuntimeInstaller.EnsurePlayerSystems(playerObject);
                 Hecton8.Narrative.NarrativeRuntimeInstaller.EnsurePlayerSystems(playerObject);
                 Hecton8.Audio.AtmosphericAudioRuntimeInstaller.EnsurePlayerSystems(playerObject);
+
+                // GlobalWeatherDirector is the only IWeatherService in the project and was never
+                // constructed, so GlobalRegistry.Weather was permanently null and TEN live consumers
+                // cached that null: HectonCelestialEngine.cs:2096, SolarPanel.cs:296,
+                // SomaticKinematicsRuntime.cs:2609, HectonFluidEngine.cs:2505,
+                // HectonUnderwaterVisuals.cs:2417, AbyssalDeferredCausticsRuntime.cs:1740,
+                // SpatialAudioManager.cs:5352, TetherManager.cs:878, HectonMarineSnowRenderer.cs:1002,
+                // HectonMapMagicVegetationBridge.cs:2839. There was no storm, wind, precipitation or
+                // weather-driven vegetation and audio response anywhere in the world.
+                Hecton8.Environment.EnvironmentRuntimeInstaller.EnsureRuntimeSystems();
+
+                // ToolDurabilitySystem was never constructed either, so GlobalRegistry.ToolDurabilityService
+                // was permanently null and seven read sites silently skipped every wear, repair and
+                // durability-display path - the laser cutter, scanner, drill and welder ran at full
+                // condition forever. Reachability of the consumers is proven, not assumed:
+                // PlayerToolManager's script GUID is authored onto Player.prefab and PlayerTool is the base
+                // of BuilderTool, whose GUID is on Tool_Builder_Held.prefab.
+                Hecton8.Tools.ToolsRuntimeInstaller.EnsureRuntimeSystems();
+
+                // The autonomous extractor already shipped its own resolve-or-create factory,
+                // AutonomousExtractorSystem.TryEnsureRuntimeOwner at :252 - complete with the
+                // inactive-root handling at :262-269 and a registry read-back check. It had ZERO callers.
+                // Meanwhile PlayerBuilder.cs:1515 caches the permanently null registry slot and hands it
+                // to placement at :2139, where ValidatePlacementWithRuntime returns false unconditionally
+                // on a null runtime (:1165-1170) - so placing an extractor was refused outright in the
+                // shipped build. No new installer file for this one: wrapping an existing public static
+                // factory in another static method is pure indirection.
+                Hecton8.Construction.AutonomousExtractorSystem.TryEnsureRuntimeOwner(out _);
             }
             finally
             {
@@ -8531,14 +8559,52 @@ namespace Hecton8.Bootstrap
         }
 #endif
 
+        /// <summary>
+        /// Re-resolves the six extended service slots that no installer owns, publishing any owner it finds.
+        /// Holds the scene-runtime publication gate across the whole pass.
+        /// </summary>
+        /// <remarks>
+        /// The gate is owned here rather than left to the caller. Each of the six helpers ends in a
+        /// GlobalRegistry.RegisterX call, so each one is a publication, and a publication past
+        /// RegistryPhase.Ready throws CriticalBootException without a token. Of the two call sites only the
+        /// one at the end of the bootstrap sequence runs before Ready; the other fires from
+        /// HandleSceneLoadedGuard behind an _isBootstrapComplete check, which is by definition after it.
+        ///
+        /// That second site did not throw only because SceneRuntimeService.LoadSceneAsync happens to hold a
+        /// gate across the sceneLoaded callback it arrives on. Depending on an unrelated caller's incidental
+        /// gate is the same implicit coupling that left ten meta/economy/ecosystem owners unregistered until
+        /// the installer block got a gate of its own, and it breaks the moment a scene loads through a route
+        /// that opens no gate.
+        ///
+        /// The cascade is what makes this worth guarding instead of documenting: the helpers run in sequence
+        /// with no try/catch between them, so the first slot whose owner actually exists throws and the
+        /// remaining helpers never run. A pass that covers zero to five of six slots depending on which
+        /// owners happen to be alive is not coverage.
+        ///
+        /// Gate depth is Interlocked-counted, so nesting inside a caller that already holds one is safe. The
+        /// ready-lock invariant is untouched: IsSceneRuntimeHotSwapSlot still hard-denies every core BIOS
+        /// slot regardless of depth, and none of these six is one.
+        /// </remarks>
         private static void EnsureExtendedRegistryCoverageForActiveScene()
         {
-            TryEnsureThermodynamicsRegistryCoverage();
-            TryEnsureLogisticsRegistryCoverage();
-            TryEnsureWorldGenRegistryCoverage();
-            TryEnsureEncounterDirectorRegistryCoverage();
-            TryEnsureQuestRegistryCoverage();
-            TryEnsureProceduralSwayRegistryCoverage();
+            bool extendedCoverageGateOpen = false;
+            try
+            {
+                GlobalRegistry.BeginSceneRuntimePublicationGate();
+                extendedCoverageGateOpen = true;
+
+                TryEnsureThermodynamicsRegistryCoverage();
+                TryEnsureLogisticsRegistryCoverage();
+                TryEnsureWorldGenRegistryCoverage();
+                TryEnsureEncounterDirectorRegistryCoverage();
+                TryEnsureQuestRegistryCoverage();
+                TryEnsureProceduralSwayRegistryCoverage();
+            }
+            finally
+            {
+                if (extendedCoverageGateOpen)
+                    GlobalRegistry.EndSceneRuntimePublicationGate();
+            }
         }
 
         private static void TryEnsureThermodynamicsRegistryCoverage()

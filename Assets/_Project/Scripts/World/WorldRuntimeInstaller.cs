@@ -96,7 +96,39 @@ namespace Hecton8.World
                 !WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref publishedFloraInteractionManager) &&
                 !runtimeRoot.TryGetComponent<FloraInteractionManager>(out _);
 
-            if (installVoxelEngine)
+            // AbyssalThermalManager is the project's only IThermodynamicsService and was never constructed
+            // by anything, so depth cold, hydrothermal vent heat and laser-cutter heat events had no
+            // gameplay effect at all. Eight live consumers already cache the slot and got null:
+            // HectonSurvivalSystem.cs:741, HectonPlayerMovement.cs:4218, FaunaDirector.cs:822,
+            // DebrisManager.cs:1069, EnvironmentalHazard.cs:288, HectonHazardSource.cs:280,
+            // HectonFluidEngine.cs:2512, CrashTelemetryBuffer.cs:2672.
+            //
+            // GameBootstrapper.TryEnsureThermodynamicsRegistryCoverage cannot rescue it: that helper
+            // bridges the concrete Thermodynamics slot into the ThermodynamicsService slot, and both are
+            // empty when no owner exists. It reads, it never constructs.
+            //
+            // Safe as a sibling on this root, verified rather than assumed: zero Destroy(gameObject) in
+            // AbyssalThermalManager.cs, so it cannot take the root down the way HectonFluidEngine would.
+            // It carries [DisallowMultipleComponent] and [DefaultExecutionOrder(-102)], which places it
+            // between FloraInteractionManager's -105 and the voxel pair's implicit 0.
+            bool installAbyssalThermalManager = !runtimeRoot.TryGetComponent<AbyssalThermalManager>(out _);
+
+            // WorldChunkResidencyManager is deliberately NOT installed here even though it is the only
+            // IStreamingBackpressureService and its slot is read by a live prologue consumer.
+            //
+            // Its slot is GlobalRegistryServiceSlot.StreamingBackpressureRuntime, which
+            // GlobalRegistry.IsSceneRuntimeHotSwapSlot HARD-DENIES (GlobalRegistry.cs:7182). The
+            // publication gate this installer runs inside cannot issue a token for a denied slot, so its
+            // OnEnable registration at WorldChunkResidencyManager.cs:2491 would throw
+            // CriticalBootException - and because the installer calls run in sequence with no try/catch
+            // between them, that throw would abort every installer after it. Adding it here is strictly
+            // worse than leaving it out. It needs a pre-Ready bootstrap lane, not this one.
+            int deferredActivationOwnerCount =
+                (installVoxelEngine ? 1 : 0) +
+                (installFloraInteractionManager ? 1 : 0) +
+                (installAbyssalThermalManager ? 1 : 0);
+
+            if (installVoxelEngine || deferredActivationOwnerCount > 1)
             {
                 // The voxel pair is installed against a deactivated root, then activated once below.
                 //
@@ -123,17 +155,21 @@ namespace Hecton8.World
             }
             else
             {
-                // Nothing here needs deferred activation. FloraInteractionManager is the only other
-                // owner this method installs and no component on this root resolves it as a sibling -
-                // consumers reach it through GlobalRegistry's wake-displacement slot
-                // (FloraInteractionManager.cs:1872) or the static at :1701. Deactivating a live root to
-                // add it would fire OnDisable on whatever is already running, and on the voxel engine
+                // Exactly one owner installs and it is not the voxel pair, so there is nothing to order
+                // against and nothing that resolves a sibling. FloraInteractionManager's consumers reach
+                // it through GlobalRegistry's wake-displacement slot (FloraInteractionManager.cs:1872) or
+                // the static at :1701; AbyssalThermalManager has zero GetComponent/TryGetComponent calls
+                // and resolves everything through GlobalRegistry. Deactivating a live root to add one
+                // component would fire OnDisable on whatever is already running, and on the voxel engine
                 // that means TeardownRuntimeState disposing native streaming scratch for nothing.
                 ActivateRuntimeRoot(runtimeRoot);
             }
 
             if (installFloraInteractionManager)
                 runtimeRoot.AddComponent<FloraInteractionManager>();
+
+            if (installAbyssalThermalManager)
+                runtimeRoot.AddComponent<AbyssalThermalManager>();
 
             if (installVoxelEngine)
             {
