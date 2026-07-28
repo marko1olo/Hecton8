@@ -51,11 +51,11 @@ Every practice in the file has a measurement behind it, and most of the measurem
 
 Tap the frame and wait three counts before seating a dog. A frame that has crept returns a flatter note, because the gasket is loaded on one edge and the steel no longer rings across the span. MC-207 calls this a percussive integrity check and allocates four minutes to it. The scratch above the dog calls for the same four minutes and does not require booking a wrench out of the tool board.
 
-Hold the lamp low for a count of ten before crossing an open corridor. Fauna log F-88 recorded eighteen approaches to a lamp front between 300 m and 600 m over one quarter, and none to a lamp held under 20 lux. Vane's column called this photophobic ritualisation. The fauna officer's column, on the facing page of a different file, called it correct.
+Hold the lamp low for a count of ten before crossing an open corridor. Fauna log F-88 recorded eighteen approaches to a lamp front between 300 m and 600 m over one quarter, and none to a lamp held under 20 lux. Vane's column called this photophobic ritualisation. The fauna officer, writing in a file nobody cross-referenced, called it correct.
 
 Work quiet through a pump restart. The H-series circulation pumps drop about a third of an octave in the two days before a sleeve bearing seizes, and Sector 44 held no instrument that heard it earlier than a person standing still with their hood off. Six seizures were logged in 2145. Four were called by ear, in writing, before the telemetry flagged them.
 
-Tie a red thread on borrowed gear. Tool custody on HECTON-8 was a paperwork state and not a physical one, so a cutter returned to the wrong slot billed to whichever number was chalked on the board, at 40 percent of replacement, whether or not that hand had touched it.
+Tie a red thread on borrowed gear. Tool custody was a paperwork state and not a physical one, so a cutter returned to the wrong slot was billed against whichever number was chalked on the board, at 40 percent of replacement, whether or not that hand had ever held it.
 
 ## 4. The Two Columns
 
@@ -84,11 +84,11 @@ Across two hundred and six pages, the `DISPOSITION` column never once reads insp
 
 ## 5. Why Nobody Stopped It
 
-Marks that cost nothing were tolerated for two hundred and six pages, and the reasons are written down.
+The tolerance was deliberate, and the reasons for it are written down in the same file.
 
-Crews who kept lamps low broke fewer lamp heads, which showed up as a consumables saving on the level 2 return. Crews who worked quiet filed fewer recorded complaints, and recorded complaint volume was a line on the shift supervisor's rating. A crew that blamed a bad frame instead of a design defect did not open a defect docket, and a defect docket on a pressure hatch went to Aegir Operations Risk, where Varnek's office priced it.
+Crews who kept lamps low broke fewer lamp heads, which showed up as a consumables saving on the level 2 return. Crews who worked quiet filed fewer recorded complaints, and recorded complaint volume was a rated line on the shift supervisor's own sheet. A crew that blamed a bad frame instead of a design defect never opened a defect docket, and a defect docket on a pressure hatch went up to Aegir Operations Risk, where Varnek's office priced it against the tide margin.
 
-Facilities intervened at the point where the marks touched money. Not when case 026 was reassigned into another wet room. Not when the hush habit hardened enough that a rigger with a chest injury worked two shifts before anyone raised it in writing, incident 44-IR-1877. Not when the grate-feeding practice on shaft 6 pulled grazers past a door frame they had previously avoided and Atlas-6 rerouted a filter loop through the new growth. The intervention came when the paint stopped matching spec and the hatch run failed a visual on a scheduled walk, and the walk was scheduled because a buyer's surveyor was aboard.
+Facilities intervened at the point where the marks touched money. Not when case 026 was reassigned into another wet room. Not when the quiet-work habit hardened far enough that a rigger with a chest injury worked two shifts before anybody raised it in writing, incident 44-IR-1877. The grate-feeding practice on shaft 6 pulled grazers past a door frame they had previously avoided, and Atlas-6 responded by rerouting a filter loop through the new growth, and none of that generated a form either. Intervention came when the paint stopped matching spec and the hatch run failed a visual on a scheduled walk, and the walk was scheduled because a buyer's surveyor was aboard.
 
 The marks were also wrong sometimes, and the file is no help there either. Nothing on 44-C-51 carries a date. Four of the eleven crossing-stroke marks in the FAC-118-3311 photographs sit on frames that had already been shimmed and returned to service, which means four crews had been tapping and waiting three counts for a fault that facilities had fixed and not recorded.
 
@@ -96,7 +96,7 @@ Black Keel intake now asks four questions of any mark recovered from the water: 
 
 ## 6. The Repaint
 
-The hatch run came back spec 9 grey on 09 of the month. Fourteen days later:
+The hatch run came back spec 9 grey on 2146-03-09. Fourteen days later:
 
 ```text
 INCIDENT 44-IR-2209                    LEVEL 2 SERVICE SPINE / 214 m

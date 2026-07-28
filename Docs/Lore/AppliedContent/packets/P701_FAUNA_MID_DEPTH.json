@@ -58,8 +58,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Salzlaugensauger",
+     "scanner": "Osmotischer Spezialist, hält eine Dichtegrenze. Konfidenz 64 Prozent. Gefahr: ausgestoßene Salzlauge verfälscht den Tiefenkanal. Einschränkung: Erholungszeit des Messgeräts nicht bestimmt.",
+     "in_game_wiki": "Wo diese Tiere Station halten, ist die Platte hinter ihnen offen.\n\nEin Sauger pumpt die Salzlaugenschicht, statt in ihr zu schwimmen, und frisst von der Differenz zwischen den beiden Dichten, die er zieht. Eine scharfe Grenze gibt er nicht her, und die schärfsten hier unten sind unsere: eine aufgerissene Kühlleitung, die auf 620 Metern Süßwasser in Salzlauge blutet, ein Einlassgitter, das durch eine tote Pumpe noch zieht.\n\nZähle die Tiere entlang eines Gitters, und du hast den Durchbruch dahinter gemessen. Gestört, entleert eines die dichte Seite in einem einzigen Schwall, und dieser Schwall sinkt an einer Class-IV vorbei und nimmt den Tiefenkanal für vier bis zehn Sekunden mit.\n\nEine Leckstelle in der Ostgalerie meiden sie. Das Wasser dort prüft identisch.\n\nBewertung: erst das Gitter zählen, dann als offene Hülle bearbeiten.",
+     "terminal": "PROBE 44-D-118. KLASSE: LECKSUCHDIENST, NICHT BEAUFTRAGT. ORT: EINLASSGITTER KÜHLGALERIE 3, 620 M. BEFUND: SALZLAUGENABWEICHUNG DURCH BEOBACHTUNG KARTIERT. SENSORTAUSCHPOSITION 22-B: GESCHLOSSEN, KALIBRIERDRIFT.",
+     "field_note": "Sie haben die Lecksensor-Position geschlossen, weil die Tiere sie umsonst vermessen haben, und dann aufgehört zu reparieren, was die Vermessung gefunden hat. Zähl das Gitter, bevor du einen Schneider in seine Nähe bringst.",
+     "external_site_article": "Bergungsmannschaften auf dem Industrieschelf von HECTON-8 melden einen kurzleibigen osmotischen Fresser, der an Dichtegrenzen Station hält und Wasser durch gepaarte Siphonen zieht, statt die Schicht zu durchschwimmen. Kolonien häufen sich an künstlichen Grenzen, besonders an aufgerissenen Kühlleitungen und Einlassgittern, die durch ausgefallene Pumpen noch Durchfluss führen.\n\nFeldpraxis behandelt das Tier als Messinstrument: die Besatzungsdichte entlang eines Gitters folgt der Größe des Durchbruchs dahinter. Deep-Reach-Unterlagen aus Sektor 44 führen die Art als nicht beauftragten Lecksuchdienst und schließen die zugehörige Sensortauschposition wegen Kalibrierdrift.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Bergungsmannschaften auf dem Industrieschelf von HECTON-8 melden einen kurzleibigen osmotischen Fresser, der an Dichtegrenzen Station hält und Wasser durch gepaarte Siphonen zieht, statt die Schicht zu durchschwimmen."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -78,8 +84,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "塩水吸い",
+     "scanner": "浸透圧特化種、密度境界に定位。信頼度64パーセント。危険：吐き出された塩水が深度チャンネルを乱す。限界：計器の復帰時間は未特定。",
+     "in_game_wiki": "これが定位している所では、その背後の板が開いている。\n\n塩水吸いは塩水層を泳ぐのではなく汲み上げ、引き込む二つの密度の差を食う。鋭い境界は手放さない。ここで最も鋭いのは我々が作ったものだ。620メートルで真水を塩水へ漏らしている裂けた冷却配管、死んだポンプを通してまだ引いている取水格子。\n\n格子沿いに個体を数えれば、その背後の破口を測ったことになる。乱されると一匹が濃い側を一塊で吐き出し、その塊はClass-IVの脇を沈みながら、深度チャンネルを四秒から十秒持っていく。\n\n東ギャラリーの漏れ一箇所だけは避ける。そこの水は分析上まったく同じだ。\n\n評価：先に格子を数え、それから開いた船体として扱う。",
+     "terminal": "標本 44-D-118。区分：漏水検知業務、契約外。場所：冷却ギャラリー3 取水格子、620 M。所見：塩水偏差は観察により作図。センサー交換項目 22-B：終了、校正ドリフト。",
+     "field_note": "漏水センサーの項目を閉じたのは、動物が無償で調べてくれたからで、そのあと調査が見つけたものを直すのをやめた。カッターを近づける前に格子を数えろ。",
+     "external_site_article": "HECTON-8の工業シェルフで作業するサルベージ班は、密度境界に定位し、層を泳ぐのではなく一対のサイフォンで水を引く短躯の浸透圧摂食種を報告している。コロニーは人工の境界に集中し、とくに裂けた冷却配管と、故障したポンプを通してなお流れのある取水格子に多い。\n\n現場ではこの動物を測定器として扱う。格子沿いの個体密度は、その背後の破口の大きさに追従する。セクター44のDeep Reach記録はこの種を契約外の漏水検知業務に分類し、対応するセンサー交換項目を校正ドリフトとして終了させている。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8の工業シェルフで作業するサルベージ班は、密度境界に定位し、層を泳ぐのではなく一対のサイフォンで水を引く短躯の浸透圧摂食種を報告している。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -98,16 +110,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Рассольный сифонщик",
+     "scanner": "Осмотический специалист, держится на границе плотностей. Достоверность 64 процента. Опасность: выброшенный рассол портит канал глубины. Ограничение: интервал восстановления датчика не охарактеризован.",
+     "in_game_wiki": "Там, где они стоят, обшивка за ними открыта.\n\nСифонщик прокачивает рассольный слой, а не плывёт в нём, и кормится разницей между двумя плотностями, которые тянет. Резкую границу он не отдаёт, а самые резкие здесь — наши: разорванная линия охлаждения, сливающая пресную воду в рассол на 620 метрах, водозаборная решётка, которая всё ещё тянет через мёртвый насос.\n\nПересчитай особей по решётке — и ты измерил пробоину за ней. Потревоженный, он сбрасывает плотную сторону одним комком, и этот комок опускается мимо Class-IV, забирая с собой канал глубины на четыре — десять секунд.\n\nОдну течь в восточной галерее они обходят. Вода там по анализу такая же.\n\nОценка: сначала пересчитать решётку, потом работать её как открытый корпус.",
+     "terminal": "ОБРАЗЕЦ 44-D-118. КЛАСС: СЛУЖБА ОБНАРУЖЕНИЯ ТЕЧЕЙ, БЕЗ ДОГОВОРА. ОБЪЕКТ: ВОДОЗАБОРНАЯ РЕШЁТКА ГАЛЕРЕИ ОХЛАЖДЕНИЯ 3, 620 М. ЗАКЛЮЧЕНИЕ: ОТКЛОНЕНИЕ ПО РАССОЛУ СОСТАВЛЕНО НАБЛЮДЕНИЕМ. ЛИНИЯ ЗАМЕНЫ ДАТЧИКОВ 22-B: ЗАКРЫТА, УХОД КАЛИБРОВКИ.",
+     "field_note": "Линию датчиков течи закрыли, потому что животные обследовали её бесплатно, а потом перестали ремонтировать то, что обследование нашло. Пересчитай решётку, прежде чем поднести к ней резак.",
+     "external_site_article": "Спасательные команды на промышленном шельфе HECTON-8 сообщают о коротком осмотическом кормящемся виде, который держится на границах плотности и тянет воду через парные сифоны, а не плывёт в слое. Колонии сгущаются на искусственных границах, особенно на разорванных линиях охлаждения и водозаборных решётках, ещё пропускающих поток через отказавшие насосы.\n\nНа практике животное используют как измерительный прибор: плотность населения по решётке отслеживает размер пробоины за ней. Записи Deep Reach по Сектору 44 относят вид к службе обнаружения течей без договора и закрывают соответствующую линию замены датчиков по уходу калибровки.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Спасательные команды на промышленном шельфе HECTON-8 сообщают о коротком осмотическом кормящемся виде, который держится на границах плотности и тянет воду через парные сифоны, а не плывёт в слое."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "卤水吸食者",
+     "scanner": "渗透压特化种，定位于密度界面。置信度64%。危险：喷出的卤水污染深度通道。限制：仪表恢复间隔未标定。",
+     "in_game_wiki": "它们定位的地方，后面的板材是开的。\n\n卤水吸食者是抽卤水层，不是在里面游，靠它抽进的两种密度之差进食。锋利的界面它不会放弃，而这里最锋利的界面是我们造的：620米处一条裂开的冷却管把淡水漏进卤水，一副取水格栅隔着一台死泵还在抽。\n\n沿格栅把它们数一遍，你就量出了后面的破口。受扰时，一只会把浓的一侧整团排出，这团东西沿Class-IV旁边下沉，并把深度通道带走四到十秒。\n\n东廊道有一处渗漏它们避开。那里的水化验结果完全相同。\n\n评估：先数格栅，再按开口船体处理。",
+     "terminal": "标本 44-D-118。类别：检漏服务，无合同。地点：冷却廊道3 取水格栅，620 M。结论：卤水偏差由观察绘制。传感器更换项 22-B：已关闭，校准漂移。",
+     "field_note": "他们关掉检漏传感器项，是因为这些动物白干了勘查，然后就不再修勘查查出来的东西。把切割器凑近格栅之前，先把格栅数一遍。",
+     "external_site_article": "在HECTON-8工业陆架作业的打捞队报告了一种短体渗透压摄食种，它停在密度界面上，用一对虹吸管抽水，而不是游过那一层。群落集中在人造界面上，尤其是裂开的冷却管路和隔着失效泵仍有流量的取水格栅。\n\n现场把这种动物当作测量仪器：沿格栅的种群密度跟随后面破口的大小。44区的Deep Reach记录把该物种列为无合同的检漏服务，并以校准漂移为由关闭了对应的传感器更换项。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "在HECTON-8工业陆架作业的打捞队报告了一种短体渗透压摄食种，它停在密度界面上，用一对虹吸管抽水，而不是游过那一层。"
     }
    }
   },

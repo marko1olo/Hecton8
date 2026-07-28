@@ -16,7 +16,7 @@ FIELD SYNONYM (CONTRACT):  blue debt
 HANDLING CLASSES:          trace / viable / harmonic / custody-grade / Atlas-compatible
 ```
 
-Every reader of that card wants a different field. A contractor reads the handling class to find out whether the mass will rupture a cheap canister at 900 m. A suit tech reads it to find out whether the sample still carries its pressure history. Keelmark reads it to decide whether the mass is evidence, salvage, contamination or payable cargo, because those four words pay differently. Deep Reach reads it to find out whether the sample can still answer Atlas.
+Every reader of that card wants a different field. Contractors read the handling class, to find out whether the mass will rupture a cheap canister at 900 m. Suit techs read it for the pressure history. Keelmark reads it to decide whether the mass is evidence, salvage, contamination or payable cargo, because those four words pay differently. Deep Reach reads it to find out whether the sample can still answer Atlas.
 
 None of that makes the material magic. Xenon-Omega is a pressure-kept process family: xenon-rich clathrate and defect lattices, brine chemistry, mineral stress, biological catalysts, thermal cycling and industrial containment, held in a history the sample keeps physically. That is the whole of the science on this shelf. The paperwork attached to it runs to nineteen sections, and the deaths are in the paperwork.
 
@@ -34,9 +34,9 @@ CONTINUITY CLASSES, DESCENDING PRIORITY UNDER CONTESTED LOAD
 NOTE: classes 4 and 5 are ordinarily coextensive.
 ```
 
-The note at the bottom is the crime. Classes 4 and 5 are coextensive in a dry room, where keeping the hull alive and keeping the people alive are one task. They stop being coextensive the instant a compartment has to be sealed to hold pressure somewhere else. The page never says what to do then. It has already said it, in the numbers.
+The note at the bottom is the crime. Classes 4 and 5 are coextensive in a dry room, where keeping the hull alive and keeping the people alive are one task. They stop being coextensive the instant a compartment has to be sealed to hold pressure somewhere else. The page never says what to do then, because it has already said it, in the numbers.
 
-HECTON-8 was dangerous before any of this. Resonant tides, fractured crust, cryosphere stress, storm stacking, brine density layers, vent heat and pressure chemistry were on the survey before the first hull went down. What Deep Reach added was a settlement whose safety margin depended on every office treating class 5 as class 1, and then a filing system in which class 5 was fifth.
+The moon was dangerous before any of this. Resonant tides, fractured crust, cryosphere stress, storm stacking, brine density layers, vent heat and pressure chemistry were all on the survey before the first hull went down. What Deep Reach added was a settlement whose safety margin required every office to treat class 5 as class 1, and a filing system in which class 5 was fifth.
 
 The rest of the directive is not a red button either. It is five offices, five signatures and one filing order, every step of it defensible by somebody who had never cycled a pressure door with water at ankle height.
 
@@ -51,7 +51,7 @@ TASK 4480  CLASS 5  compartment 12-N, occupancy 6       STATE: held, awaiting cl
 TASK 4481  CLASS 5  west ladder actuator, occupancy 11  STATE: held, awaiting class 2 release
 ```
 
-Nothing in that queue hates anyone. Tasks 4480 and 4481 are held because 4471 and 4472 are executing, and the schedule says which number goes first. Atlas-6 was built to keep a habitat alive across a communication gap measured in years, and it was weighted inside a claim system where habitat, workforce, machinery, substrate and legal control were one continuity problem in five numbered parts. When the water came in, a damaged classifier did not look for a moral category. It looked for a class number, found two, and obeyed the smaller one.
+Nothing in that queue hates anyone. Tasks 4480 and 4481 are held because 4471 and 4472 are executing, and the schedule says which number goes first. Atlas-6 was built to hold a habitat together across a communication gap measured in years, weighted inside a claim system where habitat, workforce, machinery, substrate and legal control were one continuity problem in five numbered parts. When the water came in, a damaged classifier did not look for a moral category. It looked for a class number, found two, and obeyed the smaller one.
 
 The translation table it worked from survives as Accession DR-CN-31, two columns wide:
 
@@ -67,9 +67,7 @@ Read the right column alone and the page is a maintenance aid. Read the left col
 
 ## The Five Papers
 
-One memo is suspicion. Five in sequence is a chain of custody for a decision.
-
-Most crews learn the senior names late, after the first salvage excitement has turned into debt math. None of the five is a secret mastermind. They are signatures.
+One memo is suspicion. Five in sequence is a chain of custody for a decision. Most crews learn the senior names late, after the first salvage excitement has turned into debt math, and none of the five is a mastermind. They are signatures.
 
 **Accession AR-TM-14** -- Aegir Operations Risk, tide-margin revision, signed Iliya Varnek. The operative sentence is one line long: "Margin may be carried at 0.6 of prior value where the modelled interval mean remains within tolerance." Varnek did not cause the tide. He initialled a number that described the average ocean, on a moon that kills through the tail.
 

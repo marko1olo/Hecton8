@@ -11,7 +11,7 @@
 
 Dry charts flatter people. They make distance look obedient.
 
-Survey sheet SV-44-3 was drawn in 2143 and is still the most complete drawing of the factory levels anybody holds. It is also wrong in ways that do not announce themselves. Pressure buckles corridors. Brine runs downhill and pools where the drawing shows a floor. Silt fills a doorway slowly enough that nothing logs a collapse. A service tunnel stays physically open and stops being a route because one receiver died, one gasket bloomed shut, one nest grew across an intake. The path is still there. The route is gone.
+Survey sheet SV-44-3 was drawn in 2143 and is still the most complete drawing of the factory levels anybody holds. It is also wrong in ways that do not announce themselves. Pressure buckles corridors. Brine runs downhill and pools where the drawing shows a floor. Silt fills a doorway slowly enough that nothing logs a collapse. Service tunnels stay physically open and stop being routes because one receiver died, one gasket bloomed shut, one nest grew across an intake. The path is still there. The route is gone.
 
 Old charts are worth carrying because they record intent: where Deep Reach expected people to move, where emergency teams were told to gather, where machines were supposed to discharge heat, where safe rooms were supposed to be holding power. Intent is not a hazard assessment. Nothing has amended SV-44-3 since May 2147.
 
@@ -49,7 +49,7 @@ When the layers disagree, the disagreement carries the information. A dead end o
 
 A bad map is rarely wrong. It is almost right, which is harder to survive.
 
-Almost-right maps kill professionals. They deliver a tired crew to the correct bulkhead through the wrong pressure pocket. They mark a ladder that exists and ends under silt at 410 m. They route around a flooded compartment that has since drained, then through a dry locker that is now a sump. They keep old confidence long after the facts have moved.
+Almost-right maps kill professionals. They deliver a tired crew to the correct bulkhead through the wrong pressure pocket. The ladder they mark exists, and ends under silt at 410 m. Their detour skirts a flooded compartment that has since drained, and runs through a dry locker that is now a sump. What an almost-right map preserves is confidence, long after the facts underneath it have moved.
 
 Fraud exists. Age is more common. Nobody has to invent a route to sell one, only to sell it before the age field comes up. Crews leave bad data behind because they left in a hurry, and Deep Reach did not have to be malicious for its emergency overlays to turn lethal; it had to leave, stop updating them, and let the water work.
 

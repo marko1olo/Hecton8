@@ -36,7 +36,7 @@ After abandonment the sheet stopped describing the building. A room can read occ
 
 A brownout is the sheet above, executed downward, at whatever speed the bus falls.
 
-At 84 percent of nominal the seal heaters go. At 78 the log retention drops, which is why so many Sector 44 door histories stop mid-cycle. At 74 the door motors stop and the locks stay engaged, because the locks fail secure by design and starvation is indistinguishable from procedure afterwards. Below 62 the outlets a repair crew was counting on are gone while the corridor is still lit.
+At 84 percent of nominal the seal heaters go. Log retention drops four points later, which is why so many Sector 44 door histories stop mid-cycle. At 74 the door motors stop while the locks stay engaged, because the locks fail secure by design and starvation is indistinguishable from procedure afterwards. Below 62 the outlets a repair crew was counting on are gone and the corridor is still lit.
 
 Abandoned systems ignore the sheet. Salted contactors weld shut. Patched corridors back-feed panels that were supposed to die in 2147. A dead sensor keeps its warning lamp burning because the lamp draws 0.3 watts and the loop it reported on draws 40. Pumps run without reporting at all, because telemetry is line 5 and the pump is line 1.
 

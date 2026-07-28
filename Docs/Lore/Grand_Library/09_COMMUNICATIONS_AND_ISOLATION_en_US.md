@@ -3,7 +3,7 @@
 
 > **Source:** Black Keel communications watch manual, revision 9. Packet desk log extracts, relay roster, and Marauder plate annotations. Contractor mirror, shelf copy RAN-B:H8 / COMM-09.  
 > **Scope:** Timing, payload limits, relay custody, queue behaviour, and the difference between an answer and a receipt.  
-> **Reader note:** There is no faster-than-light channel. Every figure printed here was measured on this moon, and the figures are the argument.
+> **Reader note:** There is no faster-than-light channel. Every figure printed here was measured on this moon, and most of them can still be read off an instrument that is bolted where it was left.
 
 ---
 
@@ -132,7 +132,7 @@ This is why crews mark their own routes and keep physical proof. Paint on a hatc
 
 ## 7. What A Stale Reply Costs
 
-Ran is 10.5 light years from Sol, and the card rounds the consequence to twenty-one years.
+Ran is 10.5 light years from Sol. The card prints the consequence without comment: twenty-one years, out and back.
 
 ```text
 QUERY  DR-Q-441   SENT 2147-05-22, Sector 44 evacuation authority

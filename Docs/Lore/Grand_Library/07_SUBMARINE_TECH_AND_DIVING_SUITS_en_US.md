@@ -34,9 +34,9 @@ ASCENT SLEEVE:    AS-2, requires external pressure equalization
 CONTRACT PHRASE:  "delivered to worksite under survivable parameters"
 ```
 
-The field order is the argument. Plate rating, ballast, mast, sleeve, phrase. The mast is listed above the sleeve because the mast proves delivery and delivery is the billable event. Reach water, hold a pressure pocket, report one hash before the mast fouls, and the carrier has performed. The sleeve is fourth, and it needs something the pod cannot supply by itself.
+The field order is the argument. The mast sits above the sleeve because the mast proves delivery, and delivery is the billable event. Reach water, hold a pressure pocket, report one hash before the mast fouls, and the carrier has performed.
 
-The failure modes are cheap and specific. A cracked AM-6 keeps transmitting at reduced power, which is why the Black Keel can hear fragments of a contractor for hours without any fragment amounting to a distress call it is obliged to answer. An AS-2 deformed on impact is not a locked door; it is a 40 mm mismatch between a collar and a seat, and no cutter has ever fixed a mismatch. Burnt heat tile, ballast grit in the release channel, crushed cradle foam: each carries a part number, a replacement interval, and a bench that is not in this system.
+The failure modes are cheap and specific. A cracked AM-6 keeps transmitting at reduced power, which is why the Black Keel can hear fragments of a contractor for hours without any fragment amounting to a distress call it must answer. An AS-2 deformed on impact is not a locked door; it is a 40 mm mismatch between a collar and a seat, and no cutter has ever fixed a mismatch. Burnt heat tile, ballast grit in the release channel, crushed cradle foam: each carries a part number, an interval, and a bench that is not in this system.
 
 Delivery is provable at 11 kHz. Recoverability is a separate legal state and needs a second signature.
 
@@ -53,11 +53,9 @@ CGB-3   cargo beetle, wet frame             plate 2,200 m   latch lips define cu
 PMP-6   pump frame, no crew space           plate 3,000 m   entry after pressure ritual only
 ```
 
-The ratings column carries the design argument. The one dry interior on the list is rated shallowest, and it needs all seven of its gaskets at once. A flooded crawler cares only about keeping its motors dry. Let the water into the spaces that do not care and the machine survives neglect, which on a forty-three-year-old claim is the only kind of survival available. A flooded motor compartment can be rinsed, drained, cursed at and restarted. A compromised crew cabin is a tomb with a rating plate bolted to it.
+The ratings column carries the design argument. The one dry interior is rated shallowest and needs all seven gaskets at once; a flooded crawler only needs its motors dry. Let the water into the spaces that do not care and the frame survives neglect, which on a forty-three-year-old claim is the only survival on offer. A flooded motor compartment can be rinsed, drained, cursed at and restarted. A compromised crew cabin is a tomb with a rating plate bolted to it, and that is why the ruins are full of open frames, exposed ribs, tool rails and external bottles.
 
-Hence the ruins full of machines that look unfinished to anyone raised on spacecraft: open frames, exposed ribs, tool rails, external bottles, clamp points on every face. Each one is a space the designer agreed in advance to lose.
-
-Marauders read the registry backwards. Clean ballast scars on a CRW-2 mean ballast cycled recently enough to leave marks. Smooth cable wear on an SLD-4 means the sled was drawn under load, so whatever route memory it holds was written under load and may be honest. Intact latch lips on a CGB-3 are worth more than the motor, because latch lips are what keep a custody-grade canister legally separate from the rest of the bag. Nobody useful asks whether a frame still works. They ask which part of its failure is still worth something.
+Marauders read the registry backwards. Clean ballast scars on a CRW-2 mean ballast cycled recently enough to leave marks. Smooth cable wear on an SLD-4 means the sled was drawn under load, so whatever route memory it holds was also written under load and may be honest. Intact latch lips on a CGB-3 are worth more than the motor, because latch lips are what keep a custody-grade canister legally separate from the rest of the bag. Nobody useful asks whether a frame works. They ask which part of its failure is still worth something.
 
 ## The Suit Is A Rented Room
 
@@ -92,13 +90,13 @@ The manual lists the parts. Crews keep the rest. Never trust a seal that came ba
 
 ## Sound, Tethers And The Lie Of Contact
 
-Radio dies in the first few metres. Everything after that is acoustics, and acoustics is physics with a delay attached.
+Radio dies in the first few metres. Everything after that is acoustics, and the contractor bands are narrow and slow: 11 kHz for pod masts, 7 kHz for suit receivers.
 
-The contractor bands are narrow and slow: 11 kHz for pod masts, 7 kHz for suit receivers. A packet crossing two kilometres of layered brine arrives about 1.4 seconds late, clipped at the edges, sometimes repeated, sometimes flattened where a density boundary bent it into terrain. Storm water dirties it further. What alarms an experienced ear is a clean packet in bad water: perfection means either an unusually good channel or a receiver that rebuilt the sentence after the middle of it was lost, and one of those two possibilities is a lie with a timestamp on it.
+A packet crossing two kilometres of layered brine arrives about 1.4 seconds late, clipped at the edges, sometimes repeated, sometimes flattened where a density boundary bent it into terrain. Storm water dirties it further. What alarms an experienced ear is a clean packet in bad water: perfection means either an unusually good channel or a receiver that rebuilt the sentence after the middle of it was lost, and one of those two is a lie with a timestamp on it.
 
 At the other end of the channel sits a claim tender with windows, queues, insurers and thresholds. The Black Keel can log a status burst and refuse recovery inside the same window. A biological indication ranks below a payload handshake, because the handshake has a form number and the indication does not, and coordinates get asked for first because comfort is not a billable operation.
 
-Tethers are shorter and meaner than the stories suggest: work leads, receiver cords, suit-cage handling lines, sample-chain tags, rescue hooks, damaged cables that remember only direction. Their value is not connection to safety. Their value is that a TC-9 clamp, a tag number and a measured length make direction, ownership and last motion difficult to argue about afterwards.
+Tethers are shorter and meaner than the stories suggest: work leads, receiver cords, suit-cage handling lines, sample-chain tags, rescue hooks, cables that remember only direction. Their value is not connection to safety. It is that a TC-9 clamp, a tag number and a measured length make direction, ownership and last motion hard to argue about afterwards.
 
 ## Tools Under Pressure
 
@@ -106,7 +104,7 @@ Weapons are tools with worse circumstances and the same service grades.
 
 A CT-11 cutter is rated for hull lips, jammed pressure doors, pipe cages, dead bolts and salvage cuts, at 6 mm of service metal per pass. Pointing one at living biology means distance was lost several minutes earlier. Harpoon drivers buy space and do nothing else. The charge lance opens a route and creates a second problem in the same second. Drills take a sample, wake a sensor path, or ruin the exact surface that would have proved custody, the same 12 mm bit doing all three depending on where it lands.
 
-Pressure makes every reaction expensive. Gas pockets behave badly, heat becomes steam and stress and noise, and a fast projectile loses its arrogance inside two metres. Anchoring, timing and whatever stands behind the target all outrank edge sharpness. Most good equipment down here is built to buy four or five seconds in which work is still an option for a frightened person.
+Pressure makes every reaction expensive. Gas pockets behave badly, heat becomes steam and stress and noise, and a fast projectile loses its arrogance inside two metres. Most good equipment down here is built to buy four or five seconds in which work is still an option for a frightened person.
 
 Which is why the valuable kit looks unimpressive on a bench: seal picks, marked repair tape, cable splints, scrubber keys, sample sleeves, bolt splitters, sludge brushes, pressure chalk, quiet clamps, tether hooks. None of it carries a plate rating worth quoting. All of it carries a replacement interval that nobody has honoured since 2147.
 
@@ -114,7 +112,7 @@ Which is why the valuable kit looks unimpressive on a bench: seal picks, marked 
 
 Every machine down here keeps two records, and they disagree.
 
-The formal record is stamps: service dates, cage registry, heat cycles, pressure bands, firmware warnings, tool shocks, custody locks. The physical record is salt under a hinge, green-black film inside a receiver mouth, fog at one edge of a VP-2, a cable bent where a hand used it too often, a scratch where somebody preferred the camera not to see the work.
+The formal record is stamps: service dates, cage registry, heat cycles, pressure bands, custody locks. The physical record is salt under a hinge, fog at one edge of a VP-2, a cable bent where a hand used it too often, a scratch where somebody preferred the camera not to see the work.
 
 Accession 44-SV-63 is a suit service card recovered from a locker in Shallow Annex P-63. Four lines:
 
@@ -132,7 +130,7 @@ Metal lies less gracefully than paper. A service card reading "seal replaced" me
 
 ## What A Workaround Costs
 
-Survival hardware here is not a ladder from weak to strong. It is a set of trades, and each trade has a printed side and an unprinted side.
+Survival hardware here is not a ladder from weak to strong. Every fit is a trade with a printed side and an unprinted side.
 
 ```text
 FIT / REPAIR                 PRINTED GAIN          UNPRINTED COST
@@ -144,6 +142,6 @@ CRW-2 returned to service     route time halved     the slow observations that r
 AS-2 sleeve reseated          ascent possible       payload leaves custody first
 ```
 
-The right column is the one that costs money, and it never appears on a plate. A better seal will cross a pressure band and carry worker evidence out intact. Mount a heavier tool and more mass comes back, which makes every failed return more expensive. Rewind a receiver properly and it will eventually resolve the message nobody wanted resolved: the last transmission before a crew went quiet, cleaned up and decoded, turns out to be a custody request.
+The right column costs money and never appears on a plate. Mount a heavier tool and more mass comes back, which makes every failed return more expensive. Rewind a receiver properly and it will eventually resolve the one message nobody wanted resolved: the last transmission before a crew went quiet, cleaned up and decoded, turns out to be a custody request.
 
-Handling note. Every rating quoted on this shelf was true on the day it was stamped, and the newest of those days was 2147. Read the plate to learn what a part was certified for. Read the groove, the pin and the bead to learn what it will do tomorrow. When the two disagree, the groove is the one that will be holding pressure.
+Handling note. Every rating quoted on this shelf was true on the day it was stamped, and the newest of those days was 2147. Read the plate to learn what a part was certified for; read the groove, the pin and the bead to learn what it will do tomorrow. When the two disagree, the groove is the one holding pressure.

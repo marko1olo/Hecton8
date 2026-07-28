@@ -87,7 +87,7 @@ Every field on that card is a place to lose a case. Buyers attack `WATER ADMITTE
 
 Weak chains are short. `Found in Sector 44` is a complete entry under the old Deep Reach schema and answers nothing: which ledge, before or after the pump cycle, above or below the brine layer at 1,480 m, clean tool or borrowed glove.
 
-A preserved scrape puts another crew in the room first. A contaminated seal kills a buyer's complaint before it is filed. One missing humidity tick shows a container was opened while somebody else held custody. This is why a 40 mL vial can price above a 300 kg machine: the machine is mass, and the vial can stand up at a hearing.
+A preserved scrape puts another crew in the room first. Where a seal reads contaminated, a buyer's complaint dies before it is filed. One missing humidity tick is enough to show that a container was opened while somebody else held custody. That is how a 40 mL vial prices above a 300 kg machine: the machine is mass, and the vial can stand up at a hearing.
 
 The smallest items are the dangerous ones to carry. Light enough to steal, precise enough to convict the carrier.
 
@@ -107,9 +107,9 @@ BEARER DECEASED.................................: balance transfers to lien
 
 The last line is the only one that has ever been challenged in arbitration. Marek Ibarra's desk won that hearing in 2151 on the wording of the rider, and the wording has not been touched since.
 
-The schedule produces ugly behaviour on the deck. Crews wipe tools before handing them across. They hide a stain that would prove a route, because a route fee runs cheaper than a contamination fee. Clean gloves trade hand to hand at about 0.02. Most crews carry two pouches, one for objects that smell like a hearing and one for objects that smell like money, and some dirt stays on the seafloor on purpose, because bringing it up hands the gate a new handle and rider 9 a new line.
+The schedule produces ugly behaviour on the deck. Crews wipe tools before handing them across. They hide a stain that would prove a route, because a route fee runs cheaper than a contamination fee. Clean gloves trade hand to hand at about 0.02 t-window, which is the decontamination rate and no accident. Most crews carry two pouches, one for objects that smell like a hearing and one for objects that smell like money, and some dirt stays on the seafloor on purpose, because bringing it up hands the gate a new handle and rider 9 a new line.
 
-Dirt is also a record. A scratch pattern identifies a hatch. Salt in a boot seam names a brine layer to within about 60 m of depth. Rust dust in a cutter tooth dates a cut to after flooding, because dry-cut steel does not carry it. A smear on a glove has put a body in a room whose own door log denied the entry.
+Dirt is also a record. A scratch pattern identifies a hatch. Salt in a boot seam will name a brine layer to within about 60 m of depth, and rust dust in a cutter tooth dates the cut to after flooding, because dry-cut steel does not carry it. One smear on a glove has put a body in a room whose own door log denied the entry.
 
 The same dirt that fines a worker under rider 9 is what keeps that worker from ending up as an `asset reassignment` with no coordinate attached.
 
