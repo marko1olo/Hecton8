@@ -1299,48 +1299,61 @@ def _heal_degenerate(obj, dist: float = 3.0e-4) -> dict:
     # any parameterisation of it reports a huge aspect distortion. Measured: a LOD1
     # triangle at 264.5 survived both an area filter and a degenerate-edge dissolve.
     # Collapsing its shortest edge heals the neighbourhood instead of punching a hole.
+    # Dissolve the sliver's MIDDLE vertex rather than collapsing an edge.
+    # bmesh.ops.collapse merges two vertices, and at a threshold aggressive enough to
+    # actually clear the outlier ceiling it folded the surface into NON-MANIFOLD
+    # configurations -- three faces on one edge, which recalc_face_normals cannot
+    # orient, so the validator reported inconsistent_winding at LOD0 and LOD1.
+    # dissolve_verts removes the offending vertex and re-forms the surrounding fan as a
+    # single n-gon, which stays manifold by construction; re-triangulating afterwards
+    # keeps the buffer triangular.
     collapsed = 0
     for _pass in range(8):
-        targets = []
+        candidates = []
         for face in bm.faces:
             area = face.calc_area()
             if area <= 1e-12:
                 continue
-            longest = max(edge.calc_length() for edge in face.edges)
-            # longest^2 / 2A is the ratio of the longest edge to the altitude onto it.
+            edges = list(face.edges)
+            longest = max(edges, key=lambda e: e.calc_length())
+            length = longest.calc_length()
+            # length^2 / 2A is the ratio of the longest edge to the altitude onto it.
             # Tuned against measurement, not guessed: 60 missed a 53.3 sliver entirely,
             # and at 42 the pass converged leaving a 41.8 sliver that still mapped to
-            # 4.03 UV distortion against a 3.3 ceiling. The collapse always converges
-            # just under whatever threshold is set, so the threshold has to sit below
-            # the aspect that produces a breach.
-            if (longest * longest) / (2.0 * area) > 30.0:
-                targets.append(face)
-        if not targets:
+            # 4.03 UV distortion against the 3.3 ceiling. The pass always converges just
+            # under whatever threshold is set, so it has to sit below the aspect that
+            # produces a breach.
+            if (length * length) / (2.0 * area) <= 30.0:
+                continue
+            middle = [v for v in face.verts if v not in longest.verts]
+            if len(middle) != 1:
+                continue
+            vertex = middle[0]
+            if vertex.is_boundary or not (3 <= len(vertex.link_faces) <= 8):
+                continue
+            candidates.append(vertex)
+        if not candidates:
             break
-        # Collapse only an INDEPENDENT set: two edges sharing a vertex, collapsed in the
-        # same bmesh op, can fold the surface onto itself and produce the inconsistent
-        # winding this pass is supposed to be cleaning up. One edge per vertex per pass,
-        # with more passes, converges without that risk.
+        # Independent set: dissolving two vertices that share a face in one op can leave
+        # a hole where their fans overlapped.
         claimed = set()
-        edges = []
-        for face in sorted(targets, key=lambda f: f.calc_area()):
-            shortest = min(face.edges, key=lambda e: e.calc_length())
-            keys = tuple(v.index for v in shortest.verts)
-            if any(k in claimed for k in keys):
+        chosen = []
+        for vertex in candidates:
+            ring = {vertex.index}
+            for edge in vertex.link_edges:
+                for other in edge.verts:
+                    ring.add(other.index)
+            if ring & claimed:
                 continue
-            neighbours = set()
-            for vertex in shortest.verts:
-                for edge in vertex.link_edges:
-                    for other in edge.verts:
-                        neighbours.add(other.index)
-            if any(k in claimed for k in neighbours):
-                continue
-            claimed.update(neighbours)
-            edges.append(shortest)
-        if not edges:
+            claimed |= ring
+            chosen.append(vertex)
+        if not chosen:
             break
-        bmesh.ops.collapse(bm, edges=edges, uvs=True)
-        collapsed += len(edges)
+        bmesh.ops.dissolve_verts(bm, verts=chosen)
+        collapsed += len(chosen)
+        if bm.faces:
+            bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method="BEAUTY",
+                                  ngon_method="BEAUTY")
         bmesh.ops.dissolve_degenerate(bm, dist=dist, edges=bm.edges[:])
         bm.verts.index_update()
         bm.edges.index_update()
@@ -1355,7 +1368,7 @@ def _heal_degenerate(obj, dist: float = 3.0e-4) -> dict:
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     mesh_ops.bmesh_to_object(bm, obj)
     return {"facesBefore": before_faces, "faces": len(obj.data.polygons),
-            "sliverEdgesCollapsed": collapsed, "zeroAreaDeleted": len(dead),
+            "sliverVertsDissolved": collapsed, "zeroAreaDeleted": len(dead),
             "looseDeleted": len(loose)}
 
 
@@ -1674,7 +1687,26 @@ def _author_vertex_colours(obj, form, bb, *, ao_samples: int, ao_distance: float
     roots = [sway.values[i] for i in range(len(classes))
              if classes[i] <= CLS_FINGER + 0.5] or [0.0]
 
+    # Read the composed attribute straight off the mesh. The rendered channel tiles are
+    # measured through preview.measure_channel_png, and an instrument fault there would
+    # be indistinguishable from a generator fault; these numbers come from the vertex
+    # data itself, so the two can be compared.
+    direct = {}
+    attribute = mesh.color_attributes.get(law.VCOL_ATTRIBUTE_NAME)
+    if attribute is not None:
+        for index, channel_name in enumerate(law.ORGANIC_VCOL):
+            values = [element.color[index] for element in attribute.data]
+            if values:
+                direct[channel_name] = {
+                    "min": round(min(values), 5),
+                    "max": round(max(values), 5),
+                    "mean": round(sum(values) / len(values), 5),
+                    "elements": len(values),
+                    "domain": attribute.domain,
+                }
+
     report.update({
+        "directAttributeRead": direct,
         "geodesicAttributeSurvived": geo_ok,
         "classAttributeSurvived": cls_ok,
         "maxFlexibleLengthM": round(max_flexible_length, 5),
@@ -2514,6 +2546,11 @@ def _print_report(manifest: dict) -> None:
               mx=vcol["aoMax"], me=vcol["aoMean"], s=vcol["aoSamples"],
               d=vcol["aoDistanceM"]))
     print("  vcol A           {m}".format(m=vcol["alphaMeaning"]))
+    for channel_name, stats in (vcol.get("directAttributeRead") or {}).items():
+        print("  vcol[direct] {c:<16} min={mn:<8} max={mx:<8} mean={me:<8} "
+              "n={n} ({d})".format(c=channel_name, mn=stats["min"],
+                                   mx=stats["max"], me=stats["mean"],
+                                   n=stats["elements"], d=stats["domain"]))
     collision = manifest["collision"]
     print("  collision        {k} -- {j}".format(k=collision["kind"],
                                                  j=collision["justification"]))

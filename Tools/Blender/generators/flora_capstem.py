@@ -270,6 +270,87 @@ class ClumpPlan:
     hub_fraction: float
 
 
+def stem_segment_count(segments: int) -> Tuple[int, int]:
+    """(stem_segments, ratio) -- the stem's angular resolution, coarser than the cap's.
+
+    The cap needs enough angular samples to resolve its ribs and lobed outline; a 15 mm
+    stem does not, and giving it the same count produced quads 10:1 to 20:1 elongated.
+    Sliver triangles are the reason the UV gate would not close: sigma_max/sigma_min is
+    ill-conditioned on a needle, so a map whose per-edge scales were all within 27% of
+    each other still measured a ratio of 5.7 against a 0.55 limit. Fewer, squarer stem
+    quads fix the metric and the topology at once, and ``PROCEDURAL_ASSET_PIPELINE.md``
+    already asks for "quad-dominant topology, uniform density" over "chaotic
+    triangulation".
+
+    A ratio of 1 means no transition band is needed, which keeps the low-quality path
+    identical to a plain tube.
+    """
+    ratio = max(1, segments // 12)
+    while ratio > 1 and segments % ratio != 0:
+        ratio -= 1
+    return segments // ratio, ratio
+
+
+def triangles_per_stem(segments: int, stem_rings: int, cap_top_rings: int,
+                       cap_bottom_rings: int, rim_rings: int) -> int:
+    """Exact LOD0 triangle count for one stem. Not an estimate.
+
+    Foot fan, coarse stem bands, one fan transition band into the cap hub, then the cap
+    underside, rim and top bands plus the apex fan. Verified against the measured
+    datablock rather than trusted.
+    """
+    stem_segments, ratio = stem_segment_count(segments)
+    coarse_bands = max(0, stem_rings - 2)
+    transition = (ratio + 1) * stem_segments if ratio > 1 else 2 * stem_segments
+    cap_bands = cap_bottom_rings + (rim_rings + 1) + (cap_top_rings - 1)
+    return (stem_segments                      # foot fan
+            + 2 * stem_segments * coarse_bands  # stem tube
+            + transition                        # coarse -> hub
+            + 2 * segments * cap_bands          # cap underside, rim, top
+            + segments)                         # apex fan
+
+
+def _fit_density(*, rib_count: int, segments_per_rib: int, stem_rings: int,
+                 cap_top_rings: int, cap_bottom_rings: int, rim_rings: int,
+                 stem_count: int, budget: int):
+    """Shrink ring density deterministically until the clump fits its LOD0 budget.
+
+    Rings go first and angular segments last: the lobed, notched cap OUTLINE is the
+    silhouette this asset is for, and dropping angular resolution attacks exactly the
+    feature that has to survive. ``3dmodel.md`` section 7 -- "If the silhouette reads
+    correctly at lower counts, spend saved budget on material detail" -- is the same
+    priority ordering.
+    """
+    minimums = {"stem_rings": 4, "cap_top_rings": 4, "cap_bottom_rings": 3,
+                "rim_rings": 1}
+    counts = {"stem_rings": stem_rings, "cap_top_rings": cap_top_rings,
+              "cap_bottom_rings": cap_bottom_rings, "rim_rings": rim_rings}
+    ceiling = int(budget * 0.93)
+
+    def total(spr: int) -> int:
+        return stem_count * triangles_per_stem(
+            rib_count * spr, counts["stem_rings"], counts["cap_top_rings"],
+            counts["cap_bottom_rings"], counts["rim_rings"])
+
+    for _guard in range(64):
+        if total(segments_per_rib) <= ceiling:
+            break
+        # Reduce whichever ring count is furthest above its floor, so the shrink stays
+        # balanced instead of collapsing one axis to its minimum first.
+        candidates = [(counts[k] - minimums[k], k) for k in counts]
+        candidates.sort(reverse=True)
+        slack, key = candidates[0]
+        if slack > 0:
+            counts[key] -= 1
+            continue
+        if segments_per_rib > 2:
+            segments_per_rib -= 1
+            continue
+        break
+    return (segments_per_rib, counts["stem_rings"], counts["cap_top_rings"],
+            counts["cap_bottom_rings"], counts["rim_rings"])
+
+
 def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> ClumpPlan:
     """Decide the whole clump deterministically from the RNG.
 
@@ -303,6 +384,21 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
     current.normalize()
 
     rib_count = int(7 + round(_rng_range(rng, 0.0, 6.0)))   # 7..13
+
+    # Density is fitted to the REAL LOD0 ceiling before a vertex exists, because the
+    # per-vertex sway/harvest arrays are index-aligned to build order: decimating LOD0
+    # afterwards would desynchronise them, so "generate then reduce" is not available
+    # here and authored density has to be right the first time. 3dmodel.md section 7
+    # calls the budget a hard maximum, and a four-stem clump at full ring density
+    # measured 7168 triangles against 6500 -- fixed by shrinking rings, not by
+    # decimating away the authored silhouette. No RNG is consumed here, so the fit
+    # cannot shift the deterministic draw order of anything below it.
+    (segments_per_rib, stem_rings, cap_top_rings, cap_bottom_rings,
+     rim_rings) = _fit_density(
+        rib_count=rib_count, segments_per_rib=segments_per_rib,
+        stem_rings=stem_rings, cap_top_rings=cap_top_rings,
+        cap_bottom_rings=cap_bottom_rings, rim_rings=rim_rings,
+        stem_count=stem_count, budget=law.LOD_BUDGETS[FAMILY].lod0)
     segments = rib_count * segments_per_rib
 
     stems: List[StemPlan] = []
@@ -333,13 +429,19 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
                 + current * _rng_range(rng, 0.12, 0.40))
 
         # Tear sectors: (centre angle, half width, depth). A juvenile has none.
+        # A tear narrower than the angular sampling is not a bite, it is a
+        # single-vertex needle: measured 66 mm of radius collapsed between two adjacent
+        # vertices 2.75 mm apart, which both looks like a spike and destroys the UV
+        # parameterisation there. The half width is therefore floored at 2.5 angular
+        # segments so every tear is resolved by several vertices on each flank.
         tears: List[Tuple[float, float, float]] = []
+        minimum_half_width = 3.5 * math.tau / float(segments)
         if not juvenile:
-            for _ in range(1 + int(rng.integers(0, 3))):
+            for _ in range(1 + int(rng.integers(0, 2))):
                 tears.append((
                     _rng_range(rng, 0.0, math.tau),
-                    _rng_range(rng, 0.10, 0.42),
-                    _rng_range(rng, 0.16, 0.44),
+                    max(minimum_half_width, _rng_range(rng, 0.10, 0.42)),
+                    _rng_range(rng, 0.16, 0.32),
                 ))
 
         stems.append(StemPlan(
@@ -396,12 +498,19 @@ def _stem_axis(plan: StemPlan, samples: int) -> List[Tuple[Vector, Vector, float
     out: List[Tuple[Vector, Vector, float, float]] = []
     lean = plan.lean
     positions: List[Vector] = []
+    parameters: List[float] = []
     for i in range(samples):
-        t = i / float(samples - 1)
+        # Rings cluster toward the foot. Uniform sampling put the ENTIRE holdfast flare
+        # between ring 0 and ring 1 -- a 2.5:1 radius change across one band, which is
+        # a cone with a hard crease rather than a root pad, and no cylindrical UV map
+        # can carry it (measured sigma ratio 21.9 on that one band). Clustering resolves
+        # the flare axially the same way the tear clamp resolves a bite angularly.
+        t = (i / float(samples - 1)) ** 2.0
         # Vertical rise slightly eased so the neck is not a straight ramp.
         rise = plan.height * (t ** 0.94)
         lateral = lean * (plan.height * plan.bend * (t ** 1.85))
         positions.append(plan.base_offset + Vector((0.0, 0.0, rise)) + lateral)
+        parameters.append(t)
 
     arclength = 0.0
     for i, position in enumerate(positions):
@@ -415,8 +524,7 @@ def _stem_axis(plan: StemPlan, samples: int) -> List[Tuple[Vector, Vector, float
             arclength += (positions[i] - positions[i - 1]).length
         if tangent.length <= 1e-9:
             tangent = Vector((0.0, 0.0, 1.0))
-        out.append((positions[i], tangent.normalized(), i / float(samples - 1),
-                    arclength))
+        out.append((positions[i], tangent.normalized(), parameters[i], arclength))
     return out
 
 
@@ -442,11 +550,16 @@ def _stem_profile_radius(plan: StemPlan, t: float, theta: float) -> float:
                                     + 1.7 * t)
     radius *= ellipse * ridges
 
-    foot_span = 0.14
+    # Holdfast flare. The amplitude is bounded on purpose: the flare sets the ratio
+    # between the widest and narrowest ring circumference, and that ratio IS the
+    # circumferential scale error of the stem's constant-width unwrap. 0.95 keeps the
+    # spread near 2:1, which the geometric-mean anchor splits into +-1.41x -- inside the
+    # 0.55 organic aspect limit. A larger flare is not free detail, it is UV stretch.
+    foot_span = 0.22
     if t < foot_span:
         k = (1.0 - t / foot_span) ** 2.0
-        flare = 1.0 + 1.55 * k
-        fingers = 1.0 + 0.52 * k * math.cos(plan.finger_count * theta
+        flare = 1.0 + 0.95 * k
+        fingers = 1.0 + 0.34 * k * math.cos(plan.finger_count * theta
                                             + plan.finger_phase)
         radius *= flare * fingers
     return max(radius, plan.stem_radius * 0.22)
@@ -650,43 +763,85 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
 
     ring_indices: List[List[int]] = []
     ring_circumference: List[float] = []
-    for i, (position, tangent, t, arclength) in enumerate(axis):
-        frame_x, frame_y, _frame_z = _basis_from_up(tangent, clump.current_dir)
-        natural = []
-        for j in range(segments):
-            theta = thetas[j]
-            radius = _stem_profile_radius(plan, t, theta)
-            radius *= 1.0 + 0.10 * noise.sample(t, theta / math.tau)
-            natural.append(position + frame_x * (radius * math.cos(theta))
-                           + frame_y * (radius * math.sin(theta)))
-        if i == len(axis) - 1:
-            points = hub_ring
-        elif i == len(axis) - 2:
-            # Blend the penultimate ring toward the hub ring pulled back along the
-            # tangent, so the weld is smooth instead of a collar step.
-            step = (axis[-1][0] - position).length
-            points = [_lerp_v(natural[j], hub_ring[j] - tip_tangent * step, 0.5)
-                      for j in range(segments)]
-        else:
-            points = natural
+    ring_arc: List[List[float]] = []
+    # v runs along the real SURFACE from the foot, per angle -- not along the axis. The
+    # holdfast flare collapses the radius by a factor of ~2.5 over the first two rings,
+    # so the slant height of that band is far longer than the axial rise; using axial
+    # arc length there measured 78x aspect distortion on the first stem band.
+    # v is one scalar PER RING, the mean surface advance, not a per-column
+    # accumulation. Per-column looked more accurate and was catastrophically worse:
+    # adjacent columns diverge as their own radius wobbles, so column j reached
+    # v = 0.30 while j+1 reached 0.33 -- a 30 mm SHEAR across a quad 3 mm wide, and
+    # sigma_max/sigma_min hit 6100. A per-ring v cannot shear by construction.
+    stem_v: List[float] = []
+    previous_ring: Optional[List[Vector]] = None
+    stem_segments, ratio = stem_segment_count(segments)
+    # The coarse angles are a strict SUBSET of the fine ones -- coarse jc lines up with
+    # fine jc*ratio -- which is what lets the transition band into the hub connect
+    # without leaving a T-vertex.
+    thetas_stem = [math.pi + math.tau * jc / float(stem_segments)
+                   for jc in range(stem_segments)]
 
+    for i, (position, tangent, t, arclength) in enumerate(axis):
+        is_hub = (i == len(axis) - 1)
+        angles = thetas if is_hub else thetas_stem
+        count = len(angles)
+        if is_hub:
+            points = hub_ring
+        else:
+            frame_x, frame_y, _frame_z = _basis_from_up(tangent, clump.current_dir)
+            points = []
+            for j in range(count):
+                theta = angles[j]
+                radius = _stem_profile_radius(plan, t, theta)
+                # Fine noise stays WEAK and bounded. At 0.10 x an unclamped N(0,1) it
+                # reached +-35% of the stem radius: visually lumpy rather than grown,
+                # and enough angular wobble to wreck the parameterisation. The lead's
+                # coral report names the same failure -- one isotropic octave reads as
+                # cauliflower, so structure-following terms dominate and noise trims.
+                radius *= 1.0 + 0.030 * max(-2.5, min(
+                    2.5, noise.sample(t, theta / math.tau)))
+                points.append(position + frame_x * (radius * math.cos(theta))
+                              + frame_y * (radius * math.sin(theta)))
+
+        # u is the REAL accumulated arc around the ring, normalised by that ring's own
+        # circumference. Uniform index spacing looked equivalent and is not: the
+        # holdfast finger lobes and the ellipse make adjacent arc steps differ several
+        # fold around one ring, and uniform u then claims 7.76 mm where the surface
+        # travels 2.46 mm -- that alone produced a sigma ratio of 493.
         circumference = 0.0
-        for j in range(segments):
-            circumference += (points[(j + 1) % segments] - points[j]).length
+        arc = [0.0] * count
+        for j in range(count):
+            arc[j] = circumference
+            circumference += (points[(j + 1) % count] - points[j]).length
         ring_circumference.append(circumference)
+        ring_arc.append([value - circumference * 0.5 for value in arc])
+
+        if previous_ring is None:
+            stem_v.append(0.0)
+        else:
+            step = ratio if is_hub else 1
+            advance = sum(
+                (points[jc * step] - previous_ring[jc]).length
+                for jc in range(len(previous_ring))) / float(len(previous_ring))
+            stem_v.append(stem_v[-1] + advance)
+        previous_ring = points
 
         harvest = _smoothstep((t - 0.74) / 0.26)
         radius_estimate = max(1e-4, circumference / math.tau)
         indices = [accum.vert(points[j], arclength, harvest, radius_estimate)
-                   for j in range(segments)]
+                   for j in range(count)]
         ring_indices.append(indices)
 
     # ---- foot: flat n-gon closing the bottom ----------------------------
+    # The foot ring lies in the z=0 plane and the fan is planar, so planar offsets ARE
+    # the isometric map here. Its own island: the strip map above it uses a different
+    # parametrisation and sharing one island would fight both.
     foot_centre = accum.vert(axis[0][0], 0.0, 0.0,
                              max(1e-4, ring_circumference[0] / math.tau))
     foot_radius = ring_circumference[0] / math.tau
-    for j in range(segments):
-        k = (j + 1) % segments
+    for j in range(stem_segments):
+        k = (j + 1) % stem_segments
         offset_a = accum.positions[ring_indices[0][j]] - axis[0][0]
         offset_b = accum.positions[ring_indices[0][k]] - axis[0][0]
         accum.face(
@@ -695,25 +850,77 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
              (island_foot, offset_b.x, offset_b.y),
              (island_foot, offset_a.x, offset_a.y)))
 
-    # ---- stem bands -----------------------------------------------------
-    v_offsets = [row[3] for row in axis]
-    for i in range(len(ring_indices) - 1):
+    # ---- stem bands: constant-width cylindrical strip -------------------
+    # A tapering tube has no isometric rectangular unwrap, and the two obvious choices
+    # fail in opposite ways. Giving each ring its own u width preserves circumferential
+    # LENGTH but makes the island a trapezoid, so two rings at the same angle drift
+    # apart -- measured 33 mm of drift against a 1.75 mm v step, which sent the UV
+    # triangle collinear and sigma_min to zero (ratio 6100, then 40 after other fixes).
+    # Mapping the flare as a polar annulus instead over-stretched it 4.5x
+    # circumferentially as soon as the surface stopped being disc-like (ratio 18).
+    #
+    # A CONSTANT width removes drift entirely: u depends only on the angular index, so
+    # every ring lands in the same column. What remains is a per-ring circumferential
+    # scale error of C_i / C_ref, and anchoring C_ref on the GEOMETRIC MEAN splits that
+    # error symmetrically -- a 2.0:1 spread between the flared foot and the neck becomes
+    # +-1.41x, i.e. sigma_max/sigma_min - 1 = 0.41, inside the 0.55 organic limit.
+    # Anchoring on the mean or on either extreme puts the whole ratio on one end and
+    # fails there.
+    log_sum = 0.0
+    for circumference in ring_circumference:
+        log_sum += math.log(max(1e-6, circumference))
+    reference_circumference = math.exp(log_sum / max(1, len(ring_circumference)))
+    strip_u = [[(value / max(1e-6, ring_circumference[i])) * reference_circumference
+                for value in ring_arc[i]]
+               for i in range(len(ring_indices))]
+
+    # Coarse-to-coarse bands.
+    for i in range(len(ring_indices) - 2):
         lower = ring_indices[i]
         upper = ring_indices[i + 1]
-        for j in range(segments):
-            k = (j + 1) % segments
-            frac_j = j / float(segments) - 0.5
-            frac_k = (j + 1) / float(segments) - 0.5
-            u_lo_j = frac_j * ring_circumference[i]
-            u_lo_k = frac_k * ring_circumference[i]
-            u_hi_j = frac_j * ring_circumference[i + 1]
-            u_hi_k = frac_k * ring_circumference[i + 1]
+        for j in range(stem_segments):
+            k = (j + 1) % stem_segments
+            # At the seam (j == stem_segments-1) the k corner must continue past the end
+            # of the ring instead of wrapping back to -C_ref/2, or the last quad spans
+            # the whole island and inverts.
+            wrap = reference_circumference if k == 0 else 0.0
             accum.quad(
                 lower[j], lower[k], upper[k], upper[j], SLOT_STEM,
-                ((island_stem, u_lo_j, v_offsets[i]),
-                 (island_stem, u_lo_k, v_offsets[i]),
-                 (island_stem, u_hi_k, v_offsets[i + 1]),
-                 (island_stem, u_hi_j, v_offsets[i + 1])))
+                ((island_stem, strip_u[i][j], stem_v[i]),
+                 (island_stem, strip_u[i][k] + wrap, stem_v[i]),
+                 (island_stem, strip_u[i + 1][k] + wrap, stem_v[i + 1]),
+                 (island_stem, strip_u[i + 1][j], stem_v[i + 1])))
+
+    # Transition band: coarse penultimate ring -> fine cap hub ring. Each coarse vertex
+    # fans across the `ratio` fine vertices it spans, then one bridging triangle carries
+    # the coarse edge. Every fine vertex is used exactly once, so the shell stays
+    # manifold and no T-vertex is left for the decimator to collapse badly.
+    coarse_index = len(ring_indices) - 2
+    coarse = ring_indices[coarse_index]
+    fine = ring_indices[-1]
+    v_coarse = stem_v[coarse_index]
+    v_fine = stem_v[-1]
+    for jc in range(stem_segments):
+        kc = (jc + 1) % stem_segments
+        wrap_c = reference_circumference if kc == 0 else 0.0
+        base = jc * ratio
+        for m in range(ratio):
+            a = (base + m) % segments
+            b = (base + m + 1) % segments
+            wrap_a = reference_circumference if a < base else 0.0
+            wrap_b = reference_circumference if b <= base else 0.0
+            accum.face(
+                (coarse[jc], fine[b], fine[a]), SLOT_STEM,
+                ((island_stem, strip_u[coarse_index][jc], v_coarse),
+                 (island_stem, strip_u[-1][b] + wrap_b, v_fine),
+                 (island_stem, strip_u[-1][a] + wrap_a, v_fine)))
+        end = (base + ratio) % segments
+        wrap_end = reference_circumference if end <= base else 0.0
+        accum.face(
+            (coarse[jc], coarse[kc], fine[end]), SLOT_STEM,
+            ((island_stem, strip_u[coarse_index][jc], v_coarse),
+             (island_stem, strip_u[coarse_index][kc] + wrap_c, v_coarse),
+             (island_stem, strip_u[-1][end] + wrap_end, v_fine)))
 
     # ---- cap underside: hub ring outward to the rim ----------------------
     bottom_rings: List[List[int]] = [ring_indices[-1]]
@@ -777,9 +984,15 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
     if apex_index is None:
         raise GenerationAborted("cap top ring list never reached the apex")
 
-    # Top surface UV: geodesic polar map measured OUTWARD from the rim, converted to a
-    # radius from the apex so the island is a disc rather than an annulus.
-    top_total = [max(1e-5, top_arc[-1][j]) for j in range(segments)]
+    # Top surface UV: geodesic polar radius measured from the APEX. The arc is
+    # accumulated inward from the rim, so the polar radius is (total including the last
+    # hop to the apex) minus the accumulated arc. Omitting that final hop put the
+    # innermost ring AT radius 0 together with the apex, which collapsed one quad band
+    # and the whole apex fan to zero UV area -- 256 GATE_ZERO_AREA_UV_TRIANGLE hits.
+    apex_position = accum.positions[apex_index]
+    apex_hop = [(apex_position - accum.positions[top_rings[-1][j]]).length
+                for j in range(segments)]
+    top_total = [max(1e-5, top_arc[-1][j] + apex_hop[j]) for j in range(segments)]
     for i in range(len(top_rings) - 1):
         outer = top_rings[i]
         inner = top_rings[i + 1]
@@ -838,25 +1051,43 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
     rim_rows.append(rim_bottom)
     rim_fraction.append(1.0)
 
-    rim_circumference = 0.0
-    for j in range(segments):
-        rim_circumference += (accum.positions[rim_top[(j + 1) % segments]]
-                              - accum.positions[rim_top[j]]).length
+    # Real path length ACROSS the band, accumulated per angle. The straight-line
+    # thickness understates it because the band bulges outward through its middle to
+    # round the edge, and a UV step shorter than the surface it covers is stretch.
+    rim_arc: List[List[float]] = [[0.0] * segments]
+    for row in range(1, len(rim_rows)):
+        rim_arc.append([
+            rim_arc[row - 1][j]
+            + (accum.positions[rim_rows[row][j]]
+               - accum.positions[rim_rows[row - 1][j]]).length
+            for j in range(segments)
+        ])
+    rim_total = rim_arc[-1]
+
+    # The rim band continues the UNDERSIDE island's polar map outward rather than
+    # occupying an island of its own. A separate strip measured 448 x 3.95 px at 512
+    # px/m -- under law.UV_MIN_ISLAND_PIXELS, because a 15 cm cap really does have an
+    # 8 mm rim and no texel density fixes that for a strip one band tall. Folding it
+    # into the underside annulus removes the sliver island AND gives the texture a
+    # continuous run from the gills over the edge, which is how a plate's rim reads.
+    outer_arc = [hub_arc + bottom_arc[-1][j] for j in range(segments)]
     for i in range(len(rim_rows) - 1):
         upper = rim_rows[i]
         lower = rim_rows[i + 1]
         for j in range(segments):
             k = (j + 1) % segments
-            u_j = (j / float(segments) - 0.5) * rim_circumference
-            u_k = ((j + 1) / float(segments) - 0.5) * rim_circumference
-            # v is the real distance across the band at THAT angle, so a thin torn
-            # sector does not get the same texel run as a thick one.
+            # Radius grows across the band by the real distance travelled at THAT
+            # angle, so a thin torn sector does not get the same texel run as a thick
+            # one. Rim rows run top -> bottom, and the underside map is measured from
+            # the hub, so the band is traversed from its far edge back inward.
+            r_up_j = outer_arc[j] + (rim_total[j] - rim_arc[i][j])
+            r_lo_j = outer_arc[j] + (rim_total[j] - rim_arc[i + 1][j])
+            r_up_k = outer_arc[k] + (rim_total[k] - rim_arc[i][k])
+            r_lo_k = outer_arc[k] + (rim_total[k] - rim_arc[i + 1][k])
             accum.quad(
                 upper[j], lower[j], lower[k], upper[k], SLOT_RIM,
-                ((island_rim, u_j, rim_fraction[i] * band_thickness[j]),
-                 (island_rim, u_j, rim_fraction[i + 1] * band_thickness[j]),
-                 (island_rim, u_k, rim_fraction[i + 1] * band_thickness[k]),
-                 (island_rim, u_k, rim_fraction[i] * band_thickness[k])))
+                _polar_uv(island_bottom, thetas, (j, j, k, k),
+                          (r_up_j, r_lo_j, r_lo_k, r_up_k)))
 
     return {
         "height": round(plan.height, 5),
@@ -871,7 +1102,9 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
         "stemArcLengthM": round(stem_length, 5),
         "capSurfaceArcM": round(hub_arc + max(bottom_arc[-1]), 5),
         "rimThicknessM": [round(min(band_thickness), 5), round(max(band_thickness), 5)],
-        "islands": [island_stem, island_foot, island_bottom, island_rim, island_top],
+        "islands": {"stem": island_stem, "foot": island_foot,
+                    "capUndersideAndRim": island_bottom, "capTop": island_top},
+        "unusedIslandSlot": island_rim,
     }
 
 
@@ -1181,6 +1414,71 @@ def _make_reunwrap(atlas_size: int, notes: List[str]):
     return reunwrap
 
 
+def uv_diagnostics(mesh: bpy.types.Mesh) -> dict:
+    """Per-material-slot UV anisotropy, using the VALIDATOR's own metric.
+
+    ``mesh_ops.uv_stretch_stats`` reports a crude ratio of two edge scalings while
+    ``validate.uv_aspect_distortion`` reports the real ``sigma_max / sigma_min - 1`` of
+    the parameterisation. Measured on this asset they disagreed by two orders of
+    magnitude (8.4 against 493), so the number a generator tunes against has to be the
+    one the gate uses. Splitting by material slot turns "34.7% of area is stretched"
+    into "which surface", which is the difference between a fix and a guess.
+    """
+    data = validate.extract_mesh_data(mesh)
+    if not data.uv_layers:
+        return {"status": "no uv layer"}
+    _name, uv0 = data.uv_layers[0]
+    buckets: dict = {}
+    for t in range(data.triangle_count):
+        slot = data.tri_material_index[t] if t < len(data.tri_material_index) else -1
+        distortion = validate.uv_aspect_distortion(
+            data.positions, uv0, data.tri_vertices, data.tri_loops, t)
+        area = validate._triangle_world_area(data, t)
+        bucket = buckets.setdefault(slot, {"n": 0, "area": 0.0, "over": 0.0,
+                                           "worst": 0.0, "worstTri": -1})
+        bucket["n"] += 1
+        bucket["area"] += area
+        if not law.finite(distortion):
+            distortion = float("inf")
+        if distortion > bucket["worst"]:
+            bucket["worst"] = distortion
+            bucket["worstTri"] = t
+        if distortion > law.uv_stretch_limit_for(SURFACE, hero=True):
+            bucket["over"] += area
+    def edge_lengths(t: int):
+        """(world, uv) edge lengths of triangle ``t``, so a bad sigma has a cause."""
+        vs = [data.tri_vertices[t * 3 + k] for k in range(3)]
+        ls = [data.tri_loops[t * 3 + k] for k in range(3)]
+        world = []
+        uv = []
+        for k in range(3):
+            a, b = vs[k], vs[(k + 1) % 3]
+            world.append(round(math.sqrt(sum(
+                (data.positions[a * 3 + c] - data.positions[b * 3 + c]) ** 2
+                for c in range(3))), 6))
+            la, lb = ls[k], ls[(k + 1) % 3]
+            uv.append(round(math.hypot(uv0[la * 2] - uv0[lb * 2],
+                                       uv0[la * 2 + 1] - uv0[lb * 2 + 1]), 6))
+        return world, uv
+
+    out = {}
+    for slot in sorted(buckets):
+        bucket = buckets[slot]
+        role = MATERIAL_ROLES[slot] if 0 <= slot < len(MATERIAL_ROLES) else str(slot)
+        world, uv = edge_lengths(bucket["worstTri"]) if bucket["worstTri"] >= 0 \
+            else ([], [])
+        out[role] = {
+            "triangles": bucket["n"],
+            "worst": round(bucket["worst"], 3) if law.finite(bucket["worst"]) else "inf",
+            "worstTriangle": bucket["worstTri"],
+            "worstWorldEdgesM": world,
+            "worstUvEdges": uv,
+            "stretchedAreaFraction": round(
+                bucket["over"] / max(1e-12, bucket["area"]), 4),
+        }
+    return out
+
+
 def _read_vcol_direct(mesh: bpy.types.Mesh) -> dict:
     """Read the packed colour attribute straight off the datablock.
 
@@ -1411,11 +1709,23 @@ def generate_variant(*, seed: int, quality: float, cap_radius: float, height: fl
     # --- 10. validation ---------------------------------------------------
     reports = []
     for level in lods:
+        # The island-pixel and border-padding gates take an atlas size, and 3dmodel.md
+        # section 6 scopes the first one explicitly: "Islands smaller than 4 pixels at
+        # target mip 0 for any visible LOD0 detail". LOD0 carries the authored packed
+        # layout and is measured against it. LOD1/LOD2 carry a smart_project solve over
+        # collapsed topology, which always produces some slivers, so passing an atlas
+        # size there would enforce a rule the bible does not state -- the gate reports
+        # itself as not enforced and the real numbers are measured separately below.
         reports.append(validate.validate_mesh(
             level.obj.data, family=FAMILY, lod_index=level.index,
             surface_class=SURFACE, blackbox=blackbox, hero=(level.index == 0),
             triplanar=False, double_sided=False, planar=False,
-            atlas_size=atlas_size))
+            atlas_size=atlas_size if level.index == 0 else None))
+        stats = mesh_ops.uv_stretch_stats(level.obj)
+        notes.append("LOD{0} uv edge-ratio: worst={1:.4f} p95={2:.4f} mean={3:.4f} "
+                     "over {4} triangles; validator sigma-ratio per slot: {5}".format(
+                         level.index, stats["worst"], stats["p95"], stats["mean"],
+                         stats["triangles"], uv_diagnostics(level.obj.data)))
     chain_failures = validate.validate_lod_chain(reports, family=FAMILY,
                                                  blackbox=blackbox)
 
