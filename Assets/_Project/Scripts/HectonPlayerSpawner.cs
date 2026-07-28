@@ -90,6 +90,60 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// <summary>Stable telemetry hash for "the player spawn was refused". FNV-style literal, 'PSPN'.</summary>
     private const uint SpawnRejectedWarningHash = 0x5053504Eu;
 
+    /// <summary>Stable telemetry hash for "more than one player spawner is alive". Literal 'PSDU'.</summary>
+    private const uint DuplicateSpawnerWarningHash = 0x50534455u;
+
+    /// <summary>
+    /// How many spawners have run Awake this session. Not an ownership latch - nothing is aborted or
+    /// destroyed on the strength of it - only a count, so that a second spawner cannot arrive unnoticed.
+    /// </summary>
+    private static int s_liveSpawnerCount;
+
+    /// <summary>
+    /// Cleared per play session. This project runs with domain reload DISABLED
+    /// (ProjectSettings/EditorSettings.asset, m_EnterPlayModeOptions: 1), so a plain static would carry
+    /// the previous session's count into the next one and report a duplicate that does not exist - or,
+    /// worse, stay quiet about one that does.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSpawnerInstanceCount()
+    {
+        s_liveSpawnerCount = 0;
+    }
+
+    /// <summary>
+    /// Reports a SECOND live spawner. Measured, not hypothetical: a headless route run logged
+    /// "Production Player.prefab cold-instantiated" TWICE against a single
+    /// "Step 0: Loading 02_HECTON_WORLD", so two spawners each cold-instantiated their own Player into
+    /// the world. One of those players is then destroyed, and the spawner the bootstrap goes on to call
+    /// is the one holding the destroyed reference - which is where the scene gate's PLAYER_NULL comes
+    /// from. Two owners of one runtime truth is a MASTER_PLAN.md:19 violation on its own terms.
+    ///
+    /// Deliberately does NOT abort, disable or destroy the duplicate, unlike
+    /// GameBootstrapper.AbortDuplicateRuntimeOwner. Which of the two spawners is legitimate - a
+    /// scene-authored one or a runtime-created one - is not established, and silently picking a winner
+    /// would trade a loud defect for a quiet one. Naming it is the fix that is provable today.
+    /// </summary>
+    private void ReportIfDuplicateSpawner()
+    {
+        s_liveSpawnerCount++;
+        if (s_liveSpawnerCount <= 1)
+            return;
+
+        GlobalTelemetryBus.PublishPerformanceWarning(
+            DuplicateSpawnerWarningHash,
+            0u,
+            s_liveSpawnerCount);
+
+        LogSpawnerError(
+            "[HectonPlayerSpawner] DUPLICATE SPAWNER: this is live spawner #" +
+            s_liveSpawnerCount.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+            " this session, on GameObject '" + gameObject.name + "' in scene '" + gameObject.scene.name +
+            "'. Each spawner cold-instantiates its own Player when it cannot resolve one, so the world " +
+            "now holds more than one player and only one of them can survive.",
+            this);
+    }
+
     /// <summary>
     /// Reports a refused player spawn on a route that SURVIVES A RELEASE PLAYER BUILD.
     ///
@@ -295,6 +349,8 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// </summary>
     private void Awake()
     {
+        ReportIfDuplicateSpawner();
+
         if (!s_spawnTrigLutInitialized)
         {
             InitializeSpawnTrigLut();
