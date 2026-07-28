@@ -105,15 +105,22 @@ namespace Hecton8.Core
             if (playerObject == null)
                 return false;
 
-            if (IsLegacyWorldShellOwned(playerObject))
+            // Three constant-cost component probes on the candidate itself, evaluated BEFORE the
+            // hierarchy walk below. The predicate is a plain conjunction, so the accepted set is
+            // unchanged by this ordering - but a candidate that fails a cheap probe no longer pays
+            // for a recursive subtree walk to learn it. GameBootstrapper.cs:8009 runs this over
+            // multiple candidates, so every rejected one used to pay the full walk first.
+            if (!playerObject.TryGetComponent(out IBootstrapProductionPlayerMovementAuthority movement) ||
+                movement == null ||
+                !playerObject.TryGetComponent(out IBootstrapProductionPlayerInteractionAuthority interaction) ||
+                interaction == null ||
+                !playerObject.TryGetComponent(out Rigidbody body) ||
+                body == null)
+            {
                 return false;
+            }
 
-            return playerObject.TryGetComponent(out IBootstrapProductionPlayerMovementAuthority movement) &&
-                   movement != null &&
-                   playerObject.TryGetComponent(out IBootstrapProductionPlayerInteractionAuthority interaction) &&
-                   interaction != null &&
-                   playerObject.TryGetComponent(out Rigidbody body) &&
-                   body != null;
+            return !IsLegacyWorldShellOwned(playerObject);
         }
 
         /// <summary>
@@ -159,6 +166,31 @@ namespace Hecton8.Core
             return "NONE";
         }
 
+        /// <summary>
+        /// Rejects a candidate that is, contains, or descends from a legacy world-shell owner.
+        ///
+        /// CURRENTLY INERT, DELIBERATELY KEPT. <see cref="IBootstrapLegacyWorldShellOwner"/> has ZERO
+        /// implementors in the project right now, so this method cannot return <c>true</c>. It is not
+        /// abandoned code, and it must not be deleted casually - two live facts pin it:
+        ///
+        /// 1. <c>Tools/ValidatePlayerRouteStaticEvidence.py:129-145</c>
+        ///    (<c>has_production_player_authority_guard</c>) requires the literal tokens
+        ///    <c>IsLegacyWorldShellOwned</c> and <c>IBootstrapLegacyWorldShellOwner</c> to be present in
+        ///    THIS file. Removing either flips that guard false and re-raises the
+        ///    <c>bootstrap-publish-player-without-production-validation</c> blocker that was retired as a
+        ///    false positive.
+        /// 2. The marker interface exists specifically so this contracts-assembly file never names a
+        ///    concrete gameplay/world class. The former implementor lived at
+        ///    <c>Assets/_Project/Scripts/World/HectonWorldShellController1428.cs</c> (still the
+        ///    validator's <c>DEFAULT_WORLD_SHELL</c> at <c>:34</c>) and that file no longer exists - the
+        ///    implementor was deleted, the rejection contract was not.
+        ///
+        /// So this is a live rejection rule with no current subject, not dead code. Cost is bounded by
+        /// the call ordering in <see cref="IsProductionPlayerAuthorityObject"/>: only a candidate that
+        /// has already passed all three authority component probes reaches the walk.
+        /// </summary>
+        /// <param name="candidate">Candidate player authority object.</param>
+        /// <returns>True when the candidate or any ancestor/descendant owns a legacy world shell.</returns>
         private static bool IsLegacyWorldShellOwned(GameObject candidate)
         {
             if (candidate == null)
@@ -216,6 +248,18 @@ namespace Hecton8.Core
     {
     }
 
+    /// <summary>
+    /// Marker for a legacy in-scene world-shell owner. A player candidate that carries this, or that
+    /// sits under or above one, is NOT the production player.
+    ///
+    /// ZERO IMPLEMENTORS TODAY. The only implementor,
+    /// <c>Assets/_Project/Scripts/World/HectonWorldShellController1428.cs</c>, has been deleted, so
+    /// <c>IsLegacyWorldShellOwned</c> is currently inert. The marker is retained on purpose: it is the
+    /// contracts-assembly boundary that lets BootstrapState reject a scene-local shell player without
+    /// referencing a gameplay/world type, and <c>Tools/ValidatePlayerRouteStaticEvidence.py:133</c>
+    /// grep-asserts this exact name inside BootstrapState.cs. Do not delete it without also updating
+    /// that validator and its test in the same change.
+    /// </summary>
     public interface IBootstrapLegacyWorldShellOwner
     {
     }
