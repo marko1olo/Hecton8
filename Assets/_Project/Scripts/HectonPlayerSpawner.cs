@@ -481,7 +481,55 @@ public class HectonPlayerSpawner : MonoBehaviour
                 this);
 #endif
             enabled = false;
+            return;
         }
+
+        PublishResolvedPlayerToBootstrap();
+    }
+
+    /// <summary>
+    /// Tells the bootstrap read-model which player this spawner resolved.
+    ///
+    /// THIS IS THE SEAM THAT KEPT THE GAME UNENTERABLE. The spawner resolved a player through one of its
+    /// four routes - serialized seed, IPlayerRuntimeContext, the bootstrapper's current player, or a cold
+    /// Instantiate of Player.prefab - and then kept it entirely to itself. Nothing published it, so:
+    ///   BootstrapState.CurrentPlayerObject stayed null;
+    ///   GameBootstrapper.playerObject is a [SerializeField] on a component created at runtime by
+    ///     AddComponent (GameBootstrapper.cs:1288), so it can never be authored and was null too;
+    ///   ResolveSceneActivationReferences found nothing on either route and left it null;
+    ///   SceneInstantiationGate.MarkPlayerInstantiated was handed null;
+    ///   the gate reported PLAYER_NULL and never opened;
+    ///   scene activation timed out at Step 8.9, _isBootstrapComplete was never set,
+    ///   AreAllSystemsReady() stayed false, MainMenuController disabled itself in Awake, and no menu
+    ///   meant New Game could never be pressed.
+    /// Measured on a headless route run entered the way a player enters - from 00_BOOTSTRAP - with
+    /// exactly ONE spawner and ONE cold instantiate, so this is not the earlier duplicate-spawner
+    /// artifact: Logs/omega_route7.log carries one "cold-instantiated" line, zero "DUPLICATE SPAWNER",
+    /// and still reason=PLAYER_NULL.
+    ///
+    /// BootstrapState is the canonical publication point and validates what it is given -
+    /// PublishCurrentPlayerObject (BootstrapState.cs:62) stores the object only if it passes
+    /// IsProductionPlayerAuthorityObject, and stores null otherwise. So this cannot smuggle an invalid
+    /// player past the gate; it can only stop a VALID one from being invisible. No new global surface:
+    /// the publication route already existed and had exactly one caller.
+    /// </summary>
+    private void PublishResolvedPlayerToBootstrap()
+    {
+        Rigidbody body = playerRigidbody;
+        if (body == null)
+            return;
+
+        BootstrapState.PublishCurrentPlayerObject(body.gameObject);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (BootstrapState.CurrentPlayerObject == null)
+        {
+            LogSpawnerError(
+                "[HectonPlayerSpawner] Resolved player was REFUSED by BootstrapState: " +
+                ProductionPlayerAuthorityUtility.DescribeProductionPlayerAuthorityFailure(body.gameObject),
+                this);
+        }
+#endif
     }
 
     public async Awaitable SpawnPlayerAsync(System.Threading.CancellationToken ct)
