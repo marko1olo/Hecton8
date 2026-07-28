@@ -211,7 +211,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 return frac((hash.x + hash.y) * hash.z);
             }
 
-            half ResolveKelpSineParabolaWave(float3 positionOS, float3 positionWS, half4 vertexColor, half heightMask)
+            half ResolveKelpSineParabolaWave(float3 positionOS, float3 positionWS, half heightMask)
             {
                 float tipParabola = (float)(heightMask * heightMask);
                 float swaySpeed = isfinite((float)_SwaySpeed) ? max((float)_SwaySpeed, 0.001) : 0.001;
@@ -221,8 +221,14 @@ Shader "Hecton8/Flora/KelpMaster"
                 float3 safeOffset = all(isfinite(_TotalUniverseOffset.xyz)) ? _TotalUniverseOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 aupPos = all(isfinite(positionWS)) ? positionWS + safeOffset : safeOffset;
                 float aupHash = HectonKelpHash12(floor(aupPos.xz * 0.0625));
-                float vertexSeed = isfinite((float)vertexColor.r) ? (float)vertexColor.r : 0.0;
-                float phaseSeed = dot(aupPos.xz, float2(0.173, -0.131)) * swayPhaseScale + aupHash * 6.283185307 + vertexSeed * 2.1;
+                // COLOR.r is the bible's SWAY AMPLITUDE (3dmodel.md section 5, 3DMODEL_FLORA_CORAL.md
+                // section 2), not a phase seed; it is consumed as an amplitude in ApplyKelp*Biota.
+                // Phase decorrelation is per-INSTANCE and comes from aupHash, which is the route
+                // REND_Instanced_Flora_Physics.txt section III.F specifies. Seeding phase from a
+                // monotonic root-to-tip gradient gave every plant an unauthored travelling wave
+                // along its own length: neighbouring vertices on one blade must stay nearly in
+                // phase and differ only in amplitude, because a blade bends as a beam.
+                float phaseSeed = dot(aupPos.xz, float2(0.173, -0.131)) * swayPhaseScale + aupHash * 6.283185307;
                 float safeTime = isfinite(_Time.y) ? _Time.y : 0.0;
                 float basePhase = safeTime * speedNorm + phaseSeed + aupPos.y * swayFrequency * 0.071;
                 float octave0 = HectonKelpDearLieWave(basePhase);
@@ -236,12 +242,21 @@ Shader "Hecton8/Flora/KelpMaster"
                 half heightMask = isfinite((float)uv.y) ? saturate(uv.y) : 0.0h;
                 float tipParabola = (float)(heightMask * heightMask);
                 float3 positionWS = GetVertexPositionInputs(positionOS).positionWS;
-                half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, vertexColor, heightMask);
+                half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, heightMask);
                 half qualityWeight = HectonKelpGlobalQualityWeight();
                 half motionWeight = lerp(0.42h, 1.0h, HectonKelpSmoothRange01(0.05h, 0.85h, qualityWeight));
                 half interactionWeight = lerp(0.35h, 1.0h, HectonKelpSmoothRange01(0.18h, 0.72h, qualityWeight));
                 half swayAmplitude = _SwayAmplitude * motionWeight;
                 swayAmplitude *= lerp(0.58h, 1.0h, HectonKelpSmoothRange01(0.0h, 0.85h, qualityWeight));
+                // Sway amplitude is COLOR.r: "Anchor/root = 0 ... Flexible frond tips = 192 to 255"
+                // (3DMODEL_FLORA_CORAL.md section 2), with that section's per-family stiffness
+                // exponent already baked in by the generator, so a stiff organism and a flexible
+                // one no longer share one hardcoded curve. uv.y is the fallback for a non-finite
+                // red channel, and heightMask below still pins the holdfast, so a mesh whose red
+                // channel is a flat constant degrades to a linear gradient instead of violating
+                // the "Root vertices sway as much as tips" rejection gate in section 8.
+                half swayMask = isfinite((float)vertexColor.r) ? saturate(vertexColor.r) : heightMask;
+                swayAmplitude *= swayMask;
 
                 float3 flowVector = _HectonVegetationCurrentVector.xyz + _GlobalOceanFlow.xyz * 0.35;
                 float3 flowDirection = HectonKelpSafeNormalize(flowVector, float3(0.0, 0.0, 1.0));
@@ -285,9 +300,11 @@ Shader "Hecton8/Flora/KelpMaster"
                     float playerDistSq = dot(playerDelta, playerDelta);
                     float playerInvRadiusSq = rcp(max(playerRadius * playerRadius, 0.0001));
                     float playerInfluence = saturate(1.0 - playerDistSq * playerInvRadiusSq) * saturate(_HectonPlayerFloraInteractionParams.w);
-                    float flutterSeed = isfinite((float)vertexColor.g) ? (float)vertexColor.g : 0.0;
+                    // COLOR.g is the bible's BIOLUMINESCENCE mask/phase and is consumed as such in
+                    // the fragment stage; it is not a motion seed. Flutter phase decorrelates on
+                    // object-space position alone, which is already per-vertex high frequency.
                     float safeTime = isfinite(_Time.y) ? _Time.y : 0.0;
-                    float flutterPhase = safeTime * 6.1 + dot(positionOS.xz, float2(2.7, -3.1)) + flutterSeed * 4.7;
+                    float flutterPhase = safeTime * 6.1 + dot(positionOS.xz, float2(2.7, -3.1));
                     float flutter = HectonKelpDearLieWave(flutterPhase) * 0.045 * saturate(_HectonPlayerFloraInteractionParams.x * 0.25 + _HectonPlayerFloraInteractionParams.y);
                     positionOS.xz += normalOS.xz * (flutter * playerInfluence * tipParabola * interactionWeight);
                 }
@@ -490,9 +507,15 @@ Shader "Hecton8/Flora/KelpMaster"
                 half3 baseNormalWS = ResolveFloraNormalCheap(input.normalWS);
                 half3 tangentWS = ResolveFloraNormalCheap(input.tangentWS.xyz);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
-                half tintMask = saturate(input.color.r) * _VertexTintStrength;
-                half moisture = saturate(input.color.g);
-                half age = saturate(input.color.b);
+                // Vertex colour channel contract, 3dmodel.md section 5 and
+                // 3DMODEL_FLORA_CORAL.md section 2: R = sway amplitude (consumed in the vertex
+                // stage), G = bioluminescence mask/phase, B = baked ambient occlusion,
+                // A = family-specific mask -- harvest_mask for kelp per the generator manifest.
+                // Tint variation, wetness and age darkening are NOT channels in that contract, so
+                // they are sourced from the biome hash, the mask map and the lifecycle decay
+                // parameter below instead of being read out of R/G/B.
+                half bakedBiolumMask = saturate(input.color.g);
+                half bakedVertexAo = saturate(input.color.b);
                 half heightMask = saturate(input.uv.y);
                 half widthMask = saturate(input.uv.x);
                 half centerDistance = abs(widthMask - 0.5h) * 2.0h;
@@ -535,7 +558,10 @@ Shader "Hecton8/Flora/KelpMaster"
                 half backLight = saturate(dot(-normalWS, lightDir));
                 half rim = FastKelpPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
                 half curvatureWetness = ComputeCurvatureWetness(normalWS);
-                half wetness = saturate(maskSample.g + moisture * _MoistureBoost + curvatureWetness);
+                // Wetness comes from the authored mask map plus surface curvature. _MoistureBoost
+                // now scales the map's own wetness channel; it used to scale COLOR.g, which the
+                // channel contract reserves for bioluminescence.
+                half wetness = saturate(maskSample.g * (1.0h + _MoistureBoost) + curvatureWetness);
                 half detailMask = lerp(1.0h, detailSample, saturate(_DetailStrength + edgeMask * _EdgeDetailBoost));
                 half causticMask = saturate(0.65h + detailSample * _CausticStrength + maskSample.a * 0.2h + edgeMask * 0.08h);
                 half thicknessMask = saturate(lerp(heightMask, maskSample.r, _ThicknessStrength) + edgeMask * _EdgeTransmissionBoost * 0.18h);
@@ -551,22 +577,35 @@ Shader "Hecton8/Flora/KelpMaster"
                 half zoneBiolumStrength = saturate(oceanZoneInfluence + floorZoneInfluence);
                 half3 volumeBiolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(samplePositionWS);
 
-                half3 gradient = lerp(_BaseColor.rgb, _TipColor.rgb, heightMask);
-                half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _TipColor.rgb, wetness * 0.5h);
-                half3 ageTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(1.0h - _AgeDarkening, 1.0h - _AgeDarkening, 1.0h - _AgeDarkening), age);
-                half3 albedo = gradient * baseTex * moistureTint * ageTint * detailMask;
-                albedo = lerp(albedo, albedo * half3(1.12h, 1.08h, 0.92h), tintMask + maskSample.b * 0.08h);
+                // Hoisted above the albedo build because the per-instance tint variation now reads
+                // this hash. It used to read COLOR.r, which the channel contract reserves for sway.
                 float3 biomeAup = samplePositionWS + _TotalUniverseOffset.xyz;
                 half biomeHash = (half)HectonCoreLitHash12(floor(biomeAup.xz * 0.03125));
-                half3 biomeTint = lerp(half3(0.94h, 1.01h, 1.04h), half3(1.05h, 0.97h, 0.91h), biomeHash);
                 half decay01 = saturate((half)_HectonFloraLifecycleParams.y);
+
+                half3 gradient = lerp(_BaseColor.rgb, _TipColor.rgb, heightMask);
+                half3 moistureTint = lerp(half3(1.0h, 1.0h, 1.0h), _TipColor.rgb, wetness * 0.5h);
+                // Age darkening follows the lifecycle decay parameter that already drives the
+                // desaturation below. It used to read COLOR.b, so the ray-traced ambient occlusion
+                // the offline forge bakes into B was being spent as an age tint.
+                half3 ageTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(1.0h - _AgeDarkening, 1.0h - _AgeDarkening, 1.0h - _AgeDarkening), decay01);
+                half3 albedo = gradient * baseTex * moistureTint * ageTint * detailMask;
+                half tintMask = saturate(biomeHash * _VertexTintStrength);
+                albedo = lerp(albedo, albedo * half3(1.12h, 1.08h, 0.92h), tintMask + maskSample.b * 0.08h);
+                half3 biomeTint = lerp(half3(0.94h, 1.01h, 1.04h), half3(1.05h, 0.97h, 0.91h), biomeHash);
                 half luma = dot(albedo, half3(0.2126h, 0.7152h, 0.0722h));
                 albedo = lerp(albedo * biomeTint, half3(luma, luma, luma) * half3(0.72h, 0.68h, 0.57h), decay01);
                 albedo *= (1.0h - midribMask * _MidribDarkening);
                 albedo *= lerp(1.0h, 1.0h - _EdgeWearDarkening, edgeMask);
 
                 half3 ambient = H8CustomLightProbeResolveAmbient(samplePositionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * (_AmbientStrength + wetness * 0.12h);
-                half vertexAO = lerp(0.72h, 1.0h, saturate(input.color.a));
+                // COLOR.b is baked ambient occlusion in every family contract the bible set defines
+                // -- 3dmodel.md sections 4 and 5, 3DMODEL_FLORA_CORAL.md section 2,
+                // 3DMODEL_GEOLOGY_ROCKS.md section 4, 3DMODEL_HARD_SURFACE_MODULES.md section 5.
+                // This read used to be COLOR.a, which is the family-specific harvest mask, so the
+                // occlusion was arriving as an age tint while the harvest mask was arriving as
+                // occlusion. Nothing errored; the kelp was simply lit wrong everywhere.
+                half vertexAO = lerp(0.72h, 1.0h, bakedVertexAo);
                 half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse) * vertexAO;
 
                 half sssWrap = max(0.0h, dot(normalWS, lightDir) + 0.5h) * 0.6666667h;
@@ -587,7 +626,12 @@ Shader "Hecton8/Flora/KelpMaster"
                     half4 globalBiolumState = ResolveKelpGlobalBiolum(biolumLocalAupCoord);
                     half globalBiolumMask = step(0.001h, globalBiolumState.w);
                     half proceduralBiolumMask = (half)HectonCoreLitTrianglePulse01(biolumLocalAupCoord.x * 0.043h + biolumLocalAupCoord.z * 0.061h + input.uv.y * 1.7h);
-                    half biolumMask = saturate((edgeMask * 0.42h + thicknessMask * 0.38h + proceduralBiolumMask * 0.20h) * _BiolumMaskStrength);
+                    // COLOR.g is the authored bioluminescence mask/phase, and section 2 fixes
+                    // "Non-emissive tissue = 0", so it GATES emission rather than merely biasing
+                    // it. The edge/thickness/pulse terms now shape that baked mask instead of
+                    // standing in for it -- previously the baked channel was ignored entirely and
+                    // the glow landed on whatever geometry happened to be thin or near an edge.
+                    half biolumMask = saturate(bakedBiolumMask * (0.55h + edgeMask * 0.42h + thicknessMask * 0.38h + proceduralBiolumMask * 0.20h) * _BiolumMaskStrength);
                     half celestialBiolum = max((half)_HectonCelestialBiolumMultiplier, 1.0h);
                     half masterBiolum = globalBiolumState.w;
                     half authoredBiolumEnergy = _BiolumStrength * celestialBiolum * masterBiolum * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask;
@@ -758,7 +802,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 return frac((hash.x + hash.y) * hash.z);
             }
 
-            half ResolveKelpSineParabolaWave(float3 positionOS, float3 positionWS, half4 vertexColor, half heightMask)
+            half ResolveKelpSineParabolaWave(float3 positionOS, float3 positionWS, half heightMask)
             {
                 float tipParabola = (float)(heightMask * heightMask);
                 float swaySpeed = isfinite((float)_SwaySpeed) ? max((float)_SwaySpeed, 0.001) : 0.001;
@@ -768,8 +812,14 @@ Shader "Hecton8/Flora/KelpMaster"
                 float3 safeOffset = all(isfinite(_TotalUniverseOffset.xyz)) ? _TotalUniverseOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 aupPos = all(isfinite(positionWS)) ? positionWS + safeOffset : safeOffset;
                 float aupHash = HectonKelpHash12(floor(aupPos.xz * 0.0625));
-                float vertexSeed = isfinite((float)vertexColor.r) ? (float)vertexColor.r : 0.0;
-                float phaseSeed = dot(aupPos.xz, float2(0.173, -0.131)) * swayPhaseScale + aupHash * 6.283185307 + vertexSeed * 2.1;
+                // COLOR.r is the bible's SWAY AMPLITUDE (3dmodel.md section 5, 3DMODEL_FLORA_CORAL.md
+                // section 2), not a phase seed; it is consumed as an amplitude in ApplyKelp*Biota.
+                // Phase decorrelation is per-INSTANCE and comes from aupHash, which is the route
+                // REND_Instanced_Flora_Physics.txt section III.F specifies. Seeding phase from a
+                // monotonic root-to-tip gradient gave every plant an unauthored travelling wave
+                // along its own length: neighbouring vertices on one blade must stay nearly in
+                // phase and differ only in amplitude, because a blade bends as a beam.
+                float phaseSeed = dot(aupPos.xz, float2(0.173, -0.131)) * swayPhaseScale + aupHash * 6.283185307;
                 float safeTime = isfinite(_Time.y) ? _Time.y : 0.0;
                 float basePhase = safeTime * speedNorm + phaseSeed + aupPos.y * swayFrequency * 0.071;
                 float octave0 = HectonKelpDearLieWave(basePhase);
@@ -783,12 +833,21 @@ Shader "Hecton8/Flora/KelpMaster"
                 half heightMask = isfinite((float)uv.y) ? saturate(uv.y) : 0.0h;
                 float tipParabola = (float)(heightMask * heightMask);
                 float3 positionWS = TransformObjectToWorld(positionOS);
-                half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, vertexColor, heightMask);
+                half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, heightMask);
                 half qualityWeight = HectonKelpGlobalQualityWeight();
                 half motionWeight = lerp(0.42h, 1.0h, HectonKelpSmoothRange01(0.05h, 0.85h, qualityWeight));
                 half interactionWeight = lerp(0.35h, 1.0h, HectonKelpSmoothRange01(0.18h, 0.72h, qualityWeight));
                 half swayAmplitude = _SwayAmplitude * motionWeight;
                 swayAmplitude *= lerp(0.58h, 1.0h, HectonKelpSmoothRange01(0.0h, 0.85h, qualityWeight));
+                // Sway amplitude is COLOR.r: "Anchor/root = 0 ... Flexible frond tips = 192 to 255"
+                // (3DMODEL_FLORA_CORAL.md section 2), with that section's per-family stiffness
+                // exponent already baked in by the generator, so a stiff organism and a flexible
+                // one no longer share one hardcoded curve. uv.y is the fallback for a non-finite
+                // red channel, and heightMask below still pins the holdfast, so a mesh whose red
+                // channel is a flat constant degrades to a linear gradient instead of violating
+                // the "Root vertices sway as much as tips" rejection gate in section 8.
+                half swayMask = isfinite((float)vertexColor.r) ? saturate(vertexColor.r) : heightMask;
+                swayAmplitude *= swayMask;
 
                 float3 flowDirection = HectonKelpSafeNormalize(_HectonVegetationCurrentVector.xyz + _GlobalOceanFlow.xyz * 0.35, float3(0.0, 0.0, 1.0));
                 positionOS.xz += normalOS.xz * (swayWave * swayAmplitude * heightMask);
@@ -1002,7 +1061,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 return frac((hash.x + hash.y) * hash.z);
             }
 
-            half ResolveKelpSineParabolaWave(float3 positionOS, float3 positionWS, half4 vertexColor, half heightMask)
+            half ResolveKelpSineParabolaWave(float3 positionOS, float3 positionWS, half heightMask)
             {
                 float tipParabola = (float)(heightMask * heightMask);
                 float swaySpeed = isfinite((float)_SwaySpeed) ? max((float)_SwaySpeed, 0.001) : 0.001;
@@ -1012,8 +1071,14 @@ Shader "Hecton8/Flora/KelpMaster"
                 float3 safeOffset = all(isfinite(_TotalUniverseOffset.xyz)) ? _TotalUniverseOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 aupPos = all(isfinite(positionWS)) ? positionWS + safeOffset : safeOffset;
                 float aupHash = HectonKelpHash12(floor(aupPos.xz * 0.0625));
-                float vertexSeed = isfinite((float)vertexColor.r) ? (float)vertexColor.r : 0.0;
-                float phaseSeed = dot(aupPos.xz, float2(0.173, -0.131)) * swayPhaseScale + aupHash * 6.283185307 + vertexSeed * 2.1;
+                // COLOR.r is the bible's SWAY AMPLITUDE (3dmodel.md section 5, 3DMODEL_FLORA_CORAL.md
+                // section 2), not a phase seed; it is consumed as an amplitude in ApplyKelp*Biota.
+                // Phase decorrelation is per-INSTANCE and comes from aupHash, which is the route
+                // REND_Instanced_Flora_Physics.txt section III.F specifies. Seeding phase from a
+                // monotonic root-to-tip gradient gave every plant an unauthored travelling wave
+                // along its own length: neighbouring vertices on one blade must stay nearly in
+                // phase and differ only in amplitude, because a blade bends as a beam.
+                float phaseSeed = dot(aupPos.xz, float2(0.173, -0.131)) * swayPhaseScale + aupHash * 6.283185307;
                 float safeTime = isfinite(_Time.y) ? _Time.y : 0.0;
                 float basePhase = safeTime * speedNorm + phaseSeed + aupPos.y * swayFrequency * 0.071;
                 float octave0 = HectonKelpDearLieWave(basePhase);
@@ -1027,12 +1092,21 @@ Shader "Hecton8/Flora/KelpMaster"
                 half heightMask = isfinite((float)uv.y) ? saturate(uv.y) : 0.0h;
                 float tipParabola = (float)(heightMask * heightMask);
                 float3 positionWS = TransformObjectToWorld(positionOS);
-                half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, vertexColor, heightMask);
+                half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, heightMask);
                 half qualityWeight = HectonKelpGlobalQualityWeight();
                 half motionWeight = lerp(0.42h, 1.0h, HectonKelpSmoothRange01(0.05h, 0.85h, qualityWeight));
                 half interactionWeight = lerp(0.35h, 1.0h, HectonKelpSmoothRange01(0.18h, 0.72h, qualityWeight));
                 half swayAmplitude = _SwayAmplitude * motionWeight;
                 swayAmplitude *= lerp(0.58h, 1.0h, HectonKelpSmoothRange01(0.0h, 0.85h, qualityWeight));
+                // Sway amplitude is COLOR.r: "Anchor/root = 0 ... Flexible frond tips = 192 to 255"
+                // (3DMODEL_FLORA_CORAL.md section 2), with that section's per-family stiffness
+                // exponent already baked in by the generator, so a stiff organism and a flexible
+                // one no longer share one hardcoded curve. uv.y is the fallback for a non-finite
+                // red channel, and heightMask below still pins the holdfast, so a mesh whose red
+                // channel is a flat constant degrades to a linear gradient instead of violating
+                // the "Root vertices sway as much as tips" rejection gate in section 8.
+                half swayMask = isfinite((float)vertexColor.r) ? saturate(vertexColor.r) : heightMask;
+                swayAmplitude *= swayMask;
 
                 float3 flowDirection = HectonKelpSafeNormalize(_HectonVegetationCurrentVector.xyz + _GlobalOceanFlow.xyz * 0.35, float3(0.0, 0.0, 1.0));
                 positionOS.xz += normalOS.xz * (swayWave * swayAmplitude * heightMask);

@@ -220,19 +220,46 @@ namespace Hecton8.Tests.Editor
             string collisionProxies = ExtractMethodBody(source, "private static void AddCollisionProxies(");
             string ySlabProxy = ExtractMethodBody(source, "private static void AddYSlabProxy(");
 
+            // Argument-order invariants are asserted against a whitespace-collapsed copy, not the raw
+            // source. Three of the assertions below failed on REFLOW alone: the Airlock and
+            // VerticalShaft specs grew a socket-lane override and a comment, so their constructor
+            // arguments moved onto separate lines while every value stayed identical. A test that
+            // reports a defect because an argument list wrapped is a test that gets suppressed.
+            // Collapsing whitespace keeps the ordering guarantee and drops the formatting coupling.
+            string flat = System.Text.RegularExpressions.Regex.Replace(source, @"\s+", " ");
+
             StringAssert.Contains("H8_A1712_Airlock_01", source);
-            StringAssert.Contains("BuildableFamily.Structure, -18f, 15, false, true", source);
+            StringAssert.Contains("BuildableFamily.Structure, -18f, 15, false, true", flat);
             StringAssert.Contains("H8_A1712_ReactorRoom_01", source);
-            StringAssert.Contains("BuildableFamily.Utility, 450f, 5, true, false", source);
+            StringAssert.Contains("BuildableFamily.Utility, 450f, 5, true, false", flat);
             StringAssert.Contains("H8_A1712_VerticalShaft_01", source);
             StringAssert.Contains("Vertical = Top | Bottom", source);
-            StringAssert.Contains("SocketMask.NorthSouth | SocketMask.Vertical", source);
+
+            // Bottom only, and the absence of Top is the point. SocketMask.Vertical is Top | Bottom,
+            // so the previous spec cut a ceiling opening in both the visual mesh and the collider for
+            // a socket that has no authored partner anywhere in the kit - BaseModuleTemplate_Moonpool
+            // declares North, South and one Bottom socket on lane Dock. This test's own name is about
+            // cutting vertical socket visuals and collider slabs, so it was asserting the defect it
+            // exists to catch. Both directions are checked: the mask that must be there, and the one
+            // that must not come back.
+            StringAssert.Contains("SocketMask.NorthSouth | SocketMask.Bottom", flat);
+            Assert.IsFalse(
+                flat.Contains("SocketMask.NorthSouth | SocketMask.Vertical", StringComparison.Ordinal),
+                "VerticalShaft must not request SocketMask.Vertical: the Top half has no authored " +
+                "inverse, so it becomes a permanent unresolvable snap candidate plus a hole in the " +
+                "ceiling mesh and collider.");
+
             StringAssert.Contains("float powerDrawKW = math.max(0f, -spec.PowerRatingWatts) * 0.001f", source);
             StringAssert.Contains("RequireProperty(so, \"family\").enumValueIndex = (int)spec.Family", source);
             StringAssert.Contains("RequireProperty(so, \"powerRating\").floatValue = spec.PowerRatingWatts", source);
-            StringAssert.Contains("AddYFaceWithOptionalCutout", source);
-            StringAssert.Contains("AddYFaceWithOptionalCutout(vertices, normals, uvs, indices, e, b, 1, (socketMask & SocketMask.Top) != 0)", beveledBox);
-            StringAssert.Contains("AddYFaceWithOptionalCutout(vertices, normals, uvs, indices, e, b, -1, (socketMask & SocketMask.Bottom) != 0)", beveledBox);
+
+            // AddYFaceWithOptionalCutout was replaced by AddManufacturedFaceForSocket, which takes the
+            // axis and direction as separate arguments so one method serves all six faces instead of
+            // the Y pair only. The invariant under test is unchanged and is what these two assert: a
+            // Top or Bottom socket opens its face, and nothing else does.
+            StringAssert.Contains("AddManufacturedFaceForSocket", source);
+            StringAssert.Contains("AddManufacturedFaceForSocket(buffers, e, b, 1, 1, (socketMask & SocketMask.Top) != 0", beveledBox);
+            StringAssert.Contains("AddManufacturedFaceForSocket(buffers, e, b, 1, -1, (socketMask & SocketMask.Bottom) != 0", beveledBox);
             StringAssert.Contains("AddYSlabProxy(root, layer, \"COL_FloorProxy\", safeExtents, thickness, -1, (socketMask & SocketMask.Bottom) != 0)", collisionProxies);
             StringAssert.Contains("AddYSlabProxy(root, layer, \"COL_CeilingProxy\", safeExtents, thickness, 1, (socketMask & SocketMask.Top) != 0)", collisionProxies);
             StringAssert.Contains("name + \"_WestFrame\"", ySlabProxy);
