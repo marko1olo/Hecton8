@@ -93,15 +93,26 @@ namespace Hecton8.Dev
 
             if (assignCoreLoadoutOnStart)
             {
-                // Startup provisioning FILLS GAPS. It is not the owner of quick-slot truth -
-                // PlayerToolManager is, and ContentSanityValidator.cs:2490 validates its serialized
-                // toolPrefabs as the production starter loadout - so an automatic pass must never
-                // overwrite or clear a slot the owner already holds.
-                int contributedSlots = startupPreset != null
-                    ? ApplyStartupLoadout(startupPreset.slotPrefabs, overwriteAssignedSlots: false)
-                    : ApplyStartupLoadout(coreQuickSlotPrefabs, overwriteAssignedSlots: false);
+                // The two sources are NOT the same kind of thing and must not share one route.
+                // A ToolLoadoutPreset is AUTHORED override data, so it goes through the owner's own
+                // preset route: ApplyLoadoutPreset (PlayerToolManager.cs:1120) overwrites the slots the
+                // preset NAMES, refuses to strip the ones it leaves empty, and closes the swap-state
+                // invariant afterwards. Pushing preset.slotPrefabs through the gap-filler instead threw
+                // away the only thing a preset exists to say - Preset_Loadout_Construction names the
+                // same four tools in a deliberately different slot ORDER - because every slot the owner
+                // already held was skipped. A preset applied onto a populated player therefore did
+                // nothing whatsoever, and still counted the owner's own four tools as its own
+                // contribution, so even the inert-source warning below stayed silent.
+                // coreQuickSlotPrefabs is NOT authored override data - it is a duplicate of the owner's
+                // list that no one keeps honest (see ReportQuickSlotMirrorDivergence) - so it stays a
+                // gap-filler and can never overwrite or clear a slot the owner already holds.
+                // ContentSanityValidator.cs:2490 validates the owner's serialized toolPrefabs as the
+                // production starter loadout; nothing here may downgrade it.
+                bool sourceContributed = startupPreset != null
+                    ? TryApplyStartupPresetThroughOwner()
+                    : ApplyStartupLoadout(coreQuickSlotPrefabs, overwriteAssignedSlots: false) > 0;
 
-                if (contributedSlots <= 0)
+                if (!sourceContributed)
                 {
                     Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
                         StartupLoadoutSourceInertWarningHash,
@@ -313,11 +324,23 @@ namespace Hecton8.Dev
         [ContextMenu("Apply Startup Preset")]
         public void ApplyStartupPreset()
         {
+            TryApplyStartupPresetThroughOwner();
+        }
+
+        /// <summary>
+        /// The single route from a serialized <see cref="ToolLoadoutPreset"/> into the tool owner, shared
+        /// by the designer context menu and by startup provisioning so the two cannot diverge. Returns
+        /// whether the owner accepted the preset; it refuses a preset that names no tool at all
+        /// (PlayerToolManager.cs:1134-1142), which is an authoring gap and not an instruction to empty
+        /// the quick-slot bar.
+        /// </summary>
+        private bool TryApplyStartupPresetThroughOwner()
+        {
             AutoResolveSceneReferences();
             if (toolManager == null || startupPreset == null)
-                return;
+                return false;
 
-            toolManager.ApplyLoadoutPreset(startupPreset, holsterBeforeAssigning);
+            return toolManager.ApplyLoadoutPreset(startupPreset, holsterBeforeAssigning);
         }
 
         private void AutoResolveSceneReferences()
