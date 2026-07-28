@@ -270,9 +270,17 @@ namespace Hecton8.Gameplay
             TryRegisterToTickManager();
             SubscribeModuleStatusEvents();
             ClearInteriorCarrierCache();
-            WarmRuntimePoolsIfNeeded();
+            // The starter-tool grant runs BEFORE the pool warmup on purpose. WarmRuntimePoolsIfNeeded
+            // instantiates the authored slot prefabs, so an authoring defect in any one of them raises a
+            // managed exception out of Instantiate and takes the remainder of OnEnable with it. Measured on
+            // the headless route: slot 0 (Tool_Scanner_Held) carries DataArchaeologyRuntime, whose Awake
+            // asserts "requires an authored reconstruction mesh", and that throw landed on the warmup call
+            // that used to sit directly above this line. Warmup is a pure pre-allocation optimisation, so it
+            // goes last - one unauthored prefab must not be able to deny the player the entire starter
+            // loadout, which is exactly what IsToolAvailableInSlot reports on.
             TryGrantAssignedToolItemsOnRuntimeStart();
             BaselineInventoryChangedSignalRevision();
+            WarmRuntimePoolsIfNeeded();
         }
 
         private void OnDisable()
@@ -1210,6 +1218,16 @@ namespace Hecton8.Gameplay
             WarmAssignedToolPoolsIfNeeded();
         }
 
+        /// <summary>
+        /// Grants the authored quick-slot tool items once so the production starter loadout actually exists
+        /// in the inventory. Slot availability IS ownership: <see cref="IsToolAvailableInSlot"/> resolves
+        /// through <see cref="HasToolInInventory"/>, so an assigned prefab on its own never makes a slot
+        /// selectable. The completion latch is therefore only consumed when the grant genuinely finished -
+        /// every examined slot is owned, permanently unresolvable, or the budget was spent. A refusal from
+        /// the inventory (buffers not allocated yet on this activation, grid full) leaves the latch clear so
+        /// the next activation or player-context rebind retries, instead of reporting a completed grant that
+        /// added nothing and leaving all four slots unavailable for the rest of the session.
+        /// </summary>
         private void TryGrantAssignedToolItemsOnRuntimeStart()
         {
             if (!Application.isPlaying ||
@@ -1230,6 +1248,7 @@ namespace Hecton8.Gameplay
             }
 
             int granted = 0;
+            int refused = 0;
             _suppressInventoryChangedHandling = true;
             try
             {
@@ -1245,7 +1264,12 @@ namespace Hecton8.Gameplay
                         continue;
 
                     if (playerInventory.TryAddItem(itemHash, 1))
+                    {
                         granted++;
+                        continue;
+                    }
+
+                    refused++;
                 }
             }
             finally
@@ -1255,10 +1279,30 @@ namespace Hecton8.Gameplay
             }
 
             _debugRuntimeStartToolGrants += granted;
-            _runtimeStartToolGrantCompleted = true;
+            _runtimeStartToolGrantCompleted = refused == 0;
 
             if (granted > 0)
                 PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (refused > 0)
+            {
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one " +
+                    "assigned quick-slot tool item, so the grant stays open for the next player activation.");
+            }
+            else if (granted > 0)
+            {
+                Hecton8.Core.H8Debug.Log(
+                    "[PlayerToolManager] STARTERGRANT applied - the assigned quick-slot tool items are owned.");
+            }
+            else
+            {
+                Hecton8.Core.H8Debug.Log(
+                    "[PlayerToolManager] STARTERGRANT satisfied - every assigned quick-slot tool item was " +
+                    "already owned.");
+            }
+#endif
         }
 
         private void WarmAssignedToolPoolsIfNeeded()

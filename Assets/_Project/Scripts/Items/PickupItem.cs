@@ -560,10 +560,18 @@ namespace Hecton8.Interaction
             if (itemData == null || quantity <= 0 || _cachedItemHashId == 0)
                 return false;
 
+            // IInventoryPickupSource contracts true as "transferred into the SOA inventory and consumed the
+            // world proxy". With no inventory neither happened and the item is still lying in the world, so
+            // true here is a false success, not a nicety: ToolHitUtility.TryCollectItem:392 forwards it
+            // unguarded and SalvageSamplerTool.cs:142 then archives the item, writes "SALVAGE PACKAGE
+            // RECOVERED" to the field operation log and shows the HUD message for an item nobody ever got.
+            // PlayerInteraction.cs:896 already refuses to call with a null inventory, and LootMagnetSystem
+            // .cs:1257 derives its own addedQuantity from the pickup quantity delta rather than this flag,
+            // so neither live caller changes behaviour.
             if (inventory == null)
             {
                 DropOverflow(interactor);
-                return true;
+                return false;
             }
 
             PlayerInventory.ScavengeAttemptResult attempt = inventory.ScavengeAttempt(_cachedItemHashId, quantity, interactor, _geneticsMask, QualityMilli);
@@ -671,25 +679,38 @@ namespace Hecton8.Interaction
             return false;
         }
 
+        // The inventory commit in TryHandleInventoryPickup already succeeded by the time this runs, so a
+        // resolution failure here does not undo the acquisition - it only deletes the ItemAcquiredSignal
+        // that is the sole observable proof of it (H8_HeadlessWorldDriver's resource row reads nothing
+        // else, and FirstHourDirector / RadiationHazardGrid / EcosystemDirector / AsynchronousTelemetryExporter
+        // consume the same lane). The player-pose branch stays primary because it is exact against the
+        // player's own predicted AUP, but it needs IPlayerRuntimeContext bound with HasPlayerRoot set, and
+        // that is not guaranteed at the moment an item is taken. RuntimeOriginRoute needs only the committed
+        // floating-origin offset, which is the same coordinate system, and is the route the sibling
+        // ItemAcquiredSignal publisher HarvestableOutcrop.TryResolveAupFromRuntimeOrigin already uses.
         private static bool TryBuildFiniteSignalAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
             positionAup = default;
             IPlayerRuntimeContext playerContext = s_playerRuntimeContext;
-            if (playerContext == null ||
-                !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) ||
-                !IsFiniteAup(in snapshot.Aup))
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                IsFiniteAup(in snapshot.Aup))
             {
-                return false;
+                double3 deltaMeters = new double3(
+                    (double)runtimePosition.x - snapshot.RuntimePosition.x,
+                    (double)runtimePosition.y - snapshot.RuntimePosition.y,
+                    (double)runtimePosition.z - snapshot.RuntimePosition.z);
+                positionAup = AbsoluteUniversePosition.OffsetMeters(
+                    in snapshot.Aup,
+                    deltaMeters);
+                if (IsFiniteAup(in positionAup))
+                    return true;
+
+                positionAup = default;
             }
 
-            double3 deltaMeters = new double3(
-                (double)runtimePosition.x - snapshot.RuntimePosition.x,
-                (double)runtimePosition.y - snapshot.RuntimePosition.y,
-                (double)runtimePosition.z - snapshot.RuntimePosition.z);
-            positionAup = AbsoluteUniversePosition.OffsetMeters(
-                in snapshot.Aup,
-                deltaMeters);
-            return IsFiniteAup(in positionAup);
+            return RuntimeOriginRoute.TryRuntimePositionToAup(runtimePosition, ref positionAup) &&
+                   IsFiniteAup(in positionAup);
         }
 
         private static ushort NormalizeQualityMilli(ushort qualityMilli)

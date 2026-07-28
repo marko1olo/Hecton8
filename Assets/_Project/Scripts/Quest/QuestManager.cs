@@ -4,6 +4,7 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Interaction;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Unity.Collections;
@@ -16,9 +17,21 @@ using UnityEditor;
 
 namespace Hecton8.Quest
 {
+    /// <summary>
+    /// One recorded quest spine state change. Written on the transition itself, never on a cadence.
+    /// </summary>
+    public struct QuestSpineTransitionRecord
+    {
+        public uint QuestHash;
+        public int FrameIndex;
+        public float TimeSeconds;
+        public byte TransitionCode;
+        public byte Completed;
+    }
+
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-130)]
-    public sealed class QuestManager : MonoBehaviour, ISaveable, IQuestSystem, IGlobalRegistryHotSwapListener
+    public sealed class QuestManager : MonoBehaviour, ISaveable, IQuestSystem, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         [Header("Quest Registry")]
         [Tooltip("All authored quest assets assigned to this runtime owner.")]
@@ -40,9 +53,50 @@ namespace Hecton8.Quest
         private static readonly uint _QuestNotificationMissWarningHash = unchecked((uint)LocHash.Compute("QuestManager.NotificationMiss"));
         private static readonly uint _QuestNotificationContextHash = unchecked((uint)LocHash.Compute("QuestManager.Notification"));
 
+        // The mission spine had no observable surface at all: every transition went out as a typed
+        // QuestEvents payload plus a NotificationEvents push, and nothing in the project printed or
+        // counted either one. A probe run could not tell "no quest ever activated" apart from "two
+        // quests activated on frame one and nobody looked", so the whole axis read as dead.
+        // Counters and the ring below are always on and allocation-free on the transition path; the
+        // log lines are development-only and hard-capped, so neither can turn into cadence spam.
+        private const int QuestSpineTransitionRingCapacity = 16;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const int QuestSpineTransitionLogCap = 32;
+        private const int QuestSpineLogBufferCapacity = 160;
+        private const string QuestSpineLogPrefix = "H8QUESTSPINE ";
+        private const string QuestSpineActivateLabel = "ACTIVATE";
+        private const string QuestSpineCompleteLabel = "COMPLETE";
+        private const string QuestSpineRevertLabel = "REVERT";
+        private const string QuestSpineQuestToken = " quest=0x";
+        private const string QuestSpineTotalToken = " total=";
+        private const string QuestSpineBootLabel = "BOOT authored=";
+        private const string QuestSpineAutoToken = " autoActivated=";
+        private const string QuestSpineGraphToken = " graphReady=";
+        private const string QuestSpineRegisteredToken = " registered=";
+        private const string QuestSpineLoadedToken = " loadedFromSave=";
+        private const string QuestSpineTrueLabel = "1";
+        private const string QuestSpineFalseLabel = "0";
+        // COLD ALLOC: char[160] - development-only quest spine log line staging, reused across all capped lines - owner: QuestManager
+        private static readonly char[] s_questSpineLogBuffer = new char[QuestSpineLogBufferCapacity];
+        private static int s_questSpineTransitionLogCount;
+#endif
+
         private static uint[] s_stagedLoadedPackedState;
         private static QuestSaveHeader s_stagedLoadedQuestHeader;
         private static int s_x001QuestManagerZeigarnikHapticDropCount;
+
+        // COLD ALLOC: QuestSpineTransitionRecord[16] - newest-last quest spine transition ring read back by the headless probe - owner: QuestManager
+        private static readonly QuestSpineTransitionRecord[] s_questSpineTransitionRing =
+            new QuestSpineTransitionRecord[QuestSpineTransitionRingCapacity];
+        private static int s_questSpineTransitionRingWriteIndex;
+        private static int s_questSpineTransitionCount;
+        private static int s_questSpineActivationCount;
+        private static int s_questSpineCompletionCount;
+        private static int s_questSpineRevertCount;
+        private static int s_questSpineAutoActivationCount;
+        private static int s_questSpineAuthoredQuestCount;
+        private static bool s_questSpineBootObserved;
+        private static bool s_questSpineStateGraphReady;
 
         internal static QuestManager ActiveRuntimeInstance { get; private set; }
 
@@ -61,6 +115,9 @@ namespace Hecton8.Quest
         private QuestDagBufferHandles _questDagHandles;
         private int _questDagAuthoredDependencyLinkCount;
         private bool _hotSwapRegistered;
+        private bool _lateFrameRegistered;
+        private int _lastItemAcquiredSnapshotGeneration = -1;
+        private int _itemAcquiredIngestCount;
         private uint[] _questCompletedNotificationHashes = Array.Empty<uint>();
         private uint[] _questRestoredNotificationHashes = Array.Empty<uint>();
         private uint[] _questNewNotificationHashes = Array.Empty<uint>();
@@ -74,6 +131,99 @@ namespace Hecton8.Quest
             s_stagedLoadedPackedState = null;
             s_stagedLoadedQuestHeader = default;
             ActiveRuntimeInstance = null;
+            ResetQuestSpineDiagnostics();
+        }
+
+        private static void ResetQuestSpineDiagnostics()
+        {
+            for (int i = 0; i < s_questSpineTransitionRing.Length; i++)
+                s_questSpineTransitionRing[i] = default;
+
+            s_questSpineTransitionRingWriteIndex = 0;
+            s_questSpineTransitionCount = 0;
+            s_questSpineActivationCount = 0;
+            s_questSpineCompletionCount = 0;
+            s_questSpineRevertCount = 0;
+            s_questSpineAutoActivationCount = 0;
+            s_questSpineAuthoredQuestCount = 0;
+            s_questSpineBootObserved = false;
+            s_questSpineStateGraphReady = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            s_questSpineTransitionLogCount = 0;
+#endif
+        }
+
+        /// <summary>
+        /// True once a quest runtime owner reached Start and reported its authored registry size.
+        /// </summary>
+        public static bool QuestSpineBootObserved => s_questSpineBootObserved;
+
+        /// <summary>
+        /// Authored quest asset count the runtime owner actually carried into Start.
+        /// </summary>
+        public static int QuestSpineAuthoredQuestCount => s_questSpineAuthoredQuestCount;
+
+        /// <summary>
+        /// Quests the auto-activation pass turned on during Start.
+        /// </summary>
+        public static int QuestSpineAutoActivationCount => s_questSpineAutoActivationCount;
+
+        /// <summary>
+        /// Total quest activation transitions emitted this session.
+        /// </summary>
+        public static int QuestSpineActivationCount => s_questSpineActivationCount;
+
+        /// <summary>
+        /// Total quest completion transitions emitted this session.
+        /// </summary>
+        public static int QuestSpineCompletionCount => s_questSpineCompletionCount;
+
+        /// <summary>
+        /// Total quest revert transitions emitted this session.
+        /// </summary>
+        public static int QuestSpineRevertCount => s_questSpineRevertCount;
+
+        /// <summary>
+        /// Total quest transitions of every kind emitted this session.
+        /// </summary>
+        public static int QuestSpineTransitionCount => s_questSpineTransitionCount;
+
+        /// <summary>
+        /// True when a runtime owner compiled its quest state graph without errors.
+        /// </summary>
+        public static bool QuestSpineStateGraphReady => s_questSpineStateGraphReady;
+
+        /// <summary>
+        /// Copies the most recent quest spine transitions oldest-first into the caller's buffer.
+        /// </summary>
+        /// <param name="destination">Caller-owned buffer. Nothing is copied when it is null or empty.</param>
+        /// <returns>Number of records written.</returns>
+        public static int CopyQuestSpineTransitions(QuestSpineTransitionRecord[] destination)
+        {
+            if (destination == null || destination.Length <= 0)
+                return 0;
+
+            int recorded = s_questSpineTransitionCount < QuestSpineTransitionRingCapacity
+                ? s_questSpineTransitionCount
+                : QuestSpineTransitionRingCapacity;
+            int copyCount = recorded < destination.Length ? recorded : destination.Length;
+            if (copyCount <= 0)
+                return 0;
+
+            int oldestIndex = s_questSpineTransitionRingWriteIndex - copyCount;
+            while (oldestIndex < 0)
+                oldestIndex += QuestSpineTransitionRingCapacity;
+
+            for (int i = 0; i < copyCount; i++)
+            {
+                int ringIndex = oldestIndex + i;
+                if (ringIndex >= QuestSpineTransitionRingCapacity)
+                    ringIndex -= QuestSpineTransitionRingCapacity;
+
+                destination[i] = s_questSpineTransitionRing[ringIndex];
+            }
+
+            return copyCount;
         }
 
         public int SavePriority => 7;
@@ -113,6 +263,7 @@ namespace Hecton8.Quest
             BindLocalization(GlobalRegistry.LocalizationText);
             BindQuestDagVault(GlobalRegistry.DataVault);
             _graphEvaluator?.Bind();
+            TryRegisterLateFrameTick();
         }
 
         private void OnDisable()
@@ -120,6 +271,7 @@ namespace Hecton8.Quest
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            TryUnregisterLateFrameTick();
             _graphEvaluator?.Unbind();
 
             TryUnregisterHotSwapListener();
@@ -141,6 +293,7 @@ namespace Hecton8.Quest
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            TryUnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
             BindSaveService(null);
             BindQuestDagVault(null);
@@ -169,11 +322,39 @@ namespace Hecton8.Quest
             if (!_runtimeOwnerAborted)
                 BindSaveService(GlobalRegistry.Save);
 
+            // Retried here on purpose. This owner carries [DefaultExecutionOrder(-130)], so its OnEnable
+            // can run before GlobalRegistry.Dispatcher exists, and the guard in TryRegisterLateFrameTick
+            // would then leave the item-acquisition bridge permanently unregistered with no second
+            // attempt. Start runs after every Awake and OnEnable in the load, which is the same ordering
+            // FirstHourDirector.cs:1071-1084 relies on. Both calls are idempotent.
+            TryRegisterLateFrameTick();
+
             if (_runtimeOwnerAborted || _loadedFromSave || _stateManager == null)
+            {
+                PublishQuestSpineBootFacts(autoActivatedCount: 0);
                 return;
+            }
 
             _stateManager.ApplyAutoActivationFlags(allQuests);
+            int autoActivatedCount = _stateManager.ResultCount;
+            PublishQuestSpineBootFacts(autoActivatedCount);
             FlushRuntimeResults();
+        }
+
+        /// <summary>
+        /// Records the boot facts a probe needs to separate "no quest data" from "quest data that never fired".
+        /// </summary>
+        /// <param name="autoActivatedCount">Quests the auto-activation pass turned on.</param>
+        private void PublishQuestSpineBootFacts(int autoActivatedCount)
+        {
+            s_questSpineBootObserved = true;
+            s_questSpineAuthoredQuestCount = allQuests != null ? allQuests.Length : 0;
+            s_questSpineAutoActivationCount = autoActivatedCount;
+            s_questSpineStateGraphReady = _stateManager != null && !_stateManager.HasCompileErrors;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogQuestSpineBootFacts(autoActivatedCount);
+#endif
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -277,6 +458,7 @@ namespace Hecton8.Quest
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            TryUnregisterLateFrameTick();
             _graphEvaluator?.Unbind();
             TryUnregisterHotSwapListener();
             BindSaveService(null);
@@ -293,6 +475,96 @@ namespace Hecton8.Quest
             _runtimeOwnerAborted = true;
             enabled = false;
         }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_runtimeOwnerAborted || _lateFrameRegistered)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (_runtimeOwnerAborted)
+                return;
+
+            DrainItemAcquiredSignalsIntoQuestGraph();
+        }
+
+        /// <summary>
+        /// Feeds the live item-acquisition lane into the quest graph's ItemCollected input.
+        /// </summary>
+        /// <remarks>
+        /// QuestGraphEvaluator's only item input is IInteractionEventListener.OnInteractionEvent, and the
+        /// only producer of InteractionEventType.ItemCollected in the whole project is
+        /// HarvestableOutcrop.cs:487 - whose script GUID (d7edd8c67a6e0b242b34c32fe9ddb1fd) is authored
+        /// into zero scenes and zero prefabs. Every actual acquisition route publishes
+        /// SignalBus&lt;ItemAcquiredSignal&gt; instead: PickupItem.cs:632, HectonItem.cs:501,
+        /// Fabricator.cs:3483, DeployableSdfDrillRuntime.cs:1301, VoxelDeltaProcessor.cs:5845,
+        /// LootMagnetSystem.cs:2043, ProceduralOreSpawner.cs:2801 and the drone lane. So every quest with
+        /// completionType 0 (OnItemCollected) - Quest_FirstHour_CollectTitanium, Quest_CopperSample,
+        /// Quest_RadShield - could never complete from real gameplay, and every OnItemCollected trigger
+        /// (Quest_FirstHour_CraftScanner) could never fire. FirstHourDirector.cs:1804-1838 already had to
+        /// work around exactly this for its own goals; the quest graph itself never got the bridge.
+        ///
+        /// The hash kernels are identical on both sides, so the feed is a real match and not a
+        /// plausible-looking one: PickupItem.cs:293 and HectonItem.cs:421 fill ItemHash from
+        /// LocHash.Compute(ItemData.PersistentId), InteractionEvents.ComputeItemHash does the same via
+        /// ItemData.ResolvePersistentHashId (ItemData.cs:396-400), and QuestStateManager's
+        /// ComputeSignalIdHash (:2058-2063) hashes the authored completionId with that same LocHash.
+        ///
+        /// Double-counting is impossible even if an item ever hits both lanes: TryActivateQuest and
+        /// TryCompleteQuest are bit-guarded (QuestStateManager.cs:832 and :853), so a repeat is a no-op.
+        /// The snapshot generation guard keeps one frame's signals from being ingested twice.
+        /// </remarks>
+        private void DrainItemAcquiredSignalsIntoQuestGraph()
+        {
+            QuestGraphEvaluator graphEvaluator = _graphEvaluator;
+            if (graphEvaluator == null)
+                return;
+
+            int snapshotGeneration = SignalBus<ItemAcquiredSignal>.SnapshotGeneration;
+            if (_lastItemAcquiredSnapshotGeneration == snapshotGeneration)
+                return;
+
+            _lastItemAcquiredSnapshotGeneration = snapshotGeneration;
+
+            ReadOnlySpan<ItemAcquiredSignal> signals = SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                uint itemHash = signals[i].ItemHash;
+                if (itemHash == 0u)
+                    continue;
+
+                int quantity = signals[i].Quantity;
+                InteractionEventPayload payload = default;
+                payload.ItemHashId = itemHash;
+                payload.Quantity = quantity > 0 ? quantity : 1;
+                payload.EventType = (ushort)InteractionEventType.ItemCollected;
+                payload.ReferenceSlot = -1;
+
+                graphEvaluator.OnInteractionEvent(in payload);
+                _itemAcquiredIngestCount++;
+            }
+        }
+
+        /// <summary>
+        /// Item-acquisition signals this owner has forwarded into the quest graph this session.
+        /// </summary>
+        public int ItemAcquiredIngestCount => _itemAcquiredIngestCount;
 
         private void TryUnregisterHotSwapListener()
         {
@@ -691,6 +963,7 @@ namespace Hecton8.Quest
             }
 
             uint notificationHash = ResolveQuestNotificationHash(questIndex, completed, transitionType);
+            RecordQuestSpineTransition(questHash, completed, transitionType);
 
             switch (transitionType)
             {
@@ -731,6 +1004,177 @@ namespace Hecton8.Quest
         {
             _questNotificationMissCount = 0;
         }
+
+        /// <summary>
+        /// Counts one quest spine transition and stores it in the read-back ring. Allocation-free.
+        /// </summary>
+        /// <param name="questHash">Stable quest hash that changed state.</param>
+        /// <param name="completed">True when the quest is completed after the transition.</param>
+        /// <param name="transitionType">Transition class emitted by the state graph.</param>
+        private static void RecordQuestSpineTransition(uint questHash, bool completed, QuestTransitionType transitionType)
+        {
+            switch (transitionType)
+            {
+                case QuestTransitionType.Complete:
+                    s_questSpineCompletionCount++;
+                    break;
+                case QuestTransitionType.Revert:
+                    s_questSpineRevertCount++;
+                    break;
+                default:
+                    if (completed)
+                        s_questSpineCompletionCount++;
+                    else
+                        s_questSpineActivationCount++;
+                    break;
+            }
+
+            int writeIndex = s_questSpineTransitionRingWriteIndex;
+            s_questSpineTransitionRing[writeIndex] = new QuestSpineTransitionRecord
+            {
+                QuestHash = questHash,
+                FrameIndex = SystemDispatcher.CurrentFrameIndex,
+                TimeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
+                TransitionCode = (byte)transitionType,
+                Completed = completed ? (byte)1 : (byte)0
+            };
+
+            writeIndex++;
+            s_questSpineTransitionRingWriteIndex = writeIndex >= QuestSpineTransitionRingCapacity ? 0 : writeIndex;
+            s_questSpineTransitionCount++;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogQuestSpineTransition(questHash, completed, transitionType);
+#endif
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Emits one development-only quest spine transition line. Hard-capped so it can never become cadence spam.
+        /// </summary>
+        /// <remarks>Buffer, cap and label constants live in the matching conditional block near the class head.</remarks>
+        /// <param name="questHash">Stable quest hash that changed state.</param>
+        /// <param name="completed">True when the quest is completed after the transition.</param>
+        /// <param name="transitionType">Transition class emitted by the state graph.</param>
+        private static void LogQuestSpineTransition(uint questHash, bool completed, QuestTransitionType transitionType)
+        {
+            if (s_questSpineTransitionLogCount >= QuestSpineTransitionLogCap)
+                return;
+
+            s_questSpineTransitionLogCount++;
+
+            int length = 0;
+            if (!TryAppendSpan(QuestSpineLogPrefix.AsSpan(), s_questSpineLogBuffer, ref length))
+                return;
+
+            ReadOnlySpan<char> label = ResolveQuestSpineTransitionLabel(completed, transitionType);
+            if (!TryAppendSpan(label, s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(QuestSpineQuestToken.AsSpan(), s_questSpineLogBuffer, ref length) ||
+                !TryAppendHex32(questHash, s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(QuestSpineTotalToken.AsSpan(), s_questSpineLogBuffer, ref length) ||
+                !TryAppendInt32(s_questSpineTransitionCount, s_questSpineLogBuffer, ref length))
+            {
+                return;
+            }
+
+            // COLD ALLOC: string[1] - one development-only spine line, capped at 32 per session - owner: QuestManager
+            Hecton8.Core.H8Debug.Log(new string(s_questSpineLogBuffer, 0, length));
+        }
+
+        /// <summary>
+        /// Emits the development-only quest spine boot line that separates empty quest data from inert quest data.
+        /// </summary>
+        /// <param name="autoActivatedCount">Quests the auto-activation pass turned on.</param>
+        private void LogQuestSpineBootFacts(int autoActivatedCount)
+        {
+            int length = 0;
+            if (!TryAppendSpan(QuestSpineLogPrefix.AsSpan(), s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(QuestSpineBootLabel.AsSpan(), s_questSpineLogBuffer, ref length) ||
+                !TryAppendInt32(s_questSpineAuthoredQuestCount, s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(QuestSpineAutoToken.AsSpan(), s_questSpineLogBuffer, ref length) ||
+                !TryAppendInt32(autoActivatedCount, s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(QuestSpineGraphToken.AsSpan(), s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(ResolveQuestSpineFlagLabel(s_questSpineStateGraphReady), s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(QuestSpineRegisteredToken.AsSpan(), s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(ResolveQuestSpineFlagLabel(_serviceRegistered), s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(QuestSpineLoadedToken.AsSpan(), s_questSpineLogBuffer, ref length) ||
+                !TryAppendSpan(ResolveQuestSpineFlagLabel(_loadedFromSave), s_questSpineLogBuffer, ref length))
+            {
+                return;
+            }
+
+            // COLD ALLOC: string[1] - one development-only spine boot line per runtime owner Start - owner: QuestManager
+            Hecton8.Core.H8Debug.Log(new string(s_questSpineLogBuffer, 0, length), this);
+        }
+
+        private static ReadOnlySpan<char> ResolveQuestSpineTransitionLabel(bool completed, QuestTransitionType transitionType)
+        {
+            switch (transitionType)
+            {
+                case QuestTransitionType.Complete:
+                    return QuestSpineCompleteLabel.AsSpan();
+                case QuestTransitionType.Revert:
+                    return QuestSpineRevertLabel.AsSpan();
+                default:
+                    return completed ? QuestSpineCompleteLabel.AsSpan() : QuestSpineActivateLabel.AsSpan();
+            }
+        }
+
+        private static ReadOnlySpan<char> ResolveQuestSpineFlagLabel(bool value)
+        {
+            return value ? QuestSpineTrueLabel.AsSpan() : QuestSpineFalseLabel.AsSpan();
+        }
+
+        private static bool TryAppendHex32(uint value, char[] destination, ref int length)
+        {
+            if (destination == null || length < 0 || destination.Length - length < 8)
+                return false;
+
+            // Nibble is kept as int on purpose. `int + uint` promotes to long in C#, which is the same
+            // promotion trap CONTRIBUTING.md calls out for `someIntConst - 1u`.
+            for (int shift = 28; shift >= 0; shift -= 4)
+            {
+                int nibble = (int)((value >> shift) & 0xFu);
+                destination[length++] = (char)(nibble < 10 ? '0' + nibble : ('A' - 10) + nibble);
+            }
+
+            return true;
+        }
+
+        private static bool TryAppendInt32(int value, char[] destination, ref int length)
+        {
+            if (destination == null || length < 0 || length >= destination.Length)
+                return false;
+
+            if (value < 0)
+            {
+                destination[length++] = '-';
+                if (length >= destination.Length)
+                    return false;
+            }
+
+            long magnitude = value < 0 ? -(long)value : value;
+            int digitStart = length;
+            do
+            {
+                if (length >= destination.Length)
+                    return false;
+
+                destination[length++] = (char)('0' + (int)(magnitude % 10L));
+                magnitude /= 10L;
+            }
+            while (magnitude != 0L);
+
+            for (int low = digitStart, high = length - 1; low < high; low++, high--)
+            {
+                char swap = destination[low];
+                destination[low] = destination[high];
+                destination[high] = swap;
+            }
+
+            return true;
+        }
+#endif
 
         private QuestData GetQuestDataByIndex(int questIndex)
         {

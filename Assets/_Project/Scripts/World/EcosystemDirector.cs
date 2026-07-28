@@ -244,6 +244,27 @@ namespace Hecton8.World
         private const int DefaultGrazerPopulationPerSector = 10;
         private const int DefaultLeviathanPopulationPerSector = 1;
         private const int MinimumSectorCapacity = 16;
+
+        /// <summary>
+        /// Sector slots the migration ring expansion must leave unclaimed so a travelling player can always
+        /// register the sector they are standing in. Sector slots are never freed.
+        /// </summary>
+        private const int MigrationNeighborSectorReserve = 8;
+
+        /// <summary>
+        /// Cold ticks the fauna census waits before emitting, so the spawn actuator installed on the same
+        /// lane has had time to act and a reported zero means "produced nothing", not "not yet asked".
+        /// </summary>
+        /// <remarks>
+        /// Sized against the actuator, not picked round. The cold lane runs at
+        /// <see cref="FrostTickIntervalSeconds"/> = 5 s, and StressDrivenSpawnDirector's default tuning is
+        /// BaseSpawnRatePerMinute 0.72 with MaxSpawnPerColdTick 1 (StressDrivenSpawnDirector.cs:113 and
+        /// :125), so the first creature is due after roughly 83 s. 24 cold ticks is about 120 s, which
+        /// clears that with margin while staying a few percent of the headless harness's 3600 s default
+        /// day (HeadlessSimulationRunner.cs:42). Reporting earlier would print a zero for a healthy
+        /// actuator, which is worse than reporting nothing.
+        /// </remarks>
+        private const int FaunaCensusColdTickDelay = 24;
         private const int MinimumBiomassCellCapacity = 64;
         private const int BiomassImpactQueueCapacity = 128;
         private const int BiomassBlackBoxCapacity = 300;
@@ -1415,6 +1436,12 @@ namespace Hecton8.World
 
         /// <summary>Latches the one-time unreachable-migration-threshold warning.</summary>
         private bool _migrationFoodThresholdFloorReported;
+
+        /// <summary>Latches the one-shot creature census emitted by <see cref="ReportFaunaRecordCensusOnce"/>.</summary>
+        private bool _faunaRecordCensusReported;
+
+        /// <summary>Cold ticks observed by <see cref="ReportFaunaRecordCensusOnce"/> before it emits.</summary>
+        private int _faunaCensusColdTicks;
 
         /// <summary>
         /// Lowest food density a sector can reach with no harvest pressure and no algae bloom, i.e. from
@@ -2651,6 +2678,54 @@ namespace Hecton8.World
 
                 _coldTickAccumulator -= coldTickIntervalSeconds;
                 SyncPendingHibernatedFaunaPopulationRecords();
+
+                // EnsureMigrationNeighborSectorsRegistered had ZERO callers anywhere in the project.
+                // EnsurePlayerSectorRegistered seeds a five-cell plus-shape on the BIOMASS lane
+                // (:4982-4986) but only ONE slot on the SECTOR lane (:4980), so the creature-record
+                // world was exactly one 1 km sector wide: ResolveBucketTablePopulation (:8548) hands a
+                // sector either grazerPopulationPerSector prey or leviathanPopulationPerSector
+                // predators, never both, so with a single sector the world held 10 grazers and no apex
+                // or 1 apex and no grazers depending on the player's sector hash. HeadlessThresholdMigrationJob
+                // (:1184) can only move a headless entity into a sector that already has a slot, so
+                // migration had nowhere to go either. This is the sector-lane counterpart of the biomass
+                // plus-shape and it is the reason the ecology never grew past its seed.
+                EnsureMigrationNeighborSectorsRegistered();
+
+                // Both calls below MUST stay ahead of ScheduleSectorSolve. That method deliberately keeps
+                // the sector solve write locks held for its scheduled job (keepLocksForScheduledJob), so
+                // after it returns _solveJobLocksHeld is true and a Burst job owns those buffers: reading
+                // them read-only would be the job-safety violation TryGetGlobalBiomassAudit avoids with its
+                // HasPendingSimulationJob guard (:3415), and allocating new vault handles could move
+                // buffers out from under the running job. Here HasPendingSimulationJob was just verified
+                // false and EnsureMigrationNeighborSectorsRegistered released its lock in its finally.
+
+                // StressDrivenSpawnDirector is the ONLY thing in this project that turns an ecology state
+                // into an individual creature: ApplyCompletedSelection (StressDrivenSpawnDirector.cs:1765-1777)
+                // calls PredatorCognitionDomain.Register / ResetSlot / SubmitInput / SetSlotActive, which is
+                // a creature record with a position, a species and a live cognition slot - no prefab, no
+                // mesh, no GameObject. SystemDispatcher already drives that cognition domain every frame
+                // (SystemDispatcher.cs:5175 and :5416), and Data/AI/director_spawn_rules.csv already
+                // authors four species. The one missing link was the instance: EnsureInstance() had ZERO
+                // callers in the entire project outside the editor tuner window, so the director was never
+                // constructed, never cold-ticked, and the cognition domain ran every frame over an empty
+                // population.
+                //
+                // Installed from here rather than from InitializeService/OnEnable on purpose. The director's
+                // constructor calls TryRegisterTicks (StressDrivenSpawnDirector.cs:1940), which bails to a
+                // no-op when GlobalRegistry.Dispatcher is still null (:1948) - at InitializeService time it
+                // can be, and the result would be a constructed director that never ticks: a dead install
+                // that reads as wired. Inside SlowTick the dispatcher is provably alive, because the
+                // dispatcher is what called us. EnsureInstance is idempotent (:447) and TryRegisterTicks is
+                // latched per lane (_registeredCold/_registeredLate/_registeredHotSwap), so repeating it on
+                // the cold lane costs a null check and self-heals a lane that failed to register earlier.
+                // Keeping it out of OnEnable/InitializeService also means a throw out of the fauna actuator
+                // cannot abort this director's own TryRegisterService/TryRegisterSlowTickable sequence,
+                // which is exactly how the ready-lock defect silently unpublished ten owners.
+                // COLD ALLOC: StressDrivenSpawnDirector[1] - one fauna spawn actuator per process, constructed
+                // on the first cold tick and cached in its own static; every later call is three latched bool
+                // checks - owner: StressDrivenSpawnDirector
+                StressDrivenSpawnDirector.EnsureInstance();
+                ReportFaunaRecordCensusOnce();
                 ScheduleSectorSolve();
             }
         }
@@ -4916,6 +4991,11 @@ namespace Hecton8.World
             }
         }
 
+        /// <summary>
+        /// Expands the populated sector frontier one ring outward from every already-populated sector so
+        /// migration has registered neighbours to move into and the creature-record world is wider than
+        /// the single sector <see cref="EnsurePlayerSectorRegistered"/> seeds.
+        /// </summary>
         private void EnsureMigrationNeighborSectorsRegistered()
         {
             if (HasPendingSimulationJob())
@@ -4927,7 +5007,17 @@ namespace Hecton8.World
 
             try
             {
-                for (int sectorIndex = 0; sectorIndex < seedSectorCount && _activeSectorCount < _sectorFrontStates.Length; sectorIndex++)
+                // Nothing in this class ever frees a sector slot - the only decrement of
+                // _activeSectorCount is the failed-upsert rollback in ResolveOrCreateSectorSlot (:7458).
+                // Ring expansion therefore runs to capacity and stays there, so it must not be allowed
+                // to consume the LAST slots: once the table is full ResolveOrCreateSectorSlot returns -1
+                // for every new coordinate, including the one EnsurePlayerSectorRegistered needs when the
+                // player walks into virgin sectors, and the player would end up standing in a sector with
+                // no population record at all. Reserving a fixed tail keeps travel working, and it is
+                // reserved against the resolved buffer length rather than maxTrackedSectors because a
+                // vault generation can hand back a shorter array than the requested capacity.
+                int expansionCeiling = math.max(1, _sectorFrontStates.Length - MigrationNeighborSectorReserve);
+                for (int sectorIndex = 0; sectorIndex < seedSectorCount && _activeSectorCount < expansionCeiling; sectorIndex++)
                 {
                     SectorPopulationState sourceState = _sectorFrontStates[sectorIndex];
                     if (sourceState.PreyPopulationRounded <= 0 && sourceState.PredatorPopulationRounded <= 0)
@@ -4935,15 +5025,15 @@ namespace Hecton8.World
 
                     int2 sectorCoord = sourceState.SectorCoord;
                     ResolveOrCreateSectorSlot(sectorCoord + new int2(1, 0), seedWithBaseline: false);
-                    if (_activeSectorCount >= _sectorFrontStates.Length)
+                    if (_activeSectorCount >= expansionCeiling)
                         break;
 
                     ResolveOrCreateSectorSlot(sectorCoord + new int2(-1, 0), seedWithBaseline: false);
-                    if (_activeSectorCount >= _sectorFrontStates.Length)
+                    if (_activeSectorCount >= expansionCeiling)
                         break;
 
                     ResolveOrCreateSectorSlot(sectorCoord + new int2(0, 1), seedWithBaseline: false);
-                    if (_activeSectorCount >= _sectorFrontStates.Length)
+                    if (_activeSectorCount >= expansionCeiling)
                         break;
 
                     ResolveOrCreateSectorSlot(sectorCoord + new int2(0, -1), seedWithBaseline: false);
@@ -4953,6 +5043,96 @@ namespace Hecton8.World
             {
                 UnlockSectorSolveJobBuffers();
             }
+        }
+
+        /// <summary>
+        /// Emits the one-shot creature-record census that makes fauna presence readable in a headless log.
+        /// </summary>
+        private void ReportFaunaRecordCensusOnce()
+        {
+            if (_faunaRecordCensusReported)
+                return;
+
+            // Deliberately not emitted on the first cold tick. StressDrivenSpawnDirector is constructed on
+            // the cold lane immediately above and spawns at most one creature per completed selection, so a
+            // first-tick reading would report zero cognition slots for a director that is working fine and
+            // would be indistinguishable from a director that is dead. See FaunaCensusColdTickDelay for how
+            // the wait is sized against that spawn rate; past it, a zero means "the actuator ran and
+            // produced nothing".
+            _faunaCensusColdTicks++;
+            if (_faunaCensusColdTicks < FaunaCensusColdTickDelay)
+                return;
+
+            // Zero sectors, zero records and an unresolvable buffer view are all EMITTED rather than
+            // skipped. An early return on "nothing to report" is what made this failure invisible for the
+            // whole cycle: a run with no fauna and a run with no instrumentation produce identical logs.
+            // sectorCount stays -1 when the vault view cannot be resolved so the two are distinguishable.
+            int sectorCount = -1;
+            int preyRecords = 0;
+            int predatorRecords = 0;
+            int populatedSectors = 0;
+            if (_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+            {
+                sectorCount = math.min(_activeSectorCount, sectorFrontStates.Length);
+                for (int i = 0; i < sectorCount; i++)
+                {
+                    SectorPopulationState state = sectorFrontStates[i];
+                    int prey = math.max(0, state.PreyPopulationRounded);
+                    int predator = math.max(0, state.PredatorPopulationRounded);
+                    preyRecords += prey;
+                    predatorRecords += predator;
+                    if (prey > 0 || predator > 0)
+                        populatedSectors++;
+                }
+            }
+
+            _faunaRecordCensusReported = true;
+
+            // Latched to exactly one emission per process, on the cold-tick lane, and it is the only
+            // creature-presence readout that exists: nothing in this project logs a fauna count, which is
+            // why every headless run so far could report "no creatures" without distinguishing "the
+            // records are empty" from "nobody looked". The GameObject lane is reported alongside the
+            // record lane on purpose - GlobalRegistry.FaunaSimulation is satisfied by
+            // DemiurgeFaunaSimulationService (GameBootstrapper.cs:9067), whose IsReady is a hard true and
+            // whose ResidentSlotCapacity is a hard 0, so the bootstrap FaunaSimulation node passes with
+            // zero fauna owners in the world. A printed capacity of 0 is that facade being named out loud.
+            // This guard is a DIAGNOSTIC guard, not the banned functional one. H8Debug is already
+            // [Conditional("UNITY_EDITOR")] + [Conditional("DEVELOPMENT_BUILD")], so in a player build the
+            // calls below vanish and only the string build would survive as a pointless allocation. Nothing
+            // player-visible is being gated - contrast EcosystemRuntimeInstaller.cs:19-33, where the same
+            // symbols were wrapped around the actual AddComponent installs and shipped a world with no
+            // ecosystem owners. If the census itself ever needs to reach a player build, promote it to a
+            // telemetry lane rather than deleting this guard and leaking the concatenation.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            IFaunaSim faunaSimulation = GlobalRegistry.FaunaSimulation;
+            int residentSlotCapacity = faunaSimulation != null ? faunaSimulation.ResidentSlotCapacity : -1;
+            int cognitionSlots = PredatorCognitionDomain.ActiveCognitionSlotCount;
+
+            // COLD ALLOC: string[1] - one-shot latched fauna census line - owner: EcosystemDirector
+            string census =
+                "[FAUNACENSUS] abstractRecords sectors=" + sectorCount +
+                " populated=" + populatedSectors +
+                " prey=" + preyRecords +
+                " predators=" + predatorRecords +
+                " biomassCells=" + _activeBiomassCellCount +
+                " | individuals cognitionSlots=" + cognitionSlots +
+                " | gameObjectLane residentSlotCapacity=" + residentSlotCapacity;
+
+            // An empty world is raised to a warning, not printed as an ordinary line. A creature count of
+            // zero is the single most important reading this project can produce and it must not scroll past
+            // as informational text next to hundreds of successful init lines.
+            if (preyRecords + predatorRecords + cognitionSlots <= 0)
+            {
+                Hecton8.Core.H8Debug.LogWarning(
+                    census + " - EMPTY WORLD: no abstract population record and no individual creature " +
+                    "exists. abstractRecords zero means the sector lane never seeded, which needs a " +
+                    "resolvable player AUP. cognitionSlots zero means the spawn actuator produced nothing.",
+                    this);
+                return;
+            }
+
+            Hecton8.Core.H8Debug.Log(census, this);
+#endif
         }
 
         private void TickEclipsePredatorShallowMigration(float dt)

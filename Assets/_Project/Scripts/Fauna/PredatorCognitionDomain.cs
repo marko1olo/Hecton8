@@ -895,6 +895,19 @@ namespace Hecton8.AI
         private static int _totalBlindPredators;
         private static int _lastTelemetryBlindPredatorCount = -1;
 
+        /// <summary>
+        /// Number of cognition slots currently marked active, i.e. the count of live creature records this
+        /// domain is simulating. Read-only observation of existing state; the counter itself is owned by
+        /// <see cref="SetSlotActive"/>.
+        /// </summary>
+        /// <remarks>
+        /// This is the only creature-population number this project can report. Fauna here is record-based:
+        /// SystemDispatcher drives ScheduleFrameEvaluation (SystemDispatcher.cs:5175) and LateFrameTick
+        /// (:5416) every frame regardless of population, so a live-but-empty cognition domain is
+        /// indistinguishable from a working one without this readout.
+        /// </remarks>
+        internal static int ActiveCognitionSlotCount => _activeSlotCount;
+
         internal static void InjectDataVault(IDataVault dataVault)
         {
             if (ReferenceEquals(_dataVault, dataVault))

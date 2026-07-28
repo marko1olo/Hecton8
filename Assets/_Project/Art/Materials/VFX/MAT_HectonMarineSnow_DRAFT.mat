@@ -37,6 +37,6 @@ Material:
     - _MarineSnowAtlasParams: {r: 8, g: 8, b: 0, a: 0}
     - _MarineSnowFlipbookParams: {r: 0.18, g: 0.15, b: 0.22, a: 0.35}
     - _MarineSnowRenderParams: {r: 0.55, g: 3.2, b: 18, a: 0}
-    - _MarineSnowTint: {r: 0.53999996, g: 0.61, b: 0.58, a: 0.55}
+    - _MarineSnowTint: {r: 0.54, g: 0.61, b: 0.58, a: 0.55}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

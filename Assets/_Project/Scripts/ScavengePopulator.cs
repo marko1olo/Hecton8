@@ -13,6 +13,15 @@
 //   8. Highlighting the closest resource upon Director's request
 //      (HighlightNearbyResource).
 //
+// PREFAB SOURCES (in priority order):
+//   1. lootTables[] — per-context arrays of authored ResourceNode prefabs, filled in the Inspector.
+//   2. ResourceDistributionDirector.TryResolveExternalProducerNodeSpawn — the author-authored fallback
+//      ResourceNode prefab the director already owns and warms, plus the ResourceNodeTemplate whose
+//      authored depth/temperature/slope envelope matches the scatter point. Used when (1) is empty for
+//      the requested context, so an unauthored loot table degrades the resource lane's variety instead
+//      of deleting it. A scatter point is only discarded when BOTH sources come up empty, and that
+//      discard is counted (DroppedNoPrefabCount) and reported once.
+//
 // ARCHITECTURE (v2 — Direct API):
 //   • Registry service — custom MapMagic node resolves through WorldRuntimeReferenceUtility.
 //   • ISlowTickable — for time-sliced spawning (does not block the main thread).
@@ -208,6 +217,9 @@ namespace Hecton8.Core
         [SerializeField] private int _debugTotalActiveNodes;
         [SerializeField] private int _debugPendingSpawns;
         [SerializeField] private int _debugSkippedDepleted;
+        [SerializeField] private int _debugDroppedNoPrefab;
+        [SerializeField] private int _debugFallbackSpawns;
+        [SerializeField] private int _debugFallbackSpawnsWithoutTemplate;
         [SerializeField] private string _debugLastHighlightedId;
         [SerializeField] private float _debugRuntimeChunkSize = 512f;
         [SerializeField] private float _debugRuntimeUnloadDistance = 300f;
@@ -256,6 +268,29 @@ namespace Hecton8.Core
 
         /// <summary>Schetchik propuschennyh depleted uzlov (diagnostika).</summary>
         private int _skippedDepletedCount;
+
+        /// <summary>
+        /// Scatter points dropped because neither the authored loot tables nor the
+        /// ResourceDistributionDirector fallback could supply a ResourceNode prefab.
+        /// A non-zero value with zero active nodes is the unauthored-content signature.
+        /// </summary>
+        private int _droppedNoPrefabCount;
+
+        /// <summary>
+        /// Scatter points whose prefab was resolved through the director's author-authored fallback because
+        /// the scene's loot tables are empty for their context. Counted at resolution, so it can exceed the
+        /// number of nodes that actually reached the world if the pool is exhausted. Non-zero here means the
+        /// Resource lane is running on the fallback, not on authored per-context loot tables.
+        /// </summary>
+        private int _fallbackSpawnCount;
+
+        /// <summary>
+        /// Fallback resolutions that matched no ResourceNodeTemplate envelope, so the node carries only
+        /// whatever the prefab itself authors and yields no template loot on depletion.
+        /// </summary>
+        private int _fallbackSpawnWithoutTemplateCount;
+
+        private bool _reportedMissingResourcePrefab;
 
         /// <summary>
         /// Keshirovannyy spisok koordinat chankov dlya despavna.
@@ -740,7 +775,28 @@ namespace Hecton8.Core
 
                 // ── Select prefab from context-appropriate loot table ──
                 GameObject prefab = SelectResourcePrefab(request.localIndex, request.context);
-                if (prefab == null) continue;
+                ResourceNodeTemplate runtimeTemplate = null;
+
+                // A loot-table prefab with no warm pool reserve is as unusable as no prefab at all:
+                // runtime pool expansion is forbidden by mandate, so pool.Spawn fails closed and only
+                // emits a warning. Treat a cold or exhausted pool exactly like a missing entry, so the
+                // authored fallback — whose pool the director warms itself — takes over instead of the
+                // scatter point being lost. GetAvailableCount is a dictionary probe: no allocation, no log.
+                if (prefab != null && pool.GetAvailableCount(prefab) <= 0)
+                    prefab = null;
+
+                // ── Authored fallback ──
+                // The loot tables are a per-context designer convenience, not the only source of a node
+                // prefab. ResourceDistributionDirector owns the author-authored fallback ResourceNode
+                // prefab plus the authored template set, and it is the owner that warms that prefab's
+                // pool, so an empty loot table must not silently drop every scatter point on the floor.
+                if (prefab == null &&
+                    !TryResolveAuthoredFallbackSpawn(in request, out prefab, out runtimeTemplate))
+                {
+                    _droppedNoPrefabCount++;
+                    ReportMissingResourcePrefabOnce();
+                    continue;
+                }
 
                 // ── Spawn via pool ──
                 GameObject instance = pool.Spawn(
@@ -750,12 +806,16 @@ namespace Hecton8.Core
 
                 if (instance == null) continue;
 
-                // ── Apply scale from scatter data ──
                 Transform instanceTransform = instance.transform;
-                EnqueuePresentationScale(instanceTransform, request.scale);
 
                 // ── Configure ResourceNode ──
-                ConfigureResourceNode(pool, instance, uniqueId);
+                // Runs before the presentation queue so a node that returned itself to the pool during
+                // template application never gets queued work or a chunk registration.
+                if (!ConfigureResourceNode(pool, instance, uniqueId, runtimeTemplate))
+                    continue;
+
+                // ── Apply scale from scatter data ──
+                EnqueuePresentationScale(instanceTransform, request.scale);
 
                 // ── Register in chunk ──
                 if (_chunks.TryGetValue(request.chunkCoord, out ChunkData chunk))
@@ -777,13 +837,99 @@ namespace Hecton8.Core
         /// <summary>
         /// Nastraivaet komponent ResourceNode na zaspavnennom obekte.
         /// Ustanavlivaet uniqueId cherez publichnyy metod SetUniqueId().
+        ///
+        /// When the spawn came from the ResourceDistributionDirector fallback lane it also carries an
+        /// authored ResourceNodeTemplate; stamping it is what gives the node its integrity, collider shape,
+        /// presentation and — decisively — its LootPickupPrefab, so depleting it actually drops something.
+        /// ApplyRuntimeTemplate tolerates null fallback mesh/material and keeps the prefab's own authored
+        /// presentation, which is exactly how ResourceDistributionDirector.ProcessPendingSpawns calls it.
+        /// The scatter scale is queued after this call and flushed on the LateFrameTick, so it stays the
+        /// final word on node scale, matching the populator's documented scatter contract.
+        ///
+        /// Returns false when the node removed itself from the world during configuration —
+        /// RefreshRuntimeSpatialRegistration re-derives the persistent identity from the new template and
+        /// despawns the node when that identity is already tombstoned as harvested. Registering such a node
+        /// would make TotalActiveNodes over-report and let HighlightNearbyResource hand a dead node to the
+        /// interaction lane.
         /// </summary>
-        private static void ConfigureResourceNode(IObjectPoolService pool, GameObject instance, string uniqueId)
+        private static bool ConfigureResourceNode(
+            IObjectPoolService pool,
+            GameObject instance,
+            string uniqueId,
+            ResourceNodeTemplate runtimeTemplate)
         {
-            if (pool != null && pool.TryGetPooledComponent(instance, out ResourceNode node))
+            if (pool == null || !pool.TryGetPooledComponent(instance, out ResourceNode node))
+                return true;
+
+            node.SetUniqueId(uniqueId);
+
+            if (runtimeTemplate == null)
+                return true;
+
+            node.ApplyRuntimeTemplate(runtimeTemplate, null, null);
+            node.RefreshRuntimeSpatialRegistration();
+
+            return !node.IsDepleted && instance.activeSelf;
+        }
+
+        /// <summary>
+        /// Asks the live ResourceDistributionDirector for an authored ResourceNode prefab, and the
+        /// environment-matched template to stamp on it, for a scatter point the loot tables could not
+        /// serve. The director is the owner of both the author-authored fallback prefab and the warmed
+        /// pool for it, so this is the only correct place to get one — the populator must never invent a
+        /// prefab of its own.
+        ///
+        /// A null template is a valid outcome: the node still spawns and is interactable, it simply
+        /// carries no authored yield for that position. That case is counted separately so a probe can
+        /// tell "spawned but yields nothing" apart from "did not spawn".
+        ///
+        /// ZERO GC: static property read, struct math and array indexing inside the director; no
+        /// allocation, no LINQ, no delegate.
+        /// </summary>
+        private bool TryResolveAuthoredFallbackSpawn(
+            in SpawnRequest request,
+            out GameObject prefab,
+            out ResourceNodeTemplate template)
+        {
+            prefab = null;
+            template = null;
+
+            ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;
+            if (director == null)
+                return false;
+
+            if (!director.TryResolveExternalProducerNodeSpawn(
+                    request.position,
+                    request.localIndex,
+                    out prefab,
+                    out template))
             {
-                node.SetUniqueId(uniqueId);
+                return false;
             }
+
+            _fallbackSpawnCount++;
+            if (template == null)
+                _fallbackSpawnWithoutTemplateCount++;
+
+            return true;
+        }
+
+        /// <summary>
+        /// One-shot cold report so an unauthored resource lane cannot fail silently on the SlowTick
+        /// cadence. Guarded by a latch, so it never logs per tick.
+        /// </summary>
+        private void ReportMissingResourcePrefabOnce()
+        {
+            if (_reportedMissingResourcePrefab)
+                return;
+
+            _reportedMissingResourcePrefab = true;
+            Hecton8.Core.H8Debug.LogError(
+                "[ScavengePopulator] No ResourceNode prefab available for a scatter point: the scene loot " +
+                "tables are empty for its context and ResourceDistributionDirector supplied no authored " +
+                "fallback prefab. Author ScavengePopulator.lootTables, or assign " +
+                "ResourceDistributionDirector._authoredOrePrefab and let its pool warm.",
+                this);
         }
 
         private bool EnqueuePresentationScale(Transform target, Vector3 scale)
@@ -921,6 +1067,13 @@ namespace Hecton8.Core
             Vector3 playerPos = _playerTransform.position;
             Vector2 playerXZ  = new Vector2(playerPos.x, playerPos.z);
 
+            // The cull test below measures player-to-chunk-CENTRE distance, but a tile's half-diagonal is
+            // _runtimeTileSize * 0.7071 — 362m at the authored 512m tile, larger than the 300m default
+            // unloadDistance. That makes the chunk the player is standing in eligible for unload whenever
+            // the player is near its corner, which despawns nodes from under the player's feet. The chunk
+            // the player currently occupies is resident by definition, so it is excluded outright.
+            Vector2Int playerChunkCoord = WorldToChunkCoord(playerPos);
+
             _chunksToUnload.Clear();
 
             // ── Collect chunks to unload ──
@@ -931,6 +1084,7 @@ namespace Hecton8.Core
                 ChunkData chunk = kvp.Value;
                 if (!chunk.isLoaded) continue;
                 if (chunk.activeNodes.Count == 0) continue;
+                if (kvp.Key.Equals(playerChunkCoord)) continue;
 
                 Vector2 chunkCenter = ChunkCoordToWorldCenter(kvp.Key);
                 Vector2 diff = chunkCenter - playerXZ;
@@ -1239,6 +1393,24 @@ namespace Hecton8.Core
         /// <summary>Kolichestvo zaprosov v ocheredi spavna.</summary>
         public int PendingSpawnCount => _spawnQueue.Count;
 
+        /// <summary>
+        /// Scatter points discarded because no ResourceNode prefab could be resolved at all — neither from
+        /// the scene loot tables nor from the ResourceDistributionDirector authored fallback.
+        /// </summary>
+        public int DroppedNoPrefabCount => _droppedNoPrefabCount;
+
+        /// <summary>
+        /// Scatter points whose prefab was resolved through the ResourceDistributionDirector authored
+        /// fallback because the scene loot tables were empty for their context.
+        /// </summary>
+        public int FallbackSpawnCount => _fallbackSpawnCount;
+
+        /// <summary>
+        /// Fallback resolutions that matched no authored ResourceNodeTemplate envelope, so they carry no
+        /// template yield and drop nothing on depletion.
+        /// </summary>
+        public int FallbackSpawnWithoutTemplateCount => _fallbackSpawnWithoutTemplateCount;
+
         public float UnloadDistance => _runtimeUnloadDistance;
         public float PriorityLoadRadius => _runtimePriorityLoadRadius;
         public int MaxSpawnsPerSlowTick => _runtimeMaxSpawnsPerTick;
@@ -1389,6 +1561,9 @@ namespace Hecton8.Core
             _debugTotalActiveNodes = TotalActiveNodes;
             _debugPendingSpawns    = _spawnQueue.Count;
             _debugSkippedDepleted  = _skippedDepletedCount;
+            _debugDroppedNoPrefab  = _droppedNoPrefabCount;
+            _debugFallbackSpawns   = _fallbackSpawnCount;
+            _debugFallbackSpawnsWithoutTemplate = _fallbackSpawnWithoutTemplateCount;
             _debugRuntimeChunkSize = _runtimeTileSize;
             _debugRuntimeUnloadDistance = _runtimeUnloadDistance;
             _debugRuntimePriorityRadius = _runtimePriorityLoadRadius;

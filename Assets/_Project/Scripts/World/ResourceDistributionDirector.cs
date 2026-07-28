@@ -1868,6 +1868,155 @@ namespace Hecton8.World
             return _validatedAuthoredOrePrefab;
         }
 
+        /// <summary>
+        /// Resolves an authored pooled ResourceNode prefab — and, when the runtime environment matches an
+        /// authored envelope, the ResourceNodeTemplate to stamp onto it — for producers that own their own
+        /// spawn queue and therefore never reach this director's private sector-planning path.
+        /// ScavengePopulator.ProcessSpawnQueue is the only such producer: it receives scatter points from
+        /// HectonScatterOutput / HectonVoxelEngine and has no template concept at all, so without this entry
+        /// point its spawns die on a null prefab whenever its authored loot tables are empty.
+        ///
+        /// Only authored data is used:
+        ///   - the prefab comes from <see cref="ResolveAuthoredOrePrefab"/>, i.e. the template's own
+        ///     RuntimeNodePrefab first and then the author-authored _authoredOrePrefab fallback that
+        ///     EnsureRuntimePool already warms, so the pool is guaranteed to have a reserve for it;
+        ///   - the template is chosen with <see cref="ResourceNodeTemplate.MatchesEnvelope"/>, the same
+        ///     depth/temperature/slope gate TryEvaluateSectorCandidate applies, against this director's own
+        ///     environment resolvers. PlacementProbability is deliberately not applied: it is a per-sector
+        ///     density knob for candidates this director invents, and the caller's point was chosen by the
+        ///     scatter producer, not by a density roll.
+        ///
+        /// The template is best-effort by design. A prefab is still returned when no authored envelope
+        /// matches the caller's position, so the caller spawns a real authored node instead of nothing;
+        /// callers must treat a null template as "no authored yield for this position".
+        /// Returns false only when this director has no usable authored prefab or no warm pool at all.
+        /// </summary>
+        internal bool TryResolveExternalProducerNodeSpawn(
+            Vector3 runtimePosition,
+            int deterministicSelector,
+            out GameObject prefab,
+            out ResourceNodeTemplate template)
+        {
+            prefab = null;
+            template = null;
+
+            if (!_runtimePoolReady)
+                return false;
+
+            template = ResolveEnvelopeMatchedTemplateOrNull(runtimePosition, deterministicSelector);
+
+            GameObject resolved = ResolveAuthoredOrePrefab(template);
+            if (resolved == null)
+                resolved = _validatedAuthoredOrePrefab;
+
+            if (resolved == null)
+            {
+                template = null;
+                return false;
+            }
+
+            prefab = resolved;
+            return true;
+        }
+
+        /// <summary>
+        /// Deterministic authored-template lookup for an externally supplied runtime position.
+        /// Scans resourceTemplates from a caller-supplied rotation offset so repeat calls with the same
+        /// selector always land on the same template, and prefers a match that actually carries a
+        /// LootPickupPrefab — a node whose template yields no pickup is harvestable but drops nothing,
+        /// which would silently starve every downstream consumer of the harvest.
+        /// ZERO GC: array indexing and struct math only.
+        /// </summary>
+        private ResourceNodeTemplate ResolveEnvelopeMatchedTemplateOrNull(
+            Vector3 runtimePosition,
+            int deterministicSelector)
+        {
+            ResourceNodeTemplate[] templates = resourceTemplates;
+            if (templates == null || templates.Length == 0)
+                return null;
+
+            if (!TryResolveExternalProducerEnvelope(
+                    runtimePosition,
+                    out float depthMeters,
+                    out float temperatureCelsius,
+                    out float slopeDegrees))
+            {
+                return null;
+            }
+
+            int length = templates.Length;
+            int start = deterministicSelector % length;
+            if (start < 0)
+                start += length;
+
+            ResourceNodeTemplate yieldlessMatch = null;
+
+            for (int offset = 0; offset < length; offset++)
+            {
+                int index = start + offset;
+                if (index >= length)
+                    index -= length;
+
+                ResourceNodeTemplate candidate = templates[index];
+                if (candidate == null)
+                    continue;
+
+                // Brine-pool templates are only valid inside a director-planned brine pool, which an
+                // external producer's point is not; excluding them is the same decision
+                // TryEvaluateSectorCandidate makes when brinePool.IsValid == 0.
+                if (candidate.RequiresBrinePool)
+                    continue;
+
+                if (!candidate.MatchesEnvelope(depthMeters, temperatureCelsius, slopeDegrees))
+                    continue;
+
+                if (candidate.RequiresHydrothermalVent &&
+                    temperatureCelsius < candidate.HydrothermalVentTemperatureThresholdCelsius)
+                {
+                    continue;
+                }
+
+                if (candidate.LootPickupPrefab != null)
+                    return candidate;
+
+                if (yieldlessMatch == null)
+                    yieldlessMatch = candidate;
+            }
+
+            return yieldlessMatch;
+        }
+
+        /// <summary>
+        /// Samples the authored environment at an externally supplied runtime position using the same
+        /// resolvers TryEvaluateSectorCandidate uses. Fails closed when the MapMagic bridge is absent or
+        /// the seabed sample is unavailable, because ResolveSlope dereferences that bridge unguarded.
+        /// </summary>
+        private bool TryResolveExternalProducerEnvelope(
+            Vector3 runtimePosition,
+            out float depthMeters,
+            out float temperatureCelsius,
+            out float slopeDegrees)
+        {
+            depthMeters = 0f;
+            temperatureCelsius = 0f;
+            slopeDegrees = 0f;
+
+            MapMagicBridge bridge = mapMagicBridge;
+            if (bridge == null)
+                return false;
+
+            if (!bridge.TryGetHeight(runtimePosition.x, runtimePosition.z, out float seabedHeight) ||
+                !math.isfinite(seabedHeight))
+            {
+                return false;
+            }
+
+            depthMeters = math.max(0f, ResolveWaterSurfaceLevel() - seabedHeight);
+            temperatureCelsius = ResolveTemperature(runtimePosition);
+            slopeDegrees = ResolveSlope(runtimePosition);
+            return true;
+        }
+
         private void ProcessPendingSpawns()
         {
             if (!_runtimePoolReady || _pendingSpawns.Count == 0)
