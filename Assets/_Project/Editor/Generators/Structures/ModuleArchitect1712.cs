@@ -18,6 +18,20 @@ namespace Hecton8.Editor.Structures
     public struct ModuleArchitect1712Settings
     {
         public string OutputFolder;
+
+        /// <summary>
+        /// Diagnostic single-material OVERRIDE. When non-empty, every fabricated module and every LOD
+        /// renderer is forced onto this one material, which is the material-ID debug bake
+        /// `3DMODEL_HARD_SURFACE_MODULES.md` section 11 asks for. When empty - the production default -
+        /// each module uses the material its own <c>ModuleSpec</c> names.
+        /// <para>
+        /// This field used to default to <c>Mat_Module_Foundation.mat</c> and there was no per-module
+        /// lane at all, so the corridor, the airlock, the reactor room and the vertical shaft all
+        /// rendered wearing the foundation's texture set. The per-module material identity that
+        /// `3dmodel.md` section 0 requires ("believable silhouette, material identity, ...") existed
+        /// only in the six authored <c>Mat_Module_*.mat</c> assets and reached none of the prefabs.
+        /// </para>
+        /// </summary>
         public string MaterialPath;
         public float GlobalQualityWeight;
         public uint Seed;
@@ -25,7 +39,7 @@ namespace Hecton8.Editor.Structures
         public static ModuleArchitect1712Settings Default => new ModuleArchitect1712Settings
         {
             OutputFolder = "Assets/_Project/Art/Baked/Structures/Agent1712",
-            MaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_Module_Foundation.mat",
+            MaterialPath = string.Empty,
             GlobalQualityWeight = 0.75f,
             Seed = 1712u
         };
@@ -63,6 +77,23 @@ namespace Hecton8.Editor.Structures
         private const string WorldStaticLayerName = "World_Static";
         private const string DefaultModuleCatalogFolder = "Assets/_Project/Data/Construction";
         private const string DefaultModuleCatalogPath = DefaultModuleCatalogFolder + "/ModuleCatalog_Starter.asset";
+
+        // Per-module material identity. These are the authored construction materials, textured and
+        // scalar-tuned by ConstructionGeminiMaterialApplier.cs:17-73 and migrated onto
+        // Hecton8/Construction/ModuleHardSurfaceLit - the only shader that reads the wear channels
+        // this generator bakes - by ModuleHardSurfaceWearMaterialAuthoring.cs:65-73. Every path below
+        // is inside that migrated set of six on purpose: a module pointed at a material outside it
+        // would bake four wear channels that nothing consumes.
+        //
+        // Mat_Module_InsulationBacking is deliberately absent. It is torn-insulation backing for cut
+        // faces, bound to specific panels by ConstructionInsulationBackingIntegrator.cs:35-70, not a
+        // module shell material.
+        private const string ConstructionMaterialFolder = "Assets/_Project/Art/Materials/Construction";
+        private const string CorridorMaterialPath = ConstructionMaterialFolder + "/Mat_Module_Corridor.mat";
+        private const string FoundationMaterialPath = ConstructionMaterialFolder + "/Mat_Module_Foundation.mat";
+        private const string ServicePumpMaterialPath = ConstructionMaterialFolder + "/Mat_Module_ServicePump.mat";
+        private const string PylonMaterialPath = ConstructionMaterialFolder + "/Mat_Module_Pylon.mat";
+        private const string CurrentTurbineMaterialPath = ConstructionMaterialFolder + "/Mat_Module_CurrentTurbine.mat";
         // `3dmodel.md` section 4 fixes the base-module structural bevel band at 0.035 m to 0.12 m.
         // The previous 0.08-0.34 m band was the exterior hull/wreckage macro band and it rounded a
         // 2.7 m tall corridor by 25 percent of its height, which is a pillow, not a machined module.
@@ -152,7 +183,8 @@ namespace Hecton8.Editor.Structures
         private void OnGUI()
         {
             outputFolder = EditorGUILayout.TextField("Output Folder", outputFolder);
-            materialPath = EditorGUILayout.TextField("Shared Material", materialPath);
+            materialPath = EditorGUILayout.TextField("Material-ID Debug Override", materialPath);
+            EditorGUILayout.LabelField(" ", "Empty = per-module authored materials (production).");
             globalQualityWeight = EditorGUILayout.Slider("Global Quality Weight", globalQualityWeight, 0f, 1f);
             seed = (uint)Mathf.Max(1, EditorGUILayout.IntField("Seed", unchecked((int)seed)));
 
@@ -193,7 +225,9 @@ namespace Hecton8.Editor.Structures
             try
             {
                 EnsureAssetFolder(settings.OutputFolder);
-                Material material = ResolveMaterial(settings.MaterialPath);
+                Material overrideMaterial = string.IsNullOrEmpty(settings.MaterialPath)
+                    ? null
+                    : ResolveMaterial(settings.MaterialPath, "<material-ID debug override>");
                 // Extents are HALF sizes. Two halves of one contract depend on them: proxyBoundsSize
                 // is written as extents * 2 (CreateOrUpdateTemplate), and every socket is placed on
                 // the extent plane of its own axis (BuildSocketDefinitions). The hand-authored kit
@@ -235,13 +269,58 @@ namespace Hecton8.Editor.Structures
                 // Renaming H8_A1712_ServiceCap_01 to match the T-junction role it now fills would
                 // move a persisted identity and needs a save migration; resizing does not, because
                 // no geometric field reaches the hash.
+                // Material identity per module, not one texture set for the whole family. The role
+                // each material was authored for is the `Reason` string in
+                // ConstructionGeminiMaterialApplier.cs:17-73; the mapping below follows those roles
+                // and the reference frames in
+                // `Docs\mandatory if you work on systems that user sees ...`, read directly
+                // 2026-07-29:
+                //
+                //   base.webp        painted habitat shells with dark trim rings and near-black slim
+                //                    support legs. The shell field is coated, not chrome; bare metal
+                //                    appears only as small trim/hatch/collar accents.
+                //   nice_biome.webp  dark painted structural frame carrying an ORANGE segmented safety
+                //                    stripe as the readable accent, a tight grazing highlight on the
+                //                    outer chamfer, and small genuinely-metallic fittings.
+                //
+                //   Corridor_01      Mat_Module_Corridor      interior wall trim sheet - the literal role.
+                //   Junction_01      Mat_Module_Corridor      SHARED with the corridor on purpose. A
+                //                                             junction is corridor-class interior and
+                //                                             section 4 of
+                //                                             `3DMODEL_HARD_SURFACE_MODULES.md` requires
+                //                                             socket-compatible modules to meet without a
+                //                                             visible seam; changing wall material across
+                //                                             a butt joint reads as a crack even when the
+                //                                             geometry is exact. It also keeps the set at
+                //                                             five materials instead of six.
+                //   ServiceCap_01    Mat_Module_ServicePump   wet service panel with biofilm - the service
+                //                                             role in the name, and the T-junction it
+                //                                             actually fills is a plant/utility run.
+                //   Airlock_01       Mat_Module_Pylon         orange safety composite. This is the one
+                //                                             module the player must find from OUTSIDE in
+                //                                             murk - its South socket is the only
+                //                                             Exterior-lane hatch in the set - and
+                //                                             `TASTE.md` Visibility Is A Resource asks for
+                //                                             "one readable affordance in the murk".
+                //                                             nice_biome.webp uses exactly this move.
+                //   ReactorRoom_01   Mat_Module_CurrentTurbine dark anodized machinery metal, matching the
+                //                                             only Utility-family spec in the set (+450 W).
+                //   VerticalShaft_01 Mat_Module_Foundation    salvage-worn repair metal for heavy base
+                //                                             plates; the shaft is the largest structural
+                //                                             member and carries the Dock socket.
+                //
+                // Batching consequence: five shared materials across a player-built base instead of
+                // one, so five SRP Batcher groups where there was one. Against the `AGENTS.md`
+                // guardrails of SetPass 600 / batches 1800 that is noise, and every renderer still
+                // shares a project material asset - no clone, no MaterialPropertyBlock.
                 ModuleSpec[] specs =
                 {
-                    new ModuleSpec("H8_A1712_Corridor_01", new float3(2f, 2f, 4f), SocketMask.NorthSouth, 0xC011D012u),
-                    new ModuleSpec("H8_A1712_Junction_01", new float3(4f, 2f, 4f), SocketMask.Cross, 0xC011D04Au),
-                    new ModuleSpec("H8_A1712_ServiceCap_01", new float3(4f, 2f, 4f), SocketMask.NorthEastWest, 0xC011D0A7u),
+                    new ModuleSpec("H8_A1712_Corridor_01", CorridorMaterialPath, new float3(2f, 2f, 4f), SocketMask.NorthSouth, 0xC011D012u),
+                    new ModuleSpec("H8_A1712_Junction_01", CorridorMaterialPath, new float3(4f, 2f, 4f), SocketMask.Cross, 0xC011D04Au),
+                    new ModuleSpec("H8_A1712_ServiceCap_01", ServicePumpMaterialPath, new float3(4f, 2f, 4f), SocketMask.NorthEastWest, 0xC011D0A7u),
                     new ModuleSpec(
                         "H8_A1712_Airlock_01",
+                        PylonMaterialPath,
                         new float3(3f, 2.5f, 3f),
                         SocketMask.NorthSouth,
                         0xC011DA11u,
@@ -253,9 +332,10 @@ namespace Hecton8.Editor.Structures
                         // BaseModuleTemplate_Airlock authors its South socket as the ocean-facing
                         // hatch on lane Exterior, not Habitat.
                         new ModuleSpec.SocketLaneOverride(ModuleSocketDirection.South, ExteriorSocketLane)),
-                    new ModuleSpec("H8_A1712_ReactorRoom_01", new float3(5f, 3f, 5f), SocketMask.Cross, 0xC011D9E4u, BuildableFamily.Utility, 450f, 5, true, false),
+                    new ModuleSpec("H8_A1712_ReactorRoom_01", CurrentTurbineMaterialPath, new float3(5f, 3f, 5f), SocketMask.Cross, 0xC011D9E4u, BuildableFamily.Utility, 450f, 5, true, false),
                     new ModuleSpec(
                         "H8_A1712_VerticalShaft_01",
+                        FoundationMaterialPath,
                         new float3(6f, 4f, 5f),
                         // Bottom only, no Top. BaseModuleTemplate_Moonpool declares exactly three
                         // sockets: North, South, and one Bottom socket on lane Dock at y = -4. The
@@ -275,13 +355,20 @@ namespace Hecton8.Editor.Structures
                 int vertexCount = 0;
                 int triangleCount = 0;
                 BuildableData[] generatedBuildables = new BuildableData[specs.Length];
+
+                // COLD ALLOC: Dictionary<string, Material>[8] - editor bake scratch, freed when the
+                // bake returns. Loading each path once matters for identity, not speed: the corridor
+                // and the junction must reference the SAME Material object so the prefabs share one
+                // SRP Batcher group instead of two references to one asset - owner: ModuleArchitect1712
+                Dictionary<string, Material> materialCache = new Dictionary<string, Material>(8, StringComparer.Ordinal);
                 for (int i = 0; i < specs.Length; i++)
                 {
+                    Material moduleMaterial = ResolveModuleMaterial(specs[i], overrideMaterial, materialCache);
                     BaseModuleTemplate moduleTemplate = CreateOrUpdateTemplate(settings, specs[i]);
                     string prefabPath = $"{settings.OutputFolder}/{specs[i].Name}.prefab";
                     GameObject existingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
                     BuildableData buildableData = CreateOrUpdateBuildableData(settings, specs[i], moduleTemplate, existingPrefab);
-                    BuildPrefab(settings, specs[i], material, moduleTemplate, buildableData, prefabPath, out int vertices, out int triangles);
+                    BuildPrefab(settings, specs[i], moduleMaterial, moduleTemplate, buildableData, prefabPath, out int vertices, out int triangles);
                     generatedBuildables[i] = buildableData;
                     vertexCount += vertices;
                     triangleCount += triangles;
@@ -348,7 +435,13 @@ namespace Hecton8.Editor.Structures
                 ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(spec.Extents, 1, MaxBevelMeters).ToString("0.###") + "," +
                 ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(spec.Extents, 2, MaxBevelMeters).ToString("0.###") + ")" +
                 " proxyBounds=" + (spec.Extents.x * 2f).ToString("0.###") + "x" +
-                (spec.Extents.y * 2f).ToString("0.###") + "x" + (spec.Extents.z * 2f).ToString("0.###"));
+                (spec.Extents.y * 2f).ToString("0.###") + "x" + (spec.Extents.z * 2f).ToString("0.###") +
+                // Which material each module actually got, and which shader is on it. Without this
+                // line a bake log cannot distinguish "six modules, six identities" from "six modules,
+                // one texture set", which is the defect this lane fixes, and it is also the only place
+                // a run reports whether the wear-shader migration has happened yet.
+                " material=" + (material != null ? material.name : "<null>") +
+                " shader=" + (material != null && material.shader != null ? material.shader.name : "<null>"));
 
             GameObject root = new GameObject(spec.Name);
             try
@@ -1250,14 +1343,39 @@ namespace Hecton8.Editor.Structures
             return collider;
         }
 
-        private static Material ResolveMaterial(string materialPath)
+        /// <summary>
+        /// Resolves the material one module wears. The debug override wins when the caller set one;
+        /// otherwise the module's own authored material is loaded, once per distinct path so modules
+        /// that intentionally share a material also share the loaded <see cref="Material"/> instance.
+        /// A missing material is fatal and names the module - a generator that quietly substituted a
+        /// stand-in would reproduce the exact defect this lane was added to remove.
+        /// </summary>
+        private static Material ResolveModuleMaterial(
+            ModuleSpec spec,
+            Material overrideMaterial,
+            Dictionary<string, Material> cache)
+        {
+            if (overrideMaterial != null)
+                return overrideMaterial;
+
+            string path = NormalizeAssetPath(spec.MaterialPath);
+            if (cache.TryGetValue(path, out Material cached) && cached != null)
+                return cached;
+
+            Material material = ResolveMaterial(path, spec.Name);
+            cache[path] = material;
+            return material;
+        }
+
+        private static Material ResolveMaterial(string materialPath, string ownerName)
         {
             if (string.IsNullOrEmpty(materialPath) || !materialPath.StartsWith("Assets/", StringComparison.Ordinal))
-                throw new InvalidOperationException("ModuleArchitect1712 material path must be a valid Assets/... path.");
+                throw new InvalidOperationException(
+                    "ModuleArchitect1712 material path must be a valid Assets/... path for " + ownerName + ": '" + materialPath + "'");
 
-            Material material = string.IsNullOrEmpty(materialPath) ? null : AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
             if (material == null)
-                throw new InvalidOperationException("Missing authored module material: " + materialPath);
+                throw new InvalidOperationException("Missing authored module material for " + ownerName + ": " + materialPath);
 
             return material;
         }
@@ -1445,6 +1563,14 @@ namespace Hecton8.Editor.Structures
             }
 
             public readonly string Name;
+
+            /// <summary>
+            /// The authored construction material this module wears. Not optional: the generator
+            /// throws when it is missing, because a shared default was how all six modules ended up
+            /// wearing one texture set.
+            /// </summary>
+            public readonly string MaterialPath;
+
             public readonly float3 Extents;
             public readonly SocketMask SocketMask;
             public readonly uint Seed;
@@ -1455,13 +1581,14 @@ namespace Hecton8.Editor.Structures
             public readonly bool IsEmergencyAirlock;
             private readonly SocketLaneOverride[] _socketLaneOverrides;
 
-            public ModuleSpec(string name, float3 extents, SocketMask socketMask, uint seed)
-                : this(name, extents, socketMask, seed, BuildableFamily.Habitat, GeneratedModulePowerRatingWatts, GeneratedModulePowerPriority, false, false)
+            public ModuleSpec(string name, string materialPath, float3 extents, SocketMask socketMask, uint seed)
+                : this(name, materialPath, extents, socketMask, seed, BuildableFamily.Habitat, GeneratedModulePowerRatingWatts, GeneratedModulePowerPriority, false, false)
             {
             }
 
             public ModuleSpec(
                 string name,
+                string materialPath,
                 float3 extents,
                 SocketMask socketMask,
                 uint seed,
@@ -1473,6 +1600,7 @@ namespace Hecton8.Editor.Structures
                 params SocketLaneOverride[] socketLaneOverrides)
             {
                 Name = name;
+                MaterialPath = materialPath;
                 Extents = extents;
                 SocketMask = socketMask;
                 Seed = seed;
