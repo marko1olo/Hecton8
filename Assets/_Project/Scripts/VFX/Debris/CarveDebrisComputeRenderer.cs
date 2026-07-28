@@ -58,7 +58,12 @@ namespace Hecton8.VFX.Debris
         private const float MaximumSparkSpawnRadiusMeters = 0.075f;
         private const float SparkSpeedScaleMin = 1.1f;
         private const float SparkSpeedScaleMax = 2.1f;
-        private const float SparkLife01 = 0.42f;
+        // Life is a fraction of particleLifetimeSeconds (the age job subtracts dt * lifetimeRcp from w).
+        // A spark that survives as long as a rock chip reads as a floating ember, so keep it in the
+        // 0.05-0.09 band: ~0.25-0.45 s at the default 5 s pool lifetime, which also recycles the shared
+        // pool slots fast enough that a sparking tool cannot starve carve debris.
+        private const float MinimumSparkLife01 = 0.05f;
+        private const float MaximumSparkLife01 = 0.09f;
         private const int TelemetryPublishStride = 30;
         private const int GlobalSdfRefreshStrideFrames = 4;
         private const int MissingRegistryRefreshStrideFrames = 30;
@@ -2145,7 +2150,7 @@ namespace Hecton8.VFX.Debris
                     Radius = math.lerp(MinimumSparkSpawnRadiusMeters, MaximumSparkSpawnRadiusMeters, intensity01),
                     ParticlesToInject = sparkParticles,
                     InitialSpeed = initialVelocityMetersPerSecond * math.lerp(SparkSpeedScaleMin, SparkSpeedScaleMax, intensity01),
-                    Life = SparkLife01,
+                    Life = math.lerp(MinimumSparkLife01, MaximumSparkLife01, intensity01),
                     Seed = seed
                 };
                 appended++;
