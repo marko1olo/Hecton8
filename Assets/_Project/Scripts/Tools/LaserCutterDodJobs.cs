@@ -436,10 +436,11 @@ namespace Hecton8.Tools
                 Flags = flags
             };
 
-            // NO DEFORMATION ROW IS PRODUCED HERE, DELIBERATELY. This job used to fill a
-            // LaserCutDeformationStateDTO[64] with a real RadiusMeters/DentDepthMeters/Progress01 per hit,
-            // and the runtime then bound that buffer as `out _` and dropped it: no consumer existed
-            // anywhere in the project. Neither deformation owner can legally take it from here.
+            // NO DEFORMATION ROW IS PRODUCED HERE, DELIBERATELY. This job used to fill a 64-row
+            // deformation buffer with a real RadiusMeters/DentDepthMeters/Progress01 per hit, and the
+            // runtime then bound that buffer as `out _` and dropped it: no consumer existed anywhere in
+            // the project, so the DTO, its BufferID and its layout gate were removed with the write.
+            // Neither deformation owner can legally take the row from here.
             // (1) HullIntegrityRuntime owns hull dents (its own HullDentDTO ring plus the GPU upload) and
             //     ingests through SignalBus<CombatDamageSignal>, which the cutter already publishes - but
             //     this cutter marches the voxel SDF only (LaserCutterDodRuntime CutterProbeLayerMask =

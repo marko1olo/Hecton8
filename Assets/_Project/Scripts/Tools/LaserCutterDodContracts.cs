@@ -39,7 +39,6 @@ namespace Hecton8.Tools
         public const BufferID SdfSnapshotBuffer = BufferID.CablePhysicsSolver132_SplineVertices;
         public const BufferID SdfProbeHitsBuffer = BufferID.CablePhysicsSolver132_SegmentTensions;
         public const BufferID HitResultsBuffer = BufferID.CablePhysicsSolver132_PhysicsEvents;
-        public const BufferID DeformationBuffer = BufferID.CablePhysicsSolver132_TelemetryRing;
         public const BufferID BatteryDrainBuffer = BufferID.CablePhysicsSolver132_TelemetryHead;
         public const BufferID GlowDecalBuffer = BufferID.CablePhysicsSolver132_PinnedAups;
         public const BufferID ImpactVfxBuffer = BufferID.CablePhysicsSolver132_PinnedMask;
@@ -98,20 +97,6 @@ namespace Hecton8.Tools
         [FieldOffset(84)] public float Heat01;
         [FieldOffset(88)] public uint Frame;
         [FieldOffset(92)] public uint Flags;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct LaserCutDeformationStateDTO
-    {
-        [FieldOffset(0)] public double3 CenterAUP;
-        [FieldOffset(24)] public float3 Normal;
-        [FieldOffset(36)] public float RadiusMeters;
-        [FieldOffset(40)] public float DentDepthMeters;
-        [FieldOffset(44)] public float Heat01;
-        [FieldOffset(48)] public float Progress01;
-        [FieldOffset(52)] public uint TargetHash;
-        [FieldOffset(56)] public uint Frame;
-        [FieldOffset(60)] public uint Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -274,7 +259,8 @@ namespace Hecton8.Tools
         public const uint FaultGlowDecalCenterOffset = 1u << 14;
         public const uint FaultGlowDecalFrameOffset = 1u << 15;
         public const uint FaultHitSize = 1u << 16;
-        public const uint FaultDeformationSize = 1u << 17;
+        // Bit 17 is retired: it gated the size of a deformation DTO the cutter no longer produces.
+        // Do not reuse the bit - a stored fault mask from an older build would decode as this new fault.
         public const uint FaultBatteryDrainSize = 1u << 18;
         public const uint FaultImpactVfxSize = 1u << 19;
         public const uint FaultCooldownSize = 1u << 20;
@@ -332,8 +318,6 @@ namespace Hecton8.Tools
             }
             if (UnsafeUtility.SizeOf<LaserCutHitDTO>() != 96)
                 faultFlags |= FaultHitSize;
-            if (UnsafeUtility.SizeOf<LaserCutDeformationStateDTO>() != 64)
-                faultFlags |= FaultDeformationSize;
             if (UnsafeUtility.SizeOf<LaserCutBatteryDrainRequest>() != 32)
                 faultFlags |= FaultBatteryDrainSize;
             if (UnsafeUtility.SizeOf<LaserCutImpactVfxDTO>() != 64)
