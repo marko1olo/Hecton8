@@ -10464,11 +10464,55 @@ namespace Hecton8.Gameplay
         /// Depth in meters below water surface. 0 = at surface. Positive = deeper.
         /// Returns 0 if above water.
         /// </summary>
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool _depthImmersionContradictionAnnounced;
+#endif
+
         private float ComputeDepth()
         {
             float surfaceY = EffectiveWaterSurfaceY;
             float eyeY = GetBodyEyeY();
             float depth = surfaceY - eyeY;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Reports the ONE contradiction that cannot be resolved by reading this file.
+            //
+            // Logs/omega_route28.log - the first run in which the boot completed - shows the route probe
+            // reading WaterImmersionRatio = 1.000 and CurrentDepth = 0.000 off this same component in the
+            // same frames. Immersion says fully submerged; depth says at or above the surface. Both are
+            // computed here, side by side, so the component is demonstrably ticking and the earlier
+            // "movement never ran" explanation is dead.
+            //
+            // The clamp below is what hides it: `depth > 0f ? depth : 0f` makes an eye above a wrongly-LOW
+            // surface indistinguishable from an eye legitimately at the surface. And surfaceY has two
+            // possible sources - EffectiveWaterSurfaceY selects _dynamicWaterSurfaceY when
+            // (_crestAvailable && useCrestOceanHeight) and _fallbackWaterSurfaceY otherwise - so which one
+            // produced the bad value cannot be inferred from outside the component. Guessing between two
+            // branches is how the terrain blocker stayed open for a day; this makes the next run say which.
+            //
+            // Fires once per component, only in the contradictory state, and builds no string otherwise.
+            if (!_depthImmersionContradictionAnnounced && depth <= 0f && _waterImmersionRatio > 0.5f)
+            {
+                _depthImmersionContradictionAnnounced = true;
+                System.Globalization.CultureInfo inv = System.Globalization.CultureInfo.InvariantCulture;
+                Debug.LogWarning(
+                    "[HectonPlayerMovement] DEPTH/IMMERSION CONTRADICTION on '" + name +
+                    "': immersionRatio=" + _waterImmersionRatio.ToString("F3", inv) +
+                    " says submerged, but depth clamped to 0 because eyeY >= surfaceY. eyeY=" +
+                    eyeY.ToString("F3", inv) +
+                    " surfaceY=" + surfaceY.ToString("F3", inv) +
+                    " rawDepth=" + depth.ToString("F3", inv) +
+                    " crestAvailable=" + (_crestAvailable ? "1" : "0") +
+                    " useCrestOceanHeight=" + (useCrestOceanHeight ? "1" : "0") +
+                    " crestSamplingSucceeded=" + (_crestSamplingSucceeded ? "1" : "0") +
+                    " dynamicSurfaceY=" + _dynamicWaterSurfaceY.ToString("F3", inv) +
+                    " fallbackSurfaceY=" + _fallbackWaterSurfaceY.ToString("F3", inv) +
+                    ". Whichever of dynamic/fallback is selected and disagrees with the authored water level " +
+                    "is the defect. Reported once per component.",
+                    this);
+            }
+#endif
+
             return depth > 0f ? depth : 0f;
         }
 
