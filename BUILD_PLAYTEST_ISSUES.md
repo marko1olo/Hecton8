@@ -214,6 +214,76 @@ a string-keyed dispatch table; I saw no such data layer but did not audit for on
 to `Items` — I did not trace `Creatures`, `Biomes` or `LootCdf` readers, so those sections may well be
 load-bearing and must not inherit this conclusion.
 
+### The wiring boundary is a 38-entry list in one file, and nine authoring buttons were never pressed
+
+This generalizes the fabrication finding, and the fabricator turns out to be the mildest case. `Fabricator`
+was one stranded lane; there are at least nine, and three of them are load-bearing for what the player sees.
+
+**The boundary, and it is worth internalising because it explains every case below.**
+`Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` contains exactly **38** `AddComponent<>` calls. I
+counted them myself. That list is the project's real wiring boundary: a MonoBehaviour reaches the running
+game either by sitting in a scene, or by being on that list. Anything on neither must be placed by an Editor
+authoring button — and that is precisely where the content is stranded. `ConstructionManager` is on the list
+(hence its scene-absence is harmless, which is why the pairing method matters). `BiomeMatrixDirector`,
+`WorldContentDirector`, `ScavengePopulator`, `WorldCaveDirector`, `Fabricator` and `HectonRockManager` are all
+**not** — I checked each one individually against that file.
+
+**Worst case: the biome matrix. 108 authored assets, one uninstantiated director, five blind consumers.**
+`Assets/_Project/Data/Biomes/MatrixProfiles/` holds **108** `.asset` files — I counted them — plus 13 family
+and 13 atmosphere profiles. `BiomeMatrixDirector`'s script guid `5edcfefa47837a147a16a78401507398` appears in
+**zero** `.unity` and `.prefab` files, and it is not on the bootstrapper's list, so nothing instantiates it.
+Five runtime systems declare it as `[SerializeField]` and therefore hold null:
+`Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:147`, `FaunaDirector.cs:247`,
+`AcousticZoneController.cs:421`, plus `HectonAtmosphereManager.cs:806` and `HectonUnderwaterVisuals.cs:308`
+as reported. Music, acoustics, fauna, atmosphere and underwater visuals are all reading a biome layer that is
+fully authored and never built. `[MenuItem]` at
+`Assets/_Project/Scripts/Editor/BiomeMatrixBootstrapAuthoring.cs:36` builds it.
+
+**No creature in the game has a brain.** `FaunaBrain`'s script guid `f97102d76d9d9d04f95ccebcd55b7079` occurs
+in exactly **one** file in the entire `Assets` tree — its own `.cs.meta`. I ran that search myself and there is
+no second hit: not a prefab, not a scene, not a `.cs`. The six generated proxy prefabs under
+`Data/AI/GeneratedProxies` exist, but `DroneProxy.prefab` reportedly carries zero `m_Script` lines at all,
+i.e. it is a geometry shell. `[MenuItem]` at `CreatureProxyPrefabAuthoring.cs:22`.
+
+**Widest case: the world runtime stack.** `WorldRuntimeBootstrapAuthoring.cs:55` places roughly sixteen world
+managers, and the reported guid checks put `WorldContentDirector`, `ScavengePopulator`, `WorldCaveDirector`,
+`SeamRegistry`, `FloorBiolumZone` and `WorldContentSocket` each in zero scenes, with consumers holding
+`[SerializeField]` nulls at `WorldProceduralFillDirector.cs:16`, `WorldPopulationDirector.cs:17` and
+`ScatterBudgetController.cs:53`. If that holds, there is no world content, no scavenge loot and no caves — I
+verified the bootstrapper omission for three of those six types but did not re-verify all six guids myself.
+
+**Also stranded, lower player impact:** the rock runtime stack
+(`HectonRockRuntimeBootstrapAuthoring.cs:32`), two flora topology packs whose output directories do not exist
+(`FloraTopologyStudio1604.cs:149`, `FloraTopologyStudio1711.cs:74` — and five sibling buttons gate on output
+that was never generated), the procedural interior/colony finals
+(`WorldProceduralInteriorColonyFinalAuthoring.cs:20`, while sibling lanes for geology, support and organic-misc
+all landed), and the flora template thumbnails (`FloraThumbnailGenerator.cs:16`, with 35 templates waiting).
+
+**Two rows a naive scene search would have filed wrongly**, which is why scene-absence must always be paired
+with a construction-site search: `ConstructionManager` (guid in zero scenes, but
+`GameBootstrapper.cs:6378` constructs it) and `WorldProceduralProxyInstance` (guid in zero scenes, but
+`WorldProceduralScatterDirector.cs:8425` constructs it). Both are live. Filing either as dead would have been
+a false blocker, and the same trap already cost one near-miss earlier in this session.
+
+**Why nothing flagged any of it.** There are 863 `[MenuItem("Hecton8/` declarations across 646 files, 52 of
+them under `Hecton8/Authoring/`, 78 under `Validation/` and 55 under `Diagnostics/`. Several stranded lanes
+ship a companion validator button — the fabrication kit has one at
+`FabricationBootstrapAuthoring.cs:244`. So the project has validators for buttons nobody pressed, and a
+validator that is never run cannot report that its subject is missing. Nothing in the build gates asserts
+"every authoring lane's output is present in a scene", so an empty world is indistinguishable from a full one
+at CI time.
+
+`FIRST_20_MINUTES`: the biome matrix and world runtime stack sit directly on the route — atmosphere, audio,
+fauna and any world content at all. Pressing those two buttons plausibly changes the first twenty minutes more
+than any code change currently on the board.
+
+**Proof status, stated exactly.** Static and GUID-level. I verified myself: the 38-count and each of the seven
+bootstrapper membership checks, `BiomeMatrixDirector`'s guid absence and its 108 profile assets, three of its
+five null consumers, and `FaunaBrain`'s single-file occurrence. The remaining rows — the flora and interior
+output directories, `DroneProxy.prefab`'s missing `m_Script`, and three of the six world-stack guids — are
+reported and not independently re-checked by me. No Unity run, no build, no player session. Pressing any of
+these buttons is an authoring action with scene consequences and needs the owner's go-ahead, not a subagent's.
+
 | A failed save is shown to the player as a completed save | `[!]` | force a save write failure in a build and watch the HUD |
 
 ### A failed save is rendered as success — verified 2026-07-29
