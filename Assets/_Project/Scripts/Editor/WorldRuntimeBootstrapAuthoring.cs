@@ -1025,8 +1025,8 @@ namespace Hecton8.Editor
         {
             // Inactive-inclusive on purpose: GameObject.Find sees only active objects, so with the
             // authored world root disabled under DEPRECATED_STUFF this lane silently did nothing at all
-            // rather than reporting a problem. See FindSceneRootIncludingInactive for the full history.
-            GameObject worldRoot = FindSceneRootIncludingInactive(WorldRootName);
+            // rather than reporting a problem. See FindInLoadedScenesIncludingInactive for the full history.
+            GameObject worldRoot = FindInLoadedScenesIncludingInactive(WorldRootName);
             if (worldRoot == null)
                 return;
 
@@ -1106,8 +1106,8 @@ namespace Hecton8.Editor
         {
             // Inactive-inclusive on purpose: GameObject.Find sees only active objects, so with the
             // authored world root disabled under DEPRECATED_STUFF this lane silently did nothing at all
-            // rather than reporting a problem. See FindSceneRootIncludingInactive for the full history.
-            GameObject worldRoot = FindSceneRootIncludingInactive(WorldRootName);
+            // rather than reporting a problem. See FindInLoadedScenesIncludingInactive for the full history.
+            GameObject worldRoot = FindInLoadedScenesIncludingInactive(WorldRootName);
             if (worldRoot == null)
                 return;
 
@@ -1136,7 +1136,7 @@ namespace Hecton8.Editor
         /// is why <c>EnsureChild</c> in this same file reuses children correctly. Only the root-level
         /// lookups were blind.
         /// </summary>
-        private static GameObject FindSceneRootIncludingInactive(string rootName)
+        private static GameObject FindInLoadedScenesIncludingInactive(string rootName)
         {
             if (string.IsNullOrEmpty(rootName))
                 return null;
@@ -1150,9 +1150,49 @@ namespace Hecton8.Editor
                 GameObject[] roots = scene.GetRootGameObjects();
                 for (int i = 0; i < roots.Length; i++)
                 {
-                    if (string.Equals(roots[i].name, rootName, System.StringComparison.Ordinal))
-                        return roots[i];
+                    GameObject match = FindInHierarchyIncludingInactive(roots[i].transform, rootName);
+                    if (match != null)
+                        return match;
                 }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Depth-first search for a named object under <paramref name="branch"/>, inactive included.
+        ///
+        /// This exists because the first version of this helper scanned <c>GetRootGameObjects()</c> ONLY,
+        /// and that was wrong in two directions at once.
+        ///
+        /// It was too NARROW: <see cref="GameObject.Find"/>, which it replaced, never searched roots only -
+        /// it searches every active object at any depth. A root-only scan therefore lost matches that the
+        /// old code did find.
+        ///
+        /// And it did not cover the case it was written for. The justification on this helper was that
+        /// <c>Assets/_Project/Editor/H8_SceneCleaner.cs</c> REPARENTED <c>--- WORLD ---</c> under
+        /// <c>DEPRECATED_STUFF</c> and disabled it (:41-42, then <c>SaveScene</c> at :47). A reparented
+        /// object sits at depth 1, and <c>GetRootGameObjects()</c> returns depth 0 only - so the fix could
+        /// not see the exact state its own comment cited as the reason for existing. Caught by
+        /// <c>H8_AuthoringRootReachabilityGate</c>, which was written to check precisely this.
+        ///
+        /// Transform child enumeration is used rather than <c>GetComponentsInChildren</c> so nothing is
+        /// allocated per node beyond the enumerator Unity already provides, and because it sees inactive
+        /// children unconditionally.
+        /// </summary>
+        private static GameObject FindInHierarchyIncludingInactive(Transform branch, string targetName)
+        {
+            if (branch == null)
+                return null;
+
+            if (string.Equals(branch.name, targetName, System.StringComparison.Ordinal))
+                return branch.gameObject;
+
+            for (int i = 0; i < branch.childCount; i++)
+            {
+                GameObject match = FindInHierarchyIncludingInactive(branch.GetChild(i), targetName);
+                if (match != null)
+                    return match;
             }
 
             return null;
@@ -1163,7 +1203,7 @@ namespace Hecton8.Editor
         /// <see cref="GameObject.Find"/> in this tool.
         ///
         /// Every path lookup in this file that starts at <c>--- WORLD ---</c> was blind for the same
-        /// reason described on <see cref="FindSceneRootIncludingInactive"/>: the authored world root is
+        /// reason described on <see cref="FindInLoadedScenesIncludingInactive"/>: the authored world root is
         /// disabled, and <see cref="GameObject.Find"/> skips inactive objects. Only the FIRST segment
         /// needed fixing - <see cref="Transform.Find"/> already accepts a slash-separated path and
         /// already sees inactive children.
@@ -1175,9 +1215,9 @@ namespace Hecton8.Editor
 
             int firstSeparator = path.IndexOf('/');
             if (firstSeparator < 0)
-                return FindSceneRootIncludingInactive(path);
+                return FindInLoadedScenesIncludingInactive(path);
 
-            GameObject root = FindSceneRootIncludingInactive(path.Substring(0, firstSeparator));
+            GameObject root = FindInLoadedScenesIncludingInactive(path.Substring(0, firstSeparator));
             if (root == null)
                 return null;
 
@@ -1187,7 +1227,7 @@ namespace Hecton8.Editor
 
         private static void EnsureWorldRouteSkeleton(Transform playerTransform)
         {
-            GameObject worldRoot = FindSceneRootIncludingInactive(WorldRootName);
+            GameObject worldRoot = FindInLoadedScenesIncludingInactive(WorldRootName);
             if (worldRoot == null)
                 worldRoot = new GameObject(WorldRootName);
 

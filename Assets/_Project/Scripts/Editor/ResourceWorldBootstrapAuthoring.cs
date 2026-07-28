@@ -202,13 +202,20 @@ namespace Hecton8.Editor
         }
 
         /// <summary>
-        /// Finds a scene root by name across every loaded scene, INCLUDING inactive ones. Faithful
-        /// replacement for <see cref="GameObject.Find"/>, which also searched all loaded scenes but
-        /// skipped inactive objects.
+        /// Finds a named object at ANY DEPTH across every loaded scene, inactive included. Faithful
+        /// replacement for <see cref="GameObject.Find"/>, which searched all loaded scenes at any depth
+        /// but skipped inactive objects.
+        ///
+        /// The first version of this searched <c>GetRootGameObjects()</c> only, which was wrong twice
+        /// over. Too narrow, because GameObject.Find was never root-only. And it missed the very state it
+        /// was written for: <c>Assets/_Project/Editor/H8_SceneCleaner.cs</c> REPARENTED
+        /// <c>--- WORLD ---</c> under <c>DEPRECATED_STUFF</c> and disabled it (:41-42, saved at :47), and a
+        /// reparented object sits at depth 1 where a depth-0 scan cannot reach it. Caught by
+        /// <c>H8_AuthoringRootReachabilityGate</c>.
         /// </summary>
-        private static GameObject FindSceneRootIncludingInactive(string rootName)
+        private static GameObject FindInLoadedScenesIncludingInactive(string targetName)
         {
-            if (string.IsNullOrEmpty(rootName))
+            if (string.IsNullOrEmpty(targetName))
                 return null;
 
             for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
@@ -220,9 +227,33 @@ namespace Hecton8.Editor
                 GameObject[] roots = scene.GetRootGameObjects();
                 for (int i = 0; i < roots.Length; i++)
                 {
-                    if (string.Equals(roots[i].name, rootName, System.StringComparison.Ordinal))
-                        return roots[i];
+                    GameObject match = FindInHierarchyIncludingInactive(roots[i].transform, targetName);
+                    if (match != null)
+                        return match;
                 }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Depth-first search for a named object under <paramref name="branch"/>, inactive children
+        /// included. Transform child enumeration rather than GetComponentsInChildren, so nothing is
+        /// allocated per node and inactive children are seen unconditionally.
+        /// </summary>
+        private static GameObject FindInHierarchyIncludingInactive(Transform branch, string targetName)
+        {
+            if (branch == null)
+                return null;
+
+            if (string.Equals(branch.name, targetName, System.StringComparison.Ordinal))
+                return branch.gameObject;
+
+            for (int i = 0; i < branch.childCount; i++)
+            {
+                GameObject match = FindInHierarchyIncludingInactive(branch.GetChild(i), targetName);
+                if (match != null)
+                    return match;
             }
 
             return null;
@@ -240,9 +271,9 @@ namespace Hecton8.Editor
 
             int firstSeparator = path.IndexOf('/');
             if (firstSeparator < 0)
-                return FindSceneRootIncludingInactive(path);
+                return FindInLoadedScenesIncludingInactive(path);
 
-            GameObject root = FindSceneRootIncludingInactive(path.Substring(0, firstSeparator));
+            GameObject root = FindInLoadedScenesIncludingInactive(path.Substring(0, firstSeparator));
             if (root == null)
                 return null;
 
@@ -263,7 +294,7 @@ namespace Hecton8.Editor
             // '--- WORLD ---' under DEPRECATED_STUFF and disabled it (:41-42, then SaveScene at :47),
             // this reuse check went blind and every run created a SECOND, active world root beside the
             // buried one - in a binary scene with no diff to reveal it.
-            GameObject current = FindSceneRootIncludingInactive(parts[0]);
+            GameObject current = FindInLoadedScenesIncludingInactive(parts[0]);
             if (current == null)
             {
                 current = new GameObject(parts[0]);

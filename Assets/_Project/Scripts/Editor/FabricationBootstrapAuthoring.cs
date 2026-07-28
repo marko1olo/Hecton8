@@ -336,27 +336,54 @@ namespace Hecton8.Editor
                 return null;
 
             int firstSeparator = path.IndexOf('/');
-            string rootName = firstSeparator < 0 ? path : path.Substring(0, firstSeparator);
+            string headName = firstSeparator < 0 ? path : path.Substring(0, firstSeparator);
 
+            // ANY DEPTH, not depth 0. The first version of this searched GetRootGameObjects() only, which
+            // was wrong in both directions: GameObject.Find, which it replaced, was never root-only, and a
+            // depth-0 scan cannot see the exact state this helper was written for -
+            // Assets/_Project/Editor/H8_SceneCleaner.cs REPARENTED '--- WORLD ---' under DEPRECATED_STUFF
+            // and disabled it (:41-42, saved at :47), which puts it at depth 1. Caught by
+            // H8_AuthoringRootReachabilityGate.
             GameObject[] roots = scene.GetRootGameObjects();
-            GameObject matchedRoot = null;
+            GameObject matchedHead = null;
             for (int i = 0; i < roots.Length; i++)
             {
-                if (!string.Equals(roots[i].name, rootName, StringComparison.Ordinal))
-                    continue;
-
-                matchedRoot = roots[i];
-                break;
+                matchedHead = FindInHierarchyIncludingInactive(roots[i].transform, headName);
+                if (matchedHead != null)
+                    break;
             }
 
-            if (matchedRoot == null)
+            if (matchedHead == null)
                 return null;
 
             if (firstSeparator < 0)
-                return matchedRoot;
+                return matchedHead;
 
-            Transform child = matchedRoot.transform.Find(path.Substring(firstSeparator + 1));
+            Transform child = matchedHead.transform.Find(path.Substring(firstSeparator + 1));
             return child != null ? child.gameObject : null;
+        }
+
+        /// <summary>
+        /// Depth-first search for a named object under <paramref name="branch"/>, inactive children
+        /// included. Transform child enumeration rather than GetComponentsInChildren, so nothing is
+        /// allocated per node and inactive children are seen unconditionally.
+        /// </summary>
+        private static GameObject FindInHierarchyIncludingInactive(Transform branch, string targetName)
+        {
+            if (branch == null)
+                return null;
+
+            if (string.Equals(branch.name, targetName, StringComparison.Ordinal))
+                return branch.gameObject;
+
+            for (int i = 0; i < branch.childCount; i++)
+            {
+                GameObject match = FindInHierarchyIncludingInactive(branch.GetChild(i), targetName);
+                if (match != null)
+                    return match;
+            }
+
+            return null;
         }
 
         private static void CreateOrUpdateSceneFabricator(
