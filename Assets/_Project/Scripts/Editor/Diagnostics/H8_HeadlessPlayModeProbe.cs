@@ -181,6 +181,42 @@ namespace Hecton8.EditorTools.Diagnostics
         private static bool _worldDriverEnabled = true;
         private static bool _worldDriverStarted;
 
+        /// <summary>
+        /// Hard cap on the tick grace granted after the gameplay window closes. The driver's own tick
+        /// floors sum to 24 for the entire schedule, so 48 is two full compressed schedules' worth and
+        /// cannot become an open-ended extension. Counted in TICKS on purpose: the driver's remaining work
+        /// is a fixed number of handshake steps, and on this harness a tick has cost anywhere from 0.23 s
+        /// to 132 s, so no number of seconds expresses the same guarantee.
+        /// </summary>
+        private const int WorldDriverGraceTickCap = 48;
+
+        /// <summary>Wall seconds of the hard timeout the grace refuses to eat into, so a grace can never
+        /// convert a starved row into a TIMEOUT line that loses every verdict the run did produce.</summary>
+        private const double GraceHardTimeoutMarginSeconds = 20.0;
+
+        private static int _worldDriverGraceTicks;
+        private static bool _graceOpenedLogged;
+        private static bool _graceClosedLogged;
+
+        /// <summary>
+        /// When the gameplay window's clock starts: the FIRST tick of GameplayWarmup, not the phase
+        /// transition into it.
+        ///
+        /// The window used to be measured from _phaseStartedAt, which TickWaitingForSettle sets
+        /// immediately before SetPhase(GameplayWarmup) - one editor tick earlier than the tick that calls
+        /// H8_HeadlessWorldDriver.Begin(). Those two origins are not the same instant and the difference is
+        /// not small: on the measured run the GameplayWarmup phase clock read 165.186s while the driver's
+        /// own elapsed read 160.430s, so 4.756s of the window was spent before the driver existed. The
+        /// window is 63.0 + 4.0 = 67.0s, which left the driver 62.244s of its 63.0s schedule - the margin
+        /// was NEGATIVE before a single frame stalled, and the last phase in the schedule is the one that
+        /// pays. That alone produces a NOT_EXERCISED CraftRepairBuild row on a completely smooth run.
+        ///
+        /// Rebasing here rather than widening the window keeps the fix honest: the window still bounds
+        /// 67 seconds of gameplay, it just stops charging the driver for the tail of the scene transition.
+        /// Set unconditionally, so a -h8SkipWorldDriver run measures the same window as a driven one.
+        /// </summary>
+        private static double _gameplayWindowStartedAt;
+
         private static Phase _phase = Phase.Idle;
         private static double _startedAt;
         private static int _frames;
@@ -344,8 +380,17 @@ namespace Hecton8.EditorTools.Diagnostics
             // NOT_EXERCISED rows that look like a product gap instead of a harness budget.
             //
             // This can raise an explicitly passed -h8GameplaySeconds, so it says so out loud: an argument
-            // that is quietly ignored is worse than one that is loudly overridden, and the extra seconds
-            // also come out of -h8TimeoutSeconds.
+            // that is quietly ignored is worse than one that is loudly overridden.
+            //
+            // THE MARGIN IS A TICK MARGIN, NOT A STALL ALLOWANCE, and it was tuned when the four driven
+            // rows were upstream-blocked and every phase failed on its first tick. Now that they execute,
+            // 4.0 seconds is worth 3 game frames at the 0.751 frames-per-wall-second this phase actually
+            // measured (Logs/h8_playprobe_route.json phases[5]) and less than one frame at the rate that
+            // obtained late in that run. Raising it to cover a stall would be the wrong fix twice over:
+            // a probe that passes because it was given more time hides the stall, and no fixed number of
+            // seconds can cover a single pumped frame that cost 132 of them. The driver's own per-phase
+            // ceilings bound the stall; TryGrantWorldDriverGrace covers the tail in TICKS, which is the
+            // unit the driver's remaining work is actually denominated in. So this stays at +4.0.
             if (_worldDriverEnabled)
             {
                 double required = H8_HeadlessWorldDriver.TotalBudgetSeconds + 4.0;
@@ -357,6 +402,28 @@ namespace Hecton8.EditorTools.Diagnostics
                         "shorter window and leave Swim/Resource/Tool/CraftRepairBuild NOT_EXERCISED");
                     _gameplaySeconds = required;
                 }
+            }
+
+            // The hard timeout has to be able to CONTAIN the windows configured above, and nothing was
+            // checking that. The comment on the block above used to claim the raised gameplay seconds
+            // "also come out of -h8TimeoutSeconds"; they do not - _hardTimeoutSeconds is assigned once
+            // from the argument and never adjusted. Raising it here silently would be worse, because the
+            // caller passed a number on purpose. So the arithmetic is stated instead: with the DEFAULTS
+            // (-h8TimeoutSeconds 240, menu 300, settle 300) the timeout cannot contain even the menu
+            // wait, and a run configured that way reports TIMEOUT in whatever phase it happened to be in
+            // rather than the row it was measuring.
+            double configuredWindows =
+                _menuWaitSeconds + _settleWaitSeconds + _gameplaySeconds +
+                (_saveLegEnabled ? _saveWaitSeconds : 0.0);
+            if (_startNewGame && configuredWindows > _hardTimeoutSeconds)
+            {
+                Debug.Log(
+                    $"{Marker} BUDGET WARNING the configured windows sum to {configuredWindows:F0}s " +
+                    $"(menu {_menuWaitSeconds:F0} + settle {_settleWaitSeconds:F0} + gameplay " +
+                    $"{_gameplaySeconds:F0} + save {(_saveLegEnabled ? _saveWaitSeconds : 0.0):F0}) but " +
+                    $"-h8TimeoutSeconds is {_hardTimeoutSeconds:F0}s. The hard timeout can fire mid-route " +
+                    "and its TIMEOUT line names the phase it interrupted, not the row that was starved. " +
+                    $"Raise -h8TimeoutSeconds above {configuredWindows:F0} or lower the waits.");
             }
 
             _artifactPath = ReadStringArg("-h8RouteArtifact", ResolveDefaultArtifactPath());
@@ -473,6 +540,23 @@ namespace Hecton8.EditorTools.Diagnostics
 
                     _gameplayFrames++;
 
+                    // The window's clock starts on the first tick that actually pumps gameplay, which is
+                    // also the tick that starts the driver. See _gameplayWindowStartedAt for why sharing an
+                    // origin with the driver's budget is load-bearing and not tidiness.
+                    if (_gameplayWindowStartedAt <= 0.0)
+                    {
+                        _gameplayWindowStartedAt = EditorApplication.timeSinceStartup;
+                        double transitionTail = _gameplayWindowStartedAt - _phaseStartedAt;
+                        if (transitionTail > 1.0)
+                        {
+                            Debug.Log(
+                                $"{Marker} GAMEPLAY window clock starts here, {transitionTail:F3}s after " +
+                                "the settle transition. Measured from the transition instead, that tail " +
+                                "would have come straight out of the driver's schedule and truncated its " +
+                                "last phase.");
+                        }
+                    }
+
                     // The world driver rides THIS tick. It gets no Update, no coroutine and no timer of
                     // its own, so the schedule advances only while the probe is genuinely pumping the
                     // engine - the same discipline that stops "yield return null" hanging a batchmode run.
@@ -492,12 +576,22 @@ namespace Hecton8.EditorTools.Diagnostics
                         H8_HeadlessWorldDriver.Tick();
                     }
 
-                    if (EditorApplication.timeSinceStartup - _phaseStartedAt >= _gameplaySeconds)
+                    if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
                     {
+                        // The window is a WALL clock; what the driver still needs is TICKS. Closing on
+                        // the wall alone is what turned a schedule that had entered its Craft phase into
+                        // a NOT_EXERCISED row: the driver was stopped on the same tick that entered
+                        // Craft, so the phase got zero ticks and the mechanic was never looked at.
+                        if (_worldDriverStarted && TryGrantWorldDriverGrace())
+                            break;
+
                         // Release the locomotion lane before the save leg, or the save would capture a
                         // player under synthetic input and the save/load row would measure the driver.
                         if (_worldDriverStarted)
-                            H8_HeadlessWorldDriver.Stop();
+                        {
+                            H8_HeadlessWorldDriver.Stop(
+                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+                        }
 
                         SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
                     }
@@ -519,6 +613,87 @@ namespace Hecton8.EditorTools.Diagnostics
                         Finish(_failures == 0 ? 0 : 1);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Grants the world driver one more probe tick after the gameplay window has closed, up to a hard
+        /// cap of <see cref="WorldDriverGraceTickCap"/> ticks. Returns true while the grace is open.
+        ///
+        /// WHY THIS IS NOT "JUST GIVE IT MORE TIME". The wall window and the driver's remaining work are
+        /// denominated in different units and the exchange rate is not stable: the measured GameplayWarmup
+        /// phase ran 124 game frames in 165.186 wall seconds, and one of those frames cost about 132 s
+        /// while the other 123 cost about 0.23 s each. Adding seconds to the window therefore buys an
+        /// unknown number of ticks - three, or a fraction of one - which is exactly why the existing
+        /// +4.0s margin failed. Adding TICKS buys precisely the handshake steps the remaining phases need,
+        /// and the cost is bounded by a countable number that appears in the log.
+        ///
+        /// It is also not a way to hide a stall. The grace is refused unless the driver says it still owes
+        /// ticks, every grant is counted, the fact that a grace was needed is logged once with the phase
+        /// that ate the clock named, and the driver's own compression marks every row it produced during
+        /// the grace as UNMEASURED. A run that needs the grace looks worse in the log than one that does
+        /// not - it just stops throwing away the four verdicts it had almost finished collecting.
+        /// </summary>
+        private static bool TryGrantWorldDriverGrace()
+        {
+            if (!H8_HeadlessWorldDriver.IsActive)
+                return false;
+
+            int owed = H8_HeadlessWorldDriver.MinimumTicksOwed;
+            if (owed <= 0)
+                return false;
+
+            if (_worldDriverGraceTicks >= WorldDriverGraceTickCap)
+            {
+                if (!_graceClosedLogged)
+                {
+                    _graceClosedLogged = true;
+                    Debug.Log(
+                        $"{Marker} WORLDDRIVER grace EXHAUSTED after {_worldDriverGraceTicks} ticks with " +
+                        $"{owed} still owed in phase {H8_HeadlessWorldDriver.CurrentPhaseName}. The " +
+                        "remaining rows close as NOT_EXERCISED and say so; this is a harness shortfall, " +
+                        $"not a product gap. Heaviest phase: {H8_HeadlessWorldDriver.WorstPhaseName} at " +
+                        $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s.");
+                }
+
+                return false;
+            }
+
+            // A grace must never be the reason a run dies on the hard timeout: that path loses the whole
+            // report, including the rows that already resolved.
+            if (EditorApplication.timeSinceStartup - _startedAt >
+                _hardTimeoutSeconds - GraceHardTimeoutMarginSeconds)
+            {
+                if (!_graceClosedLogged)
+                {
+                    _graceClosedLogged = true;
+                    Debug.Log(
+                        $"{Marker} WORLDDRIVER grace REFUSED with {owed} ticks owed in phase " +
+                        $"{H8_HeadlessWorldDriver.CurrentPhaseName}: only " +
+                        $"{_hardTimeoutSeconds - (EditorApplication.timeSinceStartup - _startedAt):F0}s " +
+                        $"left of the {_hardTimeoutSeconds:F0}s hard timeout and the report needs that " +
+                        "margin. Raise -h8TimeoutSeconds to let the schedule finish.");
+                }
+
+                return false;
+            }
+
+            if (!_graceOpenedLogged)
+            {
+                _graceOpenedLogged = true;
+                Debug.Log(
+                    $"{Marker} WORLDDRIVER the {_gameplaySeconds:F0}s gameplay window closed with the " +
+                    $"schedule still in phase {H8_HeadlessWorldDriver.CurrentPhaseName} owing {owed} " +
+                    $"ticks (driver elapsed {H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+                    $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s - fix that, not the rows.");
+            }
+
+            _worldDriverGraceTicks++;
+            return true;
         }
 
         /// <summary>
@@ -1509,19 +1684,73 @@ namespace Hecton8.EditorTools.Diagnostics
 
             // Anything still unlatched when reporting starts is closed out as NOT_EXERCISED with the
             // phase it stalled in, so a budget shortfall is never silently reported as a product gap.
-            H8_HeadlessWorldDriver.Stop();
+            H8_HeadlessWorldDriver.Stop(H8_HeadlessWorldDriver.StopCause.ProbeReportingStarted);
 
             Debug.Log(
                 $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
                 $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+                $"graceTicks={_worldDriverGraceTicks} " +
                 $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
                 $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
                 $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+
+            ReportWorldDriverPhaseLedger();
 
             RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
             RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
             RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
             RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+        }
+
+        /// <summary>
+        /// One row per driver phase: what it was granted, what it spent in wall seconds AND in ticks, and
+        /// why it stopped being the current phase.
+        ///
+        /// This is the table whose absence made the CraftRepairBuild row unactionable. The run reported
+        /// "driver ran out of budget in phase Craft after 160.430s" and the number that explained it -
+        /// ResourceDeplete having taken 138.192 of those seconds - was buried inside a different row's
+        /// detail string, on a different Required Route line, with no indication the two were connected.
+        /// The probe already learned this lesson once for its own phases in ReportClockRates: a single
+        /// aggregate is not a rate of anything and per-phase segments are what make a budget readable.
+        ///
+        /// Ticks are printed beside seconds because they disagree by two orders of magnitude on this
+        /// harness, and the tick column is the one that says whether a phase was allowed to do its work.
+        /// </summary>
+        private static void ReportWorldDriverPhaseLedger()
+        {
+            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+            {
+                // Phases that were never entered are skipped rather than printed as zero rows: a schedule
+                // legitimately skips phases (a blocked Settle jumps straight to ResourceTarget), and a
+                // wall of empty rows would bury the two or three that carry the answer.
+                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+                    continue;
+
+                string yield = H8_HeadlessWorldDriver.GetPhaseYieldName(phase);
+                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+
+                Debug.Log(
+                    $"{Marker} DRIVERPHASE {H8_HeadlessWorldDriver.GetPhaseName(phase),-16} " +
+                    $"wall={wall,8:F3}s granted={granted,6:F3}s ticks={ticks,5} floor={floor,2} " +
+                    $"secondsPerTick={secondsPerTick,8:F3} yield={yield}");
+            }
+
+            Debug.Log(
+                $"{Marker} DRIVERPHASE heaviest={H8_HeadlessWorldDriver.WorstPhaseName} at " +
+                $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F3}s of the " +
+                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+                "UNMEASURED, not a product gap; WallCeiling means the phase spent its own window and " +
+                "failed, which is a real result.");
         }
 
         /// <summary>
@@ -2335,6 +2564,10 @@ namespace Hecton8.EditorTools.Diagnostics
             _artifactWritten = false;
 
             _worldDriverStarted = false;
+            _worldDriverGraceTicks = 0;
+            _graceOpenedLogged = false;
+            _graceClosedLogged = false;
+            _gameplayWindowStartedAt = 0.0;
             H8_HeadlessWorldDriver.Reset();
         }
 
@@ -2435,6 +2668,50 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             builder.Append("  ],\n");
+
+            // The driver's per-phase ledger belongs in the artifact for the same reason the probe's own
+            // phase table does: two runs of this route are only comparable if the budget each phase got
+            // is recorded, and the console log for one run is 2 MB.
+            builder.Append("  \"worldDriver\": {\n");
+            AppendJsonBool(builder, "enabled", _worldDriverEnabled, "    ");
+            AppendJsonBool(builder, "started", _worldDriverStarted, "    ");
+            AppendJsonNumber(builder, "totalBudgetSeconds", H8_HeadlessWorldDriver.TotalBudgetSeconds, "    ");
+            AppendJsonNumber(builder, "elapsedSeconds", H8_HeadlessWorldDriver.ElapsedSeconds, "    ");
+            AppendJsonNumber(builder, "ticks", H8_HeadlessWorldDriver.TickCount, "    ");
+            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+            AppendJsonNumber(
+                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+
+            builder.Append("    \"phases\": [\n");
+            bool firstDriverPhase = true;
+            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+            {
+                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+                    continue;
+
+                if (!firstDriverPhase)
+                    builder.Append(",\n");
+
+                firstDriverPhase = false;
+                builder.Append("      { \"phase\": \"")
+                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseName(phase)))
+                    .Append("\", \"wallSeconds\": ")
+                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase)))
+                    .Append(", \"grantedSeconds\": ")
+                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+                    .Append(", \"yield\": \"")
+                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+                    .Append("\" }");
+            }
+
+            builder.Append(firstDriverPhase ? "    ]\n" : "\n    ]\n");
+            builder.Append("  },\n");
 
             builder.Append("  \"save\": {\n");
             AppendJsonField(builder, "root", _saveRoot, "    ");

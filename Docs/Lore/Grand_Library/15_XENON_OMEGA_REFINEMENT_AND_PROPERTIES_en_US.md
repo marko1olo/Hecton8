@@ -29,13 +29,11 @@ A trench-wall sample and a flooded process-rack sample come apart on every line 
 
 ## 2. What HECTON-8 Actually Made
 
-HECTON-8 did not make Xenon-Omega by being exotic in a vague way. It made the conditions repeatable enough for industry to gamble on them.
+The moon did not supply anything exotic. It supplied repeatability: depth, pressure gradients, brine density layers, noble gas trapping, fault heat, mineral defects, and biology that builds thin catalytic films where an ordinary factory would only get fouling. Deep Reach added industrial heat, receiver geometry, acoustic cycling, controlled contamination and Atlas-managed process timing. Nothing about the product was found. It was coaxed out of an ocean indifferent to whether the workers survived the coaxing.
 
-The moon gives depth, pressure gradients, brine density layers, noble gas trapping, fault heat, mineral defects, and biology that can build thin catalytic films where normal factories would only get fouling. Deep Reach added industrial heat, receiver geometry, acoustic cycling, controlled contamination, and Atlas-managed process timing. The valuable product was not "found." It was coaxed out of an ocean that did not care whether the workers survived the coaxing.
+In process language, Xenon-Omega is a substrate family. In worker language, it is the blue thing that makes management polite until somebody asks who has to carry it.
 
-In good process language, Xenon-Omega is a substrate family. In worker language, it is the blue thing that makes management polite until somebody asks who has to carry it.
-
-Pressure glass is the visible cousin. It is not ordinary glass made tougher. It is a pressure-grown and pressure-finished material that can hold stress without turning every small flaw into a crack. Thick viewports, receiver lenses, certain sensor windows, memory shutters and deep telemetry buffers all use related process lines. When a Marauder sees a milky blue edge inside old glass, they are not seeing decoration. They are seeing a record of manufacturing choices that may still be legally alive.
+Pressure glass is the visible member of that family: pressure-grown and pressure-finished, able to hold stress without turning every small flaw into a crack. Thick viewports, receiver lenses, sensor windows, memory shutters and deep telemetry buffers come off related process lines. A milky blue edge inside old glass is not decoration. It is a record of manufacturing choices that may still be legally alive.
 
 ## 3. Pressure Memory
 
@@ -105,34 +103,44 @@ Explosion is not the worst entry on that log. Ambiguity is. A sample that loses 
 
 ## 7. Why Humans Still Touch It
 
-The obvious question is why Deep Reach did not just send machines.
+Deep Reach did send machines. `BK-DR-12` is the loss sheet from the last serious attempt at doing this without people, thirty-one hulls in fourteen months:
 
-It did send machines. HECTON-8 ate them.
+```text
+BK-DR-12   AUTONOMOUS RECOVERY LOSS SHEET / 2188-01 TO 2189-03
+CAUSE OF LOSS                                  HULLS
+salt bridge across a diagnostic separation         9
+biofilm shorting insulation                        7
+pressure shock, solder and optical paths           6
+sensor fouling inside an XO process field          5
+Atlas handshake accepted, then refused             4
+```
 
-The ocean destroys certainty in ways expensive drones hate. Salt bridges form where diagnostics expected clean separation. Biofilms turn insulation into a slow argument. Pressure shocks age solder, seals and optical paths. Xenon-Omega process fields dirty sensors. Old Atlas infrastructure answers some machine handshakes and refuses others. A drone can be hardened against one problem, then lose money to the second and become salvage for the third.
-
-A human in a rated suit is not better because flesh is noble. A human is useful because liability can be outsourced to the contract, judgment can be forced into the water, and a desperate worker can improvise around failures no procurement office wanted to model. The suit protects the carrier from calling that murder. The debt makes the descent repeatable.
+A hull can be hardened against the first row, lose money to the second and come back as salvage on the third. A human in a Class-IV suit is not better because flesh is noble. A human is useful because liability moves onto the contract, judgement goes into the water inside the body that carries it, and a worker in debt improvises around failures no procurement office wanted to model. The suit keeps the carrier from having to call that murder. The debt makes the descent repeatable.
 
 That is the real material property Deep Reach bought on HECTON-8: a system where people could be made to carry unstable blue substrate through a place machines could not cheaply understand.
 
 ## 8. Field Grades
 
-Marauders use rough grades because rough grades keep people alive.
+Marauders grade in the water, off a scratched plate, because the intake assay lands eighteen hours after the decision that mattered:
 
-Trace XO is usually evidence, residue or small payout. Viable XO still carries process state and needs the right canister. Harmonic XO interferes with scanners, receiver logic or old Atlas paths; it pays better when controlled and ruins descents when misunderstood. Custody-grade XO has clean enough chain, pressure history and location proof to move a claim. Atlas-responsive XO is the dangerous class: it can make old systems answer, or make new systems admit that an old answer still exists.
+```text
+FIELD GRADE PLATE / BARNARD YARDS INTAKE / UNOFFICIAL COPY
+trace             evidence or residue. small payout. safe to carry wet
+viable            process state live. the wrong canister loses the class
+harmonic          fouls scanners and old Atlas paths. pays controlled,
+                  ruins a descent misunderstood
+custody-grade     chain and location proof good enough to move a claim
+Atlas-compatible  makes old systems answer. two crews refuse to carry it
+```
 
-The grades are not moral categories. A trace smear can clear a dead worker's name. A custody-grade core can keep a rescue packet delayed. A harmonic fragment can save a route or wake a door that should have stayed dead. The value depends on what the player is trying to change.
+None of the five is a moral category. A trace smear has cleared a dead worker's name, a custody-grade core has been used to hold a rescue packet in queue behind an assay, and a harmonic fragment has both saved a route and woken a door that should have stayed shut.
 
-Good field practice is boring and therefore rare: tag before moving, photograph before sealing, preserve pressure if possible, keep wet samples wet, isolate scanner noise, never trust an unpriced canister, and never let a handler rename a sample after it has left your sight.
+Field practice is boring and therefore rare: tag before moving, photograph before sealing, hold pressure where pressure can be held, keep wet samples wet, isolate scanner noise, refuse an unpriced canister, and never let a handler rename a sample after it leaves your sight.
 
 ## 9. Blue Debt
 
-The slang is cruel because it is accurate.
+The slang is cruel and it is also correct, because the debt runs in both directions. Every sample carries unpaid time -- the shift that grew it, the room that held it, the evacuation it delayed, the claim it preserved, the route that still wants it lifted -- and the tonne-window has no column for any of that.
 
-Blue debt is not only debt owed by the worker. It is debt owed by the material. Every sample carries unpaid time: the shift that grew it, the room that held it, the evacuation it delayed, the claim it preserved, the family it did not answer, the route that still wants it lifted.
+Selling the mass alone keeps the ocean a mine. Preserving the state can turn one canister into testimony, paid for in air and lift capacity on the same descent, which is a trade made in the water and settled at a desk.
 
-When a Marauder brings XO back to Black Keel, they are not only selling matter. They are deciding which part of that unpaid time becomes legible. Sell only the mass and the ocean becomes a mine again. Preserve the state and the sample can become testimony. Hand it to the wrong receiver and testimony becomes cargo before anyone outside the route can read it.
-
-That is why Xenon-Omega belongs in the Grand Library. Not because it is the secret at the center of everything, but because it teaches the central rule of HECTON-8:
-
-the most valuable thing in the water is rarely the thing itself. It is the argument the thing can still force when it surfaces.
+Hard limits worth carrying down. The unbroken brine inclusion is the one field that four of the five `DR-PR-77` rows depend on, and it survives nothing above 12 C. A sample renamed after it leaves your sight has no chain, whatever the tag says. Nothing in a 4.8 tonne lien window is reserved: every kilogram of blue mass is a kilogram not spent on scrubber media, a cutter head, a body, or the lift back to the crown.

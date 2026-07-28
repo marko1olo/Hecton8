@@ -2,7 +2,7 @@
 # FAULT ROCK, SERPENTINITE AND MOVING WALLS
 
 > **Source:** Deep Reach geotechnical survey GT-44, extensometer series X-11 to X-40, Atlas-6 structural warnings, and plate notes from the green-black routes.  
-> **Speaker:** Sector 44 geology officer. The filed report runs to nine pages. The working draft ran to thirty-one, and the twenty-two pages management cut are quoted here from the officer's own carbon.  
+> **Speaker:** Sector 44 geology officer, whose survey beat ran the whole approach column from the spine down to the vent field, not the sector below the crown alone. The filed report runs to nine pages. The working draft ran to thirty-one, and the twenty-two pages management cut are quoted here from the officer's own carbon.  
 > **Handling note:** Every convergence figure below was taken from an instrument that is still bolted to the rock and can be read again. Where the filed report and the carbon disagree, both numbers are printed.
 
 ---

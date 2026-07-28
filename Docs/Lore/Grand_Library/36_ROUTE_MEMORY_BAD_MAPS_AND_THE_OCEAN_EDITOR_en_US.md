@@ -36,12 +36,12 @@ DEVIATIONS.: 4 from survey, all below
   - ladder at 410 m ends 1.2 m under silt. use the cable trench, tight
   - door 3-11 opens. does not seal. do not shelter behind it
   - locker room at 980 m is a sump. survey shows it dry
-  - lip at 1,180 m read 340 mm on this walk. survey says 900 mm
+  - lip at 1,180 m read 340 mm on this walk. survey says 820 mm
 TIDE.......: walked on the ebb. do not attempt the trench on the flood
 CARD AGE...: 42 days at transcription
 ```
 
-Four deviations across a 1,180 m descent, and SV-44-3 remains the authority of record for all four. The lip figure is the one crews read twice: 340 mm on the second of June, 900 mm in 2143. Nothing on the card says what it is today, and the card is honest about that in the age field.
+Four deviations across a 1,180 m descent, and SV-44-3 remains the authority of record for all four. The lip figure is the one crews read twice: 340 mm on the second of June, 820 mm in 2143. Nothing on the card says what it is today, and the card is honest about that in the age field.
 
 When the layers disagree, the disagreement carries the information. A dead end on the survey can be a working shortcut. A clean corridor with no marks on it is a corridor nobody came back to mark. A route carrying six warnings has at least been read recently.
 

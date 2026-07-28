@@ -45,6 +45,27 @@
 //   coroutine, no async. Per-tick work is struct writes, native-ring pushes, ReadOnlySpan scans and
 //   property reads — zero managed allocation. Cold work (one-shot component lookup, verdict detail
 //   strings) is latched so it can never repeat per frame.
+//
+// SCHEDULE BUDGET — two units, and they are NOT convertible
+//   A driver tick is one pumped game frame, and on this harness a pumped game frame has cost anywhere
+//   from 0.23 s to 132 s inside a single run (Logs/h8_playprobe_route.json phases[5]: 124 game frames in
+//   165.186 wall seconds, 0.751 per wall second, one frame carrying about 132 of them). So the schedule
+//   is bounded on BOTH axes and each axis bounds a different failure:
+//     WALL SECONDS bound a phase that cannot succeed. Each phase gets an ABSOLUTE deadline clamped by
+//       what is left of TotalBudgetSeconds, so an overrun is charged to the total instead of being
+//       forgiven at the next transition. The old relative "PhaseElapsed < XBudgetSeconds" test forgave
+//       it: ResourceDeplete reported 138.192 s against a 6.0 s budget and the three phases after it were
+//       still handed their full windows on top of a total that was already spent.
+//     TICKS bound the reverse failure, which is the one that actually cost a row. A phase's handshake
+//       needs a fixed number of ticks — publish on one, read the owner's answer on the next — and a
+//       wall-only ceiling in a slow-frame regime grants one. MinTicksFor names the floor per phase and
+//       no wall ceiling fires beneath it, so a schedule whose seconds are gone still returns a real
+//       verdict per row rather than four NOT_EXERCISED lines that read like missing content.
+//   When the total is spent the schedule COMPRESSES rather than terminating: every remaining phase runs
+//   its tick floor, yields, and says so in its row. Terminating instead is what the probe's gameplay
+//   window did, and it produced "driver ran out of budget in phase Craft ... and never reached this row"
+//   for a Craft phase that HAD been entered and was given zero ticks.
+//   Nothing here is a bigger budget. TotalBudgetSeconds and all nine phase constants are unchanged.
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 using System.Globalization;
@@ -87,6 +108,11 @@ namespace Hecton8.EditorTools.Diagnostics
             Fail = 4,
         }
 
+        /// <summary>
+        /// Declared in SCHEDULE ORDER, and <see cref="MinimumTicksOwed"/> depends on that: it sums the
+        /// tick floors of every member after the current one. Inserting a phase out of order would make
+        /// the probe's grace calculation quietly wrong.
+        /// </summary>
         private enum DrivePhase : byte
         {
             Idle = 0,
@@ -101,6 +127,61 @@ namespace Hecton8.EditorTools.Diagnostics
             ResourcePickup,
             Craft,
             Done,
+
+            /// <summary>
+            /// Array-size sentinel for the per-phase ledger. Never entered, never latched, never a
+            /// switch case. A hand-maintained count constant next to a 12-member enum is a drift trap;
+            /// this cannot fall out of sync.
+            /// </summary>
+            PhaseCount,
+        }
+
+        /// <summary>
+        /// Why a phase stopped being the current phase. This is the field that separates "the mechanic
+        /// was measured and did not work" from "the instrument never got to look", and the previous
+        /// version of this file had no equivalent - every phase transition looked identical in the
+        /// output, so a row starved by an earlier phase's overrun read exactly like a row whose content
+        /// is missing.
+        /// </summary>
+        private enum PhaseYield : byte
+        {
+            NotEntered = 0,
+
+            /// <summary>The phase's own success or design condition was met, including a timed hold
+            /// phase reaching its full nominal duration.</summary>
+            Completed,
+
+            /// <summary>The phase's wall deadline expired with its work unfinished. This is the
+            /// "stuck phase yields to the next" case and it is a real, reportable outcome.</summary>
+            WallCeiling,
+
+            /// <summary>The schedule's whole <see cref="TotalBudgetSeconds"/> was already spent when
+            /// this phase ran, so it was compressed to its tick floor. The row is UNMEASURED and the
+            /// defect belongs to whichever phase ate the total, not to this one.</summary>
+            TotalCeiling,
+
+            /// <summary>The schedule's total tick cap fired.</summary>
+            TickCeiling,
+
+            /// <summary>The probe closed the gameplay window while this phase was in flight.</summary>
+            ExternalStop,
+
+            /// <summary>The driver threw inside this phase.</summary>
+            Aborted,
+        }
+
+        /// <summary>
+        /// Who ended the schedule. Printed verbatim, because the old finalisation text asserted a
+        /// mechanism ("driver ran out of budget") that did not exist in this file and pointed every
+        /// reader at the wrong constants.
+        /// </summary>
+        internal enum StopCause : byte
+        {
+            Unspecified = 0,
+            ProbeGameplayWindowClosed,
+            ProbeReportingStarted,
+            OwnTickCeiling,
+            Exception,
         }
 
         // ── lane constants ────────────────────────────────────────────────────────────────────────
@@ -111,6 +192,11 @@ namespace Hecton8.EditorTools.Diagnostics
         // ── phase budgets, wall-clock seconds ─────────────────────────────────────────────────────
         // Wall clock, not frames: a batchmode frame is not a unit of simulation progress, which is the
         // same lesson TickWaitingForSettle already learned the hard way.
+        //
+        // EVERY NUMBER BELOW IS UNCHANGED from the run that produced the CraftRepairBuild NOT_EXERCISED
+        // row. Nothing here was raised. What changed is that they are now ENFORCED as absolute deadlines
+        // clamped by the total, instead of being relative "PhaseElapsed < X" tests that let one phase
+        // spend the whole schedule - see PhaseCeilingReached.
         private const double SettleBudgetSeconds = 8.0;
         private const double SwimSurfaceBudgetSeconds = 5.0;
         private const double SwimDiveBudgetSeconds = 7.0;
@@ -122,11 +208,56 @@ namespace Hecton8.EditorTools.Diagnostics
         private const double CraftBudgetSeconds = 14.0;
         private const double CraftEvaluationIntervalSeconds = 0.5;
 
-        /// <summary>Total wall time the schedule can consume before it reports what it has and stops.</summary>
+        /// <summary>
+        /// Total wall time the schedule can consume. 63.0s, unchanged.
+        ///
+        /// It used to be a LABEL rather than a limit: this file read it at exactly zero places, and
+        /// <c>_startedAt</c> was read at exactly one - the "ran out of budget" message - so the driver
+        /// printed an elapsed for a stop it had no code to cause. The only thing that ever ended the
+        /// schedule was the probe closing its gameplay window
+        /// (H8_HeadlessPlayModeProbe.cs:495), which is why a run reported 160.430s against this 63.0s.
+        /// It is now the clamp on every phase ceiling and the trigger for compression.
+        /// </summary>
         internal const double TotalBudgetSeconds =
             SettleBudgetSeconds + SwimSurfaceBudgetSeconds + SwimDiveBudgetSeconds +
             ResourceTargetBudgetSeconds + ToolEquipBudgetSeconds + ToolUseBudgetSeconds +
             ResourceDepleteBudgetSeconds + ResourcePickupBudgetSeconds + CraftBudgetSeconds;
+
+        // ── tick floors ───────────────────────────────────────────────────────────────────────────
+        // MEASURED, Logs/h8_playprobe_route.json phases[5] and Logs/omega_route28.log CLOCKS: the
+        // GameplayWarmup phase advanced 124 game frames in 165.186 wall seconds - 0.751 frames per wall
+        // second - and the driver ticks once per one of those frames. 123 of them cost about 0.23s each
+        // and ONE cost about 132s, which is how ResourceDeplete reported 138.192s against a 6.0s budget
+        // while still obeying its own "PhaseElapsed < 6.0" test on every tick it was given.
+        //
+        // So wall seconds are not the resource these phases consume. TICKS are, and the two are not
+        // convertible: 6.0 seconds bought 26 ticks in the fast regime and 0.05 of a tick in the slow one.
+        // Every phase therefore declares the number of ticks its handshake physically cannot complete
+        // without, and no wall ceiling may fire before that many ticks have run.
+        //
+        // This floor is the load-bearing half of the fix. A wall-only ceiling, however tight, still
+        // hands every phase after a stalled frame exactly one tick - which is what produced
+        // "driver ran out of budget in phase Craft ... and never reached this row" on a run whose Craft
+        // phase HAD been entered and was then given zero ticks.
+        private const int MinTicksSettle = 1;
+        private const int MinTicksSwimHold = 2;
+        private const int MinTicksSwimVerdict = 1;
+        private const int MinTicksResourceTarget = 4;
+        private const int MinTicksToolEquip = 3;
+        private const int MinTicksToolUse = 2;
+        private const int MinTicksResourceDeplete = 2;
+        private const int MinTicksResourcePickup = 3;
+        private const int MinTicksCraft = 4;
+
+        /// <summary>
+        /// Runaway backstop on the axis the wall clock cannot see. The probe's own clock table measured
+        /// 6170 editor ticks per wall second in LoadingMenu and 3242 in WaitingForSettle; only
+        /// GameplayWarmup happens to be one tick per game frame. If the driver ever rides a cheap tick
+        /// again, a wall-only ceiling would let one phase run tens of thousands of scene searches and
+        /// node damage pulses inside its 6 seconds. 60000 is ~1000s of 60 fps gameplay, so it cannot
+        /// bite a schedule whose wall total is 63s - it only stops a genuine runaway.
+        /// </summary>
+        private const int MaxTotalTicks = 60000;
 
         // ── acceptance thresholds ─────────────────────────────────────────────────────────────────
         private const float MinMovementIntent01 = 0.01f;
@@ -140,14 +271,83 @@ namespace Hecton8.EditorTools.Diagnostics
         private const float NodePlacementDistanceMeters = 1.75f;
         private const float ExistingNodeMaxDistanceMeters = 3.5f;
         private const float ExistingNodeMinForwardDot = 0.5f;
-        private const float NodeCutDamagePerTick = 8.0f;
+        private const float NodeDamagePerPulse = 8.0f;
         private const float ScavengeTileSizeMeters = 512.0f; // ScavengePopulator.cs:189 authored default.
         private const int ScavengeLocalIndex = 90001;
+
+        /// <summary>
+        /// Range and pose the synthetic tool pulse declares. Nothing raycasts against it — the signal is
+        /// handed straight to the consumer — but a packet whose origin and direction disagree with its own
+        /// hit point is a lie stored in a struct, so the pose is a real 2 m top-down approach on the node.
+        /// </summary>
+        private const float NodeDamageRangeMeters = 2.0f;
+
+        /// <summary>Driver tool identity stamped into <c>InteractionPacket.ToolID</c>: ASCII "H8DW".</summary>
+        private const uint NodeDamageToolId = 0x48384457u;
+
+        /// <summary>
+        /// Ceiling on identical tool pulses per tick, and NOT a quota — the loop exits the instant the node
+        /// depletes or a pulse lands no damage.
+        ///
+        /// Why a batch at all: this leg is TICK-bound, not time-bound (see the tick-floor block above), and
+        /// one pulse per tick cannot finish any authored node. ResourceNode.TakeDamage divides the pulse by
+        /// the template hardness (ResourceNode.cs:1175), so the hardest authored node —
+        /// ResourceNodeTemplate_VoidGlassMeteorite, maxIntegrity 260 at toolResistance 2.25 — needs
+        /// 260 / (8 / 2.25) = 73.1 pulses, against a MinTicksResourceDeplete of 2. One pulse per tick would
+        /// report "would not deplete" for a node whose mechanic is perfectly healthy.
+        ///
+        /// Compression is not a shortcut. ResourceNode.ResolveYieldSampleDeltaSeconds (ResourceNode.cs:1342)
+        /// returns a FIXED 0.12 s per call regardless of wall or frame time, so N pulses inside one tick
+        /// produce identical damage, identical incremental yield and identical debris to N pulses spread over
+        /// N ticks. 96 sits above the worst authored ratio with margin and still well inside the loot
+        /// oracle's 64-request frame capacity (ScavengingLootOracleRuntime.cs:34): 8 / 2.25 * 0.12 s = 426 g
+        /// per pulse against a 13 kg unit mass emits 2 loot requests across a full 74-pulse depletion, not 74.
+        /// </summary>
+        private const int MaxNodeDamagePulsesPerTick = 96;
+
+        /// <summary>
+        /// Number of <c>InteractionEffectType</c> values the driver will consider, in the fixed preference
+        /// order of <see cref="NodeDamageEffectAtPreference"/>.
+        /// </summary>
+        private const int NodeDamageEffectPreferenceCount = 6;
 
         // ── state ─────────────────────────────────────────────────────────────────────────────────
         private static DrivePhase _phase = DrivePhase.Idle;
         private static double _phaseStartedAt;
         private static double _startedAt;
+
+        /// <summary>Absolute wall time this phase must yield at, already clamped by what is left of
+        /// <see cref="TotalBudgetSeconds"/>. Absolute, not relative: a phase that overran cannot push
+        /// the next phase's deadline out by the amount it overran.</summary>
+        private static double _phaseDeadline;
+
+        /// <summary>Seconds this phase was actually granted, which is <c>min(own budget, total
+        /// remaining)</c> and therefore not the same as its constant. Reported per row so a compressed
+        /// phase does not look like a phase that had its full window and failed.</summary>
+        private static double _phaseGranted;
+        private static int _phaseTicks;
+        private static double _totalDeadline;
+
+        /// <summary>True once the schedule's total wall budget is spent. Every phase after that point
+        /// runs its tick floor and yields, so the remaining rows still produce a real verdict instead of
+        /// four NOT_EXERCISED lines that look like missing content.</summary>
+        private static bool _compressed;
+        private static DrivePhase _compressedInPhase;
+        private static double _compressedAt;
+        private static StopCause _stopCause;
+        private static DrivePhase _stoppedInPhase;
+        private static double _stoppedAtElapsed;
+
+        // Per-phase ledger, indexed by (int)DrivePhase. Written on phase close, read only at report
+        // time. COLD ALLOC: double[13] + int[13] + PhaseYield[13] - one driver-phase ledger for the run,
+        // ~230 B total - owner: H8_HeadlessWorldDriver
+        private static readonly double[] _phaseWall = new double[(int)DrivePhase.PhaseCount];
+        private static readonly double[] _phaseGrant = new double[(int)DrivePhase.PhaseCount];
+        private static readonly int[] _phaseTickLedger = new int[(int)DrivePhase.PhaseCount];
+        private static readonly PhaseYield[] _phaseYield = new PhaseYield[(int)DrivePhase.PhaseCount];
+        private static DrivePhase _worstPhase = DrivePhase.Idle;
+        private static double _worstPhaseWall;
+
         private static bool _enabled;
         private static bool _stopped;
         private static bool _switchedToPlayerInput;
@@ -232,6 +432,19 @@ namespace Hecton8.EditorTools.Diagnostics
         private static bool _sawManualPickupAcquire;
         private static ushort _manualPickupQuantity;
 
+        // ── resource depletion, capability resolved from the node ─────────────────────────────────
+        // The mask is re-read every tick, not cached once: ResourceNode.VulnerabilityMask (:220) is
+        // recomputed from the applied template, and a driver that snapshots it would go stale the moment
+        // ScavengePopulator restamps a template (ScavengePopulator.cs:869).
+        private static bool _nodeDamageEffectResolved;
+        private static bool _nodeDamageEffectAccepted;
+        private static Hecton8.Interaction.InteractionEffectType _nodeDamageEffect;
+        private static uint _nodeDamageCapabilityMask;
+        private static uint _nodeVulnerabilityMask;
+        private static float _nodeHealthAtDepleteStart;
+        private static int _nodeDamagePulses;
+        private static int _nodeDamagePulsesLanded;
+
         // ── tool observations ─────────────────────────────────────────────────────────────────────
         private static int _requestedToolSlot = -1;
         private static int _availableToolSlots;
@@ -267,6 +480,104 @@ namespace Hecton8.EditorTools.Diagnostics
 
         internal static string CurrentPhaseName => _phase.ToString();
 
+        /// <summary>Wall seconds since <see cref="Begin"/>, or 0 before it.</summary>
+        internal static double ElapsedSeconds =>
+            _startedAt > 0.0 ? EditorApplication.timeSinceStartup - _startedAt : 0.0;
+
+        /// <summary>True once the total wall budget was spent and the remaining phases are running on
+        /// their tick floors. A run with this set produced UNMEASURED rows, not empty ones.</summary>
+        internal static bool IsCompressed => _compressed;
+
+        /// <summary>
+        /// How many more driver ticks the unfinished part of the schedule cannot produce a verdict
+        /// without. The probe sizes its grace off this number instead of guessing seconds, because on
+        /// this harness seconds and ticks are not convertible - one measured frame cost 132 s and the
+        /// 123 around it cost 0.23 s each.
+        ///
+        /// An upper bound on purpose: the live route can skip phases (a blocked Settle jumps straight to
+        /// ResourceTarget), so this over-counts rather than under-counts, and the caller caps it anyway.
+        /// </summary>
+        internal static int MinimumTicksOwed
+        {
+            get
+            {
+                if (!IsActive)
+                    return 0;
+
+                int owed = MinTicksFor(_phase) - _phaseTicks;
+                if (owed < 0)
+                    owed = 0;
+
+                for (int phase = (int)_phase + 1; phase < (int)DrivePhase.PhaseCount; phase++)
+                    owed += MinTicksFor((DrivePhase)phase);
+
+                return owed;
+            }
+        }
+
+        // ── per-phase ledger, read by the probe's report ──────────────────────────────────────────
+        internal static int PhaseLedgerCount => (int)DrivePhase.PhaseCount;
+
+        /// <summary>
+        /// <c>Enum.ToString</c> is banned in cadence, not in cold reporting: this runs at most
+        /// PhaseLedgerCount times per run from the probe's report pass. A hand-written name table beside
+        /// the enum would be one more thing to forget to update.
+        /// </summary>
+        internal static string GetPhaseName(int phase)
+        {
+            return phase >= 0 && phase < (int)DrivePhase.PhaseCount
+                ? ((DrivePhase)phase).ToString()
+                : string.Empty;
+        }
+
+        internal static double GetPhaseWallSeconds(int phase)
+        {
+            return phase >= 0 && phase < _phaseWall.Length ? _phaseWall[phase] : 0.0;
+        }
+
+        internal static double GetPhaseGrantedSeconds(int phase)
+        {
+            return phase >= 0 && phase < _phaseGrant.Length ? _phaseGrant[phase] : 0.0;
+        }
+
+        internal static int GetPhaseTicks(int phase)
+        {
+            return phase >= 0 && phase < _phaseTickLedger.Length ? _phaseTickLedger[phase] : 0;
+        }
+
+        internal static int GetPhaseMinimumTicks(int phase)
+        {
+            return phase >= 0 && phase < (int)DrivePhase.PhaseCount
+                ? MinTicksFor((DrivePhase)phase)
+                : 0;
+        }
+
+        internal static string GetPhaseYieldName(int phase)
+        {
+            return phase >= 0 && phase < _phaseYield.Length ? _phaseYield[phase].ToString() : string.Empty;
+        }
+
+        /// <summary>
+        /// Whether this phase was ever the current phase. The report skips the ones that were not, and it
+        /// asks through this rather than string-comparing <see cref="GetPhaseYieldName"/> against
+        /// "NotEntered": a reader-side match on an enum member name is one rename away from silently
+        /// printing every empty row.
+        /// </summary>
+        internal static bool WasPhaseEntered(int phase)
+        {
+            return phase >= 0 &&
+                phase < _phaseYield.Length &&
+                _phaseYield[phase] != PhaseYield.NotEntered;
+        }
+
+        /// <summary>Name of the phase that consumed the most wall time - the phase a reader should go
+        /// fix when a later row reports itself starved.</summary>
+        internal static string WorstPhaseName => _worstPhase.ToString();
+
+        internal static double WorstPhaseWallSeconds => _worstPhaseWall;
+
+        internal static string StopCauseName => _stopCause.ToString();
+
         internal static RowVerdict GetVerdict(int row)
         {
             return row >= 0 && row < RowCount ? _verdicts[row] : RowVerdict.NotExercised;
@@ -290,6 +601,27 @@ namespace Hecton8.EditorTools.Diagnostics
             _phase = DrivePhase.Idle;
             _phaseStartedAt = 0.0;
             _startedAt = 0.0;
+            _phaseDeadline = 0.0;
+            _phaseGranted = 0.0;
+            _phaseTicks = 0;
+            _totalDeadline = 0.0;
+            _compressed = false;
+            _compressedInPhase = DrivePhase.Idle;
+            _compressedAt = 0.0;
+            _stopCause = StopCause.Unspecified;
+            _stoppedInPhase = DrivePhase.Idle;
+            _stoppedAtElapsed = 0.0;
+            _worstPhase = DrivePhase.Idle;
+            _worstPhaseWall = 0.0;
+
+            for (int phase = 0; phase < (int)DrivePhase.PhaseCount; phase++)
+            {
+                _phaseWall[phase] = 0.0;
+                _phaseGrant[phase] = 0.0;
+                _phaseTickLedger[phase] = 0;
+                _phaseYield[phase] = PhaseYield.NotEntered;
+            }
+
             _enabled = false;
             _stopped = false;
             _switchedToPlayerInput = false;
@@ -346,6 +678,14 @@ namespace Hecton8.EditorTools.Diagnostics
             _interactPublished = false;
             _sawManualPickupAcquire = false;
             _manualPickupQuantity = 0;
+            _nodeDamageEffectResolved = false;
+            _nodeDamageEffectAccepted = false;
+            _nodeDamageEffect = Hecton8.Interaction.InteractionEffectType.PlasmaCut;
+            _nodeDamageCapabilityMask = 0u;
+            _nodeVulnerabilityMask = 0u;
+            _nodeHealthAtDepleteStart = 0f;
+            _nodeDamagePulses = 0;
+            _nodeDamagePulsesLanded = 0;
 
             _requestedToolSlot = -1;
             _availableToolSlots = 0;
@@ -376,20 +716,36 @@ namespace Hecton8.EditorTools.Diagnostics
             _enabled = true;
             _stopped = false;
             _startedAt = EditorApplication.timeSinceStartup;
-            EnterPhase(DrivePhase.Settle);
+            _totalDeadline = _startedAt + TotalBudgetSeconds;
+            EnterPhase(DrivePhase.Settle, PhaseYield.Completed);
         }
 
         /// <summary>
         /// Releases the locomotion lane so the world is not left under synthetic input while the save
         /// round trip runs. An override left latched would make the save leg measure a moving player.
+        ///
+        /// The cause is a required argument. The previous parameterless version was called from two
+        /// places with two completely different meanings - the gameplay window closing mid-schedule
+        /// (H8_HeadlessPlayModeProbe.cs:495) and the report pass tidying up
+        /// (H8_HeadlessPlayModeProbe.cs:1512) - and the rows it finalised could not tell a reader which
+        /// one had happened. The first is a truncated measurement; the second is a completed one.
         /// </summary>
-        internal static void Stop()
+        internal static void Stop(StopCause cause)
         {
             if (!_enabled || _stopped)
                 return;
 
             _intent = default;
             CoreDeterminismSignals.ClearInputOverride();
+
+            _stopCause = cause;
+            _stoppedInPhase = _phase;
+            _stoppedAtElapsed = ElapsedSeconds;
+
+            // Close the in-flight phase's ledger row before the verdicts are written, so a row that says
+            // "my phase got 1 tick" is quoting a recorded number rather than an in-flight one.
+            CloseCurrentPhase(
+                _phase == DrivePhase.Done ? PhaseYield.Completed : PhaseYield.ExternalStop);
 
             // _phase is deliberately NOT set to Done: the phase the schedule stopped in is the single
             // most useful fact about a run that did not finish, and overwriting it with "Done" throws it
@@ -412,6 +768,12 @@ namespace Hecton8.EditorTools.Diagnostics
 
             try
             {
+                // Ceilings are evaluated BEFORE the phase runs, so the phase that is about to execute
+                // already knows whether it is spending its own budget or running on the schedule's
+                // minimum - which is what its row detail has to state.
+                if (!EvaluateScheduleCeilings())
+                    return;
+
                 SampleObservables();
                 PublishLocomotionIntent();
                 AdvancePhase();
@@ -420,9 +782,50 @@ namespace Hecton8.EditorTools.Diagnostics
             {
                 _intent = default;
                 CoreDeterminismSignals.ClearInputOverride();
+                _stopCause = StopCause.Exception;
+                _stoppedInPhase = _phase;
+                _stoppedAtElapsed = ElapsedSeconds;
+                CloseCurrentPhase(PhaseYield.Aborted);
                 LatchAllUnlatched(RowVerdict.Fail, ex.GetType().Name, ex.Message);
                 _stopped = true;
             }
+        }
+
+        /// <summary>
+        /// The two schedule-level ceilings, checked once per tick. Returns false when the schedule has
+        /// been stopped and this tick must not advance a phase.
+        ///
+        /// Compression rather than termination is the deliberate choice. Terminating at the total
+        /// deadline is what the probe's window effectively did, and it produced a NOT_EXERCISED row for a
+        /// mechanic nobody had measured. Compression spends a bounded number of extra TICKS - the tick
+        /// floors, 24 of them for the whole schedule - to get a real verdict out of every remaining row,
+        /// and labels every one of those rows as compressed so none of them can be read as a product gap.
+        /// </summary>
+        private static bool EvaluateScheduleCeilings()
+        {
+            if (!_compressed &&
+                _totalDeadline > 0.0 &&
+                EditorApplication.timeSinceStartup >= _totalDeadline)
+            {
+                _compressed = true;
+                _compressedAt = ElapsedSeconds;
+                _compressedInPhase = _phase;
+            }
+
+            if (_ticks >= MaxTotalTicks)
+            {
+                _intent = default;
+                CoreDeterminismSignals.ClearInputOverride();
+                _stopCause = StopCause.OwnTickCeiling;
+                _stoppedInPhase = _phase;
+                _stoppedAtElapsed = ElapsedSeconds;
+                CloseCurrentPhase(PhaseYield.TickCeiling);
+                FinaliseUnlatchedRows();
+                _stopped = true;
+                return false;
+            }
+
+            return true;
         }
 
         // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -583,16 +986,205 @@ namespace Hecton8.EditorTools.Diagnostics
         //  SCHEDULE
         // ─────────────────────────────────────────────────────────────────────────────────────────
 
-        private static void EnterPhase(DrivePhase phase)
+        /// <summary>
+        /// Closes the outgoing phase's ledger row and opens the next one with an ABSOLUTE deadline that
+        /// is clamped by what is left of <see cref="TotalBudgetSeconds"/>.
+        ///
+        /// The clamp is the per-phase ceiling this front is about. Before it, every phase compared
+        /// <c>PhaseElapsed</c> against its own constant, which means the schedule's start time was
+        /// re-based on every transition and an overrun was simply forgiven: ResourceDeplete overshot its
+        /// 6.0s by 132s, and ToolEquip, ResourcePickup and Craft were all still granted their full
+        /// budgets on top of a total that was already three times spent. Now a phase can be granted at
+        /// most its own budget AND at most what the schedule still has, so one stuck phase can no longer
+        /// spend another phase's window.
+        /// </summary>
+        private static void EnterPhase(DrivePhase phase, PhaseYield reasonForLeavingCurrent)
         {
+            CloseCurrentPhase(reasonForLeavingCurrent);
+
+            double now = EditorApplication.timeSinceStartup;
+            double remainingTotal = _totalDeadline - now;
+            if (remainingTotal < 0.0)
+                remainingTotal = 0.0;
+
+            double granted = BudgetFor(phase);
+            if (granted > remainingTotal)
+                granted = remainingTotal;
+
             _phase = phase;
-            _phaseStartedAt = EditorApplication.timeSinceStartup;
+            _phaseStartedAt = now;
+            _phaseGranted = granted;
+            _phaseDeadline = now + granted;
+            _phaseTicks = 0;
+        }
+
+        /// <summary>
+        /// Records what the outgoing phase actually cost and why it stopped being current. Accumulates
+        /// with <c>+=</c> rather than assigning: no phase in this schedule is entered twice today, and a
+        /// silent overwrite is not the failure mode to leave behind if one ever is.
+        /// </summary>
+        private static void CloseCurrentPhase(PhaseYield reason)
+        {
+            DrivePhase previous = _phase;
+            if (previous == DrivePhase.Idle || previous == DrivePhase.Done)
+                return;
+
+            int index = (int)previous;
+            if (index < 0 || index >= (int)DrivePhase.PhaseCount)
+                return;
+
+            _phaseWall[index] += EditorApplication.timeSinceStartup - _phaseStartedAt;
+            _phaseTickLedger[index] += _phaseTicks;
+            _phaseGrant[index] = _phaseGranted;
+            _phaseYield[index] = reason;
+
+            if (_phaseWall[index] > _worstPhaseWall)
+            {
+                _worstPhaseWall = _phaseWall[index];
+                _worstPhase = previous;
+            }
         }
 
         private static double PhaseElapsed => EditorApplication.timeSinceStartup - _phaseStartedAt;
 
+        /// <summary>
+        /// THE per-phase ceiling test. Every phase asks this instead of comparing <c>PhaseElapsed</c>
+        /// against its own constant, and the three clauses are in this order for a reason:
+        ///
+        ///   1. TICK FLOOR FIRST. A ceiling that can fire before a phase has had the ticks its handshake
+        ///      needs does not bound a stall, it converts a stall into four unmeasured rows. The floors
+        ///      are named per phase in <see cref="MinTicksFor"/>.
+        ///   2. COMPRESSION. Once the schedule's total is spent, a phase runs its floor and yields. It
+        ///      does NOT get its own budget on top of a total that no longer exists.
+        ///   3. ABSOLUTE WALL DEADLINE, already clamped by the total in <see cref="EnterPhase"/>.
+        ///
+        /// The wall clause is still only testable at tick boundaries, so a single 132-second pumped frame
+        /// can still overshoot it - nothing inside an editor tick can preempt the engine. What changed is
+        /// that the overshoot is now CONTAINED: it is charged to the total, the phases after it are
+        /// compressed instead of being handed fresh windows, and every affected row says so.
+        /// </summary>
+        private static bool PhaseCeilingReached()
+        {
+            if (_phaseTicks < MinTicksFor(_phase))
+                return false;
+
+            if (_compressed)
+                return true;
+
+            return EditorApplication.timeSinceStartup >= _phaseDeadline;
+        }
+
+        /// <summary>Nominal wall budget for a phase, before the total-remaining clamp.</summary>
+        private static double BudgetFor(DrivePhase phase)
+        {
+            switch (phase)
+            {
+                case DrivePhase.Settle:
+                    return SettleBudgetSeconds;
+                case DrivePhase.SwimSurface:
+                    return SwimSurfaceBudgetSeconds;
+                case DrivePhase.SwimDive:
+                    return SwimDiveBudgetSeconds;
+                case DrivePhase.ResourceTarget:
+                    return ResourceTargetBudgetSeconds;
+                case DrivePhase.ToolEquip:
+                    return ToolEquipBudgetSeconds;
+                case DrivePhase.ToolUse:
+                    return ToolUseBudgetSeconds;
+                case DrivePhase.ResourceDeplete:
+                    return ResourceDepleteBudgetSeconds;
+                case DrivePhase.ResourcePickup:
+                    return ResourcePickupBudgetSeconds;
+                case DrivePhase.Craft:
+                    return CraftBudgetSeconds;
+
+                // SwimVerdict latches and advances in the same tick, and Idle/Done/PhaseCount are not
+                // driven at all. TotalBudgetSeconds deliberately does not include SwimVerdict; the clamp
+                // in EnterPhase absorbs its one tick.
+                default:
+                    return 0.0;
+            }
+        }
+
+        /// <summary>
+        /// The number of driver ticks a phase cannot produce a verdict with fewer than. Each value is a
+        /// statement about a handshake, not a padding factor.
+        /// </summary>
+        private static int MinTicksFor(DrivePhase phase)
+        {
+            switch (phase)
+            {
+                // Readiness is re-tested every tick and the phase exits the instant the owners appear, so
+                // one tick is enough to ask the question; the wall ceiling does the waiting.
+                case DrivePhase.Settle:
+                    return MinTicksSettle;
+
+                // A hold phase needs two samples for a DELTA to exist. Given one tick the depth span is
+                // exactly 0.000m and the Swim row would report "the player never moved" when the truth is
+                // "the instrument looked once".
+                case DrivePhase.SwimSurface:
+                case DrivePhase.SwimDive:
+                    return MinTicksSwimHold;
+
+                case DrivePhase.SwimVerdict:
+                    return MinTicksSwimVerdict;
+
+                // FindFirstObjectByType for the populator, RegisterSpawnPoint, the populator's own
+                // ProcessSpawnQueue drain on its SlowTick, then TryAdoptNearbyWorldNode seeing the result.
+                case DrivePhase.ResourceTarget:
+                    return MinTicksResourceTarget;
+
+                // Tick 1 enumerates slots and publishes ToolSlotN on the PLIN lane. PlayerToolManager
+                // runs its swap state machine on its own lane, so CurrentTool/CurrentSlotIndex cannot be
+                // read back on the same tick - a 1-tick ToolEquip always reports a failed swap.
+                case DrivePhase.ToolEquip:
+                    return MinTicksToolEquip;
+
+                case DrivePhase.ToolUse:
+                    return MinTicksToolUse;
+
+                case DrivePhase.ResourceDeplete:
+                    return MinTicksResourceDeplete;
+
+                // Hover observed, then Interact published, then ItemAcquiredSignal observed. Three
+                // distinct ticks, and a wall-only ceiling in a slow-frame regime grants one.
+                case DrivePhase.ResourcePickup:
+                    return MinTicksResourcePickup;
+
+                // Find the Fabricator, sweep CanCraft over AvailableRecipes, StartCraft, then observe the
+                // ItemAcquiredSignal the row is actually judged on.
+                case DrivePhase.Craft:
+                    return MinTicksCraft;
+
+                default:
+                    return 0;
+            }
+        }
+
+        /// <summary>
+        /// The reason to record when a WORK phase yields on its ceiling: it had unfinished business
+        /// either way, and the only question is whether it spent its own budget or was compressed
+        /// because an earlier phase spent the schedule's.
+        /// </summary>
+        private static PhaseYield CeilingYield()
+        {
+            return _compressed ? PhaseYield.TotalCeiling : PhaseYield.WallCeiling;
+        }
+
+        /// <summary>
+        /// The reason to record when a TIMED HOLD phase yields. Reaching the wall ceiling is that
+        /// phase's designed completion, so it is not a failure - unless the schedule was compressed, in
+        /// which case the hold never happened for its intended duration and the row must say so.
+        /// </summary>
+        private static PhaseYield HoldYield()
+        {
+            return _compressed ? PhaseYield.TotalCeiling : PhaseYield.Completed;
+        }
+
         private static void AdvancePhase()
         {
+            _phaseTicks++;
+
             switch (_phase)
             {
                 case DrivePhase.Settle:
@@ -606,7 +1198,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     break;
                 case DrivePhase.SwimVerdict:
                     LatchSwimVerdict();
-                    EnterPhase(DrivePhase.ResourceTarget);
+                    EnterPhase(DrivePhase.ResourceTarget, PhaseYield.Completed);
                     break;
                 case DrivePhase.ResourceTarget:
                     TickResourceTarget();
@@ -676,20 +1268,20 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             bool ready = _survival != null && _movement != null && input != null;
-            if (!ready && PhaseElapsed < SettleBudgetSeconds)
+            if (!ready && !PhaseCeilingReached())
                 return;
 
             if (!ready)
             {
                 LatchSettleBlocked(input);
-                EnterPhase(DrivePhase.ResourceTarget);
+                EnterPhase(DrivePhase.ResourceTarget, CeilingYield());
                 return;
             }
 
             _oxygenAtStart = _survival.Oxygen;
             _pressureAtStart = _survival.Pressure;
             _swimBaselineTaken = true;
-            EnterPhase(DrivePhase.SwimSurface);
+            EnterPhase(DrivePhase.SwimSurface, PhaseYield.Completed);
         }
 
         /// <summary>
@@ -738,6 +1330,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append("GlobalRegistry.RegisteredPlayer), not input");
             }
 
+            AppendPhaseCeilingNote();
             Latch(RowSwim, RowVerdict.Blocked);
         }
 
@@ -751,8 +1344,8 @@ namespace Hecton8.EditorTools.Diagnostics
             _intent.ActionsBitmask = 0u;
             _intent.CurrentInputSchemeHash = 0u;
 
-            if (PhaseElapsed >= SwimSurfaceBudgetSeconds)
-                EnterPhase(DrivePhase.SwimDive);
+            if (PhaseCeilingReached())
+                EnterPhase(DrivePhase.SwimDive, HoldYield());
         }
 
         private static void TickSwimDive()
@@ -763,10 +1356,10 @@ namespace Hecton8.EditorTools.Diagnostics
             _intent.ActionsBitmask = (uint)PlayerInputAction.Sprint;
             _intent.CurrentInputSchemeHash = 0u;
 
-            if (PhaseElapsed >= SwimDiveBudgetSeconds)
+            if (PhaseCeilingReached())
             {
                 _intent = default;
-                EnterPhase(DrivePhase.SwimVerdict);
+                EnterPhase(DrivePhase.SwimVerdict, HoldYield());
             }
         }
 
@@ -870,12 +1463,20 @@ namespace Hecton8.EditorTools.Diagnostics
                 if (!vitalsMoved)
                     _detail.Append("no oxygen/pressure/depth change was published ");
                 _detail.Append("- row NOT accepted");
+
+                // The depth span is a function of how long the two hold phases actually held. If they
+                // were compressed to their tick floors, "depth never spanned 0.25m" is a statement about
+                // the schedule, not about the swimmer, and the row has to say which.
+                AppendClosedPhaseNote(DrivePhase.SwimSurface);
+                AppendClosedPhaseNote(DrivePhase.SwimDive);
                 Latch(RowSwim, RowVerdict.Partial);
                 return;
             }
 
             _detail.Append(" - FAIL: the input path was open but the driver's MoveDelta never reached ")
                 .Append("HectonPlayerMovement");
+            AppendClosedPhaseNote(DrivePhase.SwimSurface);
+            AppendClosedPhaseNote(DrivePhase.SwimDive);
             Latch(RowSwim, RowVerdict.Fail);
         }
 
@@ -892,21 +1493,26 @@ namespace Hecton8.EditorTools.Diagnostics
         {
             if (_node != null && !_node.IsDepleted)
             {
-                EnterPhase(DrivePhase.ToolEquip);
+                EnterPhase(DrivePhase.ToolEquip, PhaseYield.Completed);
                 return;
             }
 
             if (TryAdoptNearbyWorldNode())
             {
                 _nodeFromWorld = true;
-                EnterPhase(DrivePhase.ToolEquip);
+                EnterPhase(DrivePhase.ToolEquip, PhaseYield.Completed);
                 return;
             }
 
             if (!_spawnPointRegistered)
             {
                 TryRegisterDriverSpawnPoint();
-                return;
+
+                // The registration attempt is bounded by its own lookup counters, so falling through to
+                // the ceiling test costs nothing and stops a phase whose populator never appears from
+                // holding the schedule open until its wall budget runs out.
+                if (!PhaseCeilingReached())
+                    return;
             }
 
             // The populator drains its queue on ISlowTickable cadence. SlowTick() is public and is the
@@ -922,11 +1528,11 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (TryAdoptNearbyWorldNode())
             {
-                EnterPhase(DrivePhase.ToolEquip);
+                EnterPhase(DrivePhase.ToolEquip, PhaseYield.Completed);
                 return;
             }
 
-            if (PhaseElapsed < ResourceTargetBudgetSeconds)
+            if (!PhaseCeilingReached())
                 return;
 
             int registryCount = Hecton8.Scavenging.ResourceNode.WorldStateRegistryCount;
@@ -948,8 +1554,9 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append(" (a null SelectResourcePrefab means the scene's ScavengePopulator loot ")
                     .Append("tables are unauthored)");
 
+            AppendPhaseCeilingNote();
             Latch(RowResource, RowVerdict.Blocked);
-            EnterPhase(DrivePhase.ToolEquip);
+            EnterPhase(DrivePhase.ToolEquip, CeilingYield());
         }
 
         /// <summary>
@@ -1050,14 +1657,15 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (manager == null)
             {
-                if (PhaseElapsed < ToolEquipBudgetSeconds)
+                if (!PhaseCeilingReached())
                     return;
 
                 _detail.Clear();
                 _detail.Append("no PlayerToolManager published on the player runtime context, so no tool ")
                     .Append("slot can be selected");
+                AppendPhaseCeilingNote();
                 Latch(RowTool, RowVerdict.Blocked);
-                EnterPhase(DrivePhase.ResourceDeplete);
+                EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
                 return;
             }
 
@@ -1078,21 +1686,45 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 if (chosen < 0)
                 {
-                    if (PhaseElapsed < ToolEquipBudgetSeconds)
+                    if (!PhaseCeilingReached())
                         return;
 
                     _detail.Clear();
                     _detail.Append("PlayerToolManager reports slotCount=").Append(slotCount)
                         .Append(" but IsToolAvailableInSlot is false for every slot, so no tool exists ")
                         .Append("to select on this route");
+                    AppendPhaseCeilingNote();
                     Latch(RowTool, RowVerdict.Blocked);
-                    EnterPhase(DrivePhase.ResourceDeplete);
+                    EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
                     return;
                 }
 
                 _requestedToolSlot = chosen;
                 _toolSlotSignalPublished =
                     PublishDiscreteCommand((byte)(PlayerInputSignalCommands.ToolSlot1 + chosen));
+
+                if (_toolSlotSignalPublished)
+                    return;
+
+                // A DROPPED push is the one path in this phase that could loop forever: the flag stays
+                // false, the next tick re-enumerates the slots, chooses the same slot, and tries again
+                // with no ceiling test between attempts. SignalBus.TryPushTracked returns false when the
+                // lane is full, which is a lane-capacity fact and not something more retries will fix.
+                if (!PhaseCeilingReached())
+                    return;
+
+                _detail.Clear();
+                _detail.Append("SignalBus<PlayerInputSignal> refused the ToolSlot")
+                    .Append(chosen + 1)
+                    .Append(" push on every attempt: pushed=").Append(_publishedDiscreteSignals)
+                    .Append(" dropped=").Append(_droppedDiscreteSignals)
+                    .Append(" availableSlots=").Append(_availableToolSlots)
+                    .Append(" - the discrete lane is full or closed, so no consumer ever saw the command. ")
+                    .Append("This is a lane-capacity fault in the harness's producer path, not a tool ")
+                    .Append("defect");
+                AppendPhaseCeilingNote();
+                Latch(RowTool, RowVerdict.NotExercised);
+                EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
                 return;
             }
 
@@ -1104,11 +1736,11 @@ namespace Hecton8.EditorTools.Diagnostics
                 _durabilityAtToolUse = current.CurrentDurability;
                 _durabilityReadable = true;
                 _nodeHealthAtToolUse = _node != null ? _node.CurrentHealth : 0f;
-                EnterPhase(DrivePhase.ToolUse);
+                EnterPhase(DrivePhase.ToolUse, PhaseYield.Completed);
                 return;
             }
 
-            if (PhaseElapsed < ToolEquipBudgetSeconds)
+            if (!PhaseCeilingReached())
                 return;
 
             _detail.Clear();
@@ -1119,8 +1751,13 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append(") but CurrentTool stayed null and CurrentSlotIndex=")
                 .Append(manager.CurrentSlotIndex).Append(" after ").Append(F((float)PhaseElapsed))
                 .Append("s - the discrete lane was accepted and the swap never completed");
+
+            // A Fail here is only honest if the swap was given the ticks it needs. PlayerToolManager runs
+            // the swap on its own lane, so the readback cannot land on the publishing tick; the note says
+            // how many ticks this phase actually got.
+            AppendPhaseCeilingNote();
             Latch(RowTool, RowVerdict.Fail);
-            EnterPhase(DrivePhase.ResourceDeplete);
+            EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
         }
 
         /// <summary>
@@ -1140,8 +1777,15 @@ namespace Hecton8.EditorTools.Diagnostics
             _intent.ActionsBitmask = (uint)PlayerInputAction.PrimaryFire;
             _intent.CurrentInputSchemeHash = 0u;
 
-            if (PhaseElapsed < ToolUseBudgetSeconds)
+            if (!PhaseCeilingReached())
                 return;
+
+            // Captured before the detail is composed and before EnterPhase re-bases _phaseStartedAt.
+            // This is the MEASURED hold duration; the line below used to print the ToolUseBudgetSeconds
+            // constant in its place and call it "held PrimaryFire for 5.000s". On the measured run one
+            // pumped frame cost 132 seconds, so that claim could be wrong by a factor of 25 and it was
+            // formatted exactly like a measurement.
+            double heldSeconds = PhaseElapsed;
 
             _intent = default;
 
@@ -1161,7 +1805,8 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append(" via the PLIN ToolSlot").Append(_requestedToolSlot + 1)
                 .Append(" signal (tool=").Append(current != null ? current.GetType().Name : "null")
                 .Append("), then held PrimaryFire on the input snapshot for ")
-                .Append(F(ToolUseBudgetSeconds)).Append("s: nodeHealth ")
+                .Append(F(heldSeconds)).Append("s over ").Append(_phaseTicks)
+                .Append(" driver ticks: nodeHealth ")
                 .Append(F(_nodeHealthAtToolUse)).Append("->").Append(F(_nodeHealthAfterToolUse))
                 .Append(" durability ").Append(F(_durabilityAtToolUse)).Append("->")
                 .Append(F(_durabilityAfterToolUse))
@@ -1181,15 +1826,34 @@ namespace Hecton8.EditorTools.Diagnostics
                 else if (_node == null)
                     _detail.Append("; there was no resource node in front of the player for the tool to act on");
                 _detail.Append(" - row NOT accepted");
+                AppendPhaseCeilingNote();
                 Latch(RowTool, RowVerdict.Partial);
             }
 
-            EnterPhase(DrivePhase.ResourceDeplete);
+            EnterPhase(DrivePhase.ResourceDeplete, HoldYield());
         }
 
         /// <summary>
-        /// Finishes the node off through ResourceNode.ApplyCutDamage (:517) — the same public entry point
-        /// the cutting path uses — so the node runs its own TrySpawnLoot and produces a real PickupItem.
+        /// Finishes the node off through ResourceNode.ApplyInteractionSignal (ResourceNode.cs:535) — the
+        /// method the shipping dispatcher actually calls for THIS target type — so the node runs its own
+        /// TrySpawnLoot and produces a real PickupItem.
+        ///
+        /// IT USED TO CALL ApplyCutDamage, AND THAT WAS THE BUG. ResourceNode implements both ICuttable and
+        /// IInteractionSignalConsumer (ResourceNode.cs:22). EquipmentInteractionHandler.DispatchCutDamage
+        /// resolves the consumer FIRST (EquipmentInteractionHandler.cs:929-933) and only falls back to
+        /// ICuttable.ApplyCutDamage (:935-936) for targets that do not implement it — a fallback the shipping
+        /// code therefore never takes for a resource node. The driver was exercising the one path the product
+        /// does not use, and that path hardcodes ToolCapabilityMasks.Cut (ResourceNode.cs:519).
+        ///
+        /// Cut is unreachable content, not a near miss: NOT ONE of the 27 authored ResourceNodeTemplate
+        /// assets under Assets/_Project/Data/Scavenging/ResourceNodes sets requiredToolClass=Knife (7 are Any,
+        /// 6 Drill, 12 Laser, 2 Salvage), so ApplyCutDamage can never damage an authored node. The measured
+        /// row — vulnerabilityMask=0x00000020, bit 5, ToolCapabilityMasks.Laser — was the template being
+        /// correct and the driver asking with the wrong verb.
+        ///
+        /// The verb is now READ from the node every tick and never hardcoded, so a template retuned from
+        /// Laser to Drill needs no change here.
+        ///
         /// Deliberately AFTER the tool phase: the tool gets first claim on the damage, and this leg never
         /// contributes to the Tool row's verdict.
         /// </summary>
@@ -1201,39 +1865,358 @@ namespace Hecton8.EditorTools.Diagnostics
                 // A node that depleted and then went away is the SUCCESS path, not a missing node: the
                 // loot prefab outlives it. Skipping straight to Craft here would discard a pickup that is
                 // sitting in the world waiting to be interacted with.
-                EnterPhase(_nodeDepleted ? DrivePhase.ResourcePickup : DrivePhase.Craft);
+                EnterPhase(
+                    _nodeDepleted ? DrivePhase.ResourcePickup : DrivePhase.Craft,
+                    PhaseYield.Completed);
                 return;
             }
 
             if (node.IsDepleted)
             {
                 _nodeDepleted = true;
-                EnterPhase(DrivePhase.ResourcePickup);
+                EnterPhase(DrivePhase.ResourcePickup, PhaseYield.Completed);
                 return;
             }
 
-            node.ApplyCutDamage(NodeCutDamagePerTick, node.transform.position);
+            ApplyNodeDamagePulses(node);
 
-            if (PhaseElapsed < ResourceDepleteBudgetSeconds)
+            if (!PhaseCeilingReached())
                 return;
 
             if (_latched[RowResource])
             {
-                EnterPhase(DrivePhase.Craft);
+                EnterPhase(DrivePhase.Craft, CeilingYield());
                 return;
             }
 
             _detail.Clear();
+            AppendResourceDepleteDetail(node);
+
+            // THE row this front exists for. On the measured run this phase reported 138.192s against a
+            // 6.0s budget, and the reason is not that the test was missing: it is that the test is only
+            // reachable at tick boundaries and ONE pumped frame in this phase cost about 132 seconds
+            // (123 of the run's 124 frames cost ~0.23s each). The ticks count above is what makes that
+            // legible - "138.192s" alone reads like 600 damage applications and it was a handful.
+            AppendPhaseCeilingNote();
+            Latch(RowResource, RowVerdict.Blocked);
+            EnterPhase(DrivePhase.Craft, CeilingYield());
+        }
+
+        /// <summary>
+        /// Applies identical tool pulses to the adopted node through a capability the node actually accepts.
+        ///
+        /// The mask is re-read from the node EVERY tick, not snapshotted: ResourceNode.VulnerabilityMask
+        /// (ResourceNode.cs:220) recomputes from the applied template, and ScavengePopulator can restamp a
+        /// template after the spawn (ScavengePopulator.cs:869). The effect type is then resolved through the
+        /// owner's own effect-type-to-capability table (EquipmentInteractionContracts.cs:96), so this driver
+        /// holds no second copy of the capability contract and cannot disagree with it.
+        /// </summary>
+        private static void ApplyNodeDamagePulses(Hecton8.Scavenging.ResourceNode node)
+        {
+            uint vulnerabilityMask = node.VulnerabilityMask;
+            if (!_nodeDamageEffectResolved || vulnerabilityMask != _nodeVulnerabilityMask)
+            {
+                if (_nodeDamagePulses == 0)
+                    _nodeHealthAtDepleteStart = node.CurrentHealth;
+
+                _nodeDamageEffectResolved = true;
+                _nodeVulnerabilityMask = vulnerabilityMask;
+                _nodeDamageEffectAccepted = TryResolveNodeDamageEffect(
+                    vulnerabilityMask,
+                    out _nodeDamageEffect,
+                    out _nodeDamageCapabilityMask);
+            }
+
+            if (!_nodeDamageEffectAccepted)
+                return;
+
+            Vector3 hitPoint = node.transform.position;
+            for (int pulse = 0; pulse < MaxNodeDamagePulsesPerTick; pulse++)
+            {
+                float healthBeforePulse = node.CurrentHealth;
+                Hecton8.Interaction.InteractionSignal signal = BuildNodeDamageSignal(hitPoint);
+                node.ApplyInteractionSignal(in signal, hitPoint);
+                _nodeDamagePulses++;
+
+                if (node.IsDepleted)
+                {
+                    _nodeDamagePulsesLanded++;
+                    _nodeDepleted = true;
+                    return;
+                }
+
+                // A pulse that changed nothing is one of three real mechanics: the capability gate refused it
+                // (ResourceNode.cs:541), the template's steam-explosion route consumed it
+                // (ResourceNode.cs:548-552), or depletion was reached and rolled back because TrySpawnLoot
+                // failed (ResourceNode.cs:1199-1203). Spinning the remaining pulses against any of them would
+                // burn the tick and teach the row nothing, so the batch stops and the detail names which.
+                if (node.CurrentHealth >= healthBeforePulse)
+                    return;
+
+                _nodeDamagePulsesLanded++;
+            }
+        }
+
+        /// <summary>
+        /// Picks the first effect type whose resolved capability mask intersects the node's vulnerability
+        /// mask.
+        ///
+        /// The order is a taste decision, not an implementation detail. PlasmaCut first because the
+        /// LaserCutter publishes exactly that effect type (LaserCutter.cs:1718) with capability
+        /// PlasmaCut = Cut|Burn|Laser (LaserCutter.cs:2531), and Tool_LaserCutter_Held is authored into
+        /// starter slot 3 of Player.prefab — so for a node that accepts more than one verb the driver uses
+        /// the one the player actually carries at minute zero. Drill second: it is the only verb that reaches
+        /// the metal-vein class, and SeafloorDrillTool publishes it (SeafloorDrillTool.cs:222). The rest are
+        /// scanned last so an authored mask nobody anticipated still resolves instead of blocking the row.
+        ///
+        /// Returning false is a real finding, not a fallback to force: no effect type resolves to
+        /// ToolCapabilityMasks.Salvage anywhere in ResolveCapabilityMask, so the 2 Salvage-class templates
+        /// have no interaction verb at all. The driver reports that instead of reaching for
+        /// ResourceNode.TakeDamage(float) (ResourceNode.cs:568), which has NO capability gate and would turn
+        /// a genuine content gap into a green row.
+        /// </summary>
+        private static bool TryResolveNodeDamageEffect(
+            uint vulnerabilityMask,
+            out Hecton8.Interaction.InteractionEffectType effectType,
+            out uint capabilityMask)
+        {
+            for (int i = 0; i < NodeDamageEffectPreferenceCount; i++)
+            {
+                Hecton8.Interaction.InteractionEffectType candidate = NodeDamageEffectAtPreference(i);
+                uint candidateMask = Hecton8.Interaction.ToolCapabilityMasks.ResolveCapabilityMask(candidate);
+                if (candidateMask == 0u || (vulnerabilityMask & candidateMask) == 0u)
+                    continue;
+
+                effectType = candidate;
+                capabilityMask = candidateMask;
+                return true;
+            }
+
+            effectType = Hecton8.Interaction.InteractionEffectType.PlasmaCut;
+            capabilityMask = 0u;
+            return false;
+        }
+
+        /// <summary>
+        /// Preference order as a switch rather than a static array: an array field would be a cold managed
+        /// allocation for six enum values, and a switch cannot silently disagree with
+        /// <see cref="NodeDamageEffectPreferenceCount"/> without the default arm showing up in the report.
+        /// </summary>
+        private static Hecton8.Interaction.InteractionEffectType NodeDamageEffectAtPreference(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return Hecton8.Interaction.InteractionEffectType.PlasmaCut;
+                case 1:
+                    return Hecton8.Interaction.InteractionEffectType.Drill;
+                case 2:
+                    return Hecton8.Interaction.InteractionEffectType.Torch;
+                case 3:
+                    return Hecton8.Interaction.InteractionEffectType.Weld;
+                case 4:
+                    return Hecton8.Interaction.InteractionEffectType.Boil;
+                default:
+                    return Hecton8.Interaction.InteractionEffectType.Harpoon;
+            }
+        }
+
+        /// <summary>
+        /// Builds one tool pulse shaped exactly like the LaserCutter's (LaserCutter.cs:1703-1719): a packet
+        /// carrying tool id, pose, power, range, mode and state flags, wrapped in a signal carrying the
+        /// delivered power, the hit normal and the effect type.
+        ///
+        /// Power and PowerDelivered are both NodeDamagePerPulse so ResourceNode.TakeDamage receives
+        /// amount == toolPower (ResourceNode.cs:555-557) — numerically identical to what ApplyCutDamage passed
+        /// (ResourceNode.cs:523-530). Damage, incremental yield and debris therefore do not drift by one gram
+        /// against the leg this replaces, and for the common PlasmaCut case the loot-oracle tool mask is also
+        /// unchanged: ResolveLootOracleToolMask maps PlasmaCut to ToolMaskCutter (ResourceNode.cs:966-969),
+        /// which is the exact value ApplyCutDamage set (ResourceNode.cs:522).
+        ///
+        /// TargetInstanceID stays 0. It is the queue's collider-identity field, and this signal is handed
+        /// straight to the consumer instead of published, so nothing resolves it: ResourceNode's consumer
+        /// (ResourceNode.cs:535-566) reads PowerDelivered, EffectType, Source.Power and HitNormal only. A
+        /// fabricated id would be a value no receiver checks. HitPoint is unread on this route for the same
+        /// reason — the absolute-universe convention belongs to the publish path
+        /// (EquipmentInteractionHandler.cs:842) — so it carries the runtime point it was taken from rather
+        /// than a fake AUP triple.
+        /// </summary>
+        private static Hecton8.Interaction.InteractionSignal BuildNodeDamageSignal(Vector3 hitPoint)
+        {
+            Vector3 origin = hitPoint + Vector3.up * NodeDamageRangeMeters;
+            Hecton8.Interaction.InteractionPacket packet = new Hecton8.Interaction.InteractionPacket(
+                NodeDamageToolId,
+                new Unity.Mathematics.float3(origin.x, origin.y, origin.z),
+                new Unity.Mathematics.float3(0f, -1f, 0f),
+                NodeDamagePerPulse,
+                NodeDamageRangeMeters,
+                (byte)Hecton8.Interaction.ToolActionMode.Primary,
+                (byte)Hecton8.Interaction.ToolStateBits.Active,
+                SystemDispatcher.CurrentFrameId);
+
+            return new Hecton8.Interaction.InteractionSignal(
+                packet,
+                0,
+                new Unity.Mathematics.float3(hitPoint.x, hitPoint.y, hitPoint.z),
+                new Unity.Mathematics.float3(0f, 1f, 0f),
+                NodeDamagePerPulse,
+                (byte)_nodeDamageEffect,
+                0);
+        }
+
+        /// <summary>
+        /// Reports the leg in terms a reader can act on: which capability the node accepts BY NAME, which
+        /// verb the driver chose, how many pulses were attempted, how many landed, and which of the four
+        /// distinguishable outcomes occurred.
+        ///
+        /// The message this replaces asserted "the template does not accept the Cut capability" from a
+        /// hardcoded assumption. It happened to be true, and it still told the reader to go and decode bit 5
+        /// by hand. Every clause below is measured.
+        /// </summary>
+        private static void AppendResourceDepleteDetail(Hecton8.Scavenging.ResourceNode node)
+        {
             _detail.Append("node '").Append(node.UniqueId)
-                .Append("' would not deplete: health=").Append(F(node.CurrentHealth))
+                .Append("' would not deplete: health=").Append(F(_nodeHealthAtDepleteStart))
+                .Append("->").Append(F(node.CurrentHealth))
                 .Append(" normalized=").Append(F(node.HealthNormalized))
                 .Append(" vulnerabilityMask=0x")
-                .Append(node.VulnerabilityMask.ToString("X8", CultureInfo.InvariantCulture))
+                .Append(_nodeVulnerabilityMask.ToString("X8", CultureInfo.InvariantCulture))
+                .Append('[');
+            AppendCapabilityNames(_nodeVulnerabilityMask);
+            _detail.Append("] requiredToolClass=").Append(ResolveHarvestToolClassName(node))
                 .Append(" after ").Append(F((float)PhaseElapsed))
-                .Append("s of ApplyCutDamage - the template does not accept the Cut capability, so no ")
-                .Append("PickupItem was ever produced");
-            Latch(RowResource, RowVerdict.Blocked);
-            EnterPhase(DrivePhase.Craft);
+                .Append("s / ").Append(_phaseTicks).Append(" driver ticks - ");
+
+            if (!_nodeDamageEffectAccepted)
+            {
+                _detail.Append("NO InteractionEffectType resolves to that capability, so no verb in ")
+                    .Append("ToolCapabilityMasks.ResolveCapabilityMask can damage this node at all. That is a ")
+                    .Append("gap in the tool capability table, not a driver setting, and no PickupItem was ")
+                    .Append("ever produced");
+                return;
+            }
+
+            _detail.Append("driverEffect=").Append(ResolveEffectTypeName(_nodeDamageEffect))
+                .Append(" capability=0x")
+                .Append(_nodeDamageCapabilityMask.ToString("X8", CultureInfo.InvariantCulture))
+                .Append('[');
+            AppendCapabilityNames(_nodeDamageCapabilityMask);
+            _detail.Append("] pulses=").Append(_nodeDamagePulses)
+                .Append(" landed=").Append(_nodeDamagePulsesLanded).Append(' ');
+
+            if (_nodeDamagePulsesLanded == 0)
+            {
+                if (NodeTemplateTriggersSteamExplosion(node))
+                    _detail.Append("- the capability WAS accepted and every pulse was absorbed by the ")
+                        .Append("template's steam-explosion route (ResourceNode.cs:548-552): ")
+                        .Append("triggersSteamExplosionWithoutThermalShield is set and no ThermalShield ")
+                        .Append("upgrade is present, so damage is refused by design. This node needs a ")
+                        .Append("thermal-shielded tool, not a driver change");
+                else
+                    _detail.Append("- the masks intersect but not one pulse reduced integrity, so the refusal ")
+                        .Append("is downstream of CanApplyToolCapability (ResourceNode.cs:595)");
+
+                _detail.Append(", so no PickupItem was ever produced");
+                return;
+            }
+
+            if (_nodeDamagePulses > _nodeDamagePulsesLanded)
+                _detail.Append("- damage landed and then a pulse stopped changing integrity, which is the ")
+                    .Append("failed-TrySpawnLoot rollback in ResourceNode.TakeDamage (:1199-1203): depletion ")
+                    .Append("WAS reached and refused because the loot could not be queued");
+            else
+                _detail.Append("- damage landed on every pulse and the leg ran out of ticks before integrity ")
+                    .Append("reached zero");
+
+            _detail.Append(", so no PickupItem was ever produced");
+        }
+
+        /// <summary>
+        /// Writes the set capability bits by name so a reader never has to decode a hex mask by hand. This is
+        /// the whole reason the front existed: "vulnerabilityMask=0x00000020" cost a full investigation to
+        /// mean "Laser".
+        /// </summary>
+        private static void AppendCapabilityNames(uint mask)
+        {
+            int written = 0;
+            written = AppendCapabilityName(mask, Hecton8.Interaction.ToolCapabilityMasks.Cut, "Cut", written);
+            written = AppendCapabilityName(mask, Hecton8.Interaction.ToolCapabilityMasks.Drill, "Drill", written);
+            written = AppendCapabilityName(mask, Hecton8.Interaction.ToolCapabilityMasks.Grab, "Grab", written);
+            written = AppendCapabilityName(mask, Hecton8.Interaction.ToolCapabilityMasks.Stun, "Stun", written);
+            written = AppendCapabilityName(mask, Hecton8.Interaction.ToolCapabilityMasks.Burn, "Burn", written);
+            written = AppendCapabilityName(mask, Hecton8.Interaction.ToolCapabilityMasks.Laser, "Laser", written);
+            written = AppendCapabilityName(mask, Hecton8.Interaction.ToolCapabilityMasks.Bash, "Bash", written);
+            written = AppendCapabilityName(mask, Hecton8.Interaction.ToolCapabilityMasks.Salvage, "Salvage", written);
+            if (written == 0)
+                _detail.Append("none");
+        }
+
+        private static int AppendCapabilityName(uint mask, uint bit, string name, int written)
+        {
+            if ((mask & bit) == 0u)
+                return written;
+
+            if (written > 0)
+                _detail.Append('|');
+
+            _detail.Append(name);
+            return written + 1;
+        }
+
+        /// <summary>
+        /// Switch, not Enum.ToString: the hot-path law bans Enum.ToString outright and a latch path that
+        /// allocates once per run is still a habit worth not forming. A null template is reported explicitly
+        /// because ResolveRequiredToolCapabilityMask returns uint.MaxValue for it (ResourceNode.cs:603-608) —
+        /// an all-bits mask is "accepts everything", not "accepts nothing", and the two read alike in hex.
+        /// </summary>
+        private static string ResolveHarvestToolClassName(Hecton8.Scavenging.ResourceNode node)
+        {
+            Hecton8.Scavenging.ResourceNodeTemplate template = node.ResourceTemplate;
+            if (template == null)
+                return "<none: no template applied, so the mask defaults to uint.MaxValue>";
+
+            switch (template.RequiredToolClass)
+            {
+                case Hecton8.Scavenging.ResourceNodeTemplate.HarvestToolClass.Any:
+                    return "Any";
+                case Hecton8.Scavenging.ResourceNodeTemplate.HarvestToolClass.Knife:
+                    return "Knife";
+                case Hecton8.Scavenging.ResourceNodeTemplate.HarvestToolClass.Drill:
+                    return "Drill";
+                case Hecton8.Scavenging.ResourceNodeTemplate.HarvestToolClass.Laser:
+                    return "Laser";
+                case Hecton8.Scavenging.ResourceNodeTemplate.HarvestToolClass.Salvage:
+                    return "Salvage";
+                default:
+                    return "<unmapped>";
+            }
+        }
+
+        private static string ResolveEffectTypeName(Hecton8.Interaction.InteractionEffectType effectType)
+        {
+            switch (effectType)
+            {
+                case Hecton8.Interaction.InteractionEffectType.Drill:
+                    return "Drill";
+                case Hecton8.Interaction.InteractionEffectType.Harpoon:
+                    return "Harpoon";
+                case Hecton8.Interaction.InteractionEffectType.Weld:
+                    return "Weld";
+                case Hecton8.Interaction.InteractionEffectType.PlasmaCut:
+                    return "PlasmaCut";
+                case Hecton8.Interaction.InteractionEffectType.Torch:
+                    return "Torch";
+                case Hecton8.Interaction.InteractionEffectType.Boil:
+                    return "Boil";
+                default:
+                    return "<unmapped>";
+            }
+        }
+
+        private static bool NodeTemplateTriggersSteamExplosion(Hecton8.Scavenging.ResourceNode node)
+        {
+            Hecton8.Scavenging.ResourceNodeTemplate template = node.ResourceTemplate;
+            return template != null && template.TriggersSteamExplosionWithoutThermalShield;
         }
 
         /// <summary>
@@ -1263,7 +2246,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     Latch(RowResource, RowVerdict.Pass);
                 }
 
-                EnterPhase(DrivePhase.Craft);
+                EnterPhase(DrivePhase.Craft, PhaseYield.Completed);
                 return;
             }
 
@@ -1272,7 +2255,7 @@ namespace Hecton8.EditorTools.Diagnostics
             if (_sawPickupHover && !_interactPublished)
                 _interactPublished = PublishDiscreteCommand(PlayerInputSignalCommands.Interact);
 
-            if (PhaseElapsed < ResourcePickupBudgetSeconds)
+            if (!PhaseCeilingReached())
                 return;
 
             if (!_latched[RowResource])
@@ -1282,32 +2265,40 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append(", PickupItem hovered=").Append(_sawPickupHover)
                     .Append(", Interact command published=").Append(_interactPublished)
                     .Append(", ItemAcquiredSignal(ManualPickup) observed=false after ")
-                    .Append(F((float)PhaseElapsed)).Append("s");
+                    .Append(F((float)PhaseElapsed)).Append("s / ").Append(_phaseTicks)
+                    .Append(" driver ticks");
 
+                // The verdict is chosen first and latched last, so the ceiling note lands inside the
+                // detail Latch stores. Appending after Latch and re-assigning _details would work and
+                // would also be the one place in this file that writes a latched row behind Latch's back.
+                RowVerdict verdict;
                 if (_interaction == null)
                 {
                     _detail.Append(" - INSTRUMENT LIMIT: no PlayerInteraction component was found in ")
                         .Append(MaxInteractionLookupAttempts)
                         .Append(" scene searches, so hover could not be observed at all. This row's ")
                         .Append("verdict is unknown, not negative");
-                    Latch(RowResource, RowVerdict.NotExercised);
+                    verdict = RowVerdict.NotExercised;
                 }
                 else if (!_sawPickupHover)
                 {
                     _detail.Append(" - PlayerInteraction never hovered a PickupItem, so either depletion ")
                         .Append("produced no loot prefab or the drop is outside reach / off the ")
                         .Append("interactable layer mask. The world object did NOT reach inventory");
-                    Latch(RowResource, RowVerdict.Partial);
+                    verdict = RowVerdict.Partial;
                 }
                 else
                 {
                     _detail.Append(" - the pickup was hovered and the real Interact command was consumed, ")
                         .Append("but no acquisition was published");
-                    Latch(RowResource, RowVerdict.Fail);
+                    verdict = RowVerdict.Fail;
                 }
+
+                AppendPhaseCeilingNote();
+                Latch(RowResource, verdict);
             }
 
-            EnterPhase(DrivePhase.Craft);
+            EnterPhase(DrivePhase.Craft, CeilingYield());
         }
 
         /// <summary>
@@ -1332,7 +2323,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     Latch(RowCraft, RowVerdict.Pass);
                 }
 
-                EnterPhase(DrivePhase.Done);
+                EnterPhase(DrivePhase.Done, PhaseYield.Completed);
                 return;
             }
 
@@ -1346,7 +2337,7 @@ namespace Hecton8.EditorTools.Diagnostics
             Hecton8.Crafting.Fabricator fabricator = _fabricator;
             if (fabricator == null)
             {
-                if (PhaseElapsed < CraftBudgetSeconds &&
+                if (!PhaseCeilingReached() &&
                     _fabricatorLookupAttempts < MaxFabricatorLookupAttempts)
                 {
                     return;
@@ -1355,8 +2346,9 @@ namespace Hecton8.EditorTools.Diagnostics
                 _detail.Clear();
                 _detail.Append("no live Fabricator component found in ").Append(_fabricatorLookupAttempts)
                     .Append(" scene searches, so no recipe can be started");
+                AppendPhaseCeilingNote();
                 Latch(RowCraft, RowVerdict.Blocked);
-                EnterPhase(DrivePhase.Done);
+                EnterPhase(DrivePhase.Done, CeilingYield());
                 return;
             }
 
@@ -1365,10 +2357,15 @@ namespace Hecton8.EditorTools.Diagnostics
                 // CanCraft walks every ingredient of every recipe against inventory. Re-asking 60 times a
                 // second for 14 seconds is a real cost for an answer that only changes when fabricator
                 // power or inventory changes, so the sweep runs on a throttle.
+                //
+                // The throttle is deliberately bypassed once the ceiling is reached, so the final verdict
+                // is composed from a fresh sweep instead of one that could be half a second stale. In a
+                // compressed schedule the phase has only its tick floor, and skipping the sweep on those
+                // ticks would report craftableRecipes=0 without ever having asked.
                 double now = EditorApplication.timeSinceStartup;
                 if (_craftEvaluatedAt > 0.0 &&
                     now - _craftEvaluatedAt < CraftEvaluationIntervalSeconds &&
-                    PhaseElapsed < CraftBudgetSeconds)
+                    !PhaseCeilingReached())
                 {
                     return;
                 }
@@ -1394,7 +2391,7 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 if (chosen == null)
                 {
-                    if (PhaseElapsed < CraftBudgetSeconds)
+                    if (!PhaseCeilingReached())
                         return;
 
                     _detail.Clear();
@@ -1404,8 +2401,9 @@ namespace Hecton8.EditorTools.Diagnostics
                         .Append(" but CanCraft is false for all of them; the Resource leg delivered ")
                         .Append(_sawManualPickupAcquire ? "1 acquisition" : "nothing")
                         .Append(", so no recipe/repair can consume a resource on this route");
+                    AppendPhaseCeilingNote();
                     Latch(RowCraft, RowVerdict.Blocked);
-                    EnterPhase(DrivePhase.Done);
+                    EnterPhase(DrivePhase.Done, CeilingYield());
                     return;
                 }
 
@@ -1420,14 +2418,14 @@ namespace Hecton8.EditorTools.Diagnostics
                         .Append(" of visible=").Append(_visibleRecipeCount)
                         .Append("; the two gates disagree");
                     Latch(RowCraft, RowVerdict.Fail);
-                    EnterPhase(DrivePhase.Done);
+                    EnterPhase(DrivePhase.Done, PhaseYield.Completed);
                     return;
                 }
 
                 return;
             }
 
-            if (PhaseElapsed < CraftBudgetSeconds)
+            if (!PhaseCeilingReached())
                 return;
 
             _detail.Clear();
@@ -1435,10 +2433,15 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append(", craftProgressPeak=").Append(F(_craftProgressPeak))
                 .Append(") but no ItemAcquiredSignal sourceKind=")
                 .Append(ItemAcquiredSignalSourceKinds.Fabricator)
-                .Append(" arrived within ").Append(F(CraftBudgetSeconds))
-                .Append("s - the craft was consumed but never delivered, row NOT accepted");
+                // MEASURED, not the CraftBudgetSeconds constant this used to print. The constant is 14.0
+                // and the phase's real window is min(14.0, whatever the schedule has left), so the old
+                // text asserted a 14-second wait on a phase that could have been granted 0.
+                .Append(" arrived within ").Append(F((float)PhaseElapsed))
+                .Append("s / ").Append(_phaseTicks)
+                .Append(" driver ticks - the craft was consumed but never delivered, row NOT accepted");
+            AppendPhaseCeilingNote();
             Latch(RowCraft, RowVerdict.Partial);
-            EnterPhase(DrivePhase.Done);
+            EnterPhase(DrivePhase.Done, CeilingYield());
         }
 
         // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -1490,6 +2493,98 @@ namespace Hecton8.EditorTools.Diagnostics
             return true;
         }
 
+        /// <summary>
+        /// Appends the ceiling clause for the phase that is CURRENTLY in flight. Every phase that yields
+        /// on a ceiling calls this before it latches, because "no interactable resource node exists" and
+        /// "this phase was given 1 tick" are different claims about the product and the old text printed
+        /// the first one for both cases.
+        ///
+        /// Answers three questions a reader of a red row actually has: how long and how many ticks the
+        /// phase got, how much it was granted, and whether it was compressed by an earlier phase's
+        /// overrun. The last one is the starved-versus-empty distinction.
+        /// </summary>
+        private static void AppendPhaseCeilingNote()
+        {
+            double wall = PhaseElapsed;
+
+            _detail.Append(" [SCHEDULE phase=").Append(_phase.ToString())
+                .Append(" wall=").Append(F(wall))
+                .Append("s ticks=").Append(_phaseTicks)
+                .Append(" tickFloor=").Append(MinTicksFor(_phase))
+                .Append(" granted=").Append(F(_phaseGranted))
+                .Append("s of a ").Append(F(BudgetFor(_phase)))
+                .Append("s nominal budget; run elapsed ").Append(F(ElapsedSeconds))
+                .Append("s of ").Append(F(TotalBudgetSeconds)).Append("s");
+
+            if (_compressed)
+            {
+                // The heaviest-phase fields are only written by CloseCurrentPhase, which has not run yet
+                // for the phase composing this note - so the in-flight phase has to be folded in here or a
+                // phase that just spent 138s would name the previous record holder as the culprit and send
+                // the reader to the wrong place. That is the exact class of mistake this note exists to
+                // stop making.
+                DrivePhase heaviest = wall > _worstPhaseWall ? _phase : _worstPhase;
+                double heaviestWall = wall > _worstPhaseWall ? wall : _worstPhaseWall;
+
+                _detail.Append(" - COMPRESSED: the schedule's total was already spent at ")
+                    .Append(F(_compressedAt)).Append("s, in phase ")
+                    .Append(_compressedInPhase.ToString())
+                    .Append(", so this phase ran its tick floor and yielded instead of getting its own ")
+                    .Append("window. The heaviest phase of the run so far was ")
+                    .Append(heaviest.ToString())
+                    .Append(" at ").Append(F(heaviestWall))
+                    .Append("s. READ THIS ROW AS UNMEASURED, NOT AS A PRODUCT GAP - fix the heavy phase, ")
+                    .Append("not this mechanic");
+            }
+            else if (wall > _phaseGranted + 1.0)
+            {
+                // The ceiling is only testable at tick boundaries, so a single expensive pumped frame can
+                // still blow past it. Saying so is the difference between a reader believing the
+                // instrument measured this long and knowing the engine was inside one frame.
+                _detail.Append(" - OVERSHOT its ceiling by ").Append(F(wall - _phaseGranted))
+                    .Append("s across ").Append(_phaseTicks)
+                    .Append(" ticks: the ceiling is only testable between pumped frames, so one expensive ")
+                    .Append("frame lands entirely outside it. The overshoot is charged to the schedule ")
+                    .Append("total, so later phases are compressed rather than given fresh windows");
+            }
+            else
+            {
+                _detail.Append(" - yielded on its own ceiling with work unfinished");
+            }
+
+            _detail.Append(']');
+        }
+
+        /// <summary>
+        /// Same clause for a phase that has already CLOSED, read out of the ledger. The Swim row needs
+        /// this: it is latched in SwimVerdict, one phase after the two holds whose duration decides
+        /// whether a depth span could exist at all.
+        /// </summary>
+        private static void AppendClosedPhaseNote(DrivePhase phase)
+        {
+            int index = (int)phase;
+            if (index < 0 || index >= (int)DrivePhase.PhaseCount)
+                return;
+
+            if (_phaseYield[index] == PhaseYield.NotEntered)
+                return;
+
+            _detail.Append(" [SCHEDULE phase=").Append(phase.ToString())
+                .Append(" wall=").Append(F(_phaseWall[index]))
+                .Append("s ticks=").Append(_phaseTickLedger[index])
+                .Append(" tickFloor=").Append(MinTicksFor(phase))
+                .Append(" granted=").Append(F(_phaseGrant[index]))
+                .Append("s yield=").Append(_phaseYield[index].ToString());
+
+            if (_phaseYield[index] == PhaseYield.TotalCeiling)
+                _detail.Append(" - COMPRESSED to its tick floor because the schedule's ")
+                    .Append(F(TotalBudgetSeconds))
+                    .Append("s total was already spent, so any threshold this row failed was never given ")
+                    .Append("the time to be crossed. UNMEASURED, not broken");
+
+            _detail.Append(']');
+        }
+
         private static void Latch(int row, RowVerdict verdict)
         {
             if (row < 0 || row >= RowCount || _latched[row])
@@ -1516,8 +2611,45 @@ namespace Hecton8.EditorTools.Diagnostics
         }
 
         /// <summary>
-        /// Anything the schedule never reached stays NOT_EXERCISED with the phase it died in named. A
-        /// row the driver did not actually drive must never be reported as anything else.
+        /// The phase whose tick would have produced a row's verdict. Used only by the finalisation text,
+        /// so a starved row can state whether its OWN phase was ever entered - which is the difference
+        /// between "the schedule stopped before this mechanic" and "this mechanic was tried and failed".
+        /// </summary>
+        private static DrivePhase TerminalPhaseFor(int row)
+        {
+            switch (row)
+            {
+                case RowSwim:
+                    return DrivePhase.SwimVerdict;
+                case RowResource:
+                    return DrivePhase.ResourcePickup;
+                case RowTool:
+                    return DrivePhase.ToolUse;
+                case RowCraft:
+                    return DrivePhase.Craft;
+                default:
+                    return DrivePhase.Idle;
+            }
+        }
+
+        /// <summary>
+        /// Closes out anything the schedule never resolved. NOT_EXERCISED is the right verdict by this
+        /// probe's own convention - the mechanic is UNKNOWN, not negative - and that part was already
+        /// correct. The TEXT was not, and it is the text a reader acts on.
+        ///
+        /// What it used to say, verbatim from Logs/h8_playprobe_route.json moments[6]:
+        ///   "driver ran out of budget in phase Craft after 160.430s and never reached this row"
+        /// Three of those clauses were wrong or unusable:
+        ///   - "ran out of budget" asserted a mechanism this file did not have. TotalBudgetSeconds was
+        ///     read at zero places in this class and _startedAt at exactly one - that message - so the
+        ///     driver printed an elapsed for a stop it had no code to cause. The stop came from the probe
+        ///     closing its gameplay window (H8_HeadlessPlayModeProbe.cs:495-503). A reader who believed
+        ///     the sentence went looking at the phase constants, which were not the problem.
+        ///   - "in phase Craft" named the phase the schedule was SITTING in, not the phase that spent the
+        ///     time. Craft had been entered and given zero ticks. ResourceDeplete had taken 138.192 of
+        ///     the 160.430 seconds and its name appeared nowhere in the row it starved.
+        ///   - "never reached this row" contradicted "in phase Craft" for the Craft row itself.
+        /// Every one of those facts is now stated separately, because they have different owners.
         /// </summary>
         private static void FinaliseUnlatchedRows()
         {
@@ -1526,10 +2658,47 @@ namespace Hecton8.EditorTools.Diagnostics
                 if (_latched[row])
                     continue;
 
+                DrivePhase terminal = TerminalPhaseFor(row);
+                int terminalIndex = (int)terminal;
+                bool terminalEntered =
+                    terminalIndex >= 0 &&
+                    terminalIndex < (int)DrivePhase.PhaseCount &&
+                    (_phaseYield[terminalIndex] != PhaseYield.NotEntered || _phase == terminal);
+
                 _detail.Clear();
-                _detail.Append("driver ran out of budget in phase ").Append(_phase.ToString())
-                    .Append(" after ").Append(F((float)(EditorApplication.timeSinceStartup - _startedAt)))
-                    .Append("s and never reached this row");
+                _detail.Append("NOT MEASURED: the schedule stopped in phase ")
+                    .Append(_stoppedInPhase.ToString())
+                    .Append(" at ").Append(F(_stoppedAtElapsed))
+                    .Append("s of its ").Append(F(TotalBudgetSeconds))
+                    .Append("s budget, after ").Append(_ticks)
+                    .Append(" driver ticks. Stop cause: ").Append(_stopCause.ToString())
+                    .Append(". This row's own phase ").Append(terminal.ToString())
+                    .Append(terminalEntered ? " WAS entered" : " was NEVER entered")
+                    .Append(" (ticks=").Append(GetPhaseTicks(terminalIndex))
+                    .Append(" of a ").Append(MinTicksFor(terminal))
+                    .Append("-tick floor, wall=").Append(F(GetPhaseWallSeconds(terminalIndex)))
+                    .Append("s)");
+
+                if (_worstPhaseWall > 0.0)
+                    _detail.Append(". The phase that consumed the most wall time was ")
+                        .Append(_worstPhase.ToString()).Append(" at ").Append(F(_worstPhaseWall))
+                        .Append("s over ").Append(GetPhaseTicks((int)_worstPhase))
+                        .Append(" ticks against a ").Append(F(GetPhaseGrantedSeconds((int)_worstPhase)))
+                        .Append("s grant - that is the phase to fix, not this row");
+
+                if (_compressed)
+                    _detail.Append(". The total budget was already spent at ").Append(F(_compressedAt))
+                        .Append("s in phase ").Append(_compressedInPhase.ToString());
+
+                if (_stopCause == StopCause.ProbeGameplayWindowClosed)
+                    _detail.Append(". The stop was EXTERNAL: the probe's gameplay window closed while the ")
+                        .Append("schedule was still running, so this row is a harness budget shortfall, ")
+                        .Append("not a product gap - STARVED, not empty");
+                else if (_stopCause == StopCause.OwnTickCeiling)
+                    _detail.Append(". The stop was the driver's own ").Append(MaxTotalTicks)
+                        .Append("-tick runaway ceiling, which means a phase was spinning without ")
+                        .Append("advancing");
+
                 _verdicts[row] = RowVerdict.NotExercised;
                 _details[row] = _detail.ToString();
                 _latched[row] = true;

@@ -2025,6 +2025,79 @@ namespace Hecton8.Inventory
             return CanAcceptQuantity(itemHashId, quantity);
         }
 
+        // Refusal-reason bits for DescribeAddRefusalMask. Kept public because the only consumers are cold
+        // callers that must PRINT the reason: a bare false from TryAddItem cannot distinguish "this inventory
+        // can never store anything for the rest of the session" from "this one item does not fit right now",
+        // and every caller that defers on a refusal has to make that distinction to be debuggable.
+        public const uint AddRefusalComponentDisabled = 1u << 0;
+        public const uint AddRefusalGridMissing = 1u << 1;
+        public const uint AddRefusalStackLaneDead = 1u << 2;
+        public const uint AddRefusalSimStackLaneDead = 1u << 3;
+        public const uint AddRefusalSimOccupancyLaneDead = 1u << 4;
+        public const uint AddRefusalCatalogMissing = 1u << 5;
+        public const uint AddRefusalHashZero = 1u << 6;
+        public const uint AddRefusalDescriptorMissing = 1u << 7;
+        public const uint AddRefusalPhysicalCapacity = 1u << 8;
+        public const uint AddRefusalGridPlacement = 1u << 9;
+
+        /// <summary>
+        /// COLD DIAGNOSTIC ONLY. Names which <see cref="TryAddItem"/> precondition is refusing a single-unit
+        /// add; returns 0 when one unit would be accepted.
+        ///
+        /// Why this exists: <see cref="TryAddItem"/> is the strictest add overload in the class - it gates on
+        /// <c>CanAcceptQuantity</c> first, which additionally requires the two PREFLIGHT SCRATCH lanes
+        /// (<c>_scavengeSimStackCounts</c>, <c>_simulationOccupiedCells</c>) to be live, while
+        /// <c>TryAddItemWithState</c>/<c>TryAddItemWithGenetics</c> skip that gate entirely. Those lanes, and
+        /// <c>_stackCounts</c>, are vault-backed and bound exactly once in <c>Awake</c> via
+        /// <c>BindPlayerInventoryVaultBuffers</c>. If that bind fails, <c>Awake</c> sets <c>enabled = false</c>
+        /// and the loss is PERMANENT for the session: <c>Awake</c> never re-runs on
+        /// <c>SetActive(true)</c>, <c>OnEnable</c> never runs so the hot-swap listener is never registered, and
+        /// the <c>GlobalRegistryServiceSlot.DataVault</c> case only calls <c>RebindVault</c> - it never
+        /// re-allocates. A caller that reads a bare <c>false</c> as "retry later" then waits forever.
+        ///
+        /// The refusal is honest and must NOT be worked around by switching to a laxer overload: a dead
+        /// <c>_stackCounts</c> lane makes the indexer setter a silent no-op (see
+        /// <c>InventoryVaultLane{T}</c>), so a laxer add would place the item in the grid, report success, and
+        /// still leave <c>CountAvailableTotal</c> at zero - trading a visible refusal for an invisible lie.
+        ///
+        /// Runs the full physical-capacity fold; never call it from a tick, render, input or UI cadence.
+        /// </summary>
+        public uint DescribeAddRefusalMask(int itemHashId)
+        {
+            uint mask = 0u;
+            if (!enabled)
+                mask |= AddRefusalComponentDisabled;
+
+            if (_grid == null)
+                mask |= AddRefusalGridMissing;
+
+            if (!_stackCounts.IsCreated)
+                mask |= AddRefusalStackLaneDead;
+
+            if (!_scavengeSimStackCounts.IsCreated)
+                mask |= AddRefusalSimStackLaneDead;
+
+            if (!_simulationOccupiedCells.IsCreated)
+                mask |= AddRefusalSimOccupancyLaneDead;
+
+            if (itemCatalog == null)
+                mask |= AddRefusalCatalogMissing;
+
+            if (itemHashId == 0)
+                mask |= AddRefusalHashZero;
+            else if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+                mask |= AddRefusalDescriptorMissing;
+            else if (!CanAcceptAdditionalPhysicalCapacity(in runtimeDescriptor, 1))
+                mask |= AddRefusalPhysicalCapacity;
+
+            // Everything named above passed, so the only remaining refusal inside CanAcceptQuantity is the
+            // simulated placement itself - the grid genuinely has no free footprint for this item.
+            if (mask == 0u && !CanAcceptQuantity(itemHashId, 1))
+                mask |= AddRefusalGridPlacement;
+
+            return mask;
+        }
+
         /// <summary>
         /// Preflights a mixed set of item quantities against one shared grid simulation without mutating live inventory.
         /// </summary>

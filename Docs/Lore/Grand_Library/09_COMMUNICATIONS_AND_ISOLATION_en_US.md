@@ -137,12 +137,12 @@ Ran is 10.5 light years from Sol. The card prints the consequence without commen
 ```text
 QUERY  DR-Q-441   SENT 2147-05-22, Sector 44 evacuation authority
        "Confirm release authority for queue 3 absent quarantine class."
-ANSWER DR-A-441   ARRIVED 2168-04-09, addressed to Sector 44 Operations
+ANSWER DR-A-441   ARRIVED 2168-06-14, addressed to Sector 44 Operations
        "Authority confirmed. Advise current occupancy status."
 ```
 
 The answer is correct, courteous, and twenty-one years late, and Sector 44 had been under water for twenty-one of them. It was filed. It sits in the mirror under the same accession run as the queue sheet it answers, and the Recovery Compliance Office still cites pending external queries as grounds to hold an action, because a query in flight is a defensible reason to do nothing for a decade.
 
-The near-side version costs less time and the same amount of blood. Incident 44-IR-3104: route state returned `passable` at 02:10, confirmed against R-44, acted on at 06:31. The fault lip had closed to 180 mm somewhere in the four hours and twenty-one minutes between the reply and the body. One worker was recovered. The other went onto Ibarra's ledger under `asset reassignment`, which is the entry the loss desk uses when there is no recovery and no coordinate.
+The near-side version costs less time and the same amount of blood. Incident 44-IR-3104, dated 2147-06-04: route state returned `passable` at 02:10, confirmed against R-44, acted on at 06:31. The fault lip had closed to 180 mm somewhere in the four hours and twenty-one minutes between the reply and the body. One worker was recovered. The other went onto Ibarra's ledger under `asset reassignment`, which is the entry the loss desk uses when there is no recovery and no coordinate.
 
 Revision 9 of the watch card added the 900-second line and the Sol round trip. It did not add a field for the gap between a true answer and a compartment that has already changed. Crews write that one on the plate themselves, in grease pencil, under the last printed line.

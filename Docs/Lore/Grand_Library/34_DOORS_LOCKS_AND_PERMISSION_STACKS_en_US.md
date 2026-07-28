@@ -62,7 +62,7 @@ Intake pays for these marks. It also prices them:
 
 The cut took eleven minutes. The claim class was chosen afterwards, in an office, by a desk that has never had to guess what is standing behind a plate. Second pass of the cutter also took out the latch reed, and the reed was the only part that could have shown whether the frame was closed before the water reached it or after.
 
-The class code is older than the frame it was used on. Schedule KM-2147-C4 was cut by a Keelmark adjuster named Ibarra in the quarter the colony drowned, to price objects nobody then expected a living person to be standing next to. Recovery Compliance Office signs the findings now, off its own return-action queue, and it has not had to write a new sentence to do it.
+The class code is older than the cut it prices. Schedule KM-2147-C4 was written by a Keelmark adjuster named Ibarra in the quarter the colony drowned, to value objects nobody then expected a living person to be standing next to. Recovery Compliance Office signs the findings now, off its own return-action queue, and it has not needed a new word to do it.
 
 ## 4. Manners At A Frame
 

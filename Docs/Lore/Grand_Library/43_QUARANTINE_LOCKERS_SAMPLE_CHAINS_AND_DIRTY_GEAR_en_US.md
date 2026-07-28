@@ -36,7 +36,7 @@ A crew member who climbs out alive has completed the first of three returns. Gea
 
 Every recovered object brings part of the moon with it, and the sheet has a column for that.
 
-The cracked helmet in 44-Q-1188 came up with scratch direction running aft to fore across the visor, a salt band 14 mm above the seal ring, and hatch-dog grease on the crown. Those three facts together put the wearer through a partly seated hatch head-first, which contradicts the route the bearer declared at the seam. Heavier items carry more: mud from the floor that held them, metal dust from the cut, a heat history sitting in the surface film, an odour that outlasts the receipt by weeks. Sealed bags are the worst of the three, because the water inside one has touched the find, the glove, the knife, the deck plate, and the hands of whoever was breathing hard while they closed it.
+The cracked helmet in the preceding lot, 44-Q-1102, came up with scratch direction running aft to fore across the visor, a salt band 14 mm above the seal ring, and hatch-dog grease across the helmet crown. Those three facts together put the wearer through a partly seated hatch head-first, which contradicts the route that bearer declared at the seam. Heavier items carry more: mud from the floor that held them, metal dust from the cut, a heat history sitting in the surface film, an odour that outlasts the receipt by weeks. Sealed bags are the worst of the three, because the water inside one has touched the find, the glove, the knife, the deck plate, and the hands of whoever was breathing hard while they closed it.
 
 That cargo pays. Dirt proves route. Stain proves contact. A living film can hold a dead seal shut long enough to matter, and a smear on a glove has closed cases that a claim tag opened wrongly. The same cargo gets into suit racks, sours food printers, loads air filters, seeds a sample freezer at minus 40, and turns one crew's shortcut into another crew's lung problem eight weeks later.
 
@@ -70,8 +70,9 @@ A sample is worth what its chain survives. The chain is form QRG-4, two sides of
 
 ```text
 CHAIN OF CUSTODY QRG-4 / SAMPLE 44-S-1188-C
-RECOVERED AT....: Sector 44, factory level 3, ledge east of pump house 6
-DEPTH...........: 1,240 m        PRESSURE AT SEAL: 12.4 MPa
+RECOVERED AT....: Sector 44, promenade ring level 3, outboard ledge
+                  east of Support 3
+DEPTH...........: 1,940 m        PRESSURE AT SEAL: 19.4 MPa
 SEAL TIME.......: 03:11:40       SEAL TEMP.......: 4 C
 TOOL............: scraper 44-T-77, certified residue-free 2190-07-02
 GLOVE LOT.......: G-4419, 2 of pair, pair number recorded
@@ -85,7 +86,7 @@ HOLD CLASS......: pending assay
 
 Every field on that card is a place to lose a case. Buyers attack `WATER ADMITTED` first, because 1.5 mL taken at 12.4 MPa and 1.5 mL taken on the deck look identical in the tube and different in the pressure trace. `GLOVE LOT` is there because a glove from the wrong pair moves a sample into another crew's route. `SEAL TEMP` at 4 C is what lets an assay argue a film was dormant when it went in and active when it came out.
 
-Weak chains are short. `Found in Sector 44` is a complete entry under the old Deep Reach schema and answers nothing: which ledge, before or after the pump cycle, above or below the brine layer at 1,480 m, clean tool or borrowed glove.
+Weak chains are short. `Found in Sector 44` is a complete entry under the old Deep Reach schema and answers nothing: which ledge, above or below the 1,880 m crown datum, inboard or outboard of the Support 3 collar, clean tool or borrowed glove.
 
 A preserved scrape puts another crew in the room first. Where a seal reads contaminated, a buyer's complaint dies before it is filed. One missing humidity tick is enough to show that a container was opened while somebody else held custody. That is how a 40 mL vial prices above a 300 kg machine: the machine is mass, and the vial can stand up at a hearing.
 
@@ -105,7 +106,7 @@ DECONTAMINATION LABOUR..........................: 0.02 t-window per hour
 BEARER DECEASED.................................: balance transfers to lien
 ```
 
-The last line is the only one that has ever been challenged in arbitration. Marek Ibarra's desk won that hearing in 2151 on the wording of the rider, and the wording has not been touched since.
+The last line is the only one that has ever been challenged in arbitration. Marek Ibarra's desk won that hearing in 2147, eleven weeks after the Tide, on the wording of the rider rather than on the merits. Nobody has touched the wording since, and the office that enforces it in 2190 is Vera Sato-Ren's, which has never had to defend it.
 
 The schedule produces ugly behaviour on the deck. Crews wipe tools before handing them across. They hide a stain that would prove a route, because a route fee runs cheaper than a contamination fee. Clean gloves trade hand to hand at about 0.02 t-window, which is the decontamination rate and no accident. Most crews carry two pouches, one for objects that smell like a hearing and one for objects that smell like money, and some dirt stays on the seafloor on purpose, because bringing it up hands the gate a new handle and rider 9 a new line.
 

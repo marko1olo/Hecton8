@@ -49,11 +49,21 @@ Deep Reach built near fault heat because power was expensive and heat was useful
 
 That decision made industrial sense. Pressure glass lines needed thermal control. Xenon-Omega process racks needed stable cycling. Habitats needed heat rejection paths and emergency power. A good geotechnical office could describe the trade in polite language: active faults, managed buffers, monitored movement, acceptable deviation.
 
-The ocean did not care about polite language.
+The rock did not read the language. Serpentinite walls shear, polish and hydrate, mineral seams swell, and brines creep through cracks until last quarter's readings describe a room that no longer exists. `DR-GT-091` is the last foundation inspection filed on the Sector 44 approach before the Tide, and it passed every item on it:
 
-Fault zones on HECTON-8 move slowly until they do not. Serpentinite walls shear, polish and hydrate. Mineral seams swell. Brines creep through cracks and make old readings obsolete. A hatch frame can shift half a finger and still pass yesterday's inspection. A conduit can remain intact while the rock around it starts cutting it like a file. A pressure route can look stable because every sensor on it is averaging away the part that matters.
+```text
+DR-GT-091   FOUNDATION INSPECTION / SECTOR 44 APPROACH / 2146-11
+ITEM                     MEASURED          TOLERANCE    RESULT
+hatch frame 3-11 square  1.4 mm out        2.0 mm       pass
+conduit run 6 contact    wear band 0.3 mm  1.0 mm       pass
+support collar drift     4 mm / year       12 mm / year  pass
+route sensor mean        no movement       --           pass
+NOTE: sensor mean is a 90-day average. Peaks are not retained.
+```
 
-The failure was not building near geology. Everyone builds near geology. The failure was treating the living margin as a quarterly variable.
+The note at the bottom is the whole file. Every figure above it was true on the day it was signed, and the one field that would have mattered had already been discarded by the instrument before the inspector reached the room.
+
+The failure was not building near geology. Everyone builds near geology. The failure was treating the margin as a quarterly variable and the peak as noise.
 
 ## 4. What The Great Tide Was
 
@@ -77,16 +87,23 @@ The dangerous word was average.
 
 Average tide. Average stress. Average release window. Average repair interval. Average response time. Average evacuation load. Each average made a document easier to approve and a body harder to move. The ocean did not arrive as an average. It arrived as the stacked edge of several systems spending their margins together.
 
-That is why the Great Tide remains important in 2190. It is not only a past event. It is a warning about every current contract that says the route is acceptable because the model survived enough ordinary days.
+The word is still in service. Clause 9 of the 2190 standard route acceptance reads `route acceptable where the modelled interval mean remains within tolerance`, which is the operative sentence of Varnek's 2147 tide-margin revision with the date filed off and the margin figure removed. A contractor signs it before every descent.
 
 ## 6. Geology As Evidence
 
-The ocean keeps records in ugly places.
+The ocean keeps records in ugly places, and loss desk file `KM-LD-77` prints them in two columns because that is the only arrangement in which the argument holds:
 
-Salt lines show where water paused. Silt fans show which doors opened first. Polished rock beside a bracket shows movement after installation. A brine crust inside a sealed room can prove the room was not sealed when the report says it was. Mineral growth across a hatch lip can show how long a route stayed unusable. Broken pressure glass can preserve stress direction. Conductive film can show where Atlas tried to keep a path alive through dead infrastructure.
+```text
+KM-LD-77   PHYSICAL RECORD AGAINST FILED RECORD / EXTRACT
+filed record                     object still in the water
+room sealed at 04:00             brine crust inside the seal ring
+compartment clear at evacuation  silt fan across the inboard sill
+no movement on route sensors     polish on one face of a clamp scar
+route usable, no obstruction     mineral growth 6 mm across the lip
+pressure loss, cause unknown     stress direction held in broken glass
+path dead, infrastructure lost   conductive film on a live cable run
+```
 
-For a salvage crew, that matters as much as a memo.
+Each left-hand entry is a document somebody signed. Each right-hand entry is an object a crew can photograph, lift, or fail to reach. Salt records where water paused, silt records which door opened first, and polish beside a bracket records movement after installation, which is a different claim from movement before it. A claim office works from the left column. HECTON-8 only writes in the right one, in layers: pressure, salt, heat, biology, metal, time.
 
-A recovered document can say a room was clear. A wall can say water reached it. A sensor can say no movement. A clamp scar can say the rock moved anyway. A claim office may prefer clean categories, but HECTON-8 writes in layers: pressure, salt, heat, biology, metal, time.
-
-Good Marauders learn to read those layers because they change payment, route safety and truth at the same time.
+Reading those layers pays twice, and the second payment is the one crews miss. A salt band in a boot seam gives depth to within about 60 m. A clamp scar dates movement against an installation stamp. Neither is worth anything at a hearing without the sheet it contradicts, which is why the thing to carry down is the old survey number rather than an opinion about it.

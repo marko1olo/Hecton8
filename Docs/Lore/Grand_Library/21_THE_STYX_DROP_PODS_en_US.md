@@ -88,6 +88,6 @@ The last document signed before a cradle throw is Form BK-D/44. One page, eleven
 
 Nine fields describe the shell: pattern number, ablator lot, cradle position, mast condition, sleeve condition, ballast valve certification, pinger code, claim hash, window reference. One field describes the contractor, and it reads OPERATOR MASS, WITH SUIT. The eleventh is the signature line, under a sentence that reads THE UNDERSIGNED ACCEPTS DELIVERY UNDER CONTRACTED PARAMETERS.
 
-All eleven fields are current. The sentence above them is not. The footer block names the issuing office and it reads RECOVERY COMPLIANCE OFFICE, which is the desk that prices a delivery loss today and answers the queue afterwards. That desk has never had to rewrite the clause it inherited. Forty-three years on, a contractor initials one page beneath a line composed by an adjuster who has been out of the file since the year it drowned, and the line still does its work unaltered.
+All eleven fields are current. The sentence over the signature line is not. The footer block names the issuing office and it reads RECOVERY COMPLIANCE OFFICE, the desk that prices a delivery loss today and answers the queue afterwards, and it has never had to rewrite what it inherited. Forty-three years on, a contractor initials one page beneath a line composed by an adjuster who has been out of the file since the year it drowned.
 
 There is no field on the form for the return.

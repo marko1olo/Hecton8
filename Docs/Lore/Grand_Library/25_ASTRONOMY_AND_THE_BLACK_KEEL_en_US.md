@@ -13,7 +13,18 @@ HECTON-8 is an ocean moon in the Aegir system. Ran is the star, Aegir is the gia
 
 Six operations near HECTON-8 all require the same geometry: a distress packet, a descent pod, a cargo release, a suit telemetry burst, a claim signature, and a body bag with a custody tag. None of them is granted by the tender on its own judgement. Each one is granted against a witness pass, and a witness pass is a line on a clock.
 
-The station's oldest clocks run that ledger. They track occultations by Aegir, radiation belt crossings, moon-ladder traffic, charged dust off Skarn, Vela ice-shadow events, Kestrel line-of-sight blocks, Ran-side thermal windows, and HECTON-8's own weather columns standing up out of the ocean. The board they feed prints three states and no others: WITNESS OPEN, WITNESS DEGRADED, HOLD.
+The station's oldest clocks run that ledger. They track occultations by Aegir, radiation belt crossings, moon-ladder traffic, charged dust off Skarn, Vela ice-shadow events, Kestrel line-of-sight blocks, Ran-side thermal windows, and HECTON-8's own weather columns standing up out of the ocean. The board they feed prints three states and no others, and it prints them against a clock:
+
+```text
+WITNESS BOARD / BLACK KEEL / 2190-07-14 / 08:00 TO 12:00
+08:00  WITNESS OPEN       clean line, all four racks
+09:14  WITNESS DEGRADED   Skarn dust, optical confidence 0.71
+09:41  WITNESS DEGRADED   deck 3 intake logged under degraded witness
+10:02  HOLD               Aegir occultation, 34 min
+10:36  WITNESS OPEN       partial-witness flag stands on 09:41 items
+```
+
+That flag on the 09:41 line does not expire when the sky clears. Every object stamped in that twenty-seven-minute stretch carries it down the whole chain, and a buyer four transfers later is entitled to ask about it.
 
 ## 2. Aegir's Moon Ladder
 
@@ -29,11 +40,24 @@ There are days when the ocean below is calm, the suit is green, the tender is re
 
 The Black Keel is not a heroic orbital city. It is an Aegir claim tender and custody platform with habitats bolted to its work.
 
-Public diagrams show modular berths, quarantine tanks, route witness racks, launch cradles, cargo meters, receiver-account consoles, and clean arrows that make the place look intentional. The corridors those arrows describe are patched, the scrubbers run over rating, condensation collects in the corners nobody walks, and the contractor berths are close enough to the claim printers to hear them wake before a shift.
+Public diagrams show modular berths, quarantine tanks, route witness racks, launch cradles, cargo meters, receiver-account consoles, and clean arrows that make the place look intentional. The corridors those arrows describe are patched, the scrubbers run over rating, condensation collects in the corners nobody walks, and the contractor berths sit close enough to the claim printers to hear them wake before a shift.
 
-The station's product is a record. Rescue is not on the capability list, and the capability list is short by design: a skeleton crew and a great deal of automation cost less to insure than a staffed rescue tender.
+The station's product is a record. What the station is rated to do is printed on the berth-deck placard, `BK-CAP-7`, and the list is short:
 
-When a contractor descends, Black Keel records the debt chain, suit identity, cargo permission, route witness and recovery terms. When a body comes back it records the legal category the body came back under. When only a beacon comes back it records whether the beacon can stand in for the body. When nothing comes back it records how long the nothing must remain nothing before a claim can move, and that interval is the only one of the four with a number attached.
+```text
+BK-CAP-7   PLATFORM CAPABILITY / AEGIR RECLAMATION POOL / POSTED
+CERTIFIED..: custody, assay, quarantine, claim notarisation, cargo
+             metering, route witness, cold-sleep transfer
+NOT RATED..: crewed descent recovery, subsurface intervention,
+             medical evacuation below the surface interface
+NOTE.......: SUBSURFACE RESCUE IS NOT A PLATFORM FUNCTION AND IS NOT
+             AN INSURED SERVICE. AVAILABILITY OF EQUIPMENT DOES NOT
+             CREATE AN OBLIGATION TO DEPLOY IT.
+```
+
+A skeleton crew and a great deal of automation insure cheaper than a staffed rescue tender, and the note in that third field is the sentence that keeps it that way.
+
+The four returns are recorded on the same form. A descending contractor gets a debt chain, suit identity, cargo permission, route witness and recovery terms. A returned body gets the legal category it came back under. A returned beacon gets a ruling on whether it can stand in for a body. When nothing comes back, form `BK-CAP-7/B` opens a silence interval of 240 days before a claim can move, and that is the only one of the four returns with a number printed on it.
 
 ## 4. Orbital Isolation
 
@@ -57,17 +81,37 @@ Contractors leave marks on the rail: scratched initials, suit numbers, lien frac
 
 ## 6. Witness, Shadow, And Claim
 
-Black Keel's most important instruments are not the ones that make the sky beautiful. They are the ones that make events admissible.
+Black Keel's most important instruments are the ones that make an event admissible. `BK-AD-4` is the admissibility sheet the witness racks are wired to, four rows, one column that decides everything:
 
-A claim ping needs a clear witness path. A suit death needs a timestamp that survives dispute. A sealed container needs a custody chain across launch, descent, recovery, quarantine, and transfer. A route packet needs to know which relay saw it and which shadow almost swallowed it. When Aegir blocks the line, when Skarn dirties the spectrum, when HECTON's weather throws a plume into the wrong corridor, the event may still happen. It simply becomes harder to prove.
+```text
+BK-AD-4   EVENT ADMISSIBILITY / ROUTE WITNESS RACKS / REV 6
+EVENT                 REQUIRES                        IF DEGRADED
+claim ping            unbroken witness path           partial witness
+suit death            timestamp surviving dispute     time of record
+sealed container      custody across launch, descent, unresolved
+                      recovery, quarantine, transfer
+route packet          named relay, logged shadow      uncorroborated
+```
 
-That difference decides outcomes below. A contractor can survive a dive and lose the claim because the witness path broke mid-pass. A crew can die exactly as the procedure describes and still sit unresolved in the ledger because the packet arrived under partial shadow. A returned Atlas fragment can be accurate about a failure and read as uncertain to an outside receiver, because the route stripped the context fields out before delivery.
+The right-hand column is not a synonym for `no`. It is a different legal object, and the difference is decided by geometry nobody aboard controls. Aegir blocks the line, Skarn dirties the spectrum, HECTON's weather throws a plume into the wrong corridor. The event still happened. It has simply become harder to prove than it is to deny.
+
+That column decides outcomes below. A contractor survives a dive and loses the claim because the witness path broke mid-pass. A crew dies exactly as the procedure describes and sits unresolved in the ledger because the packet arrived under partial shadow. A returned Atlas fragment is accurate about a failure and reads as uncorroborated to an outside receiver, because the route stripped the context fields before delivery.
 
 ## 7. Hold Codes
 
-The board carries eight hold codes, and every descent is granted or refused against them.
+Every descent is granted or refused against the eight codes on card `BK-HC-8`, and the card prints how often each one was written last quarter:
 
-`H-SHADOW` no clean witness path. `H-SCATTER` optical confidence below threshold. `H-SURGE` shielded hardware only. `H-PLUME` ocean surface state refuses the corridor. `H-LAG` guidance offset outside insured ellipse. `H-QUAR` quarantine class unresolved. `H-CUST` custody chain incomplete. `H-MASS` no tonne-window allocation available.
+```text
+BK-HC-8   DESCENT HOLD CODES / WITNESS BOARD / 2190 Q2 COUNTS
+H-SHADOW   no clean witness path...................  41
+H-SCATTER  optical confidence below threshold......  63
+H-SURGE    shielded hardware only..................  12
+H-PLUME    surface state refuses the corridor......  29
+H-LAG      guidance offset outside insured ellipse.   8
+H-QUAR     quarantine class unresolved.............  77
+H-CUST     custody chain incomplete................  54
+H-MASS     no tonne-window allocation available....   3
+```
 
-Seven of the eight describe the sky, the water or the paperwork. The eighth describes whether there is room in the manifest. On the archive's own reporting, `H-MASS` is the code most often cleared and the code least often written down as a cause, because clearing it costs a signature and nothing else.
+Seven of the eight describe the sky, the water or the paperwork. The eighth describes whether there is room in the manifest, and it was written three times in a quarter that ran 287 holds. `H-MASS` is the code most often cleared and least often recorded as a cause, because clearing it costs a signature and nothing else.
 

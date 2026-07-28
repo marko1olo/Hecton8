@@ -1227,6 +1227,20 @@ namespace Hecton8.Gameplay
         /// the inventory (buffers not allocated yet on this activation, grid full) leaves the latch clear so
         /// the next activation or player-context rebind retries, instead of reporting a completed grant that
         /// added nothing and leaving all four slots unavailable for the rest of the session.
+        ///
+        /// MEASURED LIMIT OF THAT RETRY (headless route, boot reaching activationStep='Complete'): there are
+        /// exactly two callers - <c>OnEnable</c> and <see cref="RebindRuntimeContextFromPlayerService"/> - and
+        /// the route hits <c>OnEnable</c> twice, once inside <c>HectonPlayerSpawner</c>'s cold
+        /// <c>Instantiate</c> of Player.prefab and once from <c>GameBootstrapper.ActivatePlayer</c>'s
+        /// <c>SetActive(true)</c>. The player-context path cannot add a third: <c>ActivatePlayer</c> calls
+        /// <c>PublishPlayerRuntimeReference()</c> one line BEFORE <c>SetActive(true)</c>, and at that moment
+        /// this manager sits on a deactivated object and has already dropped its hot-swap listener in
+        /// <c>OnDisable</c>, so the Player-slot notification that drives the rebind retry never reaches it -
+        /// and nothing publishes that slot again afterwards. So <c>SetActive(true)</c> is the LAST chance, and
+        /// it re-runs at the same point of this object's own lifecycle as the first attempt: no step in
+        /// between can make the inventory ready. Keeping the latch clear is still correct, but do not read a
+        /// repeated deferral as "it will converge later" - see the refusalMask in the warning below, whose
+        /// bits 0-4 are session-permanent by construction.
         /// </summary>
         private void TryGrantAssignedToolItemsOnRuntimeStart()
         {
@@ -1249,6 +1263,11 @@ namespace Hecton8.Gameplay
 
             int granted = 0;
             int refused = 0;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            int firstRefusedSlot = -1;
+            int firstRefusedItemHash = 0;
+            uint firstRefusalMask = 0u;
+#endif
             _suppressInventoryChangedHandling = true;
             try
             {
@@ -1268,6 +1287,23 @@ namespace Hecton8.Gameplay
                         granted++;
                         continue;
                     }
+
+                    // The refusal reason has to be captured HERE, at the refusal, or it is unrecoverable: the
+                    // warning below used to say only "refused at least one", which is the same text whether the
+                    // inventory will accept the item on the next activation or can never accept anything again
+                    // for the rest of the session. Both halves of this row read the same state -
+                    // IsToolAvailableInSlot resolves through HasToolInInventory -> CountAvailableTotal, which
+                    // returns 0 unconditionally when PlayerInventory's stack lane is not live - so one dead lane
+                    // presents as "the grant was refused" AND "no tool is available in any slot" at once, and
+                    // without the mask the two are impossible to tell apart from a deferred authoring gap.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    if (refused == 0)
+                    {
+                        firstRefusedSlot = i;
+                        firstRefusedItemHash = itemHash;
+                        firstRefusalMask = playerInventory.DescribeAddRefusalMask(itemHash);
+                    }
+#endif
 
                     refused++;
                 }
@@ -1289,7 +1325,17 @@ namespace Hecton8.Gameplay
             {
                 Hecton8.Core.H8Debug.LogWarning(
                     "[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one " +
-                    "assigned quick-slot tool item, so the grant stays open for the next player activation.");
+                    "assigned quick-slot tool item, so the grant stays open for the next player activation. " +
+                    "refused=" + refused.ToString() +
+                    " granted=" + granted.ToString() +
+                    " firstSlot=" + firstRefusedSlot.ToString() +
+                    " firstItemHash=" + firstRefusedItemHash.ToString() +
+                    " refusalMask=0x" + firstRefusalMask.ToString("X") +
+                    " (bit0 componentDisabled, bit1 gridMissing, bit2 stackLaneDead, bit3 simStackLaneDead, " +
+                    "bit4 simOccupancyLaneDead, bit5 catalogMissing, bit6 hashZero, bit7 descriptorMissing, " +
+                    "bit8 physicalCapacity, bit9 gridPlacement). Bits 0-4 are PERMANENT for this session: " +
+                    "PlayerInventory binds those lanes once in Awake, and neither SetActive(true) nor a " +
+                    "DataVault hot-swap re-allocates them, so a further deferral cannot converge.");
             }
             else if (granted > 0)
             {
