@@ -66,6 +66,40 @@ Not proven by that log:
 | First 20 Minutes Copper Wire route | `[~]` | full route clip plus profiler/GC/memory capture |
 | Data Monolith runtime boot | `[~]` | Unity import/player boot/checksum proof for `static_data.h8bin` |
 | RT/VRAM retained owner set | `[!]` | Memory Profiler / Frame Debugger owner isolation |
+| Tool durability does not persist | `[!]` | load a save after breaking a tool and read its durability back |
+
+### Tool durability does not persist — static evidence, 2026-07-28
+
+Found by auditing first-party runtime against the bans `AGENTS.md` states, rather than by playing.
+This one is a functional save defect, not a style violation:
+
+- `Assets/_Project/Scripts/SaveData.cs:153` `public Dictionary<string, float> toolDurabilityMap`
+- `Assets/_Project/Scripts/SaveData.cs:156` `public Dictionary<string, bool> toolBrokenMap`
+- `Assets/_Project/Scripts/SaveData.cs:365` `public Dictionary<string, string> CustomModData`
+
+These are public fields on the ROOT `SaveData` type, which is exactly what `AGENTS.md`
+`Concrete Project Contracts` bans: "Managed-collections with dynamic allocations (e.g.
+`Dictionary<string, T>` or `HashSet<string>`) in the root structures of `SaveData.cs` are banned;
+serialization must rely on `ISerializationCallbackReceiver` and parallel flat lists."
+
+Measured, not assumed: `SaveData.cs` does **not** implement `ISerializationCallbackReceiver`, has no
+`OnBeforeSerialize` or `OnAfterDeserialize`, and carries no parallel flat lists for these three maps.
+Unity serializes no `Dictionary` field, so the consequence is that tool durability and broken-tool state
+are silently dropped on save and come back empty on load. `Assets/_Project/Scripts/SaveDataMigration.cs`
+lines 232 and 254 hold `HashSet<string>` under the same ban.
+
+Deliberately NOT fixed here. Changing root save structures touches save identity and needs
+`persistence.md`, the save mandates and `SaveManager.cs` read as owner files first, plus a migration
+decision and a real load-after-save artifact. `SaveManager.cs` also had concurrent edits in flight at the
+time of this audit. Classified `BLOCKER` with the exact missing condition, per `AGENTS.md` Deliverable
+class lock.
+
+Clean in the same audit, across 2078 first-party runtime `.cs` files with comments and string literals
+stripped: zero `Camera.main`, `FindObjectOfType`/`FindObjectsOfType`, `GameObject.Find`,
+`Resources.Load`, `Resources.UnloadUnusedAssets`, `async void`, `BinaryFormatter`, `renderer.material`
+and `renderer.materials`. The four `OnGUI` hits are all inside `#if UNITY_EDITOR`, so they are not
+violations. `DontDestroyOnLoad` appears 7 times and `Time.deltaTime` 3 times outside Dev tooling — both
+need an owner-route ruling rather than a blanket verdict, and neither is claimed as a defect here.
 
 ## Entry Template
 
