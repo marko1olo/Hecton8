@@ -5027,7 +5027,12 @@ namespace Hecton8.Tests.Editor
                     out string writeError);
 
                 Assert.IsTrue(wrote, writeError);
-                PatchPayloadInt(payload, 0, SaveData.VoxelDeltaPersistenceVersion);
+                byte[] versionedPayload = BuildLegacyLayoutPayload(
+                    payload,
+                    bytesWritten,
+                    SaveData.VoxelDeltaPersistenceVersion,
+                    SaveData.PlayerHealthDefault,
+                    out int versionedBytesWritten);
                 byte[] marker = BuildVoxelDeltaDenseChunkHeaderMarker(
                     1,
                     1,
@@ -5036,7 +5041,10 @@ namespace Hecton8.Tests.Editor
                     13,
                     0.25f,
                     VoxelDeltaChunkDTO.DirtyMaskWordCount);
-                int markerOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+                int markerOffset = FindLittleEndianByteSequenceOffset(
+                    versionedPayload,
+                    versionedBytesWritten,
+                    marker);
                 Assert.GreaterOrEqual(markerOffset, 0);
 
                 int dirtyMaskValuesOffset = markerOffset + marker.Length;
@@ -5046,12 +5054,12 @@ namespace Hecton8.Tests.Editor
                 int materialValuesOffset = materialCountOffset + sizeof(int);
                 int cellFlagsCountOffset = materialValuesOffset + VoxelDeltaChunkDTO.CellCount;
                 int cellFlagsPayloadBytes = sizeof(int) + VoxelDeltaChunkDTO.CellCount;
-                byte[] legacyPayload = new byte[bytesWritten - cellFlagsPayloadBytes];
+                byte[] legacyPayload = new byte[versionedBytesWritten - cellFlagsPayloadBytes];
                 int legacyBytesWritten = RemovePayloadRange(
-                    payload,
+                    versionedPayload,
                     cellFlagsCountOffset,
                     cellFlagsPayloadBytes,
-                    bytesWritten,
+                    versionedBytesWritten,
                     legacyPayload);
 
                 fixed (byte* legacyPayloadPtr = legacyPayload)
@@ -5076,6 +5084,8 @@ namespace Hecton8.Tests.Editor
                     Assert.AreEqual((byte)0, chunk.cellFlags[dirtyCellIndex]);
                 }
 
+                // With the v83/v84 sections gone the carving operation count really is the tail again,
+                // so cutting the last int is what leaves a v76 payload with no carving tail at all.
                 byte[] legacyNoTailPayload = new byte[legacyBytesWritten - sizeof(int)];
                 int legacyNoTailBytesWritten = RemovePayloadRange(
                     legacyPayload,
@@ -5170,7 +5180,12 @@ namespace Hecton8.Tests.Editor
                     out string writeError);
 
                 Assert.IsTrue(wrote, writeError);
-                PatchPayloadInt(payload, 0, SaveData.VoxelDeltaPersistenceVersion);
+                byte[] versionedPayload = BuildLegacyLayoutPayload(
+                    payload,
+                    bytesWritten,
+                    SaveData.VoxelDeltaPersistenceVersion,
+                    SaveData.PlayerHealthDefault,
+                    out int versionedBytesWritten);
                 byte[] marker = BuildVoxelDeltaDenseChunkHeaderMarker(
                     1,
                     1,
@@ -5179,7 +5194,10 @@ namespace Hecton8.Tests.Editor
                     13,
                     0.25f,
                     VoxelDeltaChunkDTO.DirtyMaskWordCount);
-                int markerOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
+                int markerOffset = FindLittleEndianByteSequenceOffset(
+                    versionedPayload,
+                    versionedBytesWritten,
+                    marker);
                 Assert.GreaterOrEqual(markerOffset, 0);
 
                 int dirtyMaskValuesOffset = markerOffset + marker.Length;
@@ -5189,12 +5207,12 @@ namespace Hecton8.Tests.Editor
                 int materialValuesOffset = materialCountOffset + sizeof(int);
                 int cellFlagsCountOffset = materialValuesOffset + VoxelDeltaChunkDTO.CellCount;
                 int cellFlagsPayloadBytes = sizeof(int) + VoxelDeltaChunkDTO.CellCount;
-                byte[] legacyPayload = new byte[bytesWritten - cellFlagsPayloadBytes];
+                byte[] legacyPayload = new byte[versionedBytesWritten - cellFlagsPayloadBytes];
                 int legacyBytesWritten = RemovePayloadRange(
-                    payload,
+                    versionedPayload,
                     cellFlagsCountOffset,
                     cellFlagsPayloadBytes,
-                    bytesWritten,
+                    versionedBytesWritten,
                     legacyPayload);
 
                 fixed (byte* legacyPayloadPtr = legacyPayload)
@@ -5278,26 +5296,34 @@ namespace Hecton8.Tests.Editor
                     out string writeError);
 
                 Assert.IsTrue(wrote, writeError);
-                PatchPayloadInt(payload, 0, SaveData.VoxelDeltaPersistenceVersion);
-
-                bool read = SaveBinaryPayloadCodec.TryRead(
-                    payloadPtr,
+                byte[] legacyPayload = BuildLegacyLayoutPayload(
+                    payload,
                     bytesWritten,
-                    out SaveData restored,
-                    out int bytesRead,
-                    out string readError);
+                    SaveData.VoxelDeltaPersistenceVersion,
+                    SaveData.PlayerHealthDefault,
+                    out int legacyBytesWritten);
 
-                Assert.IsTrue(read, readError);
-                Assert.AreEqual(bytesWritten, bytesRead);
-                Assert.AreEqual(SaveData.VoxelDeltaPersistenceVersion, restored.version);
-                Assert.AreEqual(1, restored.voxelDeltaPersistence.chunkCount);
-                VoxelDeltaChunkDTO chunk = restored.voxelDeltaPersistence.chunks[0];
-                Assert.AreEqual(1, chunk.cellCount);
-                Assert.AreEqual(dirtyCellBit, chunk.dirtyMaskWords[dirtyWordIndex]);
-                Assert.AreEqual((ushort)0x4321, chunk.sdfValueBits[dirtyCellIndex]);
-                Assert.AreEqual((byte)7, chunk.materialIds[dirtyCellIndex]);
-                Assert.AreEqual(VoxelDeltaChunkDTO.CellCount, chunk.cellFlags.Length);
-                Assert.AreEqual(VoxelDeltaChunkDTO.CellFlagReplace, chunk.cellFlags[dirtyCellIndex]);
+                fixed (byte* legacyPayloadPtr = legacyPayload)
+                {
+                    bool read = SaveBinaryPayloadCodec.TryRead(
+                        legacyPayloadPtr,
+                        legacyBytesWritten,
+                        out SaveData restored,
+                        out int bytesRead,
+                        out string readError);
+
+                    Assert.IsTrue(read, readError);
+                    Assert.AreEqual(legacyBytesWritten, bytesRead);
+                    Assert.AreEqual(SaveData.VoxelDeltaPersistenceVersion, restored.version);
+                    Assert.AreEqual(1, restored.voxelDeltaPersistence.chunkCount);
+                    VoxelDeltaChunkDTO chunk = restored.voxelDeltaPersistence.chunks[0];
+                    Assert.AreEqual(1, chunk.cellCount);
+                    Assert.AreEqual(dirtyCellBit, chunk.dirtyMaskWords[dirtyWordIndex]);
+                    Assert.AreEqual((ushort)0x4321, chunk.sdfValueBits[dirtyCellIndex]);
+                    Assert.AreEqual((byte)7, chunk.materialIds[dirtyCellIndex]);
+                    Assert.AreEqual(VoxelDeltaChunkDTO.CellCount, chunk.cellFlags.Length);
+                    Assert.AreEqual(VoxelDeltaChunkDTO.CellFlagReplace, chunk.cellFlags[dirtyCellIndex]);
+                }
             }
         }
 
@@ -5555,13 +5581,20 @@ namespace Hecton8.Tests.Editor
                     out string writeError);
 
                 Assert.IsTrue(wrote, writeError);
-                PatchPayloadInt(payload, 0, SaveData.VoxelDeltaPersistenceVersion);
-                byte[] legacyPayload = new byte[bytesWritten - sizeof(int)];
-                int legacyBytesWritten = RemovePayloadRange(
+                byte[] versionedPayload = BuildLegacyLayoutPayload(
                     payload,
-                    bytesWritten - sizeof(int),
-                    sizeof(int),
                     bytesWritten,
+                    SaveData.VoxelDeltaPersistenceVersion,
+                    SaveData.PlayerHealthDefault,
+                    out int versionedBytesWritten);
+                // Once the v83/v84 sections are gone the voxel delta block is the payload tail again,
+                // so the last int is the carving operation count this test means to drop.
+                byte[] legacyPayload = new byte[versionedBytesWritten - sizeof(int)];
+                int legacyBytesWritten = RemovePayloadRange(
+                    versionedPayload,
+                    versionedBytesWritten - sizeof(int),
+                    sizeof(int),
+                    versionedBytesWritten,
                     legacyPayload);
 
                 fixed (byte* legacyPayloadPtr = legacyPayload)
@@ -5604,13 +5637,17 @@ namespace Hecton8.Tests.Editor
                     out string writeError);
 
                 Assert.IsTrue(wrote, writeError);
-                byte[] truncatedPayload = new byte[bytesWritten - sizeof(int)];
-                int truncatedBytesWritten = RemovePayloadRange(
-                    payload,
-                    bytesWritten - sizeof(int),
-                    sizeof(int),
-                    bytesWritten,
-                    truncatedPayload);
+                // The missing-carving-tail guard only fires when the reader has run out of buffer
+                // (SaveBinaryPayloadCodec.cs:1435-1441). Since v83 the voxel delta block is no longer
+                // the payload tail, so a payload that stops where the carving operation count should
+                // start has to lose the celestial light phase and terrain identity behind it too.
+                // Cutting only the last int truncated the terrain identity instead and produced the
+                // generic out-of-range error.
+                int truncatedBytesWritten =
+                    bytesWritten - CurrentPayloadBytesFromVoxelCarvingOperationCountToEnd;
+                Assert.Greater(truncatedBytesWritten, 0);
+                byte[] truncatedPayload = new byte[truncatedBytesWritten];
+                Buffer.BlockCopy(payload, 0, truncatedPayload, 0, truncatedBytesWritten);
 
                 fixed (byte* truncatedPayloadPtr = truncatedPayload)
                 {
@@ -17611,6 +17648,11 @@ namespace Hecton8.Tests.Editor
         private const int ProceduralTerrainIdentityPayloadBytes =
             (sizeof(uint) * 11) + (sizeof(int) * 7) + (sizeof(float) * 3);
         private const int DefaultVoxelDeltaPayloadBytes = sizeof(int) * 3;
+
+        // Distance from the voxel delta block's trailing carving operation count
+        // (SaveBinaryPayloadCodec.cs:1153, :1465-1476) to the end of a current payload.
+        private const int CurrentPayloadBytesFromVoxelCarvingOperationCountToEnd =
+            sizeof(int) + CelestialLightPhasePayloadBytes + ProceduralTerrainIdentityPayloadBytes;
 
         /// <summary>
         /// Rewrites a payload produced by the CURRENT writer so its bytes sit where the reader expects
