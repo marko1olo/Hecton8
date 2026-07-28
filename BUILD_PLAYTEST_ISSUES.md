@@ -71,6 +71,13 @@ Not proven by that log:
 
 ### The Data Monolith content census — measured from the shipped blob, 2026-07-29
 
+> **SUPERSEDED IN ITS CONCLUSION, 2026-07-29. The numbers below are correct; what I concluded from them was
+> not.** I read a placeholder-tier blob and called it a content vacuum. The blob is real and the counts hold,
+> but the blob is **not what the game loads for items**, so its row counts do not measure the game's content.
+> The corrected finding is the next entry, `The content is not missing — the wiring is`. Keep this section for
+> the byte-level method and the counts; take the verdict from the successor. Getting this wrong the first time
+> is instructive: a census of the wrong artifact reads exactly like a census of the right one.
+
 The vacuum is no longer an impression. `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`
 (7,457,664 bytes) was parsed byte-wise and every count below comes out of the section table, not out of a
 document. Two self-checks passed before any number was believed: the first non-empty section starts at 576,
@@ -131,6 +138,82 @@ fixed 64-byte size, so it can carry the mask with no allocation and no string.
 are guarded by `expected != 0u && _directory.X != 0u`, so a blob baked with `AppVersionHash` 0 silently
 matches every app version. And `visual_tuning.h8bin`, the sibling artifact, is 64 bytes — header and
 directory only, no payload.
+### The content is not missing — the wiring is. Verified 2026-07-29
+
+This entry replaces the verdict of the census above. Every number here I measured or GUID-checked myself.
+
+**The item lane already works, and that alone refutes "the game has 4 items."** `PlayerInventory` holds
+`[SerializeField] private ItemCatalog itemCatalog` (`PlayerInventory.cs:632`), and the shipping
+`Assets/_Project/Prefabs/Player.prefab:1552` assigns it:
+`itemCatalog: {fileID: 11400000, guid: e3e4f9b6922abcc44b85e1d8a6d8f46c, type: 2}`. I read that guid out of
+`Assets/_Project/Data/Items/ItemCatalog.asset.meta` and it is byte-identical — checked by GUID, not by class
+name, because scenes bind by GUID. That catalog registers **73** `ItemData` ScriptableObjects (73 `.asset`
+files carry script guid `a49e6475ccf8054419a7fba4c7a78a5c`). Every id resolution in the inventory goes through
+`itemCatalog.FindByHash(...)`, and `ItemCatalog.cs` has zero references to the monolith, so there is no blob
+fallback inside it. The player has 73 items today.
+
+Meanwhile the blob's `Items` section has **no runtime reader at all**: `TryFindItemRecordByHash`
+(`H8StaticDataArena.cs:1002`), `TryGetItemRecord` (`:966`) and `H8ItemSoAReconstructJob` each occur exactly
+once in the whole tree — at their own declaration. Its only live consumer is a private localization-string
+enumerator (`:1936-1956`) that reads `HashId` and the name offsets and nothing else. So the four blob ids
+(`scrap_metal`, `pressure_gasket`, `oxygen_cell`, `sonar_crystal`) — which I confirmed appear in **neither**
+the ScriptableObject lane nor the generated economy lane — are content nothing can ever resolve.
+`FindByHash` would return null for all four, and the call sites already null-guard.
+
+**Crafting is the opposite case, and it is the real blocker.** 42 `RecipeData` ScriptableObjects exist under
+`Assets/_Project/Data/Crafting/Recipes/`. `Fabricator` is the runtime crafting owner and reads only its own
+`[SerializeField] List<RecipeData> availableRecipes` (`Fabricator.cs:101`). Its script guid
+`65748c03d0baf8a4a95eca4dd9cfa4c4` appears in **zero** `.unity` and `.prefab` files under `Assets` — I ran
+that search myself and it returned nothing. There is also no `RecipeCatalog.asset`; `Data/Crafting/` contains
+only `Recipes/` and its `.meta`, so recipes have no aggregate registration the way items do.
+
+And here is the part that turns this from a mystery into a work item. The scene-absence does **not** mean the
+lane was never built. Its construction site exists and is an authoring tool with a button:
+`Assets/_Project/Scripts/Editor/FabricationBootstrapAuthoring.cs:437` does
+`fabricator = station.AddComponent<Fabricator>();`, reached from
+`[MenuItem("Hecton8/Authoring/Rebuild Starter Fabrication Kit", priority = 170)]` at `:60` — and there is a
+companion `[MenuItem("Hecton8/Validation/Validate Starter Fabrication Kit", priority = 171)]` at `:244`. There
+is no `AddComponent<Fabricator>` anywhere outside `Scripts/Editor/`. So a complete authoring tool, with its own
+validator, sits behind a menu item nobody has pressed. That is a one-session fix, not a content programme, and
+it is the single highest-leverage action available on this axis.
+
+**The blob is compiled from the smallest of at least three authoring lanes.** The compiler's source roots are
+exactly two: `Assets/_SourceData/DataMonolith` (`H8DataMonolithCompiler.cs:30`) and `Data/Balance` (`:31`).
+I measured `Data/Balance`: 20 hand-typed CSVs, **58 data rows total**, largest 449 bytes. I then measured what
+those roots exclude: `Data/Economy` 30 files, `Data/Precomputed` 14, `Data/Visuals` 24, `Data/Audio` 5,
+`Data/System` 7 — **7.75 MB**, including already-compiled `.h8bin` blobs, manifests and preview images. So the
+generators did run and their output is on disk. `Data/Economy/Items.csv` holds 55 rows, of which 33 ids are
+also ScriptableObject names, so a baker consumed part of the SO lane to produce it. The compiler has zero
+matches for `ScriptableObject`, `AssetDatabase.Load/Find`, or any of those directory names — the 7.75 MB is
+structurally unreachable from it. The split is systemic rather than item-specific: `Assets/_Project/Data/Biomes`
+alone carries hundreds of assets against `Biomes.csv`'s 2 rows, and `Assets/_Project/Data/Fauna` carries 22
+against `Fauna.csv`'s 3.
+
+**Do not "just add the directories to the source roots."** The two `Items.csv` files have incompatible schemas
+— the generated one is `item_id, item_hash32, display_name, item_kind, source_recipe_id, source_recipe_hash32,
+category_id, category_hash32, ...`, the hand-typed one is `Id, version_id, Name, Description, CategoryId,
+Cost, StackMax, MassKg, IconIndex, AccessFrequency`. `ParseItem` expects the second. Repointing the compiler
+would mis-map or throw. And on the item axis it would fix nothing player-visible anyway, because no runtime
+code reads the result.
+
+**Why no gate caught any of this.** `ValidateProductionSectionCoverage` is a *not-empty* gate, not a
+*not-placeholder* gate: 22 of its 23 checklist entries compare `rowCount > 0` (`AppendMissingSection`,
+`:2595`), and the lone exception is `BiomeHeatmap`'s `rowCount == 65536` (`:2607`). One row passes. `Items=4`
+can never fail it. The four 0-row sections pass because they are **not on the checklist** — and that is
+provable by construction rather than by correlation: the gate runs before `BuildBlob` and aborts on any
+checked section being zero, a blob exists on disk, therefore every checked section was non-zero at bake time,
+therefore only omitted sections can read 0. The gate prints *"A structurally valid sparse static_data.h8bin is
+not production payload proof."* while passing exactly such a blob.
+
+`FIRST_20_MINUTES`: pressing the fabrication authoring button is the shortest path to a craftable first
+twenty minutes; today the crafting station is not in any scene the player can load.
+
+**Still unproven, stated plainly.** All of the above is static and GUID-level: no Unity run, no build, no
+player session. The zero-caller claims rest on tree-wide symbol searches, which would not catch reflection or
+a string-keyed dispatch table; I saw no such data layer but did not audit for one. The item verdict is scoped
+to `Items` — I did not trace `Creatures`, `Biomes` or `LootCdf` readers, so those sections may well be
+load-bearing and must not inherit this conclusion.
+
 | A failed save is shown to the player as a completed save | `[!]` | force a save write failure in a build and watch the HUD |
 
 ### A failed save is rendered as success — verified 2026-07-29
