@@ -190,6 +190,16 @@ namespace Hecton8.Core
         /// <summary>Minimum real unscaled seconds shedding holds once armed (AGENTS.md:239 band).</summary>
         public const float VramShedMinimumHoldSeconds = 2.5f;
         private const float VramShedMaxBilledDeltaSeconds = 0.5f;
+        /// <summary>
+        /// System-health index at which the dispatcher slow-lane cadence bit arms. Strictly above, never at.
+        /// Bound to the authored level-3 activate point instead of a repeated literal so the dictator branch
+        /// can never drift away from the band <c>ResolvePressureLevel</c> already enforces.
+        /// </summary>
+        public const float SlowTickCadenceArmShi = Level3ActivateShi;
+        /// <summary>System-health index the slow-lane cadence bit must fall back to before it may release.</summary>
+        public const float SlowTickCadenceReleaseShi = Level3RestoreShi;
+        /// <summary>Minimum real unscaled seconds the slow-lane cadence bit holds once armed (AGENTS.md:239 band).</summary>
+        public const float SlowTickCadenceMinimumHoldSeconds = 2.5f;
         private const float ScalabilityHardFailFrameMs = 20f;
         private const float SurvivalHardwareShiFloor = 0.4f;
         private const float SurvivalHardwareMaxQualityWeight = 0.6f;
@@ -250,8 +260,10 @@ namespace Hecton8.Core
         private static bool _mockHeavyLoadActive;
         private static bool _vramSheddingLatched;
         private static float _vramShedHoldSeconds;
-        private static double _vramShedLastUnscaledTimeSeconds;
-        private static bool _vramShedClockSeeded;
+        private static bool _slowTickCadenceLatched;
+        private static float _slowTickCadenceHoldSeconds;
+        private static double _dictatorLastUnscaledTimeSeconds;
+        private static bool _dictatorClockSeeded;
         private static float _cullingMultiplier = 1f;
         private static float _lowCullingMultiplier = DefaultLowCullingMultiplier;
         private static float _targetFrameMsOverride = ScalabilityContract.TargetFrameMilliseconds;
@@ -342,8 +354,10 @@ namespace Hecton8.Core
             _mockHeavyLoadActive = false;
             _vramSheddingLatched = false;
             _vramShedHoldSeconds = 0f;
-            _vramShedLastUnscaledTimeSeconds = 0.0;
-            _vramShedClockSeeded = false;
+            _slowTickCadenceLatched = false;
+            _slowTickCadenceHoldSeconds = 0f;
+            _dictatorLastUnscaledTimeSeconds = 0.0;
+            _dictatorClockSeeded = false;
             _cullingMultiplier = 1f;
             _lowCullingMultiplier = DefaultLowCullingMultiplier;
             _targetFrameMsOverride = ScalabilityContract.TargetFrameMilliseconds;
@@ -510,8 +524,10 @@ namespace Hecton8.Core
             _lastRuntimeKillBits = 0u;
             _vramSheddingLatched = false;
             _vramShedHoldSeconds = 0f;
-            _vramShedLastUnscaledTimeSeconds = 0.0;
-            _vramShedClockSeeded = false;
+            _slowTickCadenceLatched = false;
+            _slowTickCadenceHoldSeconds = 0f;
+            _dictatorLastUnscaledTimeSeconds = 0.0;
+            _dictatorClockSeeded = false;
         }
 
         private static void ResetScalabilityDictatorVaultHandles()
@@ -764,6 +780,11 @@ namespace Hecton8.Core
         /// clock and delta'd rather than counted in ticks, so the band below is measured in wall seconds
         /// and cannot become a function of the player's hardware tier. Capped so a pause, a scene load or
         /// an editor breakpoint is not billed against a hysteresis band.
+        /// <para>
+        /// This advances the clock, so it must be called EXACTLY ONCE per dictator tick and the value
+        /// shared by every latch in the tick. A second call in the same tick returns 0 and would starve
+        /// whichever band asked second - a starved dwell never completes, so that latch would hold forever.
+        /// </para>
         /// </summary>
         private static float ResolveDictatorUnscaledDeltaSeconds()
         {
@@ -771,15 +792,15 @@ namespace Hecton8.Core
             if (!(now > 0.0) || double.IsInfinity(now))
                 return 0f;
 
-            if (!_vramShedClockSeeded)
+            if (!_dictatorClockSeeded)
             {
-                _vramShedClockSeeded = true;
-                _vramShedLastUnscaledTimeSeconds = now;
+                _dictatorClockSeeded = true;
+                _dictatorLastUnscaledTimeSeconds = now;
                 return 0f;
             }
 
-            double delta = now - _vramShedLastUnscaledTimeSeconds;
-            _vramShedLastUnscaledTimeSeconds = now;
+            double delta = now - _dictatorLastUnscaledTimeSeconds;
+            _dictatorLastUnscaledTimeSeconds = now;
             if (!(delta > 0.0) || double.IsInfinity(delta))
                 return 0f;
 
@@ -791,17 +812,39 @@ namespace Hecton8.Core
         /// The dispatcher clock is delta'd on every tick regardless of latch state so a later arm can
         /// never bill a stale interval against the release band.
         /// </summary>
-        private static bool AdvanceVramSheddingLatch(float vramPressure01)
+        private static bool AdvanceVramSheddingLatch(float vramPressure01, float deltaSeconds)
         {
             _vramSheddingLatched = ResolveVramSheddingLatch(
                 _vramSheddingLatched,
                 vramPressure01,
-                ResolveDictatorUnscaledDeltaSeconds(),
+                deltaSeconds,
                 VramShedArmPressure01,
                 VramShedReleasePressure01,
                 VramShedMinimumHoldSeconds,
                 ref _vramShedHoldSeconds);
             return _vramSheddingLatched;
+        }
+
+        /// <summary>
+        /// Advances the owner-local dispatcher slow-lane cadence latch from the current system health index.
+        /// <para>
+        /// This deliberately reuses <see cref="ResolveVramSheddingLatch"/>: that function is a pure
+        /// arm/release/dwell latch with no VRAM-specific behaviour, and this file carries ONE hysteresis
+        /// idiom rather than a second parallel mechanism. Its non-finite fallback (worst case) is correct
+        /// for the health index too, where 1 is worst and 0 is healthy.
+        /// </para>
+        /// </summary>
+        private static bool AdvanceSlowTickCadenceLatch(float systemHealth01, float deltaSeconds)
+        {
+            _slowTickCadenceLatched = ResolveVramSheddingLatch(
+                _slowTickCadenceLatched,
+                systemHealth01,
+                deltaSeconds,
+                SlowTickCadenceArmShi,
+                SlowTickCadenceReleaseShi,
+                SlowTickCadenceMinimumHoldSeconds,
+                ref _slowTickCadenceHoldSeconds);
+            return _slowTickCadenceLatched;
         }
 
         /// <summary>
@@ -868,6 +911,9 @@ namespace Hecton8.Core
             float safeFrameMs = SanitizePositiveFrameMs(frameMs);
             float emergencyThreshold = SanitizeTunerEmergencyThreshold(_emergencyThresholdOverride);
             float hardwareConstraint01 = ResolveHardwareConstraintPressure01();
+            // Sampled once per dictator tick and shared by every hysteresis band below: the resolver
+            // advances the dispatcher clock, so a second call in the same tick bills 0 s.
+            float dictatorDeltaSeconds = ResolveDictatorUnscaledDeltaSeconds();
 
             if (systemHealth >= emergencyThreshold)
             {
@@ -940,7 +986,7 @@ namespace Hecton8.Core
                 targetMask &= ~(ulong)SystemBit.MathLodLow;
             }
 
-            if (AdvanceVramSheddingLatch(vramPressure01))
+            if (AdvanceVramSheddingLatch(vramPressure01, dictatorDeltaSeconds))
             {
                 targetMask |= (ulong)(SystemBit.VramShedding | SystemBit.NonCriticalVfx);
                 if (targetLevel < 2)
@@ -962,12 +1008,29 @@ namespace Hecton8.Core
             else
                 targetMask &= ~(ulong)SystemBit.MockHeavyLoad;
 
-            if (systemHealth > 0.95f)
-            {
+            // SystemBit.AiOneHz IS SystemBit.SlowTick2Hz (HomeostasisBrain.cs:41). ApplyPressurePolicy feeds
+            // it into SystemDispatcher.ApplyHomeostasisKillSwitch, which writes _homeostasisSlowTick2Hz, and
+            // ResolveSlowTickIntervalSeconds then returns 1.0 s instead of 0.1 s - a 10x cadence change on
+            // the lane every slow-tick owner runs on. This branch used to arm on a bare `systemHealth >
+            // 0.95f`: a raw literal copy of Level3ActivateShi with no release half and no dwell, so a
+            // single-sample health spike could flip that interval for one tick and back.
+            // The band is now the authored 0.95/0.90 level-3 pair plus the AGENTS.md:239 minimum dwell,
+            // served by the same pure latch the VRAM shed band uses.
+            //
+            // There is deliberately no clearing `else` here. At levels 1-3 ResolveTargetMask rebuilds the
+            // mask from Level1/2/3Mask every tick (HomeostasisBrain.cs:714-727), so the latch releasing IS
+            // the clear; at level 0 the bit belongs to the sequential restoration machine, which releases it
+            // in an authored order behind TimeDilation09 (HomeostasisBrain.cs:773-791). Clearing it here
+            // would jump that queue and restore two bits in one recovery step.
+            if (AdvanceSlowTickCadenceLatch(systemHealth, dictatorDeltaSeconds))
                 targetMask |= (ulong)SystemBit.AiOneHz;
-                if (targetLevel < 3)
-                    targetLevel = 3;
-            }
+
+            // The pressure level is promoted only while the health index is genuinely above the arm point.
+            // Holding level 3 through the dwell instead would extend `emergency` in ApplyPressurePolicy,
+            // which drives RequestCoreTickDilation(0.9f) - core tick dilation is not a presentation knob and
+            // must not outlive the pressure that justified it.
+            if (systemHealth > SlowTickCadenceArmShi && targetLevel < 3)
+                targetLevel = 3;
 
             ApplyVisualOverkillPolicy(systemHealth, ref targetMask);
             ApplyGarbageCollectorPolicy(safeFrameMs, ref targetMask);
