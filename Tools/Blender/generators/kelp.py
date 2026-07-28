@@ -3182,11 +3182,27 @@ def _default_out_dir() -> str:
     developer paths ... is strictly banned. All screenshot, log, config, and data
     directories must be resolved relatively from the project root."
 
-    The package lands under ``Docs/AgentLogs`` rather than ``Assets`` because only
-    Unity may author asset-database entries; the Unity-side assembler moves and
-    imports the FBX.
+    CORRECTED 2026-07-29. This used to return ``Docs/AgentLogs/ForgeKelp`` on the
+    reasoning that "only Unity may author asset-database entries; the Unity-side
+    assembler moves and imports the FBX." Half right, and the wrong half was
+    load-bearing: only Unity may author ``.prefab``/``.mat``/``.asset`` entries, but
+    writing a raw FBX into ``Assets/`` is not authoring one -- Unity imports the file
+    and writes its own ``.meta``, which is the ordinary sanctioned route and exactly
+    what ``HectonFBXPostprocessor``'s forge carve-out exists to serve. And no
+    Unity-side assembler that "moves and imports the FBX" was ever written, so
+    nothing moved them. Measured consequence: ``.gitignore:201`` ignores
+    ``Docs/AgentLogs`` wholesale and zero FBX are tracked there, so every kelp
+    package lived on one machine's disk, invisible to Unity and to git, one
+    ``git clean`` from gone.
+
+    This matters more for kelp than for any other family right now:
+    ``Hecton_KelpMaster`` reads its sway and midrib masks from UV1 as of
+    2026-07-29, and all 472 kelp meshes currently in the project serialize UV1 with
+    dimension 0. The packages this generator writes are the only kelp meshes that
+    carry the set the shader needs.
     """
-    return os.path.join(law.project_root(), "Docs", "AgentLogs", "ForgeKelp")
+    return os.path.join(law.project_root(),
+                        *law.forge_package_dir(law.Family.FLORA).split("/"))
 
 
 def _parse_args(argv):

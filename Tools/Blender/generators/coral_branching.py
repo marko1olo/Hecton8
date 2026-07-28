@@ -1275,8 +1275,13 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
             # Blender's CWD happens to be - the first run of this stage wrote the FBX into
             # the REPOSITORY ROOT. An empty --out is the default, so the common path was the
             # broken one.
-            out_dir = preview_dir or os.path.join(
-                "Docs", "AgentLogs", "ForgeCoral")
+            #
+            # The package now defaults INSIDE Assets. law.forge_package_dir carries the
+            # source proof; the short version is that Docs/AgentLogs is gitignored and
+            # outside Assets, so every FBX this pipeline has ever made was invisible to
+            # both Unity and git. --out still overrides, which is what a silhouette
+            # iteration loop should use so it does not trigger an import per run.
+            out_dir = preview_dir or law.forge_package_dir(law.Family.FLORA)
             os.makedirs(out_dir, exist_ok=True)
             fbx_path = os.path.join(out_dir, "MESH_{f}_{n}.fbx".format(
                 f=law.Family.FLORA.value, n=asset_name))

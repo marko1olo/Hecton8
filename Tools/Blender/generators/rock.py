@@ -3695,11 +3695,20 @@ def parse_args(argv: list) -> argparse.Namespace:
 
 
 def resolve_out_dir(requested: str) -> str:
-    """Relative to the repo root. AGENTS.md bans hardcoded absolute developer paths."""
+    """Relative to the repo root. AGENTS.md bans hardcoded absolute developer paths.
+
+    The default moved out of ``Docs/AgentLogs/ForgeRock`` on 2026-07-29:
+    ``.gitignore:201`` ignores that tree wholesale and it is outside ``Assets``, so
+    every package this generator wrote was invisible to both Unity and git.
+    ``law.forge_package_dir`` carries the source proof for the destination.
+    An explicit ``--out`` still wins, which is what an iteration loop should pass so
+    it does not trigger a Unity import on every run.
+    """
     if requested:
         return requested if os.path.isabs(requested) else os.path.join(
             law.project_root(), requested)
-    return os.path.join(law.project_root(), "Docs", "AgentLogs", "ForgeRock")
+    return os.path.join(law.project_root(),
+                        *law.forge_package_dir(law.Family.GEOLOGY).split("/"))
 
 
 def main(argv: list) -> int:

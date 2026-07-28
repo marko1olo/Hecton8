@@ -1179,6 +1179,30 @@ def export_fbx(
             if blackbox is not None:
                 blackbox.note_invalid("export_fbx", "FBX_ROUNDTRIP_FAILED",
                                       "; ".join(report.failures)[:400])
+            # DELETE THE REJECTED FILE. PROCEDURAL_ASSET_PIPELINE.md "Validation
+            # Before Save": "On validation failure the save is aborted" - and an
+            # aborted save that leaves the file on disk has not aborted anything.
+            #
+            # This was harmless while packages landed in Docs/AgentLogs, which is
+            # gitignored and outside Assets. It stopped being harmless the moment
+            # law.forge_package_dir moved the destination INSIDE Assets on
+            # 2026-07-29: a rejected FBX left there is imported by Unity on next
+            # focus, and the generator's own abort message is the only thing saying
+            # it should not exist. Raising while leaving the artefact behind is the
+            # worst of both outcomes, because the caller sees a failure and the
+            # project sees an asset.
+            try:
+                if os.path.exists(out_path):
+                    os.remove(out_path)
+                    notes.append(
+                        "rejected fbx deleted from {0}: a failed round trip must "
+                        "not leave an importable file behind".format(
+                            _project_relative(out_path, [])))
+            except OSError as removal_error:            # pragma: no cover
+                notes.append(
+                    "REJECTED FBX COULD NOT BE DELETED at {0}: {1}. Remove it by "
+                    "hand before Unity imports it.".format(
+                        _project_relative(out_path, []), removal_error))
             raise GenerationAborted(
                 "fbx round trip failed for {0}: {1}".format(
                     os.path.basename(out_path), "; ".join(report.failures)),
@@ -1640,20 +1664,41 @@ def unity_import_notes(family) -> dict:
         "textureImport": texture_expectation,
         "vertexColorContract": list(law.VCOL_CONTRACT[surface]),
         "exportSettingsUsed": _serialisable_settings(),
+        # RESOLVED 2026-07-29, and the stale entry mattered: this list used to open
+        # with "OnPreprocessModel forces importNormals=Calculate for every FBX under
+        # Assets/_Project/Art ... loses its authored weighted split normals
+        # silently." That was true when it was written and is false now. The
+        # postprocessor has since grown a complete forge carve-out
+        # (HectonFBXPostprocessor.cs:43 schema, :50 MESH_ prefix, :401-429 sets
+        # importNormals=Import for a forge asset, :181-196 logs a missing LODGroup
+        # against the manifest instead of decimating). A warning nobody re-checked
+        # is the most plausible reason every generator kept writing into
+        # Docs/AgentLogs, which .gitignore:201 ignores - so the output reached
+        # neither Unity nor git for the whole life of this pipeline.
         "knownProjectConflicts": [
-            "HectonFBXPostprocessor.OnPreprocessModel forces "
-            "importNormals=ModelImporterNormals.Calculate for every FBX under "
-            "Assets/_Project/Art, Assets/_Project/_PROLOGUE_CONTENT/Models and "
-            "Assets/ScifiFacility. A generated package placed under those roots "
-            "loses its authored weighted split normals silently.",
-            "The same postprocessor forces "
+            "RESOLVED: the importNormals=Calculate clobber no longer applies to "
+            "forge packages. HectonFBXPostprocessor.cs:401-429 sets "
+            "importNormals=Import when the sibling manifest declares "
+            "h8forge.manifest/1 with unityImport.modelImporter.importNormals == "
+            "'Import'. Requires the manifest to sit in the SAME directory named "
+            "MANIFEST_<stem>.json and the mesh file to start with upper-case "
+            "'MESH_' (TryResolveForgeManifestPath, :702-736). Both hold by "
+            "construction from law.NAME_MESH and law.NAME_MANIFEST.",
+            "STILL TRUE, and it does not apply to Assets/ScifiFacility, which "
+            "TryResolveForgeManifestPath excludes at :715 so a manifest cannot "
+            "weaken third-party quarantine policy.",
+            "The postprocessor forces "
             "materialLocation=ModelImporterMaterialLocation.InPrefab, which "
             "conflicts with materialImportMode=None and the shared MAT_* policy.",
             "HectonBakeryUvAudit.RunAudit() enables generateSecondaryUV and "
-            "reimports, which overwrites authored UV1.",
+            "reimports, which overwrites authored UV1. Now sharper than when it "
+            "was written: Hecton_KelpMaster reads its height and width masks from "
+            "UV1 as of 2026-07-29, so this audit does not merely overwrite a "
+            "lightmap set, it would overwrite the sway parameterisation.",
             "HectonFBXPostprocessor.OnPostprocessModel builds a fallback LODGroup "
             "with its own decimation above 2000 triangles when no LODGroup is "
-            "present.",
+            "present. Mitigated for forge packages by the :181-196 branch, which "
+            "logs the manifest path instead - but only when the manifest parses.",
         ],
         "proofStatus": PENDING_MARKER,
         "proofStatusNote":

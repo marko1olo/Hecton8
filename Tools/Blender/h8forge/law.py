@@ -504,6 +504,72 @@ NAME_MANIFEST = "MANIFEST_{family}_{name}"
 
 
 # ---------------------------------------------------------------------------
+# Where a finished package is allowed to land
+# ---------------------------------------------------------------------------
+# WHY THIS EXISTS, and it is not a convenience. Every FBX the forge has ever
+# produced landed under ``Docs/AgentLogs/Forge*``. ``.gitignore:201`` ignores
+# ``Docs/AgentLogs/`` wholesale, ``git ls-files`` finds zero tracked FBX there, and
+# none of it is inside ``Assets/``. So the output was outside Unity, outside git,
+# and one ``git clean`` from gone. Generators were reporting measured LOD chains
+# and channel statistics for assets that existed nowhere the game could reach.
+#
+# ``export_fbx`` was RIGHT to refuse to default a path: ``AGENTS.md`` ``Project
+# Shape`` forbids inventing folders "without local source proof and
+# justification". The path did not need inventing, only finding. Proof, all local:
+#
+#   * ``HectonFBXPostprocessor.cs:16`` declares
+#     ``ProjectArtRoot = "Assets/_Project/Art"``, first in ``ManagedFbxRoots``.
+#   * ``Assets/_Project/Art/Generated/`` is the established home for generated
+#     content -- ``Generated/Flora/BioForge`` and ``Generated/ProductFace/Tools``
+#     both already exist on disk.
+#   * "Forge" is not a new prefix. It is this pipeline's name in the tool tree
+#     (``Tools/Blender/h8forge``) and in the postprocessor's own constants
+#     ``ForgeManifestSchema``, ``ForgeMeshFilePrefix``, ``ForgeFbxExtension``.
+#
+# THE IMPORT CARVE-OUT IS ALREADY BUILT AND HAS NEVER FIRED.
+# ``HectonFBXPostprocessor`` recognises ``h8forge.manifest/1`` (``:43``) and the
+# ``MESH_`` prefix (``:50``), and at ``:401-429`` sets ``importNormals =
+# ModelImporterNormals.Import`` for a forge asset -- preserving the weighted split
+# normals ``mesh_ops.apply_shading_basis`` bakes, which ``Calculate`` would
+# re-derive from a single angle and throw away. At ``:181-196`` a forge asset
+# arriving without an LODGroup is LOGGED against its manifest path instead of being
+# silently decimated into extra LODs. Both banks of the bridge were finished and
+# nothing ever crossed it.
+#
+# ``export_unity.py``'s own ``knownProjectConflicts`` still warns that the
+# postprocessor "forces importNormals=Calculate for every FBX under
+# Assets/_Project/Art". True before the carve-out, false now -- and the most
+# plausible reason nobody moved the path.
+#
+# TWO HARD REQUIREMENTS from ``TryResolveForgeManifestPath`` (``:702-736``), both
+# already satisfied by ``NAME_MESH``/``NAME_MANIFEST``, which is why the directory
+# was the only thing wrong:
+#   1. the file name starts with ``MESH_``, ordinal and CASE-SENSITIVE;
+#   2. the manifest is a SIBLING in the same directory, named ``MANIFEST_<stem>``.
+# ``Assets/ScifiFacility`` is excluded by that same function at ``:715``:
+# third-party quarantine can never earn the carve-out, and a manifest dropped
+# beside a vendor FBX must not be able to weaken it.
+UNITY_ASSET_ROOT = "Assets/_Project"
+FORGE_PACKAGE_ROOT = UNITY_ASSET_ROOT + "/Art/Generated/Forge"
+
+
+def forge_package_dir(family) -> str:
+    """Project-relative directory a finished package belongs in, per family.
+
+    Forward-slashed and never absolute: ``AGENTS.md`` ``[RULE] Relative Path
+    Requirement`` bans hardcoded developer paths in any durable artefact, and a
+    manifest records this path.
+
+    Writing here means Unity imports on next focus. That is the point, and it is
+    also why a generator must not write here while another owner holds the editor
+    for a batch run -- ``AGENTS.md`` ``Unity And Build Gates`` allows one owner at a
+    time, and an import storm is the interference it forbids.
+    """
+    resolved = family if isinstance(family, Family) else Family(family)
+    return "{root}/{family}".format(root=FORGE_PACKAGE_ROOT, family=resolved.value)
+
+
+# ---------------------------------------------------------------------------
 # Black box  --  3dmodel.md section 11
 # ---------------------------------------------------------------------------
 # "Critical generator pipelines must keep the last 300 high-level bake steps in a
