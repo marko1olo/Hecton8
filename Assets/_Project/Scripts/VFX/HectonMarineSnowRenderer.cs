@@ -495,6 +495,17 @@ namespace Hecton8.Environment
         private bool _registeredLateFrame;
         private bool _registeredSlowTick;
         private bool _registeredColdTick;
+
+        /// <summary>
+        /// Latched once GPU setup fails unrecoverably, so no dispatcher lane can ever be re-entered.
+        /// </summary>
+        /// <remarks>
+        /// Without this, unregistering on failure is worse than doing nothing: clearing
+        /// <c>_registeredColdTick</c> re-arms <see cref="TryRegisterColdTick"/>, whose two live callers then
+        /// re-register the component into the lane it just left. Measured: the missing-Texture3D assertion
+        /// went from 48 to 69 occurrences per headless run when the unregister landed without this latch.
+        /// </remarks>
+        private bool _setupPermanentlyFailed;
         private bool _pendingVisualTickDirty;
         private float _pendingVisualTickDeltaTime;
         private bool _buffersReady;
@@ -3274,7 +3285,7 @@ namespace Hecton8.Environment
 
         private void TryRegisterColdTick()
         {
-            if (_registeredColdTick)
+            if (_registeredColdTick || _setupPermanentlyFailed)
                 return;
             if (!Application.isPlaying || !_dispatcherReady)
                 return;
@@ -3303,6 +3314,19 @@ namespace Hecton8.Environment
         /// </remarks>
         private void DisableAfterUnrecoverableSetupFailure()
         {
+            // Latch FIRST, and it is the whole fix rather than a belt-and-braces extra.
+            //
+            // The first attempt at this only unregistered the lanes, and the assertion count went UP - from
+            // 48 to 69 in back-to-back headless runs - because TryRegisterColdTick early-returns on
+            // `_registeredColdTick` and clearing that flag re-armed it. Two live callers (:759 and :1042)
+            // then re-registered the component, which re-entered ColdTick, re-hit the same failing branch,
+            // re-asserted, and unregistered again. Unregistering without latching converted one repeating
+            // assertion into a register/assert/unregister churn cycle that ran faster than the original.
+            //
+            // Every caller of this method is an unrecoverable authoring or shader-compilation gap, so
+            // refusing to ever re-register is correct, not merely quieter.
+            _setupPermanentlyFailed = true;
+
             if (_registeredColdTick)
             {
                 GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
