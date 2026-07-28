@@ -5182,6 +5182,45 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        /// <summary>
+        /// Maps a <see cref="PersistentWorldRegistry.LastSaveSnapshotFailureCode"/> discriminator onto a
+        /// branch-distinct player/diag reason and a grep-token log line. Every output is a const string
+        /// selected by a switch on a byte, so this stays allocation-free on the save staging cadence.
+        /// One grep locates any occurrence in a run log: SAVEFAIL_WORLDSNAPSHOT_
+        /// </summary>
+        private static void ResolvePersistentWorldSnapshotFailureText(
+            byte snapshotFailureCode,
+            out string reason,
+            out string logReason)
+        {
+            switch (snapshotFailureCode)
+            {
+                case PersistentWorldRegistry.SaveSnapshotFailureStorageNotCreated:
+                    reason = "Persistent world registry storage was never allocated; world state cannot be saved.";
+                    logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_STORAGE_NOT_CREATED - PersistentWorldRegistry vault buffers are not created. Awake() returned before InitializeVaultBackedStorage() because service registration failed; check for a ready-locked GlobalRegistry rejecting PersistentWorldRegistry.";
+                    return;
+                case PersistentWorldRegistry.SaveSnapshotFailureTombstoneStaging:
+                    reason = "Persistent world resource-node tombstone staging failed; world state cannot be saved.";
+                    logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_TOMBSTONE_STAGING - StageResourceNodeTombstonesForSave() rejected the capture. Inspect the resource-node tombstone and deleted-instance buffer capacities in the world telemetry ring.";
+                    return;
+                case PersistentWorldRegistry.SaveSnapshotFailureSnapshotClear:
+                    reason = "Persistent world snapshot buffer could not be cleared; world state cannot be saved.";
+                    logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_SNAPSHOT_CLEAR - TryClearSaveSnapshotDeltas() rejected the capture. The save-snapshot delta buffer refused a Clear(); see the capacity-mismatch entry in the world telemetry ring.";
+                    return;
+                case PersistentWorldRegistry.SaveSnapshotFailureCapacityOverflow:
+                    reason = "Persistent world snapshot exceeded its capacity; world state cannot be saved.";
+                    logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_CAPACITY_OVERFLOW - the save-snapshot delta buffer overflowed while expanding delta records. Raise PersistentWorldRegistry.maxTrackedItems or reduce tracked world deltas.";
+                    return;
+                default:
+                    // Includes SaveSnapshotFailureNone: CaptureSaveSnapshot() returned false without
+                    // setting a discriminator, which means a false-return path was added upstream
+                    // without assigning _lastSaveSnapshotFailureCode.
+                    reason = "Persistent world save snapshot capture failed.";
+                    logReason = "[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_UNATTRIBUTED - PersistentWorldRegistry.CaptureSaveSnapshot() returned false with no failure discriminator set.";
+                    return;
+            }
+        }
+
         private bool TryCapturePersistentWorldSnapshot(
             string slotName,
             byte slotIndex,
@@ -5196,8 +5235,16 @@ namespace Hecton8.SaveSystem
             {
                 if (!persistentWorldRegistry.CaptureSaveSnapshot())
                 {
-                    const string reason = "Persistent world save snapshot capture failed.";
-                    const string logReason = "[SaveManager] Save failed: persistent world save snapshot capture failed.";
+                    // Attribute the loss to the exact registry branch. A single shared reason string
+                    // meant a total loss of player progress could only be diagnosed by byte-decoding
+                    // the slot_N.diag UTF-16 payload, and even then named none of the four branches.
+                    // reason -> player-facing UI + the diag sidecar (branch-distinct MessageHash).
+                    // logReason -> carries the SAVEFAIL_WORLDSNAPSHOT_ grep token for the run log.
+                    // All const strings selected by a switch: no concat, no interpolation, no boxing.
+                    ResolvePersistentWorldSnapshotFailureText(
+                        persistentWorldRegistry.LastSaveSnapshotFailureCode,
+                        out string reason,
+                        out string logReason);
                     const uint failureCode = 3u;
                     Exception cleanupException = null;
                     HandleSaveFailure(slotName, slotIndex, operationId, reason, logReason, failureCode, elapsedMilliseconds, ref cleanupException, ref snapshotPauseActive);

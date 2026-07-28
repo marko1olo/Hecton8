@@ -2763,6 +2763,23 @@ namespace Hecton8.World
         private const uint WorldTelemetryInvalidAup = 6u;
         private const uint WorldTelemetryTombstoneDecaySkipped = 7u;
 
+        // Save-snapshot capture failure discriminators.
+        //
+        // CaptureSaveSnapshot() has four distinct false-return branches. They previously collapsed into
+        // one SaveManager reason string ("Persistent world save snapshot capture failed."), so a total
+        // loss of player progress could only be attributed by byte-decoding the UTF-16 payload of the
+        // slot_N.diag sidecar - and even then the string named none of the four.
+        //
+        // Two of the branches emitted no telemetry at all, and SaveSnapshotFailureStorageNotCreated
+        // structurally CANNOT emit any: _worldTelemetryRing is allocated by InitializeVaultBackedStorage,
+        // the very method that did not run, so WriteWorldTelemetry() no-ops at its IsCreated guard.
+        // This managed byte is the only failure signal that escapes that branch.
+        internal const byte SaveSnapshotFailureNone = 0;
+        internal const byte SaveSnapshotFailureStorageNotCreated = 1;
+        internal const byte SaveSnapshotFailureTombstoneStaging = 2;
+        internal const byte SaveSnapshotFailureSnapshotClear = 3;
+        internal const byte SaveSnapshotFailureCapacityOverflow = 4;
+
         [StructLayout(LayoutKind.Explicit, Size = 72)]
         private struct PagedSectorHashWindow
         {
@@ -2949,6 +2966,7 @@ namespace Hecton8.World
         private VaultBackedMultiHashMap<uint, PersistentWorldCompactDeltaRecord> _deltaRecordsByChunk;
         private VaultBackedList<int> _tombstoneDecayExpiredIndices;
         private VaultBackedList<PersistentWorldDeltaRecord> _saveSnapshotDeltas;
+        private byte _lastSaveSnapshotFailureCode;
         private VaultBackedArray<PoolSlotData> _poolSlotData;
         private VaultBackedHashMap<ulong, int> _guidToPoolIndex;
         private VaultBackedHashMap<uint, EntityDataRecord> _entityStateByInstanceUid;
@@ -4866,12 +4884,31 @@ namespace Hecton8.World
 
         internal bool CaptureSaveSnapshot()
         {
+            _lastSaveSnapshotFailureCode = SaveSnapshotFailureNone;
+
             if (!_saveSnapshotDeltas.IsCreated || !_deltaRecords.IsCreated)
+            {
+                // Vault-backed storage was never allocated. Awake() returns before
+                // InitializeVaultBackedStorage() whenever TryRegisterService() leaves
+                // _serviceRegistered false, which is what a ready-locked GlobalRegistry causes.
+                // WriteWorldTelemetry() cannot report this: the ring is allocated by the same
+                // method that did not run. The failure code is the only carrier out of here.
+                _lastSaveSnapshotFailureCode = SaveSnapshotFailureStorageNotCreated;
                 return false;
+            }
 
             SyncAllHydratedRecords();
             if (!StageResourceNodeTombstonesForSave())
             {
+                _lastSaveSnapshotFailureCode = SaveSnapshotFailureTombstoneStaging;
+                WriteWorldTelemetry(
+                    WorldTelemetryCapacityMismatch,
+                    WorldRegistryResourceTombstoneKeysBuffer,
+                    0u,
+                    0,
+                    _resourceNodeTombstoneIds.Capacity,
+                    _currentPlayerChunk,
+                    0u);
                 TryClearSaveSnapshotDeltas();
                 UpdateDiagnostics();
                 return false;
@@ -4879,6 +4916,8 @@ namespace Hecton8.World
 
             if (!TryClearSaveSnapshotDeltas())
             {
+                // TryClearSaveSnapshotDeltas() already wrote its own capacity-mismatch telemetry.
+                _lastSaveSnapshotFailureCode = SaveSnapshotFailureSnapshotClear;
                 UpdateDiagnostics();
                 return false;
             }
@@ -4886,7 +4925,10 @@ namespace Hecton8.World
             for (int i = 0; i < _deltaRecords.Length; i++)
             {
                 if (!_saveSnapshotDeltas.IsCreated)
+                {
+                    _lastSaveSnapshotFailureCode = SaveSnapshotFailureStorageNotCreated;
                     return false;
+                }
 
                 if (!TryResolveDeltaRecord(_deltaRecords[i], out PersistentWorldDeltaRecord expandedRecord))
                     continue;
@@ -4894,6 +4936,7 @@ namespace Hecton8.World
                 if (_saveSnapshotDeltas.Length >= _saveSnapshotDeltas.Capacity ||
                     !_saveSnapshotDeltas.AddNoResize(expandedRecord))
                 {
+                    _lastSaveSnapshotFailureCode = SaveSnapshotFailureCapacityOverflow;
                     WriteWorldTelemetry(
                         WorldTelemetryCapacityMismatch,
                         WorldRegistrySaveSnapshotDeltasBuffer,
@@ -4911,6 +4954,13 @@ namespace Hecton8.World
             UpdateDiagnostics();
             return true;
         }
+
+        /// <summary>
+        /// Discriminates which <see cref="CaptureSaveSnapshot"/> branch rejected the last capture.
+        /// <see cref="SaveSnapshotFailureNone"/> after a successful capture. Read by SaveManager to
+        /// attribute a save-snapshot failure to an exact branch instead of one opaque reason string.
+        /// </summary>
+        internal byte LastSaveSnapshotFailureCode => _lastSaveSnapshotFailureCode;
 
         internal int SaveSnapshotCount => _saveSnapshotDeltas.IsCreated ? _saveSnapshotDeltas.Length : 0;
 
