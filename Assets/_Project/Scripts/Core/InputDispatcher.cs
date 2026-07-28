@@ -468,6 +468,7 @@ namespace Hecton8.Core
         public void InitializeService()
         {
             CaptureOwnerThread();
+            TryPersistRuntimeOwner();
             if (_isInitialized)
             {
                 EnsureInputBinding();
@@ -2832,6 +2833,42 @@ namespace Hecton8.Core
                 if (clearPendingHapticOutput)
                     _pendingHapticOutput = false;
             }
+        }
+
+        /// <summary>
+        /// Moves this dispatcher under the bootstrap persistent root so a scene transition cannot destroy
+        /// it and silently empty <see cref="GlobalRegistry"/>'s Input slot.
+        ///
+        /// WHY THIS IS NOT DEFENSIVE PADDING. GameBootstrapper.EnsureInputDispatcherRegistered
+        /// (GameBootstrapper.cs:6309-6327) is the ONLY producer of this component in the project - the
+        /// string "InputDispatcher" occurs in zero scenes and zero prefabs - and it does
+        /// <c>new GameObject("[InputDispatcher]")</c> in whatever scene happens to be active, then calls
+        /// BindNativeInputManager and InitializeService. Its two sibling factories,
+        /// EnsureSystemDispatcherRegistered (:5877) and EnsureRenderDispatcherRegistered (:6063), both call
+        /// PersistRuntimeService on the line before InitializeService. The input factory does not, and the
+        /// authored InputManager next to it is persisted explicitly (:3585). That single omission is the
+        /// whole defect.
+        ///
+        /// The consequence, and it is measured rather than reasoned: the InputDispatcher bootstrap node
+        /// runs exactly once, in BootstrapPhase.Player, while 00_BOOTSTRAP is still the active scene, and
+        /// it passed its readiness gate there (Logs/omega_route16.log:5842-5884, node readiness reads
+        /// GlobalRegistry.RegisteredInput). The route then loads 01_MAIN_MENU and 02_HECTON_WORLD and ends
+        /// with one scene loaded, so the object created in 00_BOOTSTRAP is gone. OnDestroy runs
+        /// ShutdownServiceState -> TryUnregisterInputService, the Input slot returns to null, and nothing
+        /// refills it because the Player phase does not run a second time. By gameplay the headless route
+        /// reported "no drivable player ... inputService=False" - a NULL service, not a disabled one, which
+        /// is why every consumer's leading null check (HectonPlayerInputHandler.cs:37,
+        /// HectonPlayerMovement.cs:7992, PlayerToolManager.cs:414) short-circuited before
+        /// IsPlayerInputEnabled was ever asked.
+        ///
+        /// Identical call and identical purpose to WorldStateManager.cs:85. PersistRuntimeService is inert
+        /// outside play mode and inert when no GameBootstrapper owns startup, and it returns after one
+        /// transform compare once the parent already matches, so this cold entry point pays nothing on
+        /// re-entry.
+        /// </summary>
+        private void TryPersistRuntimeOwner()
+        {
+            Hecton8.Bootstrap.GameBootstrapper.PersistRuntimeService(this);
         }
 
         private void TryRegisterInputService()

@@ -16,21 +16,29 @@
 //
 // THE TWO LANES IT PRODUCES ON
 //   AXIS 1, discrete commands: SignalBus<PlayerInputSignal> with SourceHash 0x504C494E ("PLIN") and a
-//     strictly increasing Sequence. Same lane, same gates, same payload as InputDispatcher.cs:3969.
+//     strictly increasing Sequence. Same lane, same gates, same payload as InputDispatcher.cs:4014.
 //     Consumers (PlayerInteraction, PlayerToolManager, PlayerPDA, ...) cannot tell the difference and
 //     are not asked to.
 //   AXIS 2, continuous locomotion: CoreDeterminismSignals.TryPublishInputOverride, which
-//     InputDispatcher.ApplyAutomationOverride (InputDispatcher.cs:3230, called unconditionally at
-//     :3018) folds into the authoritative PlayerInputState AFTER the hardware poll and BEFORE the
+//     InputDispatcher.ApplyAutomationOverride (InputDispatcher.cs:3267, called unconditionally at
+//     :3055) folds into the authoritative PlayerInputState AFTER the hardware poll and BEFORE the
 //     input block mask. This is the project's own sanctioned synthetic-input lane.
 //
 //   Registry-slot replacement was evaluated and REJECTED as unsafe, not merely inconvenient:
 //   GlobalRegistryServiceSlot.Input is denied by IsSceneRuntimeHotSwapSlot (GlobalRegistry.cs:7161),
 //   RegisterInputService (:3106) takes no token, and Register (:7315) calls ThrowSlotHijack (:7450)
 //   when the slot is already occupied. Publishing a ScriptedInputService before Ready would therefore
-//   make InputDispatcher.TryRegisterInputService (InputDispatcher.cs:2837) throw during Initialize and
+//   make InputDispatcher.TryRegisterInputService (InputDispatcher.cs:2874) throw during Initialize and
 //   abort the very boot this probe measures. Publishing after Ready throws CriticalBootException. The
 //   automation-override lane needs neither door and leaves the real owner in place.
+//
+//   THE SLOT BEING OCCUPIED WAS NEVER THE PROBLEM ANYWAY. Measured on the run this file was last read
+//   against (Logs/omega_route16.log): the Swim row printed "inputService=False", which is
+//   GlobalRegistry.RegisteredInput != null - the slot was EMPTY during gameplay, not hijacked and not
+//   disabled. The dispatcher registered fine at boot (:5842-5884, BootstrapPhase.Player, 00_BOOTSTRAP
+//   still active) and then died with that scene, because GameBootstrapper's input factory
+//   (GameBootstrapper.cs:6309) is the only one of the three dispatcher factories that omits
+//   PersistRuntimeService. Fixed at the owner: InputDispatcher.InitializeService now persists itself.
 //
 // CADENCE
 //   Driven by the probe's existing EditorApplication.update tick. No Update/LateUpdate/FixedUpdate, no
@@ -203,6 +211,10 @@ namespace Hecton8.EditorTools.Diagnostics
         private static bool _sawVitalsPressureFlag;
         private static bool _sawVitalsDepthFlag;
         private static bool _inputEnabledEverObserved;
+        // Distinct from _inputEnabledEverObserved: GlobalRegistry.RegisteredInput can be null (nothing
+        // registered) or non-null with a closed action map, and those are different defects with different
+        // owners. One shared flag hid that difference for a full cycle.
+        private static bool _inputServiceEverObserved;
         private static uint _inputBlockMaskLast;
 
         // ── resource observations ─────────────────────────────────────────────────────────────────
@@ -318,6 +330,7 @@ namespace Hecton8.EditorTools.Diagnostics
             _sawVitalsPressureFlag = false;
             _sawVitalsDepthFlag = false;
             _inputEnabledEverObserved = false;
+            _inputServiceEverObserved = false;
             _inputBlockMaskLast = 0u;
 
             _nodeFromWorld = false;
@@ -422,9 +435,13 @@ namespace Hecton8.EditorTools.Diagnostics
         /// </summary>
         private static void SampleObservables()
         {
+            // Presence and enablement are recorded SEPARATELY on purpose: they are two different gates with
+            // two different owners, and the run that folded them into one flag pointed a whole cycle of
+            // work at the action map when the registry slot was the empty one.
             IInputService input = GlobalRegistry.RegisteredInput;
             if (input != null)
             {
+                _inputServiceEverObserved = true;
                 if (input.IsPlayerInputEnabled)
                     _inputEnabledEverObserved = true;
 
@@ -616,11 +633,25 @@ namespace Hecton8.EditorTools.Diagnostics
         /// Waits for the owners the rows are judged against, then opens the gameplay input map through
         /// the real entry point the UI layer uses when a menu closes.
         ///
-        /// IsPlayerInputEnabled is NOT something this driver can fake: it is
-        /// _nativeInputManager.IsPlayerInputEnabled (InputDispatcher.cs:409), and both
-        /// HectonPlayerInputHandler.TryReadFrame and PlayerToolManager's fire poll refuse to read a
-        /// frame while it is false. If batchmode never enables the map, the continuous lane is closed
-        /// and the affected rows say so by name instead of reporting a pass.
+        /// THREE INDEPENDENT GATES stand between this driver and locomotion, and collapsing them into one
+        /// boolean is exactly how this front stayed mis-diagnosed for a cycle - a row that printed
+        /// "inputService=False" was read as "input is disabled" when it meant "there is no input service
+        /// at all":
+        ///   GATE 1, service presence. GlobalRegistry.RegisteredInput (GlobalRegistry.cs:949) is the RAW
+        ///     slot and returns null when nothing is registered; it does not substitute the NoOp proxy the
+        ///     way GlobalRegistry.Input does. Every consumer null-checks it before anything else
+        ///     (HectonPlayerInputHandler.cs:37, HectonPlayerMovement.cs:7992, PlayerToolManager.cs:414), so
+        ///     a null slot suppresses input for a reason that has nothing to do with action maps.
+        ///   GATE 2, IInputService.IsPlayerInputEnabled. Resolves to
+        ///     _nativeInputManager.IsPlayerInputEnabled (InputDispatcher.cs:409) and from there to
+        ///     InputActionMap.enabled (InputManager.cs:277). SwitchToPlayerInput below is the same public
+        ///     entry PauseMenuController.cs:728 and HectonFabricatorUI.cs:644 use when a menu closes - the
+        ///     driver opens the gate the way a human's first input does, and never forces the flag or reads
+        ///     past it.
+        ///   GATE 3, the input block mask, sampled in SampleObservables and printed with the Swim row. It
+        ///     zeroes the folded override AFTER both gates above are open (InputDispatcher.cs:3060), so a
+        ///     nonzero mask is a third, separately named failure.
+        /// A settle that gives up now names the gate that was shut instead of printing one ambiguous flag.
         /// </summary>
         private static void TickSettle()
         {
@@ -650,12 +681,7 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (!ready)
             {
-                LatchBlocked(
-                    RowSwim,
-                    "no drivable player after ",
-                    PhaseElapsed,
-                    "s: survival=", _survival != null, " movement=", _movement != null,
-                    " inputService=", input != null);
+                LatchSettleBlocked(input);
                 EnterPhase(DrivePhase.ResourceTarget);
                 return;
             }
@@ -664,6 +690,55 @@ namespace Hecton8.EditorTools.Diagnostics
             _pressureAtStart = _survival.Pressure;
             _swimBaselineTaken = true;
             EnterPhase(DrivePhase.SwimSurface);
+        }
+
+        /// <summary>
+        /// Names the gate the settle phase died on. The previous version printed three bare booleans and
+        /// the third one, labelled "inputService", was the presence check - so a missing service and a
+        /// closed action map produced the SAME text and two cycles of work aimed at the wrong mechanism.
+        /// Every branch below states the mechanism and where its owner lives, because a row detail that
+        /// cannot be acted on is not a diagnostic.
+        ///
+        /// Runs at most once per run: the caller only reaches it after the settle budget expires, and Latch
+        /// refuses a second write to a latched row.
+        /// </summary>
+        private static void LatchSettleBlocked(IInputService input)
+        {
+            _detail.Clear();
+            _detail.Append("no drivable player after ").Append(F(PhaseElapsed))
+                .Append("s: survival=").Append(_survival != null)
+                .Append(" movement=").Append(_movement != null)
+                .Append(" inputServiceRegistered=").Append(input != null)
+                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+                .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
+                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture));
+
+            if (input == null)
+            {
+                _detail.Append(" - BLOCKER GATE 1 (service absent, NOT disabled): GlobalRegistry's Input ")
+                    .Append("slot is empty, so IsPlayerInputEnabled was never reachable and the leading ")
+                    .Append("null check in HectonPlayerInputHandler.cs:37 rejected every frame. The slot's ")
+                    .Append("only producer is GameBootstrapper.EnsureInputDispatcherRegistered ")
+                    .Append("(GameBootstrapper.cs:6309), which runs once in BootstrapPhase.Player - if the ")
+                    .Append("dispatcher it creates does not outlive the scene it was created in, ")
+                    .Append("OnDestroy -> TryUnregisterInputService empties the slot and nothing refills it");
+            }
+            else if (!_inputEnabledEverObserved)
+            {
+                _detail.Append(" - BLOCKER GATE 2 (service present, map closed): SwitchToPlayerInput was ")
+                    .Append("invoked on the registered service and IsPlayerInputEnabled still never read ")
+                    .Append("true, so InputManager.EnablePlayerInput did not leave the Player action map ")
+                    .Append("enabled (InputManager.cs:1019 and :277). Nothing this driver may legitimately ")
+                    .Append("do can open that gate - the owner has to");
+            }
+            else
+            {
+                _detail.Append(" - BLOCKER: the input route was OPEN; the missing owner is a player ")
+                    .Append("component (HectonSurvivalSystem / HectonPlayerMovement off ")
+                    .Append("GlobalRegistry.RegisteredPlayer), not input");
+            }
+
+            Latch(RowSwim, RowVerdict.Blocked);
         }
 
         private static void TickSwimSurface()
@@ -741,14 +816,42 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append(" vitalsFlags[o2=").Append(_sawVitalsOxygenFlag)
                 .Append(" pressure=").Append(_sawVitalsPressureFlag)
                 .Append(" depth=").Append(_sawVitalsDepthFlag)
-                .Append("] inputEnabled=").Append(_inputEnabledEverObserved)
+                .Append("] inputServiceRegistered=").Append(_inputServiceEverObserved)
+                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+                .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
                 .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture));
+
+            if (!_inputServiceEverObserved)
+            {
+                _detail.Append(" - BLOCKER GATE 1: GlobalRegistry's Input slot was EMPTY for the whole ")
+                    .Append("window. No IInputService was ever registered, so IsPlayerInputEnabled was ")
+                    .Append("never reachable and the leading null check in HectonPlayerInputHandler.cs:37 ")
+                    .Append("rejected every frame. This is a registration lifetime defect, not a disabled ")
+                    .Append("action map");
+                Latch(RowSwim, RowVerdict.Blocked);
+                return;
+            }
 
             if (!_inputEnabledEverObserved)
             {
-                _detail.Append(" - BLOCKER: IInputService.IsPlayerInputEnabled was false for the whole ")
-                    .Append("window, so HectonPlayerInputHandler.TryReadFrame refused every frame and no ")
-                    .Append("locomotion producer can reach movement in this configuration");
+                _detail.Append(" - BLOCKER GATE 2: the service was registered but ")
+                    .Append("IInputService.IsPlayerInputEnabled was false for the whole window, so ")
+                    .Append("HectonPlayerInputHandler.TryReadFrame refused every frame and no locomotion ")
+                    .Append("producer can reach movement in this configuration");
+                Latch(RowSwim, RowVerdict.Blocked);
+                return;
+            }
+
+            // GATE 3, narrowed to the ONE bit that can erase locomotion. BlockLook, BlockTools and
+            // BlockDiscrete leave MoveDelta and VerticalDelta untouched (InputDispatcher.cs:3121-3141), so
+            // failing the Swim row on them would be a false negative on a route that did move.
+            if ((_inputBlockMaskLast & (uint)Hecton8.Core.InputBlockMaskFlags.BlockMovement) != 0u)
+            {
+                _detail.Append(" - BLOCKER GATE 3: both input gates were open but BlockMovement was set, ")
+                    .Append("and ApplyInputBlockMask (InputDispatcher.cs:3121) zeroes MoveDelta and ")
+                    .Append("VerticalDelta AFTER the driver's override is folded in, so the intent was ")
+                    .Append("erased before any consumer could see it. DropPodSeatController.cs:505 is the ")
+                    .Append("only setter of that mask in this project");
                 Latch(RowSwim, RowVerdict.Blocked);
                 return;
             }
@@ -1395,22 +1498,6 @@ namespace Hecton8.EditorTools.Diagnostics
             _verdicts[row] = verdict;
             _details[row] = _detail.ToString();
             _latched[row] = true;
-        }
-
-        private static void LatchBlocked(
-            int row,
-            string prefix,
-            double elapsed,
-            string a, bool aValue,
-            string b, bool bValue,
-            string c, bool cValue)
-        {
-            _detail.Clear();
-            _detail.Append(prefix).Append(F((float)elapsed))
-                .Append(a).Append(aValue)
-                .Append(b).Append(bValue)
-                .Append(c).Append(cValue);
-            Latch(row, RowVerdict.Blocked);
         }
 
         private static void LatchAllUnlatched(RowVerdict verdict, string exceptionType, string message)

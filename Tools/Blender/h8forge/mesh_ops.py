@@ -773,7 +773,13 @@ def _convex_hull_in_place(bm: bmesh.types.BMesh) -> None:
     if bm.edges:
         bmesh.ops.delete(bm, geom=bm.edges[:], context="EDGES_FACES")
     result = bmesh.ops.convex_hull(bm, input=bm.verts[:], use_existing_faces=False)
-    leftovers = list(result.get("geom_interior", [])) + list(result.get("geom_unused", []))
+    # geom_interior and geom_unused OVERLAP on concave input, and bmesh.ops.delete raises
+    # ValueError("found the same ... used multiple times") on a duplicated element. Every
+    # concave geology LOD0 crashed here. dict.fromkeys preserves order while de-duplicating
+    # by identity, which matters because bmesh elements are unhashable-by-value but stable
+    # by object identity within one BMesh.
+    leftovers = list(dict.fromkeys(
+        list(result.get("geom_interior", [])) + list(result.get("geom_unused", []))))
     if leftovers:
         bmesh.ops.delete(bm, geom=leftovers, context="VERTS")
     if bm.faces:

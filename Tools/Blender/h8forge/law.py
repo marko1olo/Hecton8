@@ -178,7 +178,33 @@ BEVEL_RANGES = {
     Family.BASE_MODULE: BevelRange(0.035, 0.12),
     # "Exterior hull/wreckage macro edge: 0.08 m to 0.35 m."
     Family.WRECKAGE: BevelRange(0.08, 0.35),
+    # Geology has no row in 3dmodel.md section 4 because that table is written for
+    # manufactured edges. A rock's chip is not a machined chamfer, and the bible warns that
+    # a uniform bevel reads as machined - 3DMODEL_GEOLOGY_ROCKS.md wants "chipped edges".
+    # The range is wide on purpose so a generator can partition its hard edges into several
+    # buckets at different widths rather than applying one chamfer everywhere.
+    Family.GEOLOGY: BevelRange(0.008, 0.09),
 }
+
+
+# Per-size geology LOD rows. `LOD_BUDGETS[Family.GEOLOGY]` carries only the LARGE row
+# (18000/7000/1200) from 3dmodel.md section 7, but 3DMODEL_GEOLOGY_ROCKS.md section 7 is
+# stricter for smaller classes, and a 0.8 m boulder allowed 18000 triangles is a budget
+# failure waiting to be discovered in a scatter field. Callers take min() of the two.
+GEOLOGY_SIZE_LOD_BUDGETS = {
+    "boulder": LodBudget(4_000, 1_200, 250, 12, 250),
+    "outcrop": LodBudget(9_000, 3_000, 600, 12, 250),
+    "cliffchunk": LodBudget(18_000, 7_000, 1_200, 12, 250),
+}
+
+
+def geology_budget_for(size_class: str) -> LodBudget:
+    """Tightest applicable geology budget for a size class.
+
+    Unknown class falls back to the large row rather than the tightest, because silently
+    over-tightening an unlisted class would decimate a legitimate cliff to boulder density.
+    """
+    return GEOLOGY_SIZE_LOD_BUDGETS.get(size_class, LOD_BUDGETS[Family.GEOLOGY])
 
 # "Interior equipment and panel trim: 0.012 m to 0.035 m."
 BEVEL_RANGE_INTERIOR_TRIM = BevelRange(0.012, 0.035)
