@@ -692,10 +692,29 @@ def main() -> int:
     # uncovered surface. Same rationale as the route-bible line above: a mandate that
     # cites a moved `Assets/`, `Docs/`, `Tools/` or `.agents-skills/` path sends the
     # next agent to the wrong owner, and nothing failed before 2026-07-28.
-    # Note the deliberate limit: ACTIVE_PATH_PREFIXES does not include bare basenames
-    # or `Runtime/` / `Tests/`-style fragments, so mandate prose that cites a symbol
-    # or a partial path is still unchecked. Widening the prefix list is a separate
-    # decision — do not assume this closes every citation class.
+    # The deliberate limit: ACTIVE_PATH_PREFIXES does not include bare basenames or
+    # `Runtime/` / `Tests/`-style fragments, so prose citing a symbol or a partial path
+    # is unchecked. Widening it was MEASURED on 2026-07-28 and rejected, so do not try
+    # again without reading this:
+    #
+    # A wider rule was probed — treat any backticked token ending in a source or doc
+    # extension as dead when its BASENAME exists nowhere in the repo. Over 46998 indexed
+    # basenames and 25334 path-shaped citations it produced 1055 findings, of which
+    # essentially none were defects. Two reasons, both structural:
+    #   * The bulk sit in `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`,
+    #     `Docs/_Archive/**` and dated `Docs/Reports/**`. Those documents cite evidence
+    #     artifacts that were deliberately cleaned up — citing a deleted artifact is
+    #     what a historical ledger IS, so flagging it is wrong by construction.
+    #   * Restricted to the live authority surface (root bibles, mandates, routing and
+    #     governance docs — 167 files, 1057 citations) the count drops to 53, and 52 of
+    #     those are bare EXTENSIONS: rule prose says "any agent touching `.cs`/`.shader`"
+    #     and a basename rule reads `` `.cs` `` as a filename. The 53rd is
+    #     `.codex_ops\ORCHESTRATION_MEMORY.md`, which lives outside this repository and
+    #     is correctly absent from it.
+    #
+    # So: zero real dead citations on the live surface, and the wider rule buys noise.
+    # The prefix list is the right shape. If you want more coverage, add a specific
+    # prefix for a directory that actually exists, never a bare-basename rule.
     for mandate_path in sorted((ROOT / ".agents-skills").glob("*.txt")):
         assert_referenced_paths_exist(errors, mandate_path)
 
