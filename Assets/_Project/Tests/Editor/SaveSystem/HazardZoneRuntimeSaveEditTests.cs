@@ -3205,46 +3205,114 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void BuildableIdentityRuntime_BaseModuleTemplateGeneratesCanonicalHashId()
         {
-            string templateSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/BaseModuleTemplate.cs"));
+            // This used to be an eight-literal ordered scan over BaseModuleTemplate.cs. It named a real
+            // rule but proved nothing about it: the file could satisfy every literal with the canonical
+            // helpers sitting in dead code, and it reports "defect" on a rename.
+            //
+            // The rule itself is a save-identity requirement, so it is asserted here on values. A base
+            // module carries TWO persisted identities and they must describe the same module:
+            //   - the string prefabId, which the save layer canonicalizes by trimming
+            //     (SaveData.SanitizePersistenceString, SaveData.cs:99-102, reached through
+            //     ModuleDTO.SanitizePersistenceId and ModuleGraphNodeDTO.SanitizeForPersistence), and which
+            //     ModuleCatalog.FindDataById also trims before the dictionary probe;
+            //   - the integer moduleHashId/PrefabHashID, produced by
+            //     BaseModuleTemplate.ResolvePersistentHashId() and consumed by HabitatConstructionManager,
+            //     HabitatGraphManager and BaseModuleCatalogRuntime.
+            // If the hash identity is computed over a NON-canonical form of the same authored id, the two
+            // persisted identities disagree and ConstructionManager's load path resolves the module by one
+            // and not the other. Trim invariance is therefore the behaviour, and it is asserted without
+            // naming a hash function so it survives a hash change.
+            //
+            // Authoring uses the real import path: set the serialized stableId, then run OnValidate, which
+            // is what bakes templateHashId when Unity imports the asset.
+            Hecton8.Building.BaseModuleTemplate padded = null;
+            Hecton8.Building.BaseModuleTemplate canonical = null;
+            Hecton8.Building.BaseModuleTemplate blank = null;
+            Hecton8.Building.BaseModuleTemplate nameFallback = null;
+            Hecton8.Building.BaseModuleTemplate other = null;
+            try
+            {
+                canonical = CreateBakedBaseModuleTemplate(
+                    "BaseModuleTemplate.Canonical",
+                    "Habitat_Corridor");
+                padded = CreateBakedBaseModuleTemplate(
+                    "BaseModuleTemplate.Padded",
+                    " Habitat_Corridor ");
+                other = CreateBakedBaseModuleTemplate(
+                    "BaseModuleTemplate.Other",
+                    "Habitat_Airlock");
 
-            int templateValidateIndex = templateSource.IndexOf(
-                "private void OnValidate()",
-                StringComparison.Ordinal);
-            Assert.GreaterOrEqual(templateValidateIndex, 0, templateSource);
-            StringAssert.Contains("public string PersistentId => ResolveCanonicalPersistentId(stableId, name);", templateSource);
-            StringAssert.Contains("private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)", templateSource);
-            int templateStableTrimIndex = templateSource.IndexOf(
-                "stableId = ResolveCanonicalPersistentId(stableId, name);",
-                templateValidateIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(templateStableTrimIndex, templateValidateIndex, templateSource);
-            int templateStableGuardIndex = templateSource.IndexOf(
-                "templateHashId = ComputeCanonicalPersistentHashId(stableId);",
-                templateStableTrimIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(templateStableGuardIndex, templateStableTrimIndex, templateSource);
-            int templateResolveHashIndex = templateSource.IndexOf(
-                "public int ResolvePersistentHashId()",
-                templateStableGuardIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(templateResolveHashIndex, templateStableGuardIndex, templateSource);
-            int templateHashHelperIndex = templateSource.IndexOf(
-                "private static int ComputeCanonicalPersistentHashId(string value)",
-                templateResolveHashIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(templateHashHelperIndex, templateResolveHashIndex, templateSource);
-            int templateHashHelperCanonicalIndex = templateSource.IndexOf(
-                "string persistentId = ResolveCanonicalPersistentId(value, null);",
-                templateHashHelperIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(templateHashHelperCanonicalIndex, templateHashHelperIndex, templateSource);
-            int templateHashHelperComputeIndex = templateSource.IndexOf(
-                "persistentId.Length == 0 ? 0 : Hecton.Localization.LocHash.Compute(persistentId)",
-                templateHashHelperCanonicalIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(templateHashHelperComputeIndex, templateHashHelperCanonicalIndex, templateSource);
+                Assert.AreNotEqual(
+                    0,
+                    canonical.ResolvePersistentHashId(),
+                    "A template with an authored stable id must resolve to a persistent hash.");
+                Assert.AreNotEqual(
+                    canonical.ResolvePersistentHashId(),
+                    other.ResolvePersistentHashId(),
+                    "Two different module templates collapsed onto one persistent hash.");
+                Assert.AreEqual(
+                    canonical.ResolvePersistentHashId(),
+                    canonical.PersistentHashId,
+                    "PersistentHashId and ResolvePersistentHashId disagreed on the same template.");
+
+                Assert.AreEqual(
+                    ModuleDTO.SanitizePersistenceId(" Habitat_Corridor "),
+                    padded.PersistentId,
+                    "BaseModuleTemplate.PersistentId is not the canonical id the save layer persists, so " +
+                        "the persisted prefabId and the template's own id are different strings.");
+                Assert.AreEqual(
+                    canonical.ResolvePersistentHashId(),
+                    padded.ResolvePersistentHashId(),
+                    "A padded authored stable id resolved to a different persistent hash than its trimmed " +
+                        "form, so the persisted prefabId (trimmed by SaveData) and the persisted " +
+                        "moduleHashId identify two different modules and the saved module is not restored.");
+                Assert.AreEqual(
+                    Hecton.Localization.LocHash.Compute(ModuleDTO.SanitizePersistenceId(" Habitat_Corridor ")),
+                    padded.ResolvePersistentHashId(),
+                    "The baked template hash disagreed with the hash ContentSanityValidator expects for " +
+                        "the canonical PersistentId, so the content gate cannot see the mismatch either.");
+
+                blank = CreateBakedBaseModuleTemplate(string.Empty, " \t\r\n");
+                Assert.AreEqual(
+                    0,
+                    blank.ResolvePersistentHashId(),
+                    "A template with no authored id and no asset name must not resolve to a hash; a " +
+                        "non-zero value here is an identity every blank template would share.");
+
+                nameFallback = CreateBakedBaseModuleTemplate("Habitat_Corridor", " \t\r\n");
+                Assert.AreEqual(
+                    canonical.ResolvePersistentHashId(),
+                    nameFallback.ResolvePersistentHashId(),
+                    "A whitespace-only stable id must fall back to the asset name and resolve to the same " +
+                        "hash as authoring that name directly.");
+            }
+            finally
+            {
+                DestroyScriptableObjectIfCreated(padded);
+                DestroyScriptableObjectIfCreated(canonical);
+                DestroyScriptableObjectIfCreated(blank);
+                DestroyScriptableObjectIfCreated(nameFallback);
+                DestroyScriptableObjectIfCreated(other);
+            }
+        }
+
+        private static Hecton8.Building.BaseModuleTemplate CreateBakedBaseModuleTemplate(
+            string assetName,
+            string authoredStableId)
+        {
+            Hecton8.Building.BaseModuleTemplate template =
+                UnityEngine.ScriptableObject.CreateInstance<Hecton8.Building.BaseModuleTemplate>();
+            template.name = assetName;
+            SetPrivateInstanceField(template, "stableId", authoredStableId);
+            SetPrivateInstanceField(template, "templateHashId", 0);
+            InvokePrivateInstanceMethod(template, "OnValidate");
+            return template;
+        }
+
+        private static void DestroyScriptableObjectIfCreated(UnityEngine.ScriptableObject instance)
+        {
+            if (instance != null)
+                UnityEngine.Object.DestroyImmediate(instance);
         }
 
         [Test]
