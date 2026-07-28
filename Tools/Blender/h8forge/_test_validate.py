@@ -441,8 +441,16 @@ def case_uv_stretch():
     expect("uv_stretch_excessive", report.failures,
            must=(V.GATE_UV_STRETCH_EXCESSIVE,))
     found = detail_of(report.failures, V.GATE_UV_STRETCH_EXCESSIVE)
-    H.check(found is not None and "distortion=" in found.detail,
-            "stretch detail must carry the measured value, got "
+    # The gate is now AREA-WEIGHTED, so the detail reports the fraction of surface area
+    # over the limit plus the worst triangle's measured distortion. The assertion's intent
+    # is unchanged - a failure must be locatable and quantified - so it checks for both
+    # numbers rather than for the old per-triangle-only wording.
+    H.check(found is not None
+            and "aspect distortion" in found.detail
+            and "worst triangle[" in found.detail
+            and "of surface area" in found.detail,
+            "stretch detail must carry the measured area fraction AND the worst "
+            "triangle value, got "
             + (found.detail if found else "<none>"))
     H.check(V.uv_aspect_distortion([0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 2.0, 2.0, 0.0],
                                    [0.0, 0.0, 1.0, 0.0, 1.0, 1.0],

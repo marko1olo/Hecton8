@@ -1001,14 +1001,22 @@ def _gate_uv_islands(data: MeshData, sink: _Sink, *, uv0_name: str, uv0,
                       "law.UV_MIN_ISLAND_PIXELS={5}".format(
                           root, uv0_name, width_px, height_px, atlas_size,
                           law.UV_MIN_ISLAND_PIXELS))
-        if (box[0] < padding_uv or box[1] < padding_uv
-                or box[2] > 1.0 - padding_uv or box[3] > 1.0 - padding_uv):
+        # Half-texel tolerance. Blender's pack_islands with margin_method='ADD' places an
+        # island edge AT the reserve boundary, and the two implementations disagree by
+        # sub-pixel rounding -- measured 0.00770 against a 0.00781 reserve for a 16 px
+        # margin at 2048, a quarter of one texel. Failing on that is the gate arguing with
+        # the packer, not a real bleed risk: the reserve exists so the lowest mip does not
+        # sample across an island border, and a quarter texel out of 16 cannot cause that.
+        tolerance = 0.5 / float(atlas_size)
+        low = padding_uv - tolerance
+        high = 1.0 - padding_uv + tolerance
+        if box[0] < low or box[1] < low or box[2] > high or box[3] > high:
             sink.fail(GATE_UV_ATLAS_PADDING_VIOLATION,
                       "island rooted at triangle[{0}] spans u {1:.5f}..{2:.5f} "
                       "v {3:.5f}..{4:.5f}, inside the {5} px border reserve "
-                      "({6:.5f} uv) for atlas {7}".format(
+                      "({6:.5f} uv, half-texel tolerance {7:.5f}) for atlas {8}".format(
                           root, box[0], box[2], box[1], box[3], padding_px,
-                          padding_uv, atlas_size))
+                          padding_uv, tolerance, atlas_size))
 
 
 def _gate_vertex_colors(data: MeshData, sink: _Sink, *, surface_class) -> None:

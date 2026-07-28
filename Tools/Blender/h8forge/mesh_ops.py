@@ -530,6 +530,58 @@ def _split_uv_seams(obj: bpy.types.Object) -> int:
     return count
 
 
+def uv_stretch_stats(obj: bpy.types.Object) -> dict:
+    """Area-weighted UV aspect-distortion summary for one object.
+
+    Exists so a caller can prove whether a decimation pass wrecked the parameterisation
+    instead of discovering it later in the validator. Measured on a kelp asset: LOD0 sat at
+    p95 = 0.98 and its LOD1 worst triangle reached 7610 -- Decimate/COLLAPSE has no UV term
+    in its collapse cost and there is no flag to add one, so UV quality after decimation is
+    not something to assume.
+    """
+    mesh = obj.data
+    layer = mesh.uv_layers.active
+    if layer is None or not mesh.polygons:
+        return {"worst": 0.0, "p95": 0.0, "mean": 0.0, "triangles": 0}
+
+    mesh.calc_loop_triangles()
+    samples = []
+    for tri in mesh.loop_triangles:
+        p = [mesh.vertices[v].co for v in tri.vertices]
+        uv = [layer.data[loop].uv for loop in tri.loops]
+        e1 = p[1] - p[0]
+        e2 = p[2] - p[0]
+        du1 = uv[1] - uv[0]
+        du2 = uv[2] - uv[0]
+        world = e1.cross(e2).length * 0.5
+        uv_area = abs(du1.x * du2.y - du2.x * du1.y) * 0.5
+        if world <= 1e-12 or uv_area <= 1e-14:
+            continue
+        # Ratio of the two edge scalings; a uniform map gives ~0.
+        s1 = du1.length / max(1e-9, e1.length)
+        s2 = du2.length / max(1e-9, e2.length)
+        lo, hi = (s1, s2) if s1 <= s2 else (s2, s1)
+        samples.append((hi / max(1e-9, lo) - 1.0, world))
+
+    if not samples:
+        return {"worst": 0.0, "p95": 0.0, "mean": 0.0, "triangles": 0}
+    samples.sort(key=lambda item: item[0])
+    total = sum(area for _d, area in samples)
+    cumulative = 0.0
+    p95 = samples[-1][0]
+    for distortion, area in samples:
+        cumulative += area
+        if cumulative >= total * 0.95:
+            p95 = distortion
+            break
+    return {
+        "worst": samples[-1][0],
+        "p95": p95,
+        "mean": sum(d * a for d, a in samples) / max(1e-9, total),
+        "triangles": len(samples),
+    }
+
+
 def build_lod_chain(
     source: bpy.types.Object,
     *,
@@ -538,6 +590,7 @@ def build_lod_chain(
     quality_weight: float = 1.0,
     levels: int = 3,
     preserve_seams: bool = True,
+    reunwrap: Optional[object] = None,
     blackbox: Optional[BlackBox] = None,
 ) -> list:
     """Produce LOD0..LOD(levels-1) as separate objects, each inside its budget.
@@ -625,6 +678,26 @@ def build_lod_chain(
             ratio_used *= ratio
 
         final_tris = triangle_count(clone.data)
+
+        # Decimation has no UV term in its collapse cost, so the parameterisation can be
+        # destroyed while the triangle budget is met. `reunwrap(obj, lod_index)` lets the
+        # owning generator re-solve UVs for this level with its own family-appropriate
+        # settings -- unwrap parameters are family knowledge and do not belong here.
+        # Without it the LOD ships whatever the collapse left behind.
+        if reunwrap is not None:
+            before = uv_stretch_stats(clone)
+            reunwrap(clone, index)
+            after = uv_stretch_stats(clone)
+            if blackbox is not None:
+                blackbox.record(
+                    "lod{i}_reunwrap".format(i=index),
+                    vertex_count=len(clone.data.vertices),
+                    triangle_count=triangle_count(clone.data),
+                    warning="uv worst {b:.2f}->{a:.2f} p95 {bp:.3f}->{ap:.3f}".format(
+                        b=before["worst"], a=after["worst"],
+                        bp=before["p95"], ap=after["p95"]),
+                )
+            final_tris = triangle_count(clone.data)
 
         # If the seam floor blocked the budget, rebuild this level from LOD0 WITHOUT
         # splitting seams and decimate again. Retrying with the same constraints would be

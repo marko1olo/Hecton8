@@ -1340,25 +1340,32 @@ def _wire_channel_driven_albedo(material: bpy.types.Material, base_color: tuple,
     separate = nodes.new("ShaderNodeSeparateColor")
     links.new(attribute.outputs["Color"], separate.inputs["Color"])
 
+    # ShaderNodeMix carries one A/B pair PER DATA TYPE and they all share the names "A"
+    # and "B", so inputs["A"] silently resolves to the FLOAT socket. Assigning a colour
+    # there leaves the Color sockets at their defaults and the whole graph renders white --
+    # which is exactly what the first material contact sheet showed. Colour sockets are
+    # index 6 and 7, colour Result is output index 2, Factor(Float) is input 0.
+    MIX_FACTOR, MIX_A, MIX_B, MIX_RESULT = 0, 6, 7, 2
+
     stain = nodes.new("ShaderNodeMix")
     stain.data_type = "RGBA"
     stain.blend_type = "MIX"
-    stain.inputs["A"].default_value = (*base_color, 1.0)
-    stain.inputs["B"].default_value = (*ROCK_ALGAE, 1.0)
-    links.new(separate.outputs["Green"], stain.inputs["Factor"])
+    stain.inputs[MIX_A].default_value = (*base_color, 1.0)
+    stain.inputs[MIX_B].default_value = (*ROCK_ALGAE, 1.0)
+    links.new(separate.outputs["Green"], stain.inputs[MIX_FACTOR])
 
     reveal = nodes.new("ShaderNodeMix")
     reveal.data_type = "RGBA"
     reveal.blend_type = "MIX"
-    reveal.inputs["B"].default_value = (*ROCK_FRESH, 1.0)
-    links.new(stain.outputs["Result"], reveal.inputs["A"])
+    reveal.inputs[MIX_B].default_value = (*ROCK_FRESH, 1.0)
+    links.new(stain.outputs[MIX_RESULT], reveal.inputs[MIX_A])
     # Chip reveal is a partial lerp: a fresh spall lightens the surface, it does not
     # replace the rock.
     reveal_gain = nodes.new("ShaderNodeMath")
     reveal_gain.operation = "MULTIPLY"
     reveal_gain.inputs[1].default_value = 0.55
     links.new(separate.outputs["Red"], reveal_gain.inputs[0])
-    links.new(reveal_gain.outputs["Value"], reveal.inputs["Factor"])
+    links.new(reveal_gain.outputs["Value"], reveal.inputs[MIX_FACTOR])
 
     # AO darkening, floored so the cavity reads dark without going pure black --
     # 3dmodel.md forbids using darkness to hide missing work.
@@ -1371,23 +1378,23 @@ def _wire_channel_driven_albedo(material: bpy.types.Material, base_color: tuple,
     occlude = nodes.new("ShaderNodeMix")
     occlude.data_type = "RGBA"
     occlude.blend_type = "MULTIPLY"
-    occlude.inputs["Factor"].default_value = 1.0
-    links.new(reveal.outputs["Result"], occlude.inputs["A"])
+    occlude.inputs[MIX_FACTOR].default_value = 1.0
+    links.new(reveal.outputs[MIX_RESULT], occlude.inputs[MIX_A])
     ao_color = nodes.new("ShaderNodeCombineColor")
     links.new(ao_floor.outputs["Value"], ao_color.inputs["Red"])
     links.new(ao_floor.outputs["Value"], ao_color.inputs["Green"])
     links.new(ao_floor.outputs["Value"], ao_color.inputs["Blue"])
-    links.new(ao_color.outputs["Color"], occlude.inputs["B"])
+    links.new(ao_color.outputs["Color"], occlude.inputs[MIX_B])
 
     # Algae and wet stain are glossier than dry rock.
-    rough = nodes.new("ShaderNodeMap Range" if False else "ShaderNodeMapRange")
+    rough = nodes.new("ShaderNodeMapRange")
     rough.inputs["From Min"].default_value = 0.0
     rough.inputs["From Max"].default_value = 1.0
     rough.inputs["To Min"].default_value = roughness
     rough.inputs["To Max"].default_value = max(0.18, roughness - 0.34)
     links.new(separate.outputs["Green"], rough.inputs["Value"])
 
-    links.new(occlude.outputs["Result"], bsdf.inputs["Base Color"])
+    links.new(occlude.outputs[MIX_RESULT], bsdf.inputs["Base Color"])
     links.new(rough.outputs["Result"], bsdf.inputs["Roughness"])
     if "Metallic" in bsdf.inputs:
         bsdf.inputs["Metallic"].default_value = 0.0
