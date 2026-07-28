@@ -153,6 +153,26 @@ LITERAL_SENSORY_CONTEXT = re.compile(
 )
 
 SENSORY_FAMILY = "fake_sensory"
+ACTOR_FAMILY = "concept_as_actor"
+
+# An audio/transcript surface is a quoted human being, not the narrator. In a packet JSON the key sits on the
+# same line as its value ("audio": "..."); in a generated page the text lives under an "## Audio" heading.
+_JSON_SPEECH_KEY = re.compile(r'"(?:audio|audio_subtitle|audio_transcript|transcript)"\s*:', re.IGNORECASE)
+_MD_SPEECH_HEADING = re.compile(r"^\s{0,3}#{1,6}\s*(audio|transcript)\b", re.IGNORECASE)
+_MD_ANY_HEADING = re.compile(r"^\s{0,3}#{1,6}\s+")
+
+
+def speech_context_flags(lines: list[str]) -> list[bool]:
+    """Mark lines that are quoted speech rather than narration."""
+    flags: list[bool] = []
+    in_md_speech = False
+    for line in lines:
+        if _MD_ANY_HEADING.match(line):
+            in_md_speech = bool(_MD_SPEECH_HEADING.match(line))
+            flags.append(in_md_speech)
+            continue
+        flags.append(in_md_speech or bool(_JSON_SPEECH_KEY.search(line)))
+    return flags
 
 
 @dataclass(frozen=True)
@@ -197,6 +217,7 @@ def scan_text(path: str, raw: str) -> list[Finding]:
     offset, body = split_frontmatter(raw)
     lines = body.splitlines()
     fenced = strip_code_fences(lines)
+    speech = speech_context_flags(lines)
     out: list[Finding] = []
     for idx, line in enumerate(lines):
         if fenced[idx]:
@@ -207,6 +228,12 @@ def scan_text(path: str, raw: str) -> list[Finding]:
         window = "\n".join(lines[max(0, idx - 2) : idx + 3])
         for family, pattern, authority, why in HARD:
             if family == SENSORY_FAMILY and LITERAL_SENSORY_CONTEXT.search(window):
+                continue
+            # writing.md bans concept-as-actor as AUTHORIAL abstraction, and explicitly permits it as
+            # "a named character's believable phrase" when the scene proves it. An audio transcript IS a
+            # quoted speaker, and people really do say "the system knows where they were". Suppressing the
+            # family inside speech keeps the rule aimed at narration, where it belongs.
+            if family == ACTOR_FAMILY and speech[idx]:
                 continue
             for m in re.finditer(pattern, line, re.IGNORECASE):
                 out.append(

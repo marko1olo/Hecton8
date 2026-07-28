@@ -11,7 +11,7 @@
 
 Manual clause 1.2 opens with an instruction nobody argues with: describe by mark, not by position.
 
-Sector 44 was surveyed with the pump stack as its local reference. A room logged as north of the pump stack in 2146 sits under it now, because the spine slumped at some point in the intervening forty-three years and moved roughly nine metres of deck with it. The survey line is not wrong about anything. It is just describing a shape that has since been folded.
+Sector 44 was surveyed with the pump stack as its local reference, crown datum 1,880 m down to the foundry floor at 2,340 m. A room logged as north of the pump stack in 2146 sits under it now, at 2,090 m on a current sounding, because the spine slumped at some point in the intervening forty-four years and moved roughly nine metres of deck with it. The survey line is not wrong about anything. It is just describing a shape that has since been folded.
 
 So the marks get trusted first. A stripe on a hatch, a scratched line on a rail, a custody tag clipped to a valve cage, a strip of dead tether knotted round a handle. Each one means a person stood at that exact metal, made a call, and expected somebody later to read it through a fogged visor with a fan running down.
 

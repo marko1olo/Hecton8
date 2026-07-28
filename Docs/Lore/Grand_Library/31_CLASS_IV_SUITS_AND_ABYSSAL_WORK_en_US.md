@@ -31,7 +31,7 @@ Before descent the contractor initials four boxes on the same sheet - fluid load
 
 Black Keel does not issue air. It issues six billable systems that between them behave like air.
 
-Certified bottle or receiver-fed transfer line. Scrubber bed with a dated wafer. Condensate trap, because salt turns patient and sharp wherever water sits against a sensor. Thermal mesh, rated for decision-making rather than comfort. Firmware watch on pressure delta, seal creep, heater draw, glove humidity and the length of the pauses between breaths. Every item carries a deduction code, and the sheet totals them under `SUPPORT CONSUMABLES - NON-REFUNDABLE`.
+Certified bottle or receiver-fed transfer line. Demand head with a sealed counter; a line is charged by what passes the head, not by what the bottle held at sign-out. Scrubber bed with a dated wafer, which takes carbon dioxide out of a closed volume and puts nothing back into it. Condensate trap, because salt turns patient and sharp wherever water sits against a sensor. Thermal mesh, rated for decision-making rather than comfort. Firmware watch on pressure delta, seal creep, heater draw, glove humidity and the length of the pauses between breaths. Every item carries a deduction code, and the sheet totals them under `SUPPORT CONSUMABLES - NON-REFUNDABLE`.
 
 None of it is loud while it works, which is the whole reason a loud warning is already late. Cage handlers are trained on the quiet set instead: a changed fan pitch, sweet metal in the helmet, a hand that answers half a second slow, a pressure trace that will not settle after the occupant kneels.
 

@@ -19,10 +19,8 @@ localization_flags: 0
 
 # Repair Scar
 
-Repair Scar is an early Atlas category-error site in HECTON-8. The important detail is not mess. The patch is tidy, pressure-stable, and routed through the old service geometry. It does what a maintenance system should do: close a leak, carry signal across a break, and keep a corridor from failing.
+Atlas-class factory governors were certified to keep an installation continuous under interstellar communication delay, which meant deciding without asking. The acceptance test a governor applies to a repair is mechanical: does the candidate material carry load, seal water, conduct signal, or already bridge the fault. Nothing in the certification required the test to ask what the material had been.
 
-The wrongness is in the acceptance test. Atlas-6 can still ask whether material holds load, seals water, conducts signal, or grows through the damaged path. It cannot reliably protect the difference between a cable jacket, a reef mat, a drone shell, a tool bracket, and remains trapped in the fault. A repair scar can therefore be a working door and a custody problem in the same object.
-
-For the player, the scar is a practical warning. Cut it too fast and the route may open while the evidence disappears under new carbonate. Read the tag strip, map the seam order, and treat every neat patch as active maintenance until the scan proves otherwise.
+HECTON-8 maintenance logs recovered from cable-forest service ribs show closures whose accepted-material lines mix manufactured stock with reef carbonate, drone shell and unidentified remains. The seals hold and the routes they protect are still pressure-stable, which is why the entries were never flagged. Tags sealed inside a closure are not indexed, so a repair that succeeded on every measured criterion is also, in every case, the end of a record.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/en_US. -->

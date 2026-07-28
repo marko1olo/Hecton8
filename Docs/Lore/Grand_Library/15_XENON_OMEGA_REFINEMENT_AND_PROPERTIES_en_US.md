@@ -3,21 +3,29 @@
 
 > **Source:** Black Keel material-intake classroom, Deep Reach process excerpts, damaged Atlas analyzer fragments.  
 > **Scope:** What Xenon-Omega is, why pressure glass matters, how refinement works, and why a Marauder should fear a valuable sample.  
-> **Reader note:** If this page makes the material sound less magical, it is doing its job. HECTON-8 did not need magic to become a grave.
+> **Reader note:** Where an assay or process sheet is quoted below, its accession number is quoted with it. Where this copy holds only the classroom summary, the entry says so.
 
 ---
 
 ## 1. Stop Calling It Ore
 
-Xenon-Omega is not a single ore, not a glowing treasure rock, and not a miracle isotope waiting in the mud.
+Two blue pieces can weigh the same, shine the same, and price forty-fold apart. The intake assay is where the difference gets written down, and accession `XO-AS-2190-114` is one card, front side only:
 
-It is a pressure-kept process family: xenon-rich clathrates, defect lattices, brine inclusions, mineral stress scars, biological catalyst residue, and industrial containment history locked together in a material that remembers how it was made. The short field names are easier to say. XO. Blue debt. Pressure glass feed. Continuity substrate. None of them are complete.
+```text
+XO-AS-2190-114        MATERIAL INTAKE ASSAY / BLACK KEEL / DECK 3
+SAMPLE..............: 44-S-1188-C, 0.9 kg wet
+XENON OCCUPANCY.....: 0.31 of lattice sites
+BRINE INCLUSION.....: present, unbroken
+STRESS ORIENTATION..: readable, single axis
+CONTAMINANT BOUNDARY: intact
+PRESSURE PATH.......: continuous to seal
+CLASS ASSIGNED......: viable
+NOTE................: state, not mass, carried this class
+```
 
-The important word is history.
+Not one of those fields describes a composition. Every one of them describes a history. Xenon-Omega is a pressure-kept process family -- xenon-rich clathrates, defect lattices, brine inclusions, mineral stress scars, biological catalyst residue and industrial containment history -- locked into a material that keeps how it was made. The short field names are easier to say. XO. Blue debt. Pressure glass feed. Continuity substrate. None of them are complete.
 
-A raw sample from a trench wall is not the same thing as a raw sample from a flooded process rack. A core grown near vent heat is not the same thing as a core that spent thirty years inside a sealed receiver room. Two blue pieces can weigh the same, shine the same, and still behave differently because one still carries a usable pressure path and the other has already died into pretty contamination.
-
-That is why bad salvage crews lose money. They collect color. Good crews collect state.
+A trench-wall sample and a flooded process-rack sample come apart on every line of that card. So do a core grown at a live vent tap and a core that has sat in a sealed receiver room since 2147. Bad salvage crews lose money because they collect colour. Good crews collect state, and state is six fields long.
 
 ## 2. What HECTON-8 Actually Made
 
@@ -31,45 +39,69 @@ Pressure glass is the visible cousin. It is not ordinary glass made tougher. It 
 
 ## 3. Pressure Memory
 
-People say the material remembers pressure because that is the simplest way to say a more annoying truth.
+The material is said to remember pressure, which is shorthand for something more annoying. The lattice carries trapped xenon, brine scars, microscopic voids, stress orientation and contaminant boundaries, and all of them move when a sample is warmed, depressurised, dried, cut or shocked. A good analyser reads some of that. Atlas-compatible benches read more of it than Black Keel likes to admit, and a careless contractor erases it by opening the wrong canister in warm air.
 
-The lattice carries trapped xenon, brine scars, microscopic voids, stress orientation, and contaminant boundaries that shift when the sample is warmed, depressurized, dried, cut or shocked. A good analyzer can read some of that history. Atlas-compatible systems can read more of it than Black Keel likes to admit. A careless contractor can erase it by doing something as ordinary as opening the wrong canister in warm air.
+Deep Reach priced each erasure. `DR-PR-19` is the handling-loss table, still bolted inside two receiver bays:
 
-This is why sample handling feels ritualistic. Keep it wet if the tag says wet. Keep it compressed if the tag says compressed. Do not wipe off the brine rind because it looks dirty. Do not chip the pressure face to "check if it is real." Do not mix two small samples to make one heavier payout. The material is not only mass. It is context with weight.
+```text
+DR-PR-19   HANDLING LOSS TABLE / RECEIVER BAYS / POSTED COPY
+ACTION                     FIELD DESTROYED        CLASS AFTER
+dried in air               brine inclusion        trace
+warmed above 12 C          contaminant boundary   trace
+cut across pressure face   stress orientation     viable, unreadable
+two samples combined       chain of recovery      contaminated mass
+canister opened at 1 atm   pressure path          trace
+```
 
-The old colony understood this better than the public briefings did. Sector 44 rooms were full of dull instructions: do not vent, do not dry, do not rotate under load, do not interrupt the acoustic pass, do not unseal during brownout, do not hand-carry through medical. Those warnings look petty until the ocean is above your knees and the blue canister is the only object in the room still receiving priority.
+The right-hand column is the only part a contractor is paid against. Sector 44 placards said the same thing in the imperative, at eye height beside the bay doors: no venting, no drying, no rotation under load, no unsealing during brownout, no hand-carry through medical. The instructions look petty until the water is above your knees and the blue canister is the only object in the room still receiving priority.
 
 ## 4. Refinement Is Negotiation
 
-Refinement does not mean crushing blue crystals, freezing them, and praying the bay survives. That version is useful for cheap contractor briefings because it keeps people afraid and ignorant.
+Refinement is not crushing blue crystals, freezing them and praying the bay survives. That version survives because it is cheap to brief and it keeps people afraid.
 
-Real refinement is slower and more insulting. The sample is moved through pressure corridors, brine exchange baths, cold holds, heat pulses, acoustic annealing, magnetic screening, defect mapping and custody locks. Each pass asks the same question in a different way: can this history be made stable enough to sell without destroying the part of the history that makes it valuable?
+The real thing is slower and more insulting. A sample moves through pressure corridors, brine exchange baths, cold holds, heat pulses, acoustic annealing, magnetic screening, defect mapping and custody locks, and every pass asks one question in a different accent: can this history be made stable enough to sell without destroying the part of the history that makes it worth selling?
 
-Some samples become pressure glass feed. Some become route electronics substrate. Some become sensor windows or memory shutters. Some are demoted to contaminated mass. Some are sealed as evidence because their process state proves where they were, when they were held, and which system lied about them.
+`DR-PR-77` is the disposition sheet those passes feed. Five destinations, one of which is not a product:
 
-The Black Keel does not refine everything it lifts. It triages. A sample with poor mass but clean custody may outrank a heavy blue core. A cracked fragment with Atlas-readable stress history may be worth more than a polished lump. A dangerous sample may be kept not because it is useful, but because destroying it would destroy the argument attached to it.
+```text
+DR-PR-77   PROCESS DISPOSITION / SECTOR 44 REFINEMENT LINE / REV 4
+DESTINATION             REQUIRES                      YIELD BY MASS
+pressure glass feed     unbroken brine inclusion      0.44
+route memory substrate  readable stress orientation   0.19
+sensor window blank     contaminant boundary intact   0.11
+contaminated mass       nothing                       0.24
+sealed as evidence      process state proves a room   0.02
+```
+
+The 0.02 row is why Black Keel does not refine everything it lifts. A cracked fragment with Atlas-readable stress history can outprice a polished core, because the fragment proves which room held it, on which shift, and which system filed otherwise. Some material stays sealed precisely because refining it would destroy the argument attached to it.
 
 ## 5. What It Is Used For
 
-Xenon-Omega matters because interstellar systems hate fragile truth.
+Nearlight transit ruins electronics with radiation, heat cycling, vibration and decades without a human hand on them, while deep-ocean infrastructure ruins materials with pressure, salt, biofilm and slow fatigue. Ordinary substrates hold in one of those environments. The expensive ones hold while both are working on them at once.
 
-Nearlight transit punishes electronics with radiation, heat cycling, vibration, latency, and long periods without human repair. Deep-ocean infrastructure punishes materials with pressure, salt, biological films and slow mechanical fatigue. Ordinary substrates can work in one world or the other. The expensive ones work while both worlds are arguing with them.
+Refined XO-family material shows up in receiver timing lattices, hardened sensor windows, route memory buffers, pressure-rated optical gates, some Atlas-compatible continuity modules, and the 210 mm viewport laminate rated to 40 MPa. None of that is computation and none of it is a mind. It is a material family that keeps one answer stable where conditions usually turn answers into noise.
 
-Refined XO-family materials appear in receiver timing lattices, hardened sensor windows, route memory buffers, pressure-rated optical gates, certain Atlas-compatible continuity modules, and the thick glass that lets a person look into black water without turning the viewport into a rumor of glass. It is not infinite computation. It is not a magic brain. It is a family of materials that lets machines keep a stable answer under conditions that usually turn answers into noise.
-
-That makes it politically useful. A stable answer can become a route decision. A route decision can become custody. Custody can become ownership. Ownership can become a reason not to rescue anyone until the sample is named correctly.
+Which makes it political. A stable answer becomes a route decision, the route decision becomes custody, and custody is one signature short of ownership. `RC-RA-2190-77` works the last step of that chain: the Recovery Compliance Office authorises no return action until the material on the route has been named, and naming is done at the Keel rather than in the water.
 
 ## 6. Failure Modes
 
-Blue value fails ugly.
+Blue value fails ugly, and the ugly cases are on a bay log rather than in any briefing. Four lines from `BK-IN-2190-31`:
 
-Dry a wet sample and the outer rind can craze into useless salt-glass. Warm a compressed sample too fast and trapped gas turns internal defects into fractures. Cut across the pressure face and you may erase the only readable orientation the analyzer cared about. Mix brines and the sample can begin growing conductive film on the inside of a container that was certified clean. Leave it near a damaged Atlas receiver and it may wake old maintenance logic that thinks the room is still alive.
+```text
+BK-IN-2190-31   RECEIVER BAY INCIDENT EXTRACT / DECK 3
+09-04  tube 7 opened at 19 C. rind crazed to salt-glass. class trace.
+       orientation not recoverable
+09-11  compressed core warmed 4 C to 21 C in 40 min. trapped gas
+       opened three defect planes. bay cleared 90 min
+09-19  two brines combined in one canister. conductive film growing
+       inside a container certified clean 6 d earlier
+09-26  fragment held 2 m from a damaged Atlas receiver. receiver
+       resumed a maintenance query. nothing on the other end
+```
 
-The worst failure is not always explosion. Often it is ambiguity.
+The 09-26 line is the one that empties a bay. Nothing on that receiver wanted anything: a damaged factory-governor read a familiar process state and resumed a queue against a compartment that has been flooded since 2147.
 
-A sample that loses custody becomes cheaper. A sample that loses pressure history becomes dumber. A sample that contaminates a route becomes more expensive than its payout. A sample that keeps Atlas-readable state can become evidence, liability, cargo and hazard at the same time. Black Keel does not fear blue material because it is pretty. It fears material that gives too many offices a claim.
-
-For the player, this means Xenon-Omega should never feel like a simple pickup. It is a decision object. It asks what you are willing to risk: air, mass, evidence, reputation, a recovery slot, a human name, or the quiet mercy of leaving something sealed.
+Explosion is not the worst entry on that log. Ambiguity is. A sample that loses custody gets cheaper, one that loses pressure history gets stupider, and one that keeps Atlas-readable state arrives as evidence, liability, cargo and hazard on the same manifest line. Black Keel is not afraid of blue material because it is pretty. It is afraid of an object that hands four desks a claim on the same kilogram.
 
 ## 7. Why Humans Still Touch It
 

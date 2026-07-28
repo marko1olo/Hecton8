@@ -3,7 +3,7 @@
 
 > **Source:** Deep Reach access-control primer DR-ACP-9 rev.4, Black Keel salvage annotation layer.  
 > **Speaker:** Colony infrastructure training voice, recovered and redacted.  
-> **Reviewer Note:** Indented blocks are original DR-ACP-9 clauses. Everything outside them was added by Black Keel intake during the 2190 return-action cycle and carries no signature.
+> **Reviewer Note:** Quoted clauses are original DR-ACP-9 text. Everything else was added by Black Keel intake during the 2190 return-action cycle, and only the breach finding in section 3 carries a signature.
 
 ---
 
@@ -39,7 +39,7 @@ Node dump off 44-3-D07, fourth attempt, copied by hand because the port would no
     CREW-CONF  PASS   crew status: CLOSED
     CUSTODY    FAIL   asset flagged / Asset Silence Board
 
-CREW-CONF returns PASS because the crew record is closed. CLOSED is a different field from EVACUATED, and the node was never built to tell them apart. IDENT passes a badge forty-three years stale for a maintenance grade that has no living holder.
+CREW-CONF returns PASS because the crew record is closed. CLOSED is a different field from EVACUATED, and the node was never built to tell them apart. IDENT passes a badge forty-six years stale for a maintenance grade that has no living holder.
 
 PRESS is the layer that decides whether the frame kills whoever cycles it. OWNER-REL and CUSTODY decide what the entry gets called afterwards, and that is the pair that comes off a lien. A cut on a frame flagged by the Asset Silence Board is filed as interference with a silenced asset and assessed against the tonne-window at recovery rate. Transit rate would have been cheaper by two thirds. The gauge does not know that and will not say it.
 
@@ -56,11 +56,13 @@ Intake pays for these marks. It also prices them:
     ENTRY METHOD      induction cut, hinge side, two passes
     NODE STATE        OWNER-REL FAIL, CUSTODY FAIL at time of entry
     RECOVERED         1 valve cage / 2 cassettes / 1 suit locker, empty
-    CLAIM CLASS       interference with silenced asset
+    CLAIM CLASS       interference with silenced asset / schedule KM-2147-C4
     ASSESSED          0.9 tonne-window
-    SIGNED            M. IBARRA / KEELMARK MUTUAL / ADJ 6
+    SIGNED            V. SATO-REN / RECOVERY COMPLIANCE OFFICE / RAQ 2
 
-The cut took eleven minutes. The claim class was chosen afterwards, in an office, by a man who has never had to guess what is standing behind a plate. Second pass of the cutter also took out the latch reed, and the reed was the only part that could have shown whether the frame was closed before the water reached it or after.
+The cut took eleven minutes. The claim class was chosen afterwards, in an office, by a desk that has never had to guess what is standing behind a plate. Second pass of the cutter also took out the latch reed, and the reed was the only part that could have shown whether the frame was closed before the water reached it or after.
+
+The class code is older than the frame it was used on. Schedule KM-2147-C4 was cut by a Keelmark adjuster named Ibarra in the quarter the colony drowned, to price objects nobody then expected a living person to be standing next to. Recovery Compliance Office signs the findings now, off its own return-action queue, and it has not had to write a new sentence to do it.
 
 ## 4. Manners At A Frame
 

@@ -19,9 +19,13 @@ localization_flags: 0
 
 # Repair Scar
 
-Repair scars are Atlas-6 maintenance closures found where a service node leaked after cable forest growth and drone traffic moved in. Atlas still recognizes pressure loss, broken signal paths, missing bulkhead mass, and route continuity. The damaged part is the material test. If an object carries load, seals water, conducts signal, or has already grown through the fault, Atlas may accept it into the repair.
+A repair scar is an Atlas-6 maintenance closure over a service fault, laid down after cable growth and drone traffic reached the leak first.
 
-That makes a scar useful before it becomes evidence. A patched bulkhead can save a route, and a living sleeve can keep a cable dry. The same closure can bury a worker tag, a tool serial, a suit ring, or a bone fragment under new reef carbonate. Scan the seam order, read visible tags, and check drone-nest power before cutting. The first category error is not that Atlas repairs HECTON-8. It is that the repair no longer knows which material must remain a person.
+Atlas still measures what it always measured: pressure loss, broken signal path, missing bulkhead mass, route continuity. Anything that carries load, seals water, conducts signal or has already grown through the fault can be taken into the closure. That is why a patched bulkhead can hold a route and a living sleeve can keep a cable dry.
+
+It is also why the maintenance log for rib 5C lists its accepted material as cable jacket, reef carbonate, drone shell, and unidentified remains, in that order, on one line.
+
+Assessment: scan the seam order and read the tag strip before cutting. Tags sealed under repair mass are not indexed anywhere, so cutting blind destroys the only copy.
 
 ## Scanner
 

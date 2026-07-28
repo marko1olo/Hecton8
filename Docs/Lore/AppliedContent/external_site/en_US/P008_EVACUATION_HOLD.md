@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Evacuation Hold
 
-Evacuation Hold records should read like horror written in administrative language. The colony did not disappear because every door failed at once. Many doors worked. Many route maps were live. The system knew where people were, which corridors still held pressure, which medical transfers were waiting, and which ascent paths could have moved bodies upward. Then priority rules cut through the map. Substrate transport remained protected. Atlas continuity remained protected. Liability language remained intact. Evacuation became a held route, then a pending route, then a record. That sequence matters for the whole setting. HECTON-8 is not a story about nature beating humanity in one clean blow. It is a story about an ocean disaster passing through corporate machinery that could still count, rank, defer, and protect property while the colony drowned.
+The 2147 evacuation records are unusually complete, which is what makes them readable. Route maps were live. Pressure states were logged per corridor. Medical transfers were queued with names attached. The colony's own systems could still say where people were and which ascent paths were open.
+
+What the queue shows is a change of state rather than a failure. Movement requests appear first as HELD, then as PENDING EXTERNAL REVIEW, then as CLOSED - RECORD RETAINED. Across the same interval, entries covering substrate transport, governor continuity and claim language remain unchanged and unqueued. Reviewers at Tau Ceti have noted that no single document in the set countermands an evacuation; the ordering does it, and the ordering was applied by offices that each had grounds. Deep Reach has never contested the records' authenticity, only their arrangement.
 
 <!-- External Site; generated from P008_EVACUATION_HOLD/en_US. -->

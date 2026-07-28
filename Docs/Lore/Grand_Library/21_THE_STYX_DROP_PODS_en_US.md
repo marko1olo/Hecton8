@@ -1,8 +1,9 @@
 <!-- localization_status: source_authority_en_US -->
 # STYX DROP PODS: THE ONE-WAY ARGUMENT
 
-> **Source:** *Black Keel* Descent Operations Manual, Annex D-44, "Contractor Bathy-Drop Delivery."
-> **Speaker:** Marek Ibarra, Keelmark Mutual adjuster, delivery-loss annex language.
+> **Source:** *Black Keel* Descent Operations Manual, Annex D-44, "Contractor Bathy-Drop Delivery."  
+> **Speaker:** Annex voice. The delivery-loss clauses are Marek Ibarra's Keelmark Mutual draft, Q4 2147, carried into current issue without rewording.  
+> **Issue authority:** Recovery Compliance Office, 2190 return-action cycle. Ibarra's desk closed with the colony. His sentences did not.  
 > **Reviewer note:** Public-safe cutaway. This copy describes the pod, not the private claim-window keys, ascent charge signatures, or insurer kill thresholds.
 
 ---
@@ -16,6 +17,8 @@ The old manuals call it an "atmosphere-ocean contractor delivery unit." Marauder
 Deep Reach did not design the Styx for comfort. The original pattern was a drill-drop bus used to punch autonomous mining heads through Aegir storm bands. When the colony failed and claim recovery became cheaper than rescue, the drill bus was re-certified for living cargo. The certification did not say "safe." It said "survivable under contracted parameters."
 
 Keelmark's actuarial sheet lists an 88.4 percent survivable delivery rate with weather, pod age, suit seal and operator biometrics all inside green margins. The sheet has no row for a drop where two of those four are amber, which is most of them. It classifies a failed drop as a delivery loss and files it against the shell's pattern number, not against a name.
+
+That classification is older than the practice it governs. Ibarra's desk cut the delivery-loss schedule in the quarter the colony drowned, in the same reconciliation cycle that moved unrecovered colonists into inventory categories, and it was written before a single pod had carried a living contractor down. The office that signs the schedule now is not his. The wording is.
 
 ## 2. The Descent Profile
 
@@ -84,5 +87,7 @@ Contractors keep riding them because the shell is the cheapest object in the cha
 The last document signed before a cradle throw is Form BK-D/44. One page, eleven fields.
 
 Nine fields describe the shell: pattern number, ablator lot, cradle position, mast condition, sleeve condition, ballast valve certification, pinger code, claim hash, window reference. One field describes the contractor, and it reads OPERATOR MASS, WITH SUIT. The eleventh is the signature line, under a sentence that reads THE UNDERSIGNED ACCEPTS DELIVERY UNDER CONTRACTED PARAMETERS.
+
+All eleven fields are current. The sentence above them is not. The footer block names the issuing office and it reads RECOVERY COMPLIANCE OFFICE, which is the desk that prices a delivery loss today and answers the queue afterwards. That desk has never had to rewrite the clause it inherited. Forty-three years on, a contractor initials one page beneath a line composed by an adjuster who has been out of the file since the year it drowned, and the line still does its work unaltered.
 
 There is no field on the form for the return.
