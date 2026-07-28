@@ -157,22 +157,22 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0
-    - _GameTime: 0.013000001
+    - _GameTime: 0.012000001
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HazeFalloff: 2.899964
-    - _HazeIntensity: 0.4448852
-    - _HazeSunTintStrength: 0.31522322
+    - _HazeFalloff: 2.89994
+    - _HazeIntensity: 0.44489127
+    - _HazeSunTintStrength: 0.31522715
     - _HighCloudOpacity: 0.82
     - _HighCloudParallaxStrength: 0
     - _HighCloudSpeedMult: 0.08
-    - _HorizonMistShelfHeight: 0.17885312
-    - _HorizonMistShelfIntensity: 0.5704159
-    - _HorizonMistShelfSoftness: 0.10673964
+    - _HorizonMistShelfHeight: 0.17885378
+    - _HorizonMistShelfIntensity: 0.57042295
+    - _HorizonMistShelfSoftness: 0.10673999
     - _Metallic: 0
-    - _NightBlend: 0.48982602
+    - _NightBlend: 0.49056256
     - _OcclusionStrength: 1
     - _OverlayAlpha: 1
     - _OverlayDiscInnerDot: 0.9214169
@@ -186,14 +186,14 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _StarIntensity: 0.48982602
+    - _StarIntensity: 0.49056256
     - _StarIntensityMax: 2
     - _StarSeed: 99173
     - _StarSkyExposure: 1.5
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.0035
-    - _SunElevation: 0.00075367343
+    - _SunElevation: 0.0006991079
     - _SunScatterIntensity: 1.1
     - _SunScatterPower: 10.4
     - _SunSize: 0.0065
@@ -213,7 +213,7 @@ Material:
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.7953252, g: 0.47172502, b: 0.45055678, a: 1}
+    - _HazeColor: {r: 0.79532486, g: 0.47172478, b: 0.45055652, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.0256, g: 0.018000001, b: 0.0528, a: 1}
