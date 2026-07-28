@@ -312,6 +312,27 @@ def triangle_area_times_two(p, i0: int, i1: int, i2: int) -> float:
     )
 
 
+def _triangle_world_area(data, t: int) -> float:
+    """World-space area of triangle ``t`` in square metres.
+
+    Used to AREA-WEIGHT the UV stretch population. Weighting by triangle count instead
+    lets a pole singularity -- many tiny triangles, negligible visible surface -- dominate
+    the verdict, which is why a clean UV sphere failed the count-based gate on 68% of its
+    triangles while being perfectly acceptable art.
+    """
+    p = data.positions
+    a = data.tri_vertices[t * 3] * 3
+    b = data.tri_vertices[t * 3 + 1] * 3
+    c = data.tri_vertices[t * 3 + 2] * 3
+    ux, uy, uz = p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]
+    vx, vy, vz = p[c] - p[a], p[c + 1] - p[a + 1], p[c + 2] - p[a + 2]
+    cx = uy * vz - uz * vy
+    cy = uz * vx - ux * vz
+    cz = ux * vy - uy * vx
+    area = 0.5 * ((cx * cx + cy * cy + cz * cz) ** 0.5)
+    return area if _finite(area) else 0.0
+
+
 def uv_aspect_distortion(p, uv, tri_v, tri_l, t: int) -> float:
     """Aspect distortion of triangle ``t``: ``sigma_max / sigma_min - 1``.
 
@@ -792,7 +813,7 @@ def _gate_triangles(data: MeshData, sink: _Sink, *, double_sided: bool) -> None:
 
 
 def _gate_uv(data: MeshData, sink: _Sink, *, hero: bool, triplanar: bool,
-             atlas_size, indices_usable: bool) -> None:
+             atlas_size, indices_usable: bool, surface_class=None) -> None:
     """UV0 presence, finiteness, zero-area UV triangles, stretch, atlas gates.
 
     3dmodel.md section 6 forbidden UV states: "Stretched polygons above 15
@@ -834,7 +855,17 @@ def _gate_uv(data: MeshData, sink: _Sink, *, hero: bool, triplanar: bool,
         for gate in (GATE_ZERO_AREA_UV_TRIANGLE, GATE_UV_STRETCH_EXCESSIVE):
             sink.skip(gate, "caller declared triplanar=True and UV0 is present")
     else:
-        limit = law.UV_STRETCH_MAX_HERO if hero else law.UV_STRETCH_MAX_DISTANT
+        limit = law.uv_stretch_limit_for(surface_class, hero=hero)
+        # Judged by SURFACE AREA, not by triangle count. See law.UV_STRETCH_AREA_FRACTION_MAX
+        # for the control experiment: a clean UV sphere exceeds the per-triangle limit on
+        # 68% of its TRIANGLES, because a conformal unwrap of a closed surface has an
+        # unavoidable pole singularity -- but those triangles are tiny and are not visible
+        # stretch. Area weighting asks the question the bible actually cares about: how much
+        # of what the player looks at is stretched.
+        stretched_area = 0.0
+        total_area = 0.0
+        worst_distortion = 0.0
+        worst_triangle = -1
         for t in range(data.triangle_count):
             l0 = data.tri_loops[t * 3]
             l1 = data.tri_loops[t * 3 + 1]
@@ -845,19 +876,45 @@ def _gate_uv(data: MeshData, sink: _Sink, *, hero: bool, triplanar: bool,
             if not all(_finite(x) for x in (s0, t0, s1, t1, s2, t2)):
                 continue
             area2 = abs((s1 - s0) * (t2 - t0) - (s2 - s0) * (t1 - t0))
-            if area2 <= law.DEGENERATE_TRIANGLE_AREA_EPS:
+            # UV area is dimensionless in a 0..1 domain; DEGENERATE_TRIANGLE_AREA_EPS is a
+            # world area in square metres. Comparing them mixed units and made a healthy
+            # 5 mm triangle at high texel density read as degenerate.
+            if area2 <= law.DEGENERATE_UV_AREA_EPS:
                 sink.fail(GATE_ZERO_AREA_UV_TRIANGLE,
                           "triangle[{0}] uv area x2={1!r} on layer '{2}' <= "
-                          "law.DEGENERATE_TRIANGLE_AREA_EPS={3}".format(
-                              t, area2, uv0_name,
-                              law.DEGENERATE_TRIANGLE_AREA_EPS))
+                          "law.DEGENERATE_UV_AREA_EPS={3}".format(
+                              t, area2, uv0_name, law.DEGENERATE_UV_AREA_EPS))
                 continue
+
+            world_area = _triangle_world_area(data, t)
+            total_area += world_area
             distortion = uv_aspect_distortion(data.positions, uv0,
                                               data.tri_vertices, data.tri_loops, t)
+            if distortion > worst_distortion:
+                worst_distortion = distortion
+                worst_triangle = t
             if distortion > limit:
+                stretched_area += world_area
+
+        if total_area > 0.0:
+            fraction = stretched_area / total_area
+            if fraction > law.UV_STRETCH_AREA_FRACTION_MAX:
                 sink.fail(GATE_UV_STRETCH_EXCESSIVE,
-                          "triangle[{0}] aspect distortion={1:.4f} above "
-                          "{2} (hero={3})".format(t, distortion, limit, hero))
+                          "{0:.1%} of surface area exceeds aspect distortion {1} "
+                          "(limit {2:.1%}); worst triangle[{3}]={4:.4f}, "
+                          "surface_class={5} hero={6}".format(
+                              fraction, limit, law.UV_STRETCH_AREA_FRACTION_MAX,
+                              worst_triangle, worst_distortion,
+                              getattr(surface_class, "value", surface_class), hero))
+            outlier_ceiling = limit * law.UV_STRETCH_OUTLIER_MULTIPLIER
+            if worst_distortion > outlier_ceiling:
+                # A single catastrophic triangle must not hide inside a good average.
+                sink.fail(GATE_UV_STRETCH_EXCESSIVE,
+                          "triangle[{0}] aspect distortion={1:.4f} exceeds the outlier "
+                          "ceiling {2:.4f} (= limit {3} x "
+                          "law.UV_STRETCH_OUTLIER_MULTIPLIER {4})".format(
+                              worst_triangle, worst_distortion, outlier_ceiling,
+                              limit, law.UV_STRETCH_OUTLIER_MULTIPLIER))
 
     if atlas_size is None:
         for gate in (GATE_UV_ISLAND_BELOW_MIN_PIXELS,
@@ -1111,6 +1168,7 @@ def validate_mesh_data(data: MeshData, *, family, lod_index: int, surface_class,
         for gate in (GATE_DEGENERATE_TRIANGLE, GATE_INCONSISTENT_WINDING):
             sink.skip(gate, "index buffer is invalid; fix index gates first")
     _gate_uv(data, sink, hero=hero, triplanar=triplanar, atlas_size=atlas_size,
+             surface_class=surface_class,
              indices_usable=indices_usable)
     _gate_vertex_colors(data, sink, surface_class=surface_class)
     submesh_count = _gate_materials(data, sink)

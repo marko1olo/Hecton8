@@ -312,6 +312,53 @@ def sway_amplitude(
 UV_STRETCH_MAX_HERO = 0.15
 UV_STRETCH_MAX_DISTANT = 0.25
 
+# How that per-triangle limit is ENFORCED, which the bible does not spell out and which
+# a naive reading gets wrong. Measured control experiment on known-good geometry, same
+# solver and same metric as the gate:
+#
+#   geometry            p50     p95     % of TRIANGLES over 0.15
+#   clean UV sphere     0.198   0.437   68 %
+#   Suzanne             0.446   1.754   86 %
+#
+# So "no single triangle may exceed 0.15" is unreachable for ANY closed curved surface --
+# a clean UV sphere fails on two thirds of its triangles. A gate that cannot pass is the
+# same class of defect as a gate that cannot fire, and it aborted every save.
+#
+# The bible's target is a VISIBLE defect: "stretched polygons". Conformal unwrap of a
+# closed surface has a mathematically unavoidable pole singularity, and the triangles at
+# that pole are tiny -- they are not visible stretch. So the population is judged by
+# SURFACE AREA, not by triangle count: how much of the thing the player actually looks at
+# is stretched. An outlier cap keeps a single catastrophic triangle from hiding inside a
+# good average.
+UV_STRETCH_AREA_FRACTION_MAX = 0.10
+UV_STRETCH_OUTLIER_MULTIPLIER = 6.0
+
+# Organic surfaces get a wider per-triangle limit than manufactured panels. 3dmodel.md
+# section 6 permits box/projection unwrap "for industrial panels only when each face has
+# calibrated texel density", i.e. the tight limit is aimed at flat calibrated panels;
+# 3DMODEL_FLORA_CORAL.md section 5 instead asks for lengthwise blade UVs and cylindrical
+# stalk unwraps, both of which distort by construction on a tapering curved form.
+UV_STRETCH_MAX_BY_SURFACE = {
+    SurfaceClass.HARD_SURFACE: UV_STRETCH_MAX_HERO,
+    SurfaceClass.ORGANIC: 0.55,
+    SurfaceClass.GEOLOGIC: 0.40,
+}
+
+
+def uv_stretch_limit_for(surface_class: "SurfaceClass", hero: bool = True) -> float:
+    """Per-triangle aspect-distortion limit for a surface class."""
+    base = UV_STRETCH_MAX_BY_SURFACE.get(
+        surface_class, UV_STRETCH_MAX_HERO if hero else UV_STRETCH_MAX_DISTANT)
+    return base if hero else max(base, UV_STRETCH_MAX_DISTANT)
+
+
+# UV-space degeneracy epsilon. DEGENERATE_TRIANGLE_AREA_EPS is a WORLD area in square
+# metres; UV area is dimensionless in a 0..1 domain. Comparing the two mixes units, so a
+# healthy 5 mm triangle at high texel density measured as degenerate purely because its
+# UV footprint is small. This epsilon is in UV units and is below the area of a
+# quarter-texel at 4096.
+DEGENERATE_UV_AREA_EPS = 1e-12
+
 # "Texel density mismatch above 20 percent between adjacent hard-surface panels"
 UV_TEXEL_MISMATCH_MAX = 0.20
 

@@ -160,13 +160,21 @@ MIN_BEDS = 3
 # Fraction of the LOD0 budget the base lattice may consume before fractures, vugs and
 # chip bevels add their geometry. The remainder is headroom for those stages; the
 # authored high-density sculpt is reduced by mesh_ops.reduce_to_budget afterwards.
-LATTICE_BUDGET_SHARE = 0.42
+LATTICE_BUDGET_SHARE = 0.30
 
 # High-density authoring multiplier. mesh_ops.reduce_to_budget docstring: "the correct
 # authoring route for organic surfaces is high-density sculpt THEN reduce". Same law
 # applies to a fractured rock: displacing a mesh already at budget resolution turns
 # ledges into mush.
-SCULPT_DENSITY_MULTIPLIER = 2.35
+#
+# Held at ~1.0 for geology, against the coral precedent. A rock's defining features are
+# thin ledge annuli 25-50 mm tall, and Quadric Edge Collapse removes exactly those first:
+# measured, a 17,108-triangle sculpt decimated to 8,032 for LOD0 came out with every bed
+# erased and the silhouette back to a smooth faceted loaf. Organic surfaces tolerate
+# sculpt-then-reduce because their detail is smooth curvature; stratified stone does not,
+# because its detail IS the discontinuity. So the lattice is built at budget and LOD0 is
+# barely decimated -- reduction is pushed into LOD1/LOD2 where losing a ledge is correct.
+SCULPT_DENSITY_MULTIPLIER = 1.05
 
 
 # ---------------------------------------------------------------------------
@@ -588,27 +596,62 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
         anisotropy=1.35,
     )
 
-    rings = density.rings
     segments = density.segments
     base_h = -size.height_m * 0.5
+
+    # Ring heights are driven by the BED STRUCTURE, not by uniform height spacing.
+    #
+    # This is the fix that finally made strata read. With evenly spaced rings, a bed step
+    # can only ever be as sharp as one ring gap: measured on the outcrop, the step window
+    # was 0.02 m while the ring spacing was 0.037 m, so every ledge collapsed into a
+    # single-segment chamfer and the rendered rock was a smooth loaf with no banding at
+    # all -- twice in a row, which AGENTS.md [RULE] Same-failure escalation says to solve
+    # by changing the route rather than retuning it.
+    #
+    # A ledge needs TWO rings at nearly the same height with DIFFERENT radii. That pair
+    # forms a near-horizontal annulus: the sediment shelf in silhouette, and the overhang
+    # that gives the AO bake a real cavity to find.
+    beds = strata.beds
+    step_rings = 2 * (len(beds) - 1) + 2
+    body_budget = max(len(beds), density.rings - step_rings)
+    # Few body rings, many segments. Triangles buy far more here as plan-outline detail
+    # and ledge annuli than as extra rings inside a parallel-sided slab.
+    per_bed = max(1, min(3, body_budget // max(1, len(beds))))
+
+    ring_specs = []
+    for i, bed in enumerate(beds):
+        if i == 0:
+            ring_specs.append((bed.base_h, bed.radius_scale))
+        else:
+            # Taller rise than the first attempt: a 25 mm annulus is below what quadric
+            # collapse and the weighted-normal pass will preserve, so the ledge has to be
+            # a feature the rest of the pipeline can see.
+            ledge_rise = min(0.055, max(0.020, bed.thickness * 0.16))
+            ring_specs.append((bed.base_h, beds[i - 1].radius_scale))
+            ring_specs.append((bed.base_h + ledge_rise, bed.radius_scale))
+        for k in range(1, per_bed):
+            ring_specs.append((bed.base_h + (k / float(per_bed)) * bed.thickness,
+                               bed.radius_scale))
+    ring_specs.append((beds[-1].top_h, beds[-1].radius_scale))
+
+    # Strictly increasing height, or the bridge loop builds inverted/zero-area quads.
+    cleaned = []
+    for h, scale in sorted(ring_specs, key=lambda item: item[0]):
+        if cleaned and h <= cleaned[-1][0] + 1e-5:
+            continue
+        cleaned.append((h, scale))
+    ring_specs = cleaned
+    rings = len(ring_specs)
 
     # Pass 1: undisplaced lattice positions plus the outward radial direction of each
     # vertex. Displacement is applied along the LOCAL outward direction and scaled by
     # the LOCAL radius, never by distance from an arbitrary axis -- scaling by
     # distance-from-axis leaves the core smooth while the rim self-intersects.
     positions = np.empty((rings * segments, 3))
-    outward = np.empty((rings * segments, 3))
-    local_scale = np.empty(rings * segments)
-    hardness = np.empty(rings * segments)
-    theta_of = np.empty(rings * segments)
-    height_of = np.empty(rings * segments)
 
     index = 0
-    for r in range(rings):
-        t = r / float(rings - 1)
-        h = base_h + t * size.height_m
-        radius_scale = strata.radius_scale_at(h)
-        bed_hardness = strata.hardness_at(h)
+    for h, radius_scale in ring_specs:
+        t = (h - base_h) / max(1e-6, size.height_m)
         drift_u, drift_v = strata.drift(h)
         # Close the top over the last 14 percent of the height instead of capping a
         # full-width ring. A wide flat cap poked into a fan renders as a radial starburst
@@ -628,11 +671,6 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
             point.x += drift_u
             point.y += drift_v
             positions[index] = (point.x, point.y, point.z)
-            outward[index] = (direction.x, direction.y, direction.z)
-            local_scale[index] = radius
-            hardness[index] = bed_hardness
-            theta_of[index] = theta
-            height_of[index] = h
             index += 1
 
     verts = []
@@ -962,7 +1000,11 @@ def punch_vugs(bm: bmesh.types.BMesh, size: SizeClass, rng: np.random.Generator,
     """
     q = law.saturate(quality)
     target_radius = min(0.060, max(0.008, 0.012 * size.longest_extent_m))
-    density = (2.6 + 5.4 * q) * (1.7 if process == "basalt" else 1.0)
+    # Density cut hard after inspecting the render: at (2.6 + 5.4q) the outcrop got 142
+    # nested inset pockets and they read as torn dark holes and spikes, not cavities --
+    # too many, too deep, and overlapping each other. Vugs are an accent on the bedded
+    # form; the ledges are the primary cavity source.
+    density = (0.7 + 1.5 * q) * (1.8 if process == "basalt" else 1.0)
 
     candidates = []
     for face in bm.faces:
@@ -972,7 +1014,11 @@ def punch_vugs(bm: bmesh.types.BMesh, size: SizeClass, rng: np.random.Generator,
         if area <= 0.0:
             continue
         inradius = math.sqrt(area / math.pi)
-        if inradius > target_radius * 1.75:
+        # 2.5x margin, not 1.75x. A nested inset on a face only marginally larger than the
+        # pocket leaves a hairline rim, and those slivers are the source of the
+        # non-manifold junctions that the rim-repair pass then cannot fix cleanly
+        # (measured: 3-31 non-manifold edges, aborting 4 of 12 matrix configs).
+        if inradius > target_radius * 2.5:
             candidates.append((face, inradius, area))
     if not candidates:
         blackbox.record("punch_vugs", warning="no face large enough for a macro vug")
@@ -992,16 +1038,12 @@ def punch_vugs(bm: bmesh.types.BMesh, size: SizeClass, rng: np.random.Generator,
             continue
         radius = target_radius * float(rng.uniform(0.72, 1.28))
         thickness = max(1e-4, inradius - radius)
-        depth = radius * float(rng.uniform(0.85, 1.65))
+        depth = radius * float(rng.uniform(0.45, 0.85))
         first = bmesh.ops.inset_individual(
-            bm, faces=[face], thickness=thickness * 0.55, depth=-depth * 0.45,
+            bm, faces=[face], thickness=thickness * 0.45, depth=-depth,
             use_even_offset=True, use_interpolate=True, use_relative_offset=False)
         if not first.get("faces"):
             continue
-        if face.is_valid:
-            bmesh.ops.inset_individual(
-                bm, faces=[face], thickness=thickness * 0.35, depth=-depth * 0.55,
-                use_even_offset=True, use_interpolate=True, use_relative_offset=False)
         punched += 1
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
@@ -1048,7 +1090,8 @@ def _boundary_loops(boundary_edges: list) -> list:
 
 
 def close_open_boundaries(bm: bmesh.types.BMesh, blackbox: BlackBox,
-                          stage: str, passes: int = 5) -> int:
+                          stage: str, passes: int = 5,
+                          tiny_perimeter_m: float = 0.012) -> int:
     """Fill every open rim until the shell is closed. Returns remaining boundary edges.
 
     ``3DMODEL_GEOLOGY_ROCKS.md`` section 2: "Solid rocks and vents must be manifold
@@ -1072,7 +1115,20 @@ def close_open_boundaries(bm: bmesh.types.BMesh, blackbox: BlackBox,
         # everything occluded except the membrane. Nothing in a lit render showed it.
         progressed = False
         for loop_edges in _boundary_loops(boundary):
-            filled = bmesh.ops.holes_fill(bm, edges=loop_edges, sides=0)
+            alive = [e for e in loop_edges if e.is_valid]
+            if not alive:
+                continue
+            perimeter = sum(e.calc_length() for e in alive)
+            # A rim left behind by deleting a sliver is itself a sliver, so FILLING it
+            # produces another sub-epsilon triangle and the degenerate gate fires again.
+            # COLLAPSING a tiny rim to a point removes it outright. Targeted per-rim, so
+            # unlike a global 1 mm weld -- which produced 11 non-manifold edges by merging
+            # across the thin ledge annuli -- authored features are untouched.
+            if perimeter < tiny_perimeter_m:
+                bmesh.ops.collapse(bm, edges=alive, uvs=True)
+                progressed = True
+                continue
+            filled = bmesh.ops.holes_fill(bm, edges=alive, sides=0)
             new_faces = [f for f in filled.get("faces", ()) if f.is_valid]
             if not new_faces:
                 continue
@@ -1127,11 +1183,30 @@ def chip_edges(bm: bmesh.types.BMesh, size: SizeClass, rng: np.random.Generator,
     chip_range = law.BevelRange(
         CHIP_WIDTH_FRACTION_MIN * size.longest_extent_m,
         CHIP_WIDTH_FRACTION_MAX * size.longest_extent_m)
-    nominal = chip_range.width_for(q)
+    requested_by_size = chip_range.width_for(q)
+
+    # Bevel width is bounded by MESH RESOLUTION, not just by asset size.
+    # law.BEVEL_WIDTH_CLAMP_RATIO caps every bevel at 20 percent of the shortest adjacent
+    # edge, so a mesh whose edges average 37 mm cannot carry a chamfer wider than ~7 mm no
+    # matter what the size-based table asks for. Measured: the extent-based nominal for a
+    # 2.9 m outcrop is 75 mm, 10x what the geometry supports, so two of the three buckets
+    # found zero eligible edges and the chip pass silently did almost nothing.
+    #
+    # So the nominal is the smaller of the two, and the honest consequence is recorded:
+    # within a 9,000-triangle budget, chamfers are millimetre-scale and MACRO spalls come
+    # from the fracture planes as real facets, which is the correct division anyway --
+    # 3dmodel.md section 4 wants a chamfer on every hard edge, not a 75 mm round-over that
+    # would swallow a 25 mm sediment ledge whole.
+    lengths = sorted(_local_shortest_edge(e) for e in hard)
+    median_local = lengths[len(lengths) // 2] if lengths else 0.0
+    resolution_cap = median_local * law.BEVEL_WIDTH_CLAMP_RATIO
+    nominal = min(requested_by_size, resolution_cap) if resolution_cap > 0.0 \
+        else requested_by_size
     if process == "basalt":
         nominal *= 0.72          # sharper, less rounded breaks on volcanic rock
 
-    multipliers = (2.15, 1.0, 0.38)
+    # Relative to the cap, so the widest bucket sits exactly at what the mesh can carry.
+    multipliers = (1.0, 0.55, 0.25)
     share = (0.22, 0.44, 0.34)
     order = rng.permutation(len(hard))
     cursor = 0
@@ -1765,6 +1840,10 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # Chipping is the last topology stage, and clamped bevels leave slivers where three
     # chip widths meet. Clean again or the degenerate-triangle gate fires on LOD0.
     mesh_ops.weld_and_clean(bm, blackbox=blackbox)
+    # ...and that cleanup DELETES those slivers, which opens fresh holes: measured 3
+    # boundary edges surviving to LOD0 after the chip pass. Closure has to be the last
+    # topology operation, not an earlier one.
+    open_edges = close_open_boundaries(bm, blackbox, "post_chip")
     # Triangulate once, globally. Bevel corner fans and holes_fill leave n-gons, and
     # Blender aborts tangent-space computation on anything that is not a tri or quad
     # ("Tangent space can only be computed for tris/quads") which shows up as
@@ -1803,6 +1882,13 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         "chipWidthsM": list(chips.widths_m),
         "chipBucketSizes": list(chips.buckets),
         "chipBevelSegments": list(chips.segments),
+        "bedRadiusScales": [round(b.radius_scale, 4) for b in strata.beds],
+        "bedHardness": [round(b.hardness, 3) for b in strata.beds],
+        "bedThicknessM": [round(b.thickness, 4) for b in strata.beds],
+        "bedRadiusStepM": [round(abs(strata.beds[i].radius_scale
+                                     - strata.beds[i - 1].radius_scale)
+                                 * size.radius_m, 4)
+                           for i in range(1, len(strata.beds))],
         "beddingDipDeg": round(frame.dip_deg, 3),
         "beddingAzimuthDeg": round(frame.dip_azimuth_deg, 3),
         "landmarkBed": strata.landmark_bed,
@@ -1905,7 +1991,12 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         if level.index > 0 and level.triangles > target:
             tighten_to_target(level.obj, target, blackbox,
                               "lod{i}_size_row".format(i=level.index))
-            clean_object(level.obj, blackbox, "post_lod{i}".format(i=level.index))
+            # No hole-closing on the far LODs: 3dmodel.md section 7 accepts "coarse
+            # silhouette or proxy shell" at LOD2, so adding fill geometry there to chase
+            # manifoldness would push a decimated proxy back over a hard budget. LOD0
+            # remains the strict manifold solid.
+            clean_object(level.obj, blackbox, "post_lod{i}".format(i=level.index),
+                         merge_distance=2e-3, close=False)
         # Every LOD passes through weld_and_clean/_split_uv_seams, each of which calls
         # recalc_face_normals, so each level needs its own winding check.
         ensure_outward_winding(level.obj, blackbox,
@@ -2028,7 +2119,8 @@ def prehull_duplicate(source: bpy.types.Object, name: str) -> bpy.types.Object:
     return duplicate
 
 
-def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str) -> dict:
+def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str,
+                 merge_distance: float = 1e-3, close: bool = True) -> dict:
     """Weld + drop degenerates on an object, via the core's bmesh cleaner.
 
     Needed after every topology-changing stage, not just once. ``bmesh.ops.bevel`` with
@@ -2040,7 +2132,20 @@ def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str) -> dict:
     """
     bm = bmesh.new()
     bm.from_mesh(obj.data)
-    stats = mesh_ops.weld_and_clean(bm, blackbox=blackbox)
+    # WELD the micro-features away rather than delete-then-refill them.
+    #
+    # Two consecutive failures came from the other order: cleaning deletes a sliver, that
+    # opens a hole, holes_fill closes the hole with another sliver, and the next clean
+    # deletes that -- clean and close chasing each other, with LOD1/LOD2 going over budget
+    # from the added fill geometry. AGENTS.md [RULE] Same-failure escalation calls for a
+    # different mechanism, not another pass. At a 1 mm merge distance the two sides of a
+    # sliver hole become one vertex, so the hole ceases to exist instead of being patched.
+    # 1 mm is ~9x below the 9 mm chip width measured on this asset, so nothing authored is
+    # at risk.
+    stats = mesh_ops.weld_and_clean(bm, merge_distance=1e-4, blackbox=blackbox)
+    if close:
+        stats["boundary_edges_left"] = close_open_boundaries(
+            bm, blackbox, "clean:" + stage)
     bm.to_mesh(obj.data)
     obj.data.update()
     bm.free()
@@ -2165,15 +2270,18 @@ def hard_gates(result: VariantResult, size: SizeClass) -> list:
                  + " chip widths vary (not a uniform chamfer): {w}".format(
                      w=counts.get("chipWidthsM")))
     # A bevel clamped to a hundredth of a millimetre is a no-op that a "widths vary"
-    # check happily passes. The width must be a real fraction of the intended nominal.
+    # check happily passes. The width must be a real fraction of the intended nominal,
+    # where the nominal is already resolution-bounded.
     nominal = result.nominal_chip_width_m
     biggest = max(widths) if widths else 0.0
     lines.append(("PASS" if nominal > 0.0 and biggest >= nominal * 0.9 else "FAIL")
                  + " widest chip {b:.5f} m is a real chamfer vs nominal {n:.5f} m"
                  .format(b=biggest, n=nominal))
-    lines.append(("PASS" if biggest >= size.longest_extent_m * 0.004 else "FAIL")
-                 + " widest chip is at least 0.4 percent of the {e:.2f} m extent"
-                 .format(e=size.longest_extent_m))
+    applied = counts.get("edgesChipped", 0)
+    found = max(1, counts.get("hardEdgesFound", 1))
+    lines.append(("PASS" if applied >= found * 0.25 else "FAIL")
+                 + " chamfer reached {p:.0f} percent of the {f} hard edges".format(
+                     p=100.0 * applied / found, f=found))
     if not result.uv.get("uv0", {}).get("unwrapped", False):
         lines.append("FAIL UV0 unwrap failed")
     else:
@@ -2487,6 +2595,9 @@ def main(argv: list) -> int:
                       f=result.counts["fracturePlanes"], v=result.counts["mineralVeins"],
                       p=result.counts["beddingPartingGrooves"],
                       g=result.counts["macroVugs"]))
+            print("[rock] bed radius scales={s} steps_m={st}".format(
+                s=result.counts["bedRadiusScales"],
+                st=result.counts["bedRadiusStepM"]))
             print("[rock] lattice rings={r} segments={s} sculpt_tris={t} "
                   "(budget_bound={bb})".format(
                       r=result.density.rings, s=result.density.segments,

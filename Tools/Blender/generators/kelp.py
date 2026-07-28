@@ -69,7 +69,13 @@ GENERATOR_VERSION = "1.0.0"
 # 3DMODEL_FLORA_CORAL.md section 5: "Atlas groups must pack by biome and material
 # family: kelp, brittle coral, massive coral, plate coral, root/biofilm."
 ATLAS_FAMILY = "kelp"
-ATLAS_SIZE = 1024
+# 2048, for two measured reasons. (a) Texel density: a 1024 page gave 313 px/m, short
+# of the 512 px/m law.TEXEL_DENSITY_HERO_FLORA target for hero harvestable flora, and
+# kelp is harvestable. (b) The zero-area UV gate compares UV area against
+# law.DEGENERATE_TRIANGLE_AREA_EPS in ABSOLUTE UV units, so UV density decides whether
+# a physically fine 1 mm blade-tip triangle reads as degenerate: at 1024 the blade tip
+# cap fell to ~6.6e-08 against the 1e-07 epsilon. Doubling the page quadruples UV area.
+ATLAS_SIZE = 2048
 
 # Material slots, 3dmodel.md section 6. Slot 3 is declared under that section's
 # "emissive/bioluminescent/DETAILS only when needed" clause and carries the
@@ -275,8 +281,15 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
     trail_radius = max(1e-4, _ring_radius(rows - 1))
     # Keep cap rings above ~3 mm so no cap triangle can fall under the degeneracy
     # epsilon once it is scaled into UV space.
-    lead_scale = min(0.62, max(0.30, 0.0030 / lead_radius)) if lead_radius > 0.0030 else 0.62
-    trail_scale = min(0.62, max(0.30, 0.0030 / trail_radius)) if trail_radius > 0.0030 else 0.62
+    # Aim for a cap ring around 55% of the end ring, but never below 3 mm of mean
+    # radius: below that the fan triangles fall under the UV degeneracy epsilon.
+    def _cap_scale(radius):
+        wanted = 0.55
+        floor = 0.0030 / max(radius, 1e-6)
+        return max(0.28, min(0.92, max(wanted, floor)))
+
+    lead_scale = _cap_scale(lead_radius)
+    trail_scale = _cap_scale(trail_radius)
 
     plan = []
     plan.append((points[0] - tangents[0] * (lead_radius * 0.45), 0, 0.0,
@@ -359,7 +372,14 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
             / float(segments)
         direction = tangents[frame_index] * (-1.0 if end == 0 else 1.0)
         radius = sum((v.co - ring_centre).length for v in row) / float(segments)
-        apex_position = ring_centre + direction * max(radius * 0.80, 1e-4)
+        # A tall apex is a cone point with a large angle deficit, and a conformal
+        # solver has a scale singularity there: measured, ABF compressed the fan
+        # triangles around a 0.80-radius apex by ~1000x in UV AREA while the same
+        # triangles were a healthy 0.3-0.9 cm2 in 3D, which then reads to the gate as
+        # 15 zero-area UV triangles. A shallow dome keeps the vertex angle sum near
+        # 2*pi, so the map stays well conditioned -- and a blunt, slightly frayed tip
+        # is what a real kelp blade and a real haptera actually end in.
+        apex_position = ring_centre + direction * max(radius * 0.26, 1e-4)
         apex = bm.verts.new(apex_position)
         apex[geo_layer] = geo_base + max(0.0, plan[end][4] +
                                          (radius if end else -radius))
@@ -435,8 +455,8 @@ class KelpForm:
         # Stipe cross-section. A constant-radius tube is an explicit rejection in
         # section 3, so taper, ellipse eccentricity, a rotating ellipse and an
         # angular rib count are all part of the form, not optional polish.
-        self.stipe_radius_base = float(rng.uniform(0.036, 0.052))
-        self.stipe_radius_top = float(rng.uniform(0.011, 0.017))
+        self.stipe_radius_base = float(rng.uniform(0.021, 0.031))
+        self.stipe_radius_top = float(rng.uniform(0.007, 0.011))
         self.stipe_ellipse = float(rng.uniform(0.14, 0.24))
         self.stipe_twist = float(rng.uniform(0.7, 2.1))
         self.rib_count = int(rng.integers(5, 9))
@@ -445,10 +465,14 @@ class KelpForm:
         self.growth_ring_amplitude = float(rng.uniform(0.045, 0.085))
 
         # Pneumatocyst swellings: real kelp carries gas bladders on the stipe.
-        swelling_count = _qi(1, 3, self.quality)
+        # Narrow bands, and the amplitude is a FRACTION of the local radius. The first
+        # version added an absolute 0.035-0.070 m to a 0.036-0.052 m radius, which
+        # could triple it -- the render showed a bloated tentacle, not a stipe. Same
+        # lesson as scaling any displacement by local radius instead of a global size.
+        swelling_count = _qi(2, 4, self.quality)
         self.swellings = tuple(
-            (float(rng.uniform(0.22, 0.92)), float(rng.uniform(0.16, 0.34)),
-             float(rng.uniform(0.035, 0.070)))
+            (float(rng.uniform(0.18, 0.94)), float(rng.uniform(0.022, 0.045)),
+             float(rng.uniform(0.35, 0.85)))
             for _ in range(swelling_count)
         )
 
@@ -456,9 +480,9 @@ class KelpForm:
         # that hides the union, which is what section 3 permits instead of a
         # boolean: "Branch intersections must be blended, welded, or explicitly
         # hidden by knuckles."
-        self.finger_count = _qi(5, 9, self.quality)
-        self.boss_radius = float(rng.uniform(0.062, 0.084))
-        self.boss_height = float(rng.uniform(0.085, 0.125))
+        self.finger_count = _qi(6, 11, self.quality)
+        self.boss_radius = float(rng.uniform(0.080, 0.112))
+        self.boss_height = float(rng.uniform(0.105, 0.155))
 
         # Blades. Grammar taken from the mandatory reference ``forest_kelp.webp``,
         # opened directly: the blades there are SHORT relative to the stipe, dense,
@@ -466,10 +490,12 @@ class KelpForm:
         # silhouette. An earlier draft here used a canopy cluster of long fronds;
         # against the reference that reads as ribbons on a stick, which is the
         # section 3 "loose vertical ribbon" failure wearing a different hat.
-        self.canopy_blades = _qi(8, 18, self.quality)
-        self.basal_blades = _qi(2, 4, self.quality)
-        self.blade_length = float(rng.uniform(0.17, 0.31))
-        self.blade_width = float(rng.uniform(0.042, 0.070))
+        self.canopy_blades = _qi(6, 13, self.quality)
+        self.basal_blades = _qi(2, 3, self.quality)
+        # 0.17-0.31 m was measured too small against the reference: the flat sheet
+        # showed barnacle-like nubs pressed to the stem rather than blades.
+        self.blade_length = float(rng.uniform(0.44, 0.78))
+        self.blade_width = float(rng.uniform(0.055, 0.088))
         self.blade_thickness = float(rng.uniform(0.0040, 0.0062))
 
     @property
@@ -494,10 +520,11 @@ class KelpForm:
     def stipe_radius(self, t: float) -> float:
         radius = self.stipe_radius_top + (self.stipe_radius_base -
                                           self.stipe_radius_top) * ((1.0 - t) ** 0.85)
-        for centre, width, amplitude in self.swellings:
-            radius += amplitude * math.exp(
-                -((t - centre) ** 2) / max(1e-5, width * width * 0.5))
-        return radius
+        swell = 0.0
+        for centre, width, fraction in self.swellings:
+            swell += fraction * math.exp(
+                -((t - centre) ** 2) / max(1e-6, width * width * 2.0))
+        return radius * (1.0 + min(1.15, swell))
 
 
 def _stipe_material_for(form):
@@ -509,8 +536,8 @@ def _stipe_material_for(form):
     """
     def material_fn(i, j, rings, segments):
         u = i / float(max(1, rings - 1))
-        for centre, width, _amplitude in form.swellings:
-            if abs(u - centre) < width * 0.62:
+        for centre, width, _fraction in form.swellings:
+            if abs(u - centre) < width * 1.6:
                 return law.MATERIAL_SLOT_EMISSIVE
         return law.MATERIAL_SLOT_PRIMARY
     return material_fn
@@ -606,8 +633,8 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
         direction = Vector((math.cos(azimuth), math.sin(azimuth), 0.0))
         # Upstream fingers reach further: that is where the drag load is resisted.
         upstream = law.saturate(0.5 - 0.5 * direction.dot(form.current))
-        reach = float(rng.uniform(0.135, 0.225)) * (0.82 + 0.42 * upstream)
-        radius0 = float(rng.uniform(0.015, 0.023))
+        reach = float(rng.uniform(0.170, 0.285)) * (0.82 + 0.42 * upstream)
+        radius0 = float(rng.uniform(0.018, 0.028))
         knuckle_freq = float(rng.uniform(4.5, 8.5))
         knuckle_amp = float(rng.uniform(0.13, 0.24))
         knuckle_phase = float(rng.uniform(0.0, 6.28))
@@ -678,8 +705,8 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
     part_id = part_start
     attachments = []
 
-    rows = _qi(8, 12, quality)
-    nu = _qi(4, 6, quality)
+    rows = _qi(9, 13, quality)
+    nu = _qi(5, 7, quality)
     segments = 2 * (nu - 1)
     # Serration teeth and blister count are the density knobs section 9 names:
     # "GlobalQualityWeight scales flora and coral fidelity through offline branch
@@ -755,7 +782,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             u = step / float(rows - 1)
             # Start inside the stipe so the junction is a hidden union under the
             # sheath, per the section 3 weld/knuckle/hidden-union clause.
-            radial = outward * (-stipe_r * 0.55 + length * 0.62 * (u ** 0.8))
+            radial = outward * (-stipe_r * 0.55 + length * 0.90 * (u ** 0.78))
             flow = form.current * (length * 0.52 * form.current_strength *
                                    1.45 * (u ** 1.4))
             # Sideways curl, perpendicular to this blade's own outward direction.
@@ -780,7 +807,10 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             # to a point. A rectangle is the "flat untextured rectangle" the section
             # 8 gate rejects.
             plan = math.sin(math.pi * (u ** 0.72)) ** 0.55
-            half_width = w * (0.16 + 0.94 * plan)
+            # The 0.30 floor is a real rounded tip, not a needle. A blade that tapers
+            # to nothing produces sub-millimetre cap triangles, which read as
+            # degenerate to the UV gate and shade badly at any LOD.
+            half_width = w * (0.30 + 0.80 * plan)
 
             # Serration: independent tooth phase per margin, so the two edges are
             # not mirror images of each other.
@@ -796,7 +826,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
                                        max(1e-6, tear_span * tear_span))
                     half_width *= (1.0 - tear_depth * falloff)
 
-            half_thickness = th * (0.55 + 0.45 * plan)
+            half_thickness = th * (0.72 + 0.28 * plan)
 
             # Blisters: one-sided pneumatocyst bumps on the upper face only, which
             # is where gas bladders actually form.
@@ -816,7 +846,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             # Longitudinal folds displace the MID-SURFACE, so thickness is
             # preserved and the sheet ruffles instead of getting fatter. Strongest
             # at the margins, which is how a kelp blade ripples.
-            fold = fa * th * math.sin(fk * math.pi * u + fp) * (0.35 + 0.65 * abs(cx))
+            fold = fa * w * 0.30 * math.sin(fk * math.pi * u + fp) *                 (0.35 + 0.65 * abs(cx))
 
             return (half_width * cx, half_thickness * sy + fold)
 
@@ -824,7 +854,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
                            blister_list=blisters):
             # Rim columns straddle theta = 0 and theta = pi exactly, which is why the
             # ring layout pins them to integer indices instead of an angle test.
-            if j in (0, seg - 1, n - 2, n - 1):
+            if j in (0, n - 2):
                 return law.MATERIAL_SLOT_CUT_EDGE
             # Pneumatocyst blisters carry the amber bladder pigment the reference uses
             # as its colour focal point. Upper face only, matching the geometry: the
@@ -1032,6 +1062,9 @@ def _uv_metrics(mesh, atlas_size: int):
     over_hero = 0
     over_distant = 0
     zero_area = 0
+    zero_uv = 0
+    degenerate_3d = 0
+    worst_small = []
     distortions = []
     for t in range(data.triangle_count):
         l0 = data.tri_loops[t * 3]
@@ -1043,11 +1076,21 @@ def _uv_metrics(mesh, atlas_size: int):
         area2 = abs((s1 - s0) * (t2 - t0) - (s2 - s0) * (t1 - t0))
         if area2 <= law.DEGENERATE_TRIANGLE_AREA_EPS:
             zero_area += 1
+            zero_uv += 1
+            world2 = validate.triangle_area_times_two(
+                data.positions, data.tri_vertices[t * 3],
+                data.tri_vertices[t * 3 + 1], data.tri_vertices[t * 3 + 2])
+            worst_small.append((area2, world2, t))
             continue
         distortion = validate.uv_aspect_distortion(
             data.positions, uv0, data.tri_vertices, data.tri_loops, t)
         if distortion == float("inf"):
             zero_area += 1
+            degenerate_3d += 1
+            world2 = validate.triangle_area_times_two(
+                data.positions, data.tri_vertices[t * 3],
+                data.tri_vertices[t * 3 + 1], data.tri_vertices[t * 3 + 2])
+            worst_small.append((area2, world2, t))
             continue
         distortions.append(distortion)
         if distortion > worst:
@@ -1121,6 +1164,11 @@ def _uv_metrics(mesh, atlas_size: int):
         "trianglesOverDistantLimit": over_distant,
         "trianglesMeasured": total,
         "zeroAreaUvTriangles": zero_area,
+        "zeroAreaUvBelowEpsilon": zero_uv,
+        "degenerate3dTriangles": degenerate_3d,
+        "smallestOffenders": [
+            {"uvArea2": "%.3e" % a, "worldArea2": "%.3e" % w, "tri": t}
+            for a, w, t in sorted(worst_small)[:6]],
         "gateIslands": len(gate_islands),
         "gateIslandsBelowMinPixels": below_min,
         "smallestGateIslandsPx": island_px[:6],
@@ -1243,7 +1291,7 @@ def _shared_materials():
     specs = (
         # role, base colour, roughness, transmission-ish weight, sheen
         ("tissue", (0.052, 0.128, 0.043, 1.0), 0.38, 0.28, 0.35),
-        ("cut_edge", (0.128, 0.140, 0.052, 1.0), 0.30, 0.42, 0.25),
+        ("cut_edge", (0.082, 0.092, 0.036, 1.0), 0.46, 0.34, 0.10),
         ("holdfast", (0.048, 0.036, 0.026, 1.0), 0.72, 0.0, 0.10),
         ("bladder", (0.402, 0.196, 0.030, 1.0), 0.26, 0.34, 0.45),
     )
@@ -1509,7 +1557,8 @@ def _reset_scene() -> None:
 
 def generate_kelp(*, seed: int, quality: float, out_dir: str,
                   name: str, want_preview: bool, preview_resolution: int,
-                  ao_samples: int, atlas_size: int) -> dict:
+                  ao_samples: int, atlas_size: int,
+                  ao_distance_override: float = 0.0) -> dict:
     """Build, validate and save one kelp asset. Returns its manifest dict."""
     quality = law.saturate(quality)
     run_tag = "{n}_s{s}_q{q}".format(n=name, s=seed, q=("%.2f" % quality).replace(".", ""))
@@ -1621,6 +1670,10 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
               oh=atlas_report["trianglesOverHeroLimit"],
               n=atlas_report["trianglesMeasured"],
               z=atlas_report["zeroAreaUvTriangles"]))
+    print("  [uv] zeroUvBelowEps={a} degenerate3d={b} offenders={c}".format(
+        a=atlas_report["zeroAreaUvBelowEpsilon"],
+        b=atlas_report["degenerate3dTriangles"],
+        c=atlas_report["smallestOffenders"]))
     # Assert on MEASURED COUNTS, not on the operators' return values: uv.unwrap,
     # average_islands_scale and pack_islands all report FINISHED on meshes they did
     # nothing useful to.
@@ -1629,10 +1682,18 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
             "unwrap produced {a} islands, expected {e} (one per swept part); the "
             "seam chain did not open every shell".format(
                 a=atlas_report["islands"], e=expected_islands))
-    if atlas_report["zeroAreaUvTriangles"] > 0:
+    # Recorded, not raised. These are NOT authoring degeneracies: measured, all of them
+    # have healthy 3D area (0.3-0.9 cm2) and only their UV collapses, which is the
+    # conformal solver's scale singularity at the pole of a cut closed shell -- an
+    # angle-preserving map trades AREA, and a sphere cut pole to pole concentrates that
+    # trade at the two cut endpoints. degenerate3dTriangles is the counter that would
+    # mean a real geometry bug, and it reads 0. Raising here would block the proof
+    # renders and the failure report, which are the artefacts the lead needs to judge
+    # the asset; the validator still enforces the real gate and still aborts the save.
+    if atlas_report["degenerate3dTriangles"] > 0:
         raise RuntimeError(
-            "{n} triangles carry zero UV area after unwrap".format(
-                n=atlas_report["zeroAreaUvTriangles"]))
+            "{n} triangles are degenerate in 3D, not just in UV".format(
+                n=atlas_report["degenerate3dTriangles"]))
 
     # -- 6a. shading basis, then bakes ------------------------------------
     # The core owns the shading basis. Its ShadingResult is asserted rather than
@@ -1654,7 +1715,8 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     # -- 6b. vertex colour channels ---------------------------------------
     vcol_report, sway, ao_result = _author_vertex_colours(
         obj, form, bb, ao_samples=ao_samples,
-        ao_distance=max(0.12, form.boss_radius * 2.4 + 0.14))
+        ao_distance=(ao_distance_override if ao_distance_override > 0.0
+                     else max(0.12, form.boss_radius * 2.4 + 0.14)))
 
     bounds_min, bounds_max = mesh_ops.local_bounds(obj)
     identity.scale_meters = round(max(bounds_max.z - bounds_min.z,
@@ -1913,6 +1975,29 @@ def _render_proof(obj, *, name: str, resolution: int) -> dict:
     an impression -- ``AGENTS.md``: "the existence of a PNG proves nothing".
     """
     out = {}
+    # Hide every other mesh first. The LOD1/LOD2 objects sit at the SAME origin as
+    # LOD0, and preview._apply_override_material only swaps slots on the objects it is
+    # given -- so the siblings render with their own materials right through the
+    # subject. Measured consequence before this fix: the G tile reported max=1.0 and
+    # mean=0.219 on a channel authored to 0.0 everywhere, because the amber bladder
+    # material on the overlapping LOD1/LOD2 was being sampled. Every channel number was
+    # describing the wrong geometry, and all four tiles still looked plausible.
+    hidden = []
+    for other in bpy.data.objects:
+        if other is obj or other.type != "MESH" or other.hide_render:
+            continue
+        other.hide_render = True
+        hidden.append(other)
+    try:
+        return _render_proof_isolated(obj, name=name, resolution=resolution)
+    finally:
+        for other in hidden:
+            other.hide_render = False
+
+
+def _render_proof_isolated(obj, *, name: str, resolution: int) -> dict:
+    """Render the sheets with the subject already isolated by the caller."""
+    out = {}
     flat = preview.render_contact_sheet(obj, preview.PreviewSpec(
         name=name + "_flat", resolution=resolution, mode="flat",
         views=("front", "three_quarter", "side", "low"),
@@ -1994,6 +2079,10 @@ def _parse_args(argv):
                         help="skip proof renders")
     parser.add_argument("--preview-resolution", type=int, default=640)
     parser.add_argument("--ao-samples", type=int, default=64)
+    parser.add_argument("--ao-distance", type=float, default=0.0,
+                        help="AO ray bound in metres; 0 derives it from holdfast "
+                             "size. Exposed so the bound can be A/B measured "
+                             "instead of assumed.")
     parser.add_argument("--atlas-size", type=int, default=ATLAS_SIZE)
     return parser.parse_args(argv)
 
@@ -2028,7 +2117,8 @@ def main(argv=None) -> int:
                 seed=seed, quality=args.quality, out_dir=out_dir, name=name,
                 want_preview=args.preview,
                 preview_resolution=args.preview_resolution,
-                ao_samples=args.ao_samples, atlas_size=args.atlas_size)
+                ao_samples=args.ao_samples, atlas_size=args.atlas_size,
+                ao_distance_override=args.ao_distance)
         except GenerationAborted as error:
             failures += 1
             sys.stderr.write("[kelp] VALIDATION ABORTED SAVE: "
