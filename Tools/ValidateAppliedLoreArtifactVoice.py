@@ -286,6 +286,15 @@ def load_baseline(path: str | None) -> set[str]:
 
 
 def main() -> int:
+    # This corpus is 15 locales including CJK, Arabic and Hebrew. On a Windows machine with a non-UTF-8
+    # locale (this project's dev box defaults to cp1251) print() would encode stdout in that codepage and
+    # silently corrupt the output - which produced an undecodable --json payload before this line existed.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     ap = argparse.ArgumentParser(description="Detect design-document voice in player-facing lore text.")
     ap.add_argument("--glob", action="append", required=True, help="glob of files to scan (repeatable)")
     ap.add_argument("--json", action="store_true", help="emit JSON")
