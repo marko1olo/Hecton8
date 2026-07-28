@@ -2099,17 +2099,6 @@ namespace Hecton8.VFX.Debris
             if (sparkSignals.Length == 0)
                 return 0;
 
-            // Spark hit points arrive camera-relative (ToolKinematicsMath.ToLocalFloat3 subtracts the camera
-            // anchor position), so the render camera position is the only legal way back to runtime space.
-            Camera camera = renderCamera;
-            if (camera == null)
-                return 0;
-
-            Vector3 cameraRuntimePosition = camera.transform.position;
-            float3 cameraOrigin = new float3(cameraRuntimePosition.x, cameraRuntimePosition.y, cameraRuntimePosition.z);
-            if (!math.all(math.isfinite(cameraOrigin)))
-                return 0;
-
             int requestLimit = math.min(MaxCarveSignalsPerFrame, carveRequests.IsCreated ? carveRequests.Length : 0);
             int scanCount = math.min(sparkSignals.Length, MaxVfxSparkSignalScanPerFrame);
             int appended = 0;
@@ -2131,13 +2120,10 @@ namespace Hecton8.VFX.Debris
                 if (!TryOpenSparkGate(spark.ToolHash))
                     continue;
 
-                float3 center = cameraOrigin + spark.HitPoint;
-                if (!math.all(math.isfinite(center)))
-                {
-                    jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
-                    continue;
-                }
-
+                // Lane convention is runtime/presentation space, matching the sibling DebrisSpawnSignal path
+                // above: LaserCutterDodRuntime.cs:746 publishes hitAup - presentationOriginAup and
+                // DroneFleetManager.cs:6264 publishes TryResolveRuntimeFloat3AupDelta(hitAup). No rebasing.
+                float3 center = spark.HitPoint;
                 uint seed = BuildSparkSeed(_frameSequence, in spark, i);
                 int sparkParticles = math.clamp(
                     (int)math.round(particlesPerCarve * SparkParticleShare * math.lerp(0.45f, 1f, intensity01)),
