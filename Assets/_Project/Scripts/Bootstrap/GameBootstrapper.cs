@@ -525,9 +525,46 @@ namespace Hecton8.Bootstrap
         private static readonly uint _ShaderWarmupFailureHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.ShaderWarmup.Failure"));
         private static readonly uint _ShaderWarmupTimeoutHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.ShaderWarmup.Timeout"));
         private static readonly WaitCallback _shaderWarmupDumpCallback = WriteBootstrapShaderWarmupDumpOnWorker;
+
+        /// <summary>Telemetry subject for a bootstrap that is looping through entry recovery instead of completing.</summary>
+        private static readonly uint _EntryRecoveryLoopHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.EntryRecovery.Loop"));
         private static bool _isBootstrapComplete;
         private static bool _sceneGuardRegistered;
         private static bool _entryRecoveryIssued;
+
+        /// <summary>
+        /// How many times entry recovery has reloaded the bootstrap scene THIS SESSION.
+        ///
+        /// <see cref="_entryRecoveryIssued"/> only guards re-entrancy inside ONE attempt: it is cleared
+        /// by the full bootstrap state reset, which is exactly what a recovery reload triggers. So a boot
+        /// that cannot finish loops - activation fails, _isBootstrapComplete stays false, the next scene
+        /// load sees a non-bootstrap scene and reloads bootstrap Single, the reset clears the flag, and
+        /// the whole thing repeats with nothing counting the repeats. That is consistent with the
+        /// measured "one run in three comes up a shell world" this project has been living with.
+        /// This counter is NOT cleared by the state reset. It survives until the play session ends.
+        /// </summary>
+        private static int _entryRecoveryAttempts;
+
+        /// <summary>
+        /// Recoveries allowed before the loop is broken. Two, not one: a single legitimate recovery is
+        /// the feature working - a session that genuinely started outside 00_BOOTSTRAP gets put back on
+        /// the route - and one retry absorbs a transient. A third means the boot is not recovering, it
+        /// is looping, and reloading again cannot help.
+        /// </summary>
+        private const int MaxEntryRecoveryAttempts = 2;
+
+        /// <summary>
+        /// Session-scoped counters that the bootstrap state reset must NOT clear. Domain reload is
+        /// disabled on this project (ProjectSettings/EditorSettings.asset m_EnterPlayModeOptions: 1), so
+        /// without this hook the attempt count carries into the next play session and the very first
+        /// recovery there would be refused.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetEntryRecoveryAttempts()
+        {
+            _entryRecoveryAttempts = 0;
+        }
+
         private static bool _bootstrapGameplayHandoffOwnsSceneLoad;
         private static string _bootstrapGameplayHandoffExpectedScenePath;
         // Cold single-allocation completion delegate. Owns the scene-runtime publication gate once the awaiting
@@ -7154,6 +7191,27 @@ namespace Hecton8.Bootstrap
             if (_entryRecoveryIssued)
                 return false;
 
+            // The reload below restarts bootstrap, and that restart clears _entryRecoveryIssued - so the
+            // flag above cannot bound anything across attempts. Without this cap a boot that never
+            // completes reloads the bootstrap scene forever, and every reload destroys the scene it
+            // arrived in, along with whatever that scene had already spawned.
+            if (_entryRecoveryAttempts >= MaxEntryRecoveryAttempts)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _EntryRecoveryLoopHash,
+                    0u,
+                    _entryRecoveryAttempts);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(
+                    "[GameBootstrapper] Entry recovery refused after " +
+                    _entryRecoveryAttempts.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                    " attempts - bootstrap is not recovering, it is looping. Reloading again cannot help. " +
+                    "The real failure is upstream: read the last scene-activation step in this log.");
+#endif
+                return false;
+            }
+
+            _entryRecoveryAttempts++;
             _entryRecoveryIssued = true;
             if (!GameStartContextHolder.TryGetPendingTargetSceneName(out _))
             {
