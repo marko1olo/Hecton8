@@ -208,12 +208,19 @@ def bake_ambient_occlusion(
     # mean to 0.078 and buried exactly what the bible asks for -- "low values in crevices,
     # under plates, root clusters, and branch intersections".
     ao_distance_applied = False
+    previous_ao_distance = None
     world = scene.world
     if world is None:
         world = bpy.data.worlds.new("H8_ForgeBakeWorld")
         scene.world = world
     light_settings = getattr(world, "light_settings", None)
     if light_settings is not None and hasattr(light_settings, "distance"):
+        # Captured for restore below. Leaking this value means the FIRST generator in a
+        # session silently sets the AO bake conditions for every generator after it, so two
+        # assets baked in one Blender run would not be reproducible from their own seeds --
+        # which is precisely what PROCEDURAL_ASSET_PIPELINE.md's determinism contract
+        # forbids, and the same class of process-global-state bug as mathutils.noise's seed.
+        previous_ao_distance = light_settings.distance
         light_settings.distance = distance
         ao_distance_applied = True
     if not ao_distance_applied and blackbox is not None:
@@ -239,6 +246,10 @@ def bake_ambient_occlusion(
             scene.cycles.samples = previous_samples
         except AttributeError:
             pass
+    if previous_ao_distance is not None and light_settings is not None:
+        # Restore, so a second bake in the same session gets the conditions IT asked for
+        # rather than inheriting the first one's.
+        light_settings.distance = previous_ao_distance
     if previous_active is not None:
         view_layer.objects.active = previous_active
 

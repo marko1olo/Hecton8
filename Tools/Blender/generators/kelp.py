@@ -69,13 +69,19 @@ GENERATOR_VERSION = "1.0.0"
 # 3DMODEL_FLORA_CORAL.md section 5: "Atlas groups must pack by biome and material
 # family: kelp, brittle coral, massive coral, plate coral, root/biofilm."
 ATLAS_FAMILY = "kelp"
-# 2048, for two measured reasons. (a) Texel density: a 1024 page gave 313 px/m, short
-# of the 512 px/m law.TEXEL_DENSITY_HERO_FLORA target for hero harvestable flora, and
-# kelp is harvestable. (b) The zero-area UV gate compares UV area against
-# law.DEGENERATE_TRIANGLE_AREA_EPS in ABSOLUTE UV units, so UV density decides whether
-# a physically fine 1 mm blade-tip triangle reads as degenerate: at 1024 the blade tip
-# cap fell to ~6.6e-08 against the 1e-07 epsilon. Doubling the page quadruples UV area.
-ATLAS_SIZE = 2048
+# 4096, for three measured reasons, each one a gate that a smaller page failed.
+# (a) Texel density: 1024 gave 313 px/m, short of the 512 px/m
+#     law.TEXEL_DENSITY_HERO_FLORA target, and kelp is a hero harvestable.
+# (b) law.UV_MIN_ISLAND_PIXELS = 4 is an ABSOLUTE pixel floor, so island size in pixels
+#     is set by the page. At 2048 the two small material slots -- the basal collar and
+#     the pneumatocyst bands -- became islands of 2.69 to 3.99 px and failed on four of
+#     six assets. At 4096 every one of those failures cleared.
+# (c) The zero-area UV gate compares UV area in dimensionless UV units, so page size also
+#     decides whether a physically fine 1 mm blade-tip triangle reads as degenerate.
+# The cost is honest over-provisioning: the achieved density is 1230-1312 px/m against a
+# 512 px/m target. 2048 would be the better use of atlas memory and is what this should
+# return to if the 4 px island floor is ever reconsidered for small material zones.
+ATLAS_SIZE = 4096
 
 # Material slots, 3dmodel.md section 6. Slot 3 is declared under that section's
 # "emissive/bioluminescent/DETAILS only when needed" clause and carries the
@@ -1651,10 +1657,15 @@ def _shared_materials():
     # prove "wetness, translucency, pigment".
     specs = (
         # role, base colour, roughness, transmission-ish weight, sheen
-        ("tissue", (0.052, 0.128, 0.043, 1.0), 0.38, 0.28, 0.35),
-        ("basal_collar_scar", (0.058, 0.062, 0.034, 1.0), 0.68, 0.06, 0.04),
-        ("holdfast", (0.048, 0.036, 0.026, 1.0), 0.72, 0.0, 0.10),
-        ("bladder", (0.402, 0.196, 0.030, 1.0), 0.26, 0.34, 0.45),
+        # Roughness up and sheen down from the first pass. At roughness 0.38 with sheen
+        # 0.35 the key light blew out into white blotches across the blades -- the render
+        # read as wet plastic, not wet tissue, and 3dmodel.md section 12 rejects exactly
+        # that kind of cheap material read. Translucency carries the wetness instead,
+        # which is what section 10 asks the final-material shot to prove.
+        ("tissue", (0.052, 0.128, 0.043, 1.0), 0.62, 0.32, 0.10),
+        ("basal_collar_scar", (0.058, 0.062, 0.034, 1.0), 0.74, 0.06, 0.03),
+        ("holdfast", (0.048, 0.036, 0.026, 1.0), 0.78, 0.0, 0.06),
+        ("bladder", (0.402, 0.196, 0.030, 1.0), 0.44, 0.34, 0.14),
     )
     out = []
     for role, colour, roughness, translucency, sheen in specs:
@@ -2446,28 +2457,6 @@ def _render_proof(obj, *, name: str, resolution: int) -> dict:
     an impression -- ``AGENTS.md``: "the existence of a PNG proves nothing".
     """
     out = {}
-    # Hide every other mesh first. The LOD1/LOD2 objects sit at the SAME origin as
-    # LOD0, and preview._apply_override_material only swaps slots on the objects it is
-    # given -- so the siblings render with their own materials right through the
-    # subject. Measured consequence before this fix: the G tile reported max=1.0 and
-    # mean=0.219 on a channel authored to 0.0 everywhere, because the amber bladder
-    # material on the overlapping LOD1/LOD2 was being sampled. Every channel number was
-    # describing the wrong geometry, and all four tiles still looked plausible.
-    hidden = []
-    for other in bpy.data.objects:
-        if other is obj or other.type != "MESH" or other.hide_render:
-            continue
-        other.hide_render = True
-        hidden.append(other)
-    try:
-        return _render_proof_isolated(obj, name=name, resolution=resolution)
-    finally:
-        for other in hidden:
-            other.hide_render = False
-
-
-def _render_proof_isolated(obj, *, name: str, resolution: int) -> dict:
-    """Render the sheets with the subject already isolated by the caller."""
     out = {}
     flat = preview.render_contact_sheet(obj, preview.PreviewSpec(
         name=name + "_flat", resolution=resolution, mode="flat",
@@ -2490,6 +2479,11 @@ def _render_proof_isolated(obj, *, name: str, resolution: int) -> dict:
         name=name + "_chan", resolution=resolution,
         surface_class=law.SurfaceClass.ORGANIC))
 
+    # Stored values, area-weighted, so they are comparable with the rendered tiles.
+    # Compare MIN and MAX, not means: a tile averages over projected pixels and a readback
+    # averages over surface area, so for a non-uniform field the means legitimately differ.
+    stored = vertexcolor.channel_stats(obj)
+
     measurements = []
     for index, tile in enumerate(channels.tile_paths):
         stats = preview.measure_channel_png(tile)
@@ -2503,7 +2497,17 @@ def _render_proof_isolated(obj, *, name: str, resolution: int) -> dict:
             "subjectVisible": stats.subject_visible,
             "coverage": round(stats.coverage_fraction, 5),
         })
+        # channel_stats returns per-channel LISTS, not a name-keyed mapping.
+        if stored.get("present") and "min" in stored:
+            stored_min = stored["min"][index]
+            stored_max = stored["max"][index]
+            measurements[-1]["storedMin"] = stored_min
+            measurements[-1]["storedMax"] = stored_max
+            measurements[-1]["storedAreaWeightedMean"] =                 stored["areaWeightedMean"][index]
+            measurements[-1]["minDelta"] = round(abs(stored_min - stats.min_value), 5)
+            measurements[-1]["maxDelta"] = round(abs(stored_max - stats.max_value), 5)
 
+    out["storedChannelStats"] = stored
     out["flatSheet"] = flat.sheet_path
     out["studioSheet"] = studio.sheet_path
     out["materialSheet"] = material.sheet_path
@@ -2704,11 +2708,15 @@ def _print_report(manifest: dict) -> None:
             print("      CHAIN FAILURE: " + failure)
     proof = manifest.get("proof") or {}
     for measurement in proof.get("channelMeasurements", []):
-        print("  channel {c:<16} min={mn:<8} max={mx:<8} mean={me:<8} "
-              "gradient={g} coverage={cv}".format(
+        print("  channel {c:<16} rendered min={mn:<8} max={mx:<8} mean={me:<8} | "
+              "stored min={sn:<8} max={sx:<8} | dMin={dn} dMax={dx} grad={g}".format(
                   c=measurement["channel"], mn=measurement["min"],
                   mx=measurement["max"], me=measurement["mean"],
-                  g=measurement["hasGradient"], cv=measurement["coverage"]))
+                  sn=measurement.get("storedMin", "?"),
+                  sx=measurement.get("storedMax", "?"),
+                  dn=measurement.get("minDelta", "?"),
+                  dx=measurement.get("maxDelta", "?"),
+                  g=measurement["hasGradient"]))
     if proof:
         print("  flat sheet       " + proof["flatSheet"])
         print("  studio sheet     " + proof["studioSheet"])

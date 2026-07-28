@@ -60,7 +60,7 @@ if _BLENDER_TOOLS not in sys.path:
     # AGENTS.md [RULE] Relative Path Requirement: derived from __file__, never typed.
     sys.path.insert(0, _BLENDER_TOOLS)
 
-from h8forge import law, mesh_ops, preview, vertexcolor          # noqa: E402
+from h8forge import export_unity, law, mesh_ops, preview, vertexcolor  # noqa: E402
 from h8forge.blackbox import BlackBox, GenerationAborted         # noqa: E402
 
 try:
@@ -73,31 +73,6 @@ else:
 
 GENERATOR_NAME = "rock.py"
 GENERATOR_VERSION = "1.0.0"
-
-
-# ---------------------------------------------------------------------------
-# Law gap: per-size geology budgets that ``law.py`` does not carry yet
-# ---------------------------------------------------------------------------
-# ``law.LOD_BUDGETS[Family.GEOLOGY]`` == 18000/7000/1200, which is the *large vent /
-# cliff chunk* row of ``3dmodel.md`` section 7 ("Geology rock/vent").
-# ``3DMODEL_GEOLOGY_ROCKS.md`` section 7 is STRICTER for smaller rocks and lists three
-# rows, verbatim:
-#
-#   - Small rock:              LOD0 4,000   LOD1 1,200   LOD2 250
-#   - Medium boulder/ore:      LOD0 9,000   LOD1 3,000   LOD2 600
-#   - Large vent/cliff chunk:  LOD0 18,000  LOD1 7,000   LOD2 1,200
-#
-# ``3dmodel.md`` section 1: "This root file overrides weaker family documents.
-# Specialist files add stricter rules for their domain." The geology rows are stricter,
-# therefore binding, and law.py has no symbol for them. This table is the gap, not an
-# invention: the numbers are quoted, the ceiling still comes from law for the large
-# class, and the report asks the lead to move these into ``law.py`` as
-# ``GEOLOGY_SIZE_LOD_BUDGETS``. Nothing here redefines a value law.py already owns.
-GEOLOGY_SIZE_LOD_ROWS = {
-    "boulder": (4_000, 1_200, 250),
-    "outcrop": (9_000, 3_000, 600),
-    "cliff-chunk": (18_000, 7_000, 1_200),
-}
 
 
 @dataclass(frozen=True)
@@ -114,11 +89,21 @@ class SizeClass:
     def longest_extent_m(self) -> float:
         return max(self.radius_m * 2.0, self.height_m)
 
+    @property
+    def law_key(self) -> str:
+        """law.GEOLOGY_SIZE_LOD_BUDGETS keys carry no dash ("cliffchunk")."""
+        return self.name.replace("-", "")
+
     def budget(self, lod_index: int) -> int:
-        """Strictest of law's family ceiling and the geology specialist row."""
-        family_limit = law.LOD_BUDGETS[law.Family.GEOLOGY].limit(lod_index)
-        row = GEOLOGY_SIZE_LOD_ROWS[self.name]
-        return min(family_limit, row[min(lod_index, 2)])
+        """Per-size geology budget, now owned by law.py.
+
+        ``law.LOD_BUDGETS[Family.GEOLOGY]`` is only the large cliff-chunk row of
+        ``3dmodel.md`` section 7; ``3DMODEL_GEOLOGY_ROCKS.md`` section 7 is stricter for
+        smaller rocks, and section 1 makes the specialist file binding where it is
+        stricter. That table used to live here as a local copy and now lives in law with
+        its citation, so this is a lookup rather than a second source of truth.
+        """
+        return law.geology_budget_for(self.law_key).limit(lod_index)
 
 
 SIZE_CLASSES = {
@@ -453,7 +438,7 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
     # 3DMODEL_GEOLOGY_ROCKS.md section 9 rejects outright. Bed relief is the macro form of
     # a sedimentary rock, so it must be the largest term in the shape -- an order of
     # magnitude above the surface grain, not comparable to it.
-    recess_gain = float(rng.uniform(0.14, 0.34))
+    recess_gain = float(rng.uniform(0.055, 0.150))
     for bed in beds:
         recess = recess_gain * (1.0 - bed.hardness)
         scale = 1.0 - recess
@@ -467,12 +452,31 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
     lower = max(1, int(count * 0.34))
     upper = max(lower + 1, int(count * 0.72))
     landmark = int(rng.integers(lower, min(count - 1, upper) + 1))
-    beds[landmark].radius_scale -= float(rng.uniform(0.14, 0.26))
+    beds[landmark].radius_scale -= float(rng.uniform(0.060, 0.130))
     beds[landmark].hardness = min(beds[landmark].hardness, 0.32)
     if landmark + 1 < count:
-        beds[landmark + 1].radius_scale += float(rng.uniform(0.070, 0.140))
+        beds[landmark + 1].radius_scale += float(rng.uniform(0.030, 0.075))
         beds[landmark + 1].overhangs_below = True
         beds[landmark + 1].hardness = max(beds[landmark + 1].hardness, 0.72)
+
+    # A ledge's TREAD must not out-run its RISER.
+    #
+    # Isolated with --debug-stage lattice: at recess 0.14-0.34 the raw bed lattice was not
+    # a stratified rock but a stack of PANCAKE PLATES with 0.3-0.6 m overhangs that
+    # interpenetrated their neighbours. The detail stages then welded those
+    # interpenetrations away, and THAT is what erased the strata -- the grammar was
+    # producing them all along, absurdly, and the cleanup was removing them. Raising the
+    # amplitude, which is what the earlier rounds did, made it strictly worse.
+    #
+    # So the horizontal step is clamped against the bed's own thickness: a step wider than
+    # roughly half the riser height turns a bedding ledge into a near-horizontal shelf that
+    # both self-intersects and reads as a mushroom cap.
+    for index in range(1, len(beds)):
+        max_step = (beds[index].thickness * 0.55) / max(1e-6, size.radius_m)
+        difference = beds[index].radius_scale - beds[index - 1].radius_scale
+        if abs(difference) > max_step:
+            beds[index].radius_scale = (beds[index - 1].radius_scale
+                                        + math.copysign(max_step, difference))
 
     orders = np.array(sorted(rng.choice(np.arange(2, 9), size=4, replace=False)))
     harmonics = rng.uniform(0.045, 0.135, size=4) / (1.0 + 0.35 * (orders - 2))
@@ -653,6 +657,11 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     for h, radius_scale in ring_specs:
         t = (h - base_h) / max(1e-6, size.height_m)
         drift_u, drift_v = strata.drift(h)
+        bed_phase = 0.0
+        for candidate in strata.beds:
+            if candidate.base_h <= h <= candidate.top_h:
+                bed_phase = candidate.plan_phase
+                break
         # Close the top over the last 14 percent of the height instead of capping a
         # full-width ring. A wide flat cap poked into a fan renders as a radial starburst
         # of thin triangles -- clearly visible as an artifact in the first contact sheet,
@@ -665,7 +674,13 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
             theta = (s / float(segments)) * 2.0 * math.pi
             shape = strata.plan_shape(theta, h)
             notch = strata.landmark_sector_weight(theta, h)
-            radius = size.radius_m * shape * radius_scale * taper * (1.0 - 0.30 * notch)
+            # Break the lens symmetry: a bed that recedes by the same amount all the way
+            # round reads as a turned plate, which is what the isolation render showed even
+            # after the step was clamped. Real beds weather back unevenly, so the recess is
+            # modulated around the circumference by the bed's own phase.
+            asymmetry = 1.0 + 0.16 * math.sin(3.0 * theta + bed_phase * 4.0)                 + 0.09 * math.sin(5.0 * theta - bed_phase * 2.0)
+            radius = (size.radius_m * shape * radius_scale * asymmetry * taper
+                      * (1.0 - 0.30 * notch))
             direction = frame.e1 * math.cos(theta) + frame.e2 * math.sin(theta)
             point = direction * radius + frame.normal * h
             point.x += drift_u
@@ -1180,9 +1195,10 @@ def chip_edges(bm: bmesh.types.BMesh, size: SizeClass, rng: np.random.Generator,
                         failure_code="CHIP_NO_HARD_EDGES")
         return ChipReport(0, (), (), (), 0)
 
-    chip_range = law.BevelRange(
-        CHIP_WIDTH_FRACTION_MIN * size.longest_extent_m,
-        CHIP_WIDTH_FRACTION_MAX * size.longest_extent_m)
+    # law.BEVEL_RANGES[Family.GEOLOGY] now exists (0.008-0.09 m), deliberately wide so the
+    # three-bucket treatment below keeps its spread instead of collapsing to one chamfer.
+    # The local extent-fraction table this replaced is deleted.
+    chip_range = law.BEVEL_RANGES[law.Family.GEOLOGY]
     requested_by_size = chip_range.width_for(q)
 
     # Bevel width is bounded by MESH RESOLUTION, not just by asset size.
@@ -1803,11 +1819,12 @@ class VariantResult:
     shading: Optional[mesh_ops.ShadingResult] = None
     post_fracture_topology: dict = field(default_factory=dict)
     channel_readback: dict = field(default_factory=dict)
+    channel_area_stats: dict = field(default_factory=dict)
 
 
 def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str,
                      out_dir: str, want_preview: bool, want_fbx: bool,
-                     preview_resolution: int) -> VariantResult:
+                     preview_resolution: int, debug_stage: str = "") -> VariantResult:
     """Full stage order from ``PROCEDURAL_ASSET_PIPELINE.md`` "Generation Order"."""
     q = law.saturate(quality)
     name = "{cls}_{proc}_s{seed}_q{q:03d}".format(
@@ -1835,15 +1852,35 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # Stage 3: high-detail source geometry.
     bm, _grain, _pit = build_body(strata, frame, density, size, rng, q, process, blackbox)
 
+    # --debug-stage: stop after a named stage and render the raw result.
+    # The strata measure 0.17-1.12 m of radius step in the PARAMETERS yet do not appear in
+    # the silhouette. Three rounds of guessing which stage flattens them was already spent;
+    # this bisects it instead.
+    if debug_stage == "lattice":
+        return _debug_render(bm, name, size, out_dir, preview_resolution,
+                             "lattice", result)
+
     # Stage 4: family topology rules.
     fractures = cut_fractures(bm, frame, strata, size, rng, q, process, blackbox)
     close_open_boundaries(bm, blackbox, "post_fracture")
+    if debug_stage == "fracture":
+        return _debug_render(bm, name, size, out_dir, preview_resolution,
+                             "fracture", result)
     partings = carve_partings(bm, frame, strata, size, rng, q, blackbox)
+    if debug_stage == "parting":
+        return _debug_render(bm, name, size, out_dir, preview_resolution,
+                             "parting", result)
     veins = raise_mineral_seams(bm, frame, strata, size, rng, q, blackbox)
     vugs = punch_vugs(bm, size, rng, q, process, blackbox)
     mesh_ops.weld_and_clean(bm, blackbox=blackbox)
     open_edges = close_open_boundaries(bm, blackbox, "post_detail")
+    if debug_stage == "vug":
+        return _debug_render(bm, name, size, out_dir, preview_resolution,
+                             "vug", result)
     chips = chip_edges(bm, size, rng, q, process, blackbox)
+    if debug_stage == "chip":
+        return _debug_render(bm, name, size, out_dir, preview_resolution,
+                             "chip", result)
     # Chipping is the last topology stage, and clamped bevels leave slivers where three
     # chip widths meet. Clean again or the degenerate-triangle gate fires on LOD0.
     mesh_ops.weld_and_clean(bm, blackbox=blackbox)
@@ -1951,9 +1988,16 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # The result is asserted, not assumed: this function used to be a silent no-op
     # headless, and a secretly flat-shaded rock would have sent me tuning geometry to fix
     # a shading bug.
+    # law.smooth_angle_for(GEOLOGIC) is 46 degrees, not the 32-degree hard-surface
+    # default. At 32 nearly every bed edge and weathered facet classified as a hard break,
+    # so the shading faceted the whole mass and the ledges had no crisper read than the
+    # noise around them. 46 sits above the weathered-mass angles and below the strata-step
+    # and fracture-plane angles, which is exactly the discrimination the bible asks for:
+    # "Split normals at sharp fracture edges above 45 degrees" while not smoothing a
+    # chipped plane into a blob.
     result.shading = mesh_ops.apply_shading_basis(
-        obj, smooth_angle_deg=law.SMOOTH_ANGLE_DEG, weighted=True, keep_sharp=True,
-        blackbox=blackbox)
+        obj, smooth_angle_deg=law.smooth_angle_for(law.SurfaceClass.GEOLOGIC),
+        weighted=True, keep_sharp=True, blackbox=blackbox)
 
     # Stage 5: material IDs + UVs.
     build_materials(obj)
@@ -2013,16 +2057,16 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
             "object": level.obj.name,
             "triangles": mesh_ops.triangle_count(level.obj.data),
             "lawFamilyBudget": law.LOD_BUDGETS[law.Family.GEOLOGY].limit(level.index),
-            "geologySizeRowBudget": GEOLOGY_SIZE_LOD_ROWS[size.name][min(level.index, 2)],
+            "geologySizeRowBudget": law.geology_budget_for(size.law_key).limit(level.index),
             "effectiveBudget": target,
         })
 
-    # Stage 9: collision proxy, independent of the visual LODs.
-    hull_source = prehull_duplicate(lods[0].obj, name)
-    collider = mesh_ops.make_convex_collider(hull_source, family=law.Family.GEOLOGY,
+    # Stage 9: collision proxy, independent of the visual LODs. The prehull duplicate that
+    # used to sit here worked around the concave-input crash in
+    # mesh_ops._convex_hull_in_place; that is fixed in the core with a dict.fromkeys
+    # dedupe, so the workaround is deleted and the core owns the whole hull route again.
+    collider = mesh_ops.make_convex_collider(lods[0].obj, family=law.Family.GEOLOGY,
                                              name=name, blackbox=blackbox)
-    bpy.data.objects.remove(hull_source, do_unlink=True)
-    bpy.context.view_layer.update()
     result.collider_triangles = collider.triangles
     result.collider_within_budget = collider.within_budget
     result.collider_kind = collider.kind
@@ -2030,6 +2074,14 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # Read the authored channels back off the mesh that will actually be rendered and
     # exported, not off the lists that were handed to the writer.
     result.channel_readback = read_back_channels(lods[0].obj.data)
+    # Area-weighted stats, comparable with the rendered tiles. A rendered tile averages
+    # over PIXELS and a naive readback averages over LOOPS, so for a non-uniform field the
+    # two MEANS legitimately differ -- min and max are weighting-independent and are the
+    # values to assert on.
+    try:
+        result.channel_area_stats = vertexcolor.channel_stats(lods[0].obj)
+    except Exception as error:                                   # pragma: no cover
+        result.channel_area_stats = {"error": str(error)}
 
     # Stage 11: validation BEFORE save.
     result.gates = hard_gates(result, size)
@@ -2057,73 +2109,52 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # Stage 12/13: save + proof.
     os.makedirs(out_dir, exist_ok=True)
     if want_fbx:
-        result.fbx_path = export_fbx(lods, collider, out_dir, name)
+        result.fbx_path = export_package(lods, collider, out_dir, name)
     if want_preview:
         render_proof(lods[0].obj, name, out_dir, preview_resolution, result)
     result.manifest_path = write_manifest(result, size, frame, strata, out_dir)
     return result
 
 
-def prehull_duplicate(source: bpy.types.Object, name: str) -> bpy.types.Object:
-    """Convex duplicate of ``source``, so ``make_convex_collider`` gets a valid input.
+def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, out_dir: str,
+                  resolution: int, stage: str, result: VariantResult) -> VariantResult:
+    """Commit a bmesh to a throwaway object and render it flat. Isolation instrument only.
 
-    BLOCKING BUG in the core, reported rather than patched (``h8forge`` is not this
-    generator's to edit): ``mesh_ops._convex_hull_in_place`` builds
-    ``leftovers = geom_interior + geom_unused`` and passes it straight to
-    ``bmesh.ops.delete``. On a concave rock those two result lists OVERLAP, and
-    ``bmesh.ops.delete`` raises ``ValueError: geom: found the same (BMVert/BMEdge/BMFace)
-    used multiple times``. Every concave geology LOD0 hits it. The one-line fix in the
-    core is to de-duplicate, e.g. ``geom=list(dict.fromkeys(leftovers))``.
-
-    The workaround is NOT a second hull implementation: ``bpy.ops.mesh.convex_hull`` is a
-    first-class Blender operator that owns its own cleanup, and the result is handed back
-    to ``mesh_ops.make_convex_collider`` which still owns naming, the decimation loop, the
-    re-hull after decimation and the ``law.COLLIDER_CONVEX_TRI_MAX`` ceiling. For a
-    convex input the core's ``geom_interior``/``geom_unused`` both come back empty, so the
-    faulty delete never executes.
+    Deliberately skips UVs, bakes, LODs, colliders, validation and the manifest: the only
+    question it answers is what the silhouette looks like at this exact point in the stage
+    order, so anything that could itself alter the shape is left out.
     """
-    duplicate = source.copy()
-    duplicate.data = source.data.copy()
-    duplicate.name = "H8_HullSource_" + name
-    source.users_collection[0].objects.link(duplicate)
+    mesh = bpy.data.meshes.new("DEBUG_{n}_{s}".format(n=name, s=stage))
+    obj = bpy.data.objects.new(mesh.name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
     bpy.context.view_layer.update()
+    bm.to_mesh(mesh)
+    bm.free()
 
-    for other in bpy.context.view_layer.objects:
-        if other is not None and other.select_get():
-            other.select_set(False)
-    duplicate.select_set(True)
-    bpy.context.view_layer.objects.active = duplicate
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.mesh.convex_hull(delete_unused=True, use_existing_faces=False,
-                             make_holes=False, join_triangles=False)
-    bpy.ops.object.mode_set(mode="OBJECT")
+    lo, _hi = mesh_ops.local_bounds(obj)
+    for vertex in obj.data.vertices:
+        vertex.co.z -= lo.z
 
-    # Reduce here, then re-hull, so the object handed to the core is BOTH convex and
-    # already under law.COLLIDER_CONVEX_TRI_MAX. The core's loop then breaks on its first
-    # measurement and its decimate-then-rehull path never runs. That path is what
-    # produced ``collider_not_convex: vertex sits 0.001890 m outside the plane`` -- edge
-    # collapse on a hull pulls vertices off the shell, and the re-hull leaves
-    # near-coplanar slivers that fail the core's 1 mm ABSOLUTE tolerance. Note for the
-    # lead: that tolerance does not scale with asset size, so a 7.6 m chunk is judged at
-    # the same 1 mm as a 0.8 m boulder.
-    target = int(law.COLLIDER_CONVEX_TRI_MAX * 0.85)
-    for _attempt in range(6):
-        if mesh_ops.triangle_count(duplicate.data) <= target:
-            break
-        modifier = duplicate.modifiers.new(name="H8_HullPreReduce", type="DECIMATE")
-        modifier.decimate_type = "COLLAPSE"
-        modifier.ratio = max(0.02, min(0.95, target / float(
-            mesh_ops.triangle_count(duplicate.data)) * 0.92))
-        modifier.use_collapse_triangulate = True
-        bpy.context.view_layer.objects.active = duplicate
-        bpy.ops.object.modifier_apply(modifier=modifier.name)
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.mesh.convex_hull(delete_unused=True, use_existing_faces=False,
-                             make_holes=False, join_triangles=False)
-    bpy.ops.object.mode_set(mode="OBJECT")
-    return duplicate
+    # Shade it the way the real pipeline will, or the render answers a different question.
+    mesh_ops.apply_shading_basis(
+        obj, smooth_angle_deg=law.smooth_angle_for(law.SurfaceClass.GEOLOGIC),
+        weighted=True, keep_sharp=True)
+
+    spec = preview.PreviewSpec(
+        name="{n}_DEBUG_{s}".format(n=name, s=stage), output_dir=out_dir,
+        resolution=resolution, mode="flat",
+        surface_class=law.SurfaceClass.GEOLOGIC,
+        views=("three_quarter", "front", "side", "low"))
+    sheet = preview.render_contact_sheet(obj, spec)
+    result.sheets["debug_" + stage] = sheet.sheet_path
+    result.lods.append({"index": 0, "object": obj.name,
+                        "triangles": mesh_ops.triangle_count(obj.data),
+                        "lawFamilyBudget": law.LOD_BUDGETS[law.Family.GEOLOGY].limit(0),
+                        "geologySizeRowBudget": law.geology_budget_for(size.law_key).limit(0),
+                        "effectiveBudget": size.budget(0)})
+    print("[rock] DEBUG stage={s} tris={t} sheet={p}".format(
+        s=stage, t=mesh_ops.triangle_count(obj.data), p=sheet.sheet_path))
+    return result
 
 
 def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str,
@@ -2404,6 +2435,7 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
                                 "edges split",
         },
         "vertexColorReport": result.channels,
+        "vertexColorAreaWeighted": result.channel_area_stats,
         "aoBake": {
             "engine": "CYCLES",
             "target": "VERTEX_COLORS",
@@ -2451,39 +2483,27 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
     return path
 
 
-def export_fbx(lods: list, collider, out_dir: str, name: str) -> str:
-    """FBX with Unity axis conversion and tangents.
+def export_package(lods: list, collider, out_dir: str, name: str) -> str:
+    """Delegate the FBX to ``h8forge.export_unity``, which now exists.
 
-    ``h8forge.__init__`` advertises an ``export_unity`` module that does not exist on
-    disk yet. Rather than create a competing module under ``h8forge/`` (out of scope for
-    this generator), this is a local export with the same contract; delete it and call
-    ``h8forge.export_unity`` as soon as that module lands.
-
-    ``use_tspace=True`` is required: ``3dmodel.md`` section 3 lists Tangent as a
-    mandatory stream and section 10 gates tangent length and handedness.
+    The local ``bpy.ops.export_scene.fbx`` shim that used to live here was written because
+    ``h8forge/__init__.py`` advertised an ``export_unity`` module that was absent from disk.
+    It has landed, so the shim is deleted: ``export_lod_group`` owns the Unity axis
+    conversion, the tangent basis, the ``_LOD0``/``_LOD1``/``_LOD2`` naming Unity keys its
+    automatic LODGroup off, the ``COL_`` collider node, and a round-trip verification the
+    shim never did.
     """
     path = os.path.join(out_dir, "MESH_{f}_{n}.fbx".format(
         f=law.Family.GEOLOGY.value, n=name))
-    for other in bpy.context.view_layer.objects:
-        if other.select_get():
-            other.select_set(False)
-    subjects = [level.obj for level in lods]
-    if collider.obj is not None:
-        subjects.append(collider.obj)
-    for obj in subjects:
-        obj.select_set(True)
-    bpy.context.view_layer.objects.active = subjects[0]
+    identity = law.GeneratorIdentity(
+        generator=GENERATOR_NAME, generator_version=GENERATOR_VERSION,
+        seed=0, quality_weight=0.0, family=law.Family.GEOLOGY,
+        scale_meters=0.0, camera_distance_class="", platform_lane="windows_copper_wire")
     try:
-        bpy.ops.export_scene.fbx(
-            filepath=path, use_selection=True, apply_unit_scale=True,
-            global_scale=1.0, apply_scale_options="FBX_SCALE_NONE",
-            axis_forward="-Z", axis_up="Y", object_types={"MESH"},
-            use_mesh_modifiers=True, mesh_smooth_type="EDGE", use_tspace=True,
-            colors_type="LINEAR", use_triangles=True, path_mode="COPY",
-            bake_anim=False)
-    except (RuntimeError, AttributeError, TypeError) as error:
+        result = export_unity.export_lod_group(lods, collider, path, identity=identity)
+    except Exception as error:                                  # pragma: no cover
         return "EXPORT_FAILED: " + str(error)
-    return path
+    return getattr(result, "path", path)
 
 
 # ---------------------------------------------------------------------------
@@ -2551,6 +2571,9 @@ def parse_args(argv: list) -> argparse.Namespace:
     parser.add_argument("--fbx", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--preview-resolution", dest="preview_resolution", type=int,
                         default=640)
+    parser.add_argument("--debug-stage", dest="debug_stage", default="",
+                        choices=("", "lattice", "fracture", "parting", "vug", "chip"),
+                        help="stop after this stage and render it; isolation only")
     return parser.parse_args(argv)
 
 
@@ -2583,7 +2606,8 @@ def main(argv: list) -> int:
                 result = generate_variant(
                     seed=seed, quality=args.quality, size=size, process=args.process,
                     out_dir=out_dir, want_preview=args.preview, want_fbx=args.fbx,
-                    preview_resolution=args.preview_resolution)
+                    preview_resolution=args.preview_resolution,
+                    debug_stage=args.debug_stage)
             except GenerationAborted as error:
                 failures += 1
                 print("[rock] ABORTED {c} seed={s} q={q}: {m}".format(
@@ -2642,6 +2666,7 @@ def main(argv: list) -> int:
                     print("[rock] vcol authored {n}: min/max/mean {v}".format(
                         n=name, v=result.channels[key]))
             print("[rock] vcol readback: " + json.dumps(result.channel_readback))
+            print("[rock] vcol area-weighted: " + json.dumps(result.channel_area_stats))
             for entry in result.channel_stats:
                 print("[rock] channel {c} ({m}): min={lo} max={hi} mean={me} "
                       "coverage={cv} gradient={g} subject={s}".format(

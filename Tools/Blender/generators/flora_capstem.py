@@ -179,6 +179,12 @@ class _Accum:
     # One (island_id, u_metres, v_metres) per face corner, resolved to packed UV
     # coordinates after every island's bounding box is known.
     face_uv: List[List[Tuple[int, float, float]]] = field(default_factory=list)
+    # Structural label per face, so a measurement can name the geometry that produced
+    # it. Without this a report reads "worst triangle[1553] = 58.0" and the author
+    # guesses which of six surfaces that is; with it the diagnostic says "transition"
+    # and the fix is obvious. Cheap, permanent, and it replaced three rounds of guessing.
+    face_region: List[str] = field(default_factory=list)
+    region: str = "unset"
 
     def vert(self, position: Vector, geodesic: float, harvest: float,
              thickness: float) -> int:
@@ -201,6 +207,7 @@ class _Accum:
         self.faces.append(tuple(int(i) for i in indices))
         self.face_material.append(int(material))
         self.face_uv.append([(int(i), float(u), float(v)) for i, u, v in uvs])
+        self.face_region.append(self.region)
 
     def quad(self, a: int, b: int, c: int, d: int, material: int,
              uvs: Sequence[Tuple[int, float, float]]) -> None:
@@ -454,11 +461,17 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
                     _rng_range(rng, 0.16, 0.32),
                 ))
 
+        stem_radius = stem_height * _rng_range(rng, 0.036, 0.058)
+        # 0.585 is the taper factor the profile reaches at t = 1 before the neck flare,
+        # i.e. (1 - 0.46) ** 0.85. hub_fraction is 0.13 of the cap radius.
+        natural_top_radius = max(1e-4, stem_radius * 0.585)
+        neck_ratio = max(1.0, (0.13 * stem_cap_radius) / natural_top_radius)
+
         stems.append(StemPlan(
             base_offset=base,
             height=stem_height,
             cap_radius=stem_cap_radius,
-            stem_radius=stem_height * _rng_range(rng, 0.036, 0.058),
+            stem_radius=stem_radius,
             bend=_rng_range(rng, 0.10, 0.30),
             lean=lean,
             tilt_deg=_rng_range(rng, 9.0, 34.0),
@@ -483,6 +496,12 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
             ridge_phase=_rng_range(rng, 0.0, math.tau),
             finger_count=int(5 + round(_rng_range(rng, 0.0, 3.0))),
             finger_phase=_rng_range(rng, 0.0, math.tau),
+            # How far the neck must widen to meet the cap hub. Without it the stem met a
+            # hub 3x its own radius in ONE band -- a trumpet no strip unwrap can carry
+            # (measured sigma ratio 26.9) and anatomically wrong besides: a cap-and-stem
+            # plant flares into its cap over a visible neck. Derived from the hub radius
+            # the cap will actually present, not guessed.
+            neck_ratio=neck_ratio,
             juvenile=juvenile,
         ))
 
@@ -494,7 +513,7 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
         cap_top_rings=cap_top_rings,
         cap_bottom_rings=cap_bottom_rings,
         rim_rings=rim_rings,
-        hub_fraction=0.17,
+        hub_fraction=0.13,
     )
 
 
@@ -521,10 +540,14 @@ def _stem_axis(plan: StemPlan, samples: int) -> List[Tuple[Vector, Vector, float
         # can carry it (measured sigma ratio 21.9 on that one band). Clustering resolves
         # the flare axially the same way the tear clamp resolves a bite angularly.
         #
-        # Exponent 1.5 rather than 2.0: at 2.0 the clustering was paid for by a final
-        # band spanning 30% of the stem, 132 mm against a 6.6 mm circumferential step,
-        # which simply moved the sliver problem from the foot to the neck.
-        t = (i / float(samples - 1)) ** 1.5
+        # COSINE (Chebyshev) spacing, clustering at BOTH ends. A one-sided power warp
+        # traded one defect for another: exponent 2.0 fixed the foot and left a final
+        # band spanning 30% of the stem, and the fan transition into the cap hub then sat
+        # on a 38 mm axial step whose triangles were collinear to 0.1 mm in 65 mm --
+        # sigma 10.07 against the 3.30 outlier ceiling. Clustering both ends resolves the
+        # holdfast flare AND shortens the neck-to-hub step to a few millimetres, so the
+        # transition triangles are small in both directions instead of needles.
+        t = 0.5 * (1.0 - math.cos(math.pi * i / float(samples - 1)))
         # Vertical rise slightly eased so the neck is not a straight ramp.
         rise = plan.height * (t ** 0.94)
         lateral = lean * (plan.height * plan.bend * (t ** 1.85))
@@ -568,6 +591,12 @@ def _stem_profile_radius(plan: StemPlan, t: float, theta: float) -> float:
     ridges = 1.0 + 0.075 * math.cos(plan.ridge_count * theta + plan.ridge_phase
                                     + 1.7 * t)
     radius *= ellipse * ridges
+
+    # Neck: the stem widens into the cap hub over the top ~28% instead of meeting it in
+    # one step. Anatomically what a cap-and-stem plant does, and geometrically it turns
+    # a single 3:1 cone band into four gentle ones.
+    if t > 0.72:
+        radius *= 1.0 + (plan.neck_ratio - 1.0) * _smoothstep((t - 0.72) / 0.28)
 
     # Holdfast flare. The amplitude is bounded on purpose: the flare sets the ratio
     # between the widest and narrowest ring circumference, and that ratio IS the
@@ -852,6 +881,7 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
                    for j in range(count)]
         ring_indices.append(indices)
 
+    accum.region = "foot"
     # ---- foot: flat n-gon closing the bottom ----------------------------
     # The foot ring lies in the z=0 plane and the fan is planar, so planar offsets ARE
     # the isometric map here. Its own island: the strip map above it uses a different
@@ -869,6 +899,7 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
              (island_foot, offset_b.x, offset_b.y),
              (island_foot, offset_a.x, offset_a.y)))
 
+    accum.region = "stem_band"
     # ---- stem bands: constant-width cylindrical strip -------------------
     # A tapering tube has no isometric rectangular unwrap, and the two obvious choices
     # fail in opposite ways. Giving each ring its own u width preserves circumferential
@@ -910,6 +941,7 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
                  (island_stem, strip_u[i + 1][k] + wrap, stem_v[i + 1]),
                  (island_stem, strip_u[i + 1][j], stem_v[i + 1])))
 
+    accum.region = "transition"
     # Transition band: coarse penultimate ring -> fine cap hub ring. Each coarse vertex
     # fans across the `ratio` fine vertices it spans, then one bridging triangle carries
     # the coarse edge. Every fine vertex is used exactly once, so the shell stays
@@ -941,6 +973,7 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
              (island_stem, strip_u[coarse_index][kc] + wrap_c, v_coarse),
              (island_stem, strip_u[-1][end] + wrap_end, v_fine)))
 
+    accum.region = "cap_underside"
     # ---- cap underside: hub ring outward to the rim ----------------------
     bottom_rings: List[List[int]] = [ring_indices[-1]]
     bottom_arc = [[0.0] * segments]
@@ -974,6 +1007,7 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
                           (hub_arc + bottom_arc[i][j], hub_arc + bottom_arc[i + 1][j],
                            hub_arc + bottom_arc[i + 1][k], hub_arc + bottom_arc[i][k])))
 
+    accum.region = "cap_top"
     # ---- cap top: rim inward to the apex --------------------------------
     top_rings: List[List[int]] = []
     top_arc: List[List[float]] = []
@@ -1035,6 +1069,7 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
             (innermost[j], innermost[k], apex_index), SLOT_CAP,
             _polar_uv(island_top, thetas, (j, k, j), (r_j, r_k, 0.0)))
 
+    accum.region = "rim"
     # ---- rim band: closes underside to top with real thickness ----------
     # 3DMODEL_FLORA_CORAL.md section 3 (plate coral): "thick rims ... chipped edges".
     # The band bulges outward through its middle so the edge is rounded rather than a
@@ -1433,7 +1468,7 @@ def _make_reunwrap(atlas_size: int, notes: List[str]):
     return reunwrap
 
 
-def uv_diagnostics(mesh: bpy.types.Mesh) -> dict:
+def uv_diagnostics(mesh: bpy.types.Mesh, regions: Optional[Sequence[str]] = None) -> dict:
     """Per-material-slot UV anisotropy, using the VALIDATOR's own metric.
 
     ``mesh_ops.uv_stretch_stats`` reports a crude ratio of two edge scalings while
@@ -1447,6 +1482,11 @@ def uv_diagnostics(mesh: bpy.types.Mesh) -> dict:
     if not data.uv_layers:
         return {"status": "no uv layer"}
     _name, uv0 = data.uv_layers[0]
+    # loop_triangle -> polygon, so a per-face structural label can be looked up. The
+    # accumulator's face order survives into mesh.polygons unchanged (from_pydata keeps
+    # it, and the clean pass is asserted to remove nothing), so the index maps directly.
+    mesh.calc_loop_triangles()
+    polygon_of_triangle = [tri.polygon_index for tri in mesh.loop_triangles]
     buckets: dict = {}
     for t in range(data.triangle_count):
         slot = data.tri_material_index[t] if t < len(data.tri_material_index) else -1
@@ -1454,7 +1494,8 @@ def uv_diagnostics(mesh: bpy.types.Mesh) -> dict:
             data.positions, uv0, data.tri_vertices, data.tri_loops, t)
         area = validate._triangle_world_area(data, t)
         bucket = buckets.setdefault(slot, {"n": 0, "area": 0.0, "over": 0.0,
-                                           "worst": 0.0, "worstTri": -1})
+                                           "worst": 0.0, "worstTri": -1,
+                                           "byRegion": {}})
         bucket["n"] += 1
         bucket["area"] += area
         if not law.finite(distortion):
@@ -1464,6 +1505,10 @@ def uv_diagnostics(mesh: bpy.types.Mesh) -> dict:
             bucket["worstTri"] = t
         if distortion > law.uv_stretch_limit_for(SURFACE, hero=True):
             bucket["over"] += area
+            if regions is not None and t < len(polygon_of_triangle):
+                polygon = polygon_of_triangle[t]
+                name = regions[polygon] if 0 <= polygon < len(regions) else "unknown"
+                bucket["byRegion"][name] = bucket["byRegion"].get(name, 0.0) + area
     def edge_lengths(t: int):
         """(world, uv) edge lengths of triangle ``t``, so a bad sigma has a cause."""
         vs = [data.tri_vertices[t * 3 + k] for k in range(3)]
@@ -1480,6 +1525,12 @@ def uv_diagnostics(mesh: bpy.types.Mesh) -> dict:
                                        uv0[la * 2 + 1] - uv0[lb * 2 + 1]), 6))
         return world, uv
 
+    def region_of(t: int) -> str:
+        if regions is None or t < 0 or t >= len(polygon_of_triangle):
+            return "unknown"
+        polygon = polygon_of_triangle[t]
+        return regions[polygon] if 0 <= polygon < len(regions) else "unknown"
+
     out = {}
     for slot in sorted(buckets):
         bucket = buckets[slot]
@@ -1490,37 +1541,43 @@ def uv_diagnostics(mesh: bpy.types.Mesh) -> dict:
             "triangles": bucket["n"],
             "worst": round(bucket["worst"], 3) if law.finite(bucket["worst"]) else "inf",
             "worstTriangle": bucket["worstTri"],
+            "worstRegion": region_of(bucket["worstTri"]),
             "worstWorldEdgesM": world,
             "worstUvEdges": uv,
             "stretchedAreaFraction": round(
                 bucket["over"] / max(1e-12, bucket["area"]), 4),
+            "overLimitByRegion": {
+                name: round(area / max(1e-12, bucket["area"]), 4)
+                for name, area in sorted(bucket["byRegion"].items())
+            },
         }
     return out
 
 
-def _read_vcol_direct(mesh: bpy.types.Mesh) -> dict:
-    """Read the packed colour attribute straight off the datablock.
+def _read_vcol_direct(obj: bpy.types.Object) -> dict:
+    """Read the packed colour attribute off the mesh, labelled by the organic contract.
 
-    Two agents independently saw channel tiles and material renders come back WHITE for
-    geometry reading ``Col`` while the stored data was verified correct. So the stored
-    values are proven here, at the source, before any render is trusted: if the tiles
-    and this readback disagree, the instrument is wrong, not the generator.
+    Delegates the numbers to ``vertexcolor.channel_stats`` rather than reimplementing
+    them, because that function area-weights its mean so it is comparable with
+    ``preview.measure_channel_png``. Compare MIN and MAX between the two: those are
+    weighting-independent, while a rendered tile averages over pixels and a readback
+    over loops, and for a non-uniform field the two means legitimately differ.
+
+    Reading the stored values at the source is not redundant with the render. Channel
+    tiles were measuring stacked LOD copies still wearing default grey and reporting a
+    plausible min 0.0 / max 1.0 for every channel; a readback is the only way to tell a
+    broken instrument from a broken generator.
     """
-    attribute = mesh.color_attributes.get(law.VCOL_ATTRIBUTE_NAME)
-    if attribute is None:
-        return {"present": False}
-    count = len(attribute.data)
-    buffer = [0.0] * (count * 4)
-    attribute.data.foreach_get("color", buffer)
-    values = np.asarray(buffer, dtype=np.float64).reshape(count, 4)
-    out = {"present": True, "domain": attribute.domain,
-           "dataType": attribute.data_type, "elements": count}
+    stats = vertexcolor.channel_stats(obj)
+    if not stats.get("present"):
+        return stats
+    out = {"present": True, "domain": stats.get("domain"),
+           "attribute": stats.get("attribute")}
     for index, label in enumerate(law.ORGANIC_VCOL):
-        column = values[:, index]
         out[label] = {
-            "min": round(float(column.min()), 5),
-            "max": round(float(column.max()), 5),
-            "mean": round(float(column.mean()), 5),
+            "min": stats["min"][index],
+            "max": stats["max"][index],
+            "areaWeightedMean": stats["areaWeightedMean"][index],
         }
     return out
 
@@ -1685,7 +1742,7 @@ def generate_variant(*, seed: int, quality: float, cap_radius: float, height: fl
         ao=ao_values if ao_values else None,
         alpha=accum.harvest, alpha_meaning=ALPHA_MEANING, blackbox=blackbox)
     vertexcolor.remove_scratch_attributes(obj.data)
-    vcol_direct = _read_vcol_direct(obj.data)
+    vcol_direct = _read_vcol_direct(obj)
 
     # --- 7/8. LOD chain (materials already built at stage 5) --------------
     lod_notes: List[str] = []
@@ -1744,7 +1801,10 @@ def generate_variant(*, seed: int, quality: float, cap_radius: float, height: fl
         notes.append("LOD{0} uv edge-ratio: worst={1:.4f} p95={2:.4f} mean={3:.4f} "
                      "over {4} triangles; validator sigma-ratio per slot: {5}".format(
                          level.index, stats["worst"], stats["p95"], stats["mean"],
-                         stats["triangles"], uv_diagnostics(level.obj.data)))
+                         stats["triangles"],
+                         uv_diagnostics(level.obj.data,
+                                        accum.face_region if level.index == 0
+                                        else None)))
     chain_failures = validate.validate_lod_chain(reports, family=FAMILY,
                                                  blackbox=blackbox)
 
@@ -1848,7 +1908,7 @@ def _print_report(variant: VariantResult, proof: Optional[dict],
         entry = variant.vcol_direct.get(label)
         if entry:
             print("         {0:<16} min={1:<8} max={2:<8} mean={3}".format(
-                label, entry["min"], entry["max"], entry["mean"]))
+                label, entry["min"], entry["max"], entry["areaWeightedMean"]))
     print("  uv       : {0}".format(
         {k: v for k, v in variant.uv_summary.items() if k != "route"}))
     if proof is not None:
