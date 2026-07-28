@@ -327,19 +327,52 @@ namespace Hecton8.Tests.Editor.SaveSystem
         public void DirectSaveInvalidSlotPublishesSaveEventAndStatusTogether()
         {
             string source = ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs");
-            string saveBody = ExtractMethodBody(source, "private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)");
 
-            int invalidIndex = saveBody.IndexOf("if (!TryResolveSafeSlotName(slotName, out slotName))", StringComparison.Ordinal);
-            int invalidErrorIndex = saveBody.IndexOf("LastOperationError = InvalidSlotNameReason;", invalidIndex, StringComparison.Ordinal);
-            int invalidEventIndex = saveBody.IndexOf("SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);", invalidIndex, StringComparison.Ordinal);
-            int invalidStatusIndex = saveBody.IndexOf("PublishSaveStatus(slotIndex, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));", invalidIndex, StringComparison.Ordinal);
-            int invalidReturnIndex = saveBody.IndexOf("return;", invalidIndex, StringComparison.Ordinal);
+            // The invalid-slot rejection is no longer inside SaveGameAsyncInternal. SaveManager
+            // extracted every pre-flight rejection into TryPassPreflightChecks (SaveManager.cs:5329),
+            // which SaveGameAsyncInternal (SaveManager.cs:5394) now calls, and the slot-name branch sits
+            // at SaveManager.cs:5341-5347. Reading the old method's body found the anchor literal
+            // nowhere, produced startIndex -1, and the next IndexOf threw ArgumentOutOfRangeException
+            // before a single assertion ran - so this test could not fail for its own reason, and could
+            // not pass either.
+            //
+            // BOUNDARY: this is still a guard on the literal text of a .cs file. It proves the four
+            // statements are WRITTEN in this order, not that they EXECUTE in it. Proving the execution
+            // order needs the async save path driven with a real SaveEvents sink observing the emitted
+            // (event, status) pair - SaveGameAsyncInternal is a private async Awaitable on a
+            // MonoBehaviour, so that is a PlayMode test, not reachable from this EditMode assembly.
+            const string preflightSignature =
+                "private bool TryPassPreflightChecks(ref string slotName, byte slotIndex, uint operationId)";
+            const string invalidSlotAnchor = "if (!TryResolveSafeSlotName(slotName, out slotName))";
+            string preflightBody = ExtractMethodBody(source, preflightSignature);
 
-            Assert.GreaterOrEqual(invalidIndex, 0);
+            int invalidIndex = preflightBody.IndexOf(invalidSlotAnchor, StringComparison.Ordinal);
+            int invalidErrorIndex = IndexOfAfterAnchor(
+                preflightBody,
+                "LastOperationError = InvalidSlotNameReason;",
+                invalidIndex,
+                invalidSlotAnchor);
+            int invalidEventIndex = IndexOfAfterAnchor(
+                preflightBody,
+                "SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);",
+                invalidIndex,
+                invalidSlotAnchor);
+            int invalidStatusIndex = IndexOfAfterAnchor(
+                preflightBody,
+                "PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);",
+                invalidIndex,
+                invalidSlotAnchor);
+            int invalidRejectIndex = IndexOfAfterAnchor(
+                preflightBody,
+                "return false;",
+                invalidIndex,
+                invalidSlotAnchor);
+
+            Assert.GreaterOrEqual(invalidIndex, 0, invalidSlotAnchor);
             Assert.Greater(invalidErrorIndex, invalidIndex);
             Assert.Greater(invalidEventIndex, invalidErrorIndex);
             Assert.Greater(invalidStatusIndex, invalidEventIndex);
-            Assert.Greater(invalidReturnIndex, invalidStatusIndex);
+            Assert.Greater(invalidRejectIndex, invalidStatusIndex);
         }
 
         [Test]
@@ -608,6 +641,29 @@ namespace Hecton8.Tests.Editor.SaveSystem
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             return File.ReadAllText(Path.Combine(root, relativePath));
+        }
+
+        /// <summary>
+        /// Ordinal <c>IndexOf</c> measured from an anchor index this fixture has already located.
+        /// <para>
+        /// The bare <c>body.IndexOf(literal, anchorIndex, StringComparison.Ordinal)</c> chains this
+        /// fixture is built from throw <see cref="ArgumentOutOfRangeException"/> the moment the ANCHOR
+        /// literal stops matching, because -1 is not a legal <c>startIndex</c>. The throw lands on the
+        /// lookup line, several lines above the <c>Assert.GreaterOrEqual(anchorIndex, 0)</c> written
+        /// specifically to name the missing literal - so the run reports "Index was out of range" and
+        /// says nothing about which part of SaveManager.cs moved. Four tests in this fixture failed
+        /// exactly that way in all three recorded batchmode runs. Anchoring through here fails on the
+        /// anchor, and names it.
+        /// </para>
+        /// </summary>
+        private static int IndexOfAfterAnchor(string body, string literal, int anchorIndex, string anchorLabel)
+        {
+            Assert.IsNotNull(body);
+            Assert.GreaterOrEqual(
+                anchorIndex,
+                0,
+                "Anchor literal is missing from the extracted method body, so nothing ordered after it can be located: " + anchorLabel);
+            return body.IndexOf(literal, anchorIndex, StringComparison.Ordinal);
         }
 
         private static string ExtractMethodBody(string source, string signature)
