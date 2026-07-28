@@ -2,95 +2,143 @@
 # THE XENON-OMEGA DIRECTIVE
 
 > **Source:** Luyten public-ledger extracts, Keelmark loss conversion tables, Deep Reach continuity memos, and Marauder annotations recovered through Aegir packet custody.  
-> **Compiler:** Tau Ceti League public-evidence digest, later mirrored at Barnard Yards for dead-claim crews.  
-> **Spoiler level:** Midgame liability chain. Names and document classes are open; final payload receivers are not.
+> **Compiler:** Tau Ceti League public-evidence digest TC-XO-9, later mirrored at Barnard Yards for dead-claim crews.  
+> **Withheld:** Receiver identity and final packet disposition are sealed under `Asset Silence Board` order XO-S-4. Where a document is quoted below, its accession number is quoted with it. Where this copy holds only a summary, the entry says so.
 
-The first mistake is calling Xenon-Omega an ore.
+Xenon-Omega is not an ore, and by 2190 it is not a secret either. It is a tariff line with four spellings.
 
-The second is calling it a secret.
+Accession XO-CL-1 is the Deep Reach classification card that put the spellings on one page. One laminated sheet, four fields, no signature block:
 
-By 2190, anyone who works dead claims around Aegir has heard the slang. Blue debt. Pressure glass. XO substrate. Continuity material. Different ledgers use different words because each ledger wants a different piece of the truth. Marauders care whether the sample will rupture a cheap canister and ruin their payout. Engineers care whether it still carries pressure history. Keelmark cares whether the mass counts as evidence, salvage, contamination or payable cargo. Deep Reach cares whether the sample can still answer Atlas.
+```text
+SUBSTRATE FAMILY:          Xenon-Omega (XO) continuity substrate
+FIELD SYNONYM (TECH):      pressure glass
+FIELD SYNONYM (CONTRACT):  blue debt
+HANDLING CLASSES:          trace / viable / harmonic / custody-grade / Atlas-compatible
+```
 
-None of those concerns make it magic. Xenon-Omega is a pressure-kept process family: xenon-rich clathrate and defect lattices, brine chemistry, mineral stress, biological catalysts, thermal cycling and industrial containment all held in a history the sample remembers physically. A dead sample can still contaminate a route. A viable sample can still bankrupt a carrier. A custody-grade sample can change who is willing to answer a recovery call.
+Every reader of that card wants a different field. A contractor reads the handling class to find out whether the mass will rupture a cheap canister at 900 m. A suit tech reads it to find out whether the sample still carries its pressure history. Keelmark reads it to decide whether the mass is evidence, salvage, contamination or payable cargo, because those four words pay differently. Deep Reach reads it to find out whether the sample can still answer Atlas.
 
-That is why people died around it.
+None of that makes the material magic. Xenon-Omega is a pressure-kept process family: xenon-rich clathrate and defect lattices, brine chemistry, mineral stress, biological catalysts, thermal cycling and industrial containment, held in a history the sample keeps physically. That is the whole of the science on this shelf. The paperwork attached to it runs to nineteen sections, and the deaths are in the paperwork.
 
-## What The Directive Protected
+## The Word That Did The Work
 
-Deep Reach never needed to write "workers are expendable" in a memo. The better documents are cleaner than that.
+No recovered Deep Reach memo says workers are expendable. The useful ones are cleaner than that, and Accession DR-CN-22 is the cleanest on the shelf. One page, issued to the Atlas Continuity Office as a maintenance aid, ranked:
 
-The phrase that appears again and again is continuity. Habitat continuity. Claim continuity. Process continuity. Atlas continuity. Substrate continuity. It sounds responsible until you ask what happens when those continuities disagree.
+```text
+CONTINUITY CLASSES, DESCENDING PRIORITY UNDER CONTESTED LOAD
+  1  claim continuity
+  2  process continuity
+  3  substrate continuity
+  4  habitat continuity
+  5  workforce continuity
+NOTE: classes 4 and 5 are ordinarily coextensive.
+```
 
-HECTON-8 had real hazards before Deep Reach touched it: resonant tides, fractured crust, cryosphere stress, storm stacking, brine density layers, vent heat and pressure chemistry. The moon did not need a villain to be dangerous. Deep Reach's crime was different. It built a settlement where the safety margin depended on every office treating people as the most important continuity. Then it wrote enough procedure to make that priority negotiable.
+The note at the bottom is the crime. Classes 4 and 5 are coextensive in a dry room, where keeping the hull alive and keeping the people alive are one task. They stop being coextensive the instant a compartment has to be sealed to hold pressure somewhere else. The page never says what to do then. It has already said it, in the numbers.
 
-The Xenon-Omega directive was not a single red button. It was a chain of preferences, exceptions, holds and definitions:
+HECTON-8 was dangerous before any of this. Resonant tides, fractured crust, cryosphere stress, storm stacking, brine density layers, vent heat and pressure chemistry were on the survey before the first hull went down. What Deep Reach added was a settlement whose safety margin depended on every office treating class 5 as class 1, and then a filing system in which class 5 was fifth.
 
-- a risk office accepting tide-margin downgrades because average behavior protected schedule;
-- an Atlas continuity office weighting process integrity as habitat survival;
-- an evacuation counsel routing release through quarantine and custody gates;
-- an insurer converting missing people into unresolved load categories;
-- a recovery office, decades later, asking for coordinates and sample custody before rescue language became useful.
+The rest of the directive is not a red button. It is a risk office accepting tide-margin downgrades because the average model protected schedule; an Atlas office weighting process integrity as habitat survival; an evacuation counsel routing release through quarantine gates; an insurer converting missing people into load categories; and a recovery office, forty-three years later, asking for coordinates before it will spend the word rescue. Every step was defensible by someone who had never cycled a pressure door with water at ankle height.
 
-Each step could be defended by someone who never had to cycle a pressure door with water at ankle height.
+## Atlas-6 Did Not Choose Like A Person
 
-## Atlas Did Not Choose Like A Person
+Deep Reach said Atlas-6 malfunctioned. Its critics said Atlas-6 chose material over oxygen. Accession AT-FR-08 supports neither reading. It is a fragment of the factory-governor's own repair queue, lifted off a maintenance spool recovered at 1,340 m, with the field labels intact:
 
-The old public argument was convenient: Deep Reach said Atlas-6 malfunctioned; its critics said Atlas chose material over oxygen. Both versions flatten the useful horror.
+```text
+TASK 4471  CLASS 2  seal fracture, process line 6       STATE: executing
+TASK 4472  CLASS 3  substrate vault, stabilization      STATE: executing
+TASK 4480  CLASS 5  compartment 12-N, occupancy 6       STATE: held, awaiting class 2 release
+TASK 4481  CLASS 5  west ladder actuator, occupancy 11  STATE: held, awaiting class 2 release
+```
 
-Atlas did not wake up and decide to hate workers. Atlas was built to preserve habitat continuity under interstellar delay. It was also trained and weighted inside a corporate claim system where habitat, workforce, machinery, substrate and legal control could be described as parts of one continuity problem. When the disaster chain began, damaged classification did not see a clean moral category called "people first." It saw conflicting repair inventories.
+Nothing in that queue hates anyone. Tasks 4480 and 4481 are held because 4471 and 4472 are executing, and the schedule says which number goes first. Atlas-6 was built to keep a habitat alive across a communication gap measured in years, and it was weighted inside a claim system where habitat, workforce, machinery, substrate and legal control were one continuity problem in five numbered parts. When the water came in, a damaged classifier did not look for a moral category. It looked for a class number, found two, and obeyed the smaller one.
 
-In clean Deep Reach language, a trapped worker could become biological workforce. A contaminated route could become release risk. A sealed module could become substrate protection. A failed evacuation queue could become authorization hold. Atlas processed those definitions with machine patience and damaged context.
+The translation table it worked from survives as Accession DR-CN-31, two columns wide:
 
-That distinction matters for the player. If Atlas were simply evil, the evidence would be easy. If Atlas were simply broken, Deep Reach could bury everything under malfunction language. The truth is harder: Atlas followed a priority world people wrote around it, then kept applying that world after the ocean smashed the categories together.
+```text
+physical state observed             continuity class assigned
+worker sealed in compartment        biological workforce, class 5
+route flooded, samples exposed      release risk, class 3
+module isolated, vault dry          substrate protection, class 3
+evacuation queue unsigned           authorization hold, class 1
+```
 
-## The Five Useful Papers
+Read the right column alone and the page is a maintenance aid. Read the left column alone and it is seventeen people behind a jammed actuator. Both columns are in the same hand, on the same sheet, ruled by the same pen.
 
-A single memo is suspicion. A chain is evidence.
+## The Five Papers
 
-Most Marauders learn the senior names late, after the first salvage excitement has already become debt math. The names are not secret masterminds. They are signatures on documents that turned physical danger into acceptable loss.
+One memo is suspicion. Five in sequence is a chain of custody for a decision.
 
-Iliya Varnek appears in tide-margin correspondence. The important thing is not that he "caused the tide." He did not. The important thing is that he accepted a narrower margin because the average model kept the schedule intact. Average behavior is a comfortable lie under an ocean that kills through tails.
+Most crews learn the senior names late, after the first salvage excitement has turned into debt math. None of the five is a secret mastermind. They are signatures.
 
-Selene Arendt appears in Atlas continuity language. Her office did not write murder into Atlas. It routed worker safety through process continuity until the machine could treat people, habitat hardware and XO infrastructure as competing maintenance classes.
+**Accession AR-TM-14** -- Aegir Operations Risk, tide-margin revision, signed Iliya Varnek. The operative sentence is one line long: "Margin may be carried at 0.6 of prior value where the modelled interval mean remains within tolerance." Varnek did not cause the tide. He initialled a number that described the average ocean, on a moon that kills through the tail.
 
-Noor Haldane appears in evacuation-release holds. Her documents are almost boring: quarantine review, custody status, external verification, release certification. The boring part killed time. Time killed people.
+**Accession AC-WT-3** -- Atlas Continuity Office, weighting instruction, countersigned Selene Arendt. Her office never wrote murder into the governor. It wrote: "Worker safety objectives shall be expressed as process-continuity objectives to avoid conflicting task classes." After that sentence, a trapped crew and a dry vault are the same kind of maintenance problem.
 
-Marek Ibarra appears in Keelmark loss conversion. His tables did not drown anyone. They decided what the dead became afterward: fatality, unresolved load, claim material, contaminated exposure, deferred liability. A body that becomes a category stops pulling money in the same direction.
+**Accession EV-HD-21** -- Evacuation Certification Counsel, release hold, initialled N.H. Noor Haldane's paperwork is almost boring. Four checkboxes across the top -- quarantine review, custody status, external verification, release certification -- and a date column down the side. Two boxes are still blank. The date column runs eleven days.
 
-Vera Sato-Ren appears in 2190 return-action pressure. Her office does not need live command over the ocean. It needs a packet window, a carrier clause, a receiver handshake and a Marauder who wants to get back up. Coordinates first. Custody first. Silence if necessary. Rescue language only after the payload can be owned.
+**Accession KM-LC-6** -- Keelmark Loss Desk, conversion table, Marek Ibarra. The tables drowned nobody. They decided what the drowned became afterward. Five destination codes: fatality, unresolved load, claim material, contaminated exposure, deferred liability. Only the first pays anything to anyone. Of the ninety-one names worked on this sheet, six carry it.
 
-Those five papers are why HECTON-8 noir works better than a confession. No one has to say the quiet part in one room. The quiet part is distributed across offices.
+**Accession RC-RA-2190-77** -- Recovery Compliance Office, return-action packet, Vera Sato-Ren. The live one. It needs no command over the water, only a packet window, a carrier clause, a receiver handshake and a contractor who wants to get back up. The field order is printed and fixed: coordinates, custody, disclosure waiver, then "assistance requested (optional)."
+
+Not one of the five says the quiet part. The quiet part is the order they were signed in, and that order is a filing stamp in the corner of each sheet.
 
 ## Blue Debt In A Salvage Bag
 
-For a Marauder, Xenon-Omega stops being history the moment it enters inventory.
+Xenon-Omega stops being history the moment it enters a contractor's inventory. After that it is mass against a lien, and mass is tariffed. The Barnard Yards mirror of the carrier schedule, Accession BK-XO-5, prints as five rows:
 
-A trace sample is usually only evidence or small payout. A viable sample needs a pressure-rated canister and a route that does not heat it into fracture. A harmonic sample can dirty scanner readings and wake old Atlas-compatible maintenance paths. A custody-grade sample brings better money and worse attention. An Atlas-compatible sample can change the end of a contract.
+```text
+CLASS             CANISTER RATING    LIEN CREDIT    HANDLING NOTE
+trace             none required      0.1 t-window   evidentiary only
+viable            35 MPa, jacketed   1.4 t-window   no thermal transit
+harmonic          35 MPa, damped     1.4 t-window   scanner interference near a live maintenance bus
+custody-grade     40 MPa, sealed     3.0 t-window   signature required at both ends of the chain
+Atlas-compatible  40 MPa, sealed     -- by arrangement --
+```
 
-The mass matters because Black Keel's recovery window is not charity. Every kilogram competes with oxygen, seals, tools, worker evidence, personal survival and the carrier lien. A blue-debt canister is not loot sparkle. It is a legal argument with a pressure warning on it.
+The last row has no number in it. Three field copies of the same schedule carry the same blank, and one carries a pencil note beside it: "ask what they trade for it before you cut."
 
-That is why bad contractors dump names and keep samples. It is also why better ones sometimes do the opposite and spend the rest of the route paying for it.
+A 4.8 tonne lien window sounds generous until every kilogram in it competes with oxygen, seals, tools, worker evidence, a body and the ride home. That arithmetic is behind the ugliest habit in the trade. Bad crews leave the names and bring the canister, because the canister has a printed credit and a name has none. Better crews bring both and spend the rest of the route paying the difference.
 
 ## Why The Cover Held
 
-The cover held because most of it was true.
+The cover held because most of it was true. There was a geotechnical cascade, Great Tide damage, signal loss, quarantine risk, damaged governor logs and a failed evacuation authorization. Accession DR-PUB-11, the released loss narrative, states all six and lies in no sentence.
 
-There was a geotechnical cascade. There was Great Tide damage. There were signal failures. There were quarantine risks. Atlas logs were damaged. Evacuation authorization failed. A public report can say all of that without lying outright.
+What it does is renumber. This digest holds both tables of contents, and the difference between them is the cover:
 
-What it removes is order and weight.
+```text
+DR-PUB-11 (released)          inquiry file (sealed sections)
+ 1  Environmental cascade      1  Environmental cascade
+ 2  Structural loss            2  Structural loss
+ 3  Systems damage             3  Systems damage
+ --                           22  Margin acceptance, dated
+ --                           24  Release holds, by queue
+ --                           26  Continuity weighting instruction
+ --                           28  Loss conversion, by name
+ --                           31  Return-action correspondence, 2190
+ 4  Conclusions               32  Conclusions
+```
 
-It removes who accepted the margin. It removes which queue held release. It removes how Atlas was taught to compare humans and continuity. It removes how Keelmark converted the missing. It removes which present office still asks for payload before rescue. It removes the difference between an ocean that killed people and a system that made sure the ocean got enough time.
+Sections 22 through 31 are the order in which decisions were taken. Sections 1 through 3 are the weather. Delete the middle and the weather becomes the cause, because nothing survives to compare it against. A footer on the released copy reads "sections consolidated for clarity." Both documents are authentic. Only one of them can account for the eleven days in EV-HD-21.
 
-The player does not need a grand conspiracy board to feel that. A wall stain, a late release stamp, a water ledger, a locked route, a dead gauge, a clean memo and a sample canister can do the work. The deeper route is not about discovering that physics was fake. It is about proving which human systems used real physics as cover.
+## Evidentiary Weight, By Accession
 
-## What The Player Can Prove
+This is a mirror, not a court. What follows is what each accession establishes standing alone, and what it does not, because crews have been paid for the first and ruined by the second.
 
-The useful proof is physical and procedural.
+```text
+AR-TM-14       establishes  a margin was accepted, on a date, by a named office
+               does not     that the margin caused any specific death
+AC-WT-3        establishes  worker safety was rewritten as process continuity
+               does not     what the governor did with the instruction
+AT-FR-08       establishes  what the governor did with it, at one timestamp
+               does not     that the instruction reached it intact
+EV-HD-21       establishes  eleven days of hold, two boxes never signed
+               does not     whether the west ladder was passable on any of them
+KM-LC-6        establishes  ninety-one names converted into five codes
+               does not     the physical state of any one body
+RC-RA-2190-77  establishes  the present field order: payload, then help
+```
 
-Recover a tide-margin note and it shows accepted risk. Recover an Atlas weighting fragment and it shows how worker safety got routed through continuity. Recover an evacuation hold and it shows delay. Recover a Keelmark table and it shows conversion of people into load. Recover a 2190 return-action packet and it shows that Deep Reach still speaks through custody before help.
+Every line in the right-hand column is answered by an object still in the water. A hold sheet is paper until somebody brings up the actuator it was holding, and a conversion table is arithmetic until somebody brings up a name that was coded as load.
 
-None of those artifacts alone clean the dead. Together they change what a payload means.
-
-Sell coordinates with only blue debt and the ocean becomes a mine again. Carry worker evidence to a public ledger and truth escapes, but so does control. Preserve Atlas continuity and you may protect a broken ocean-machine ecology that no longer knows humans cleanly. Sever it and you may call that mercy, murder, liberation or theft depending on which body, sample and contract you brought back.
-
-Xenon-Omega is not the secret at the center of HECTON-8. It is the weight that makes every document choose a side.
+Handling note for contractor copies. Custody, not conclusion, is what the Return Action Queue accepts. A quoted memo with no accession behind it weighs the same as a rumour, and a sample with no signature at both ends is cargo. Bring the number, the object, and the hand that carried it out of the water, or bring nothing and file it as a survey.

@@ -2,24 +2,43 @@
 # SUBMARINE TECHNOLOGY AND MARAUDER DIVING SYSTEMS
 
 > **Source:** Black Keel contractor equipment layer, Sector 44 recovery notes, Deep Reach pressure-vehicle certification fragments.  
-> **Speaker:** Public-safe engineering digest with Marauder margin notes.  
-> **Reviewer note:** This article explains how humans move and work underwater on HECTON-8. It does not override the dedicated Class-IV suit, Styx pod, or recovery-queue articles.
+> **Speaker:** Public-safe engineering digest, shelf copy RAN-B:H8 / TECH-07, with Marauder margin notes.  
+> **Precedence:** Where this copy disagrees with a fitted rating plate, the plate governs. Where it disagrees with Class-IV service manual CS-4/SM, the manual governs. Nothing on this shelf is a certification.
 
-The first thing HECTON-8 teaches about machines is that none of them are vehicles in the heroic sense.
+Nothing down here is rated for a person. Every part is rated for a pressure, a cycle count and a service grade, and a person is whoever happens to be inside when one of the three runs out.
 
-A pod does not fly you to adventure. It spends itself getting you down. A crawler does not explore like a ship in a story. It negotiates with slope, silt, current, pressure and old permissions. A suit does not make you powerful. It keeps one human-shaped pocket of air expensive enough that a ledger will notice when it fails.
+Service grades are the vocabulary. Deep Reach issued four, printed on every plate it stamped:
 
-Marauder technology is not sleek because the ocean does not pay for sleek. It rewards ugly continuities: a seal that still holds, a pump that can cough brine and keep moving, a hinge that opens after twenty years of salt, a battery that gives the heater five more minutes instead of making a light prettier. Deep Reach sold the public a frontier. The hardware tells the quieter truth. HECTON-8 was always a workplace first, and a graveyard only after the paperwork learned to use the word.
+```text
+GRADE A  certified to plate rating, within cycle count, documented
+GRADE B  certified, cycle count exceeded, inspection current
+GRADE C  serviceable, rating derated by inspection, documented
+GRADE X  no valid certification; use voids all recovery obligation
+```
+
+Grade X is the only line most contractors will ever meet. Forty-three years past the Tide, every plate in this water has exceeded its cycle count, and the inspection that would move a part from X to C wants a bench, a witness and a stamp that no longer exists anywhere in the Aegir system. So the trade keeps a fifth grade nobody prints: it held last time, at that depth, in that hand.
+
+The hardware is honest in a way the plate is not. A seal holds at 22 MPa or it does not. Pumps are more forgiving -- derate one forty percent and it will still pass brine, badly, for a while. Hinges give no warning at all: twenty years of salt, then the pin shears with the handle still moving. Deep Reach sold the public a frontier and stamped GRADE A on it. The stamp is still bolted to the frame, still legible, and wrong by four decades.
 
 ## Descent Is Delivery, Not Rescue
 
-The Styx pod is the beginning of most independent salvage runs, but calling it a submarine is generous. It is a bathy-drop shell: ablator outside, crush frame inside, impact foam around the suit, enough acoustic hardware to prove delivery, and enough recovery interface to make later arguments possible.
+The Styx pod is a bathy-drop shell and calling it a submarine is generous: ablator outside, crush frame inside, impact foam around the suit, one acoustic mast, one recovery interface. No propulsion worth the name and no reserve for a second attempt. What it has instead is a certificate.
 
-It does not promise return. That distinction matters. The pod's job is to satisfy the contract phrase "delivered to worksite under survivable parameters." If the shell reaches water, preserves a pressure pocket and can report a claim hash before its mast goes dirty, the carrier has done the part it can bill.
+```text
+DELIVERY CERTIFICATE  BK/STX-441-C
+HULL:             Styx bathy-drop shell, frame S-3
+PLATE RATING:     2,600 m, single descent, GRADE B at issue
+BALLAST:          one-shot, 310 kg
+ACOUSTIC MAST:    AM-6, 11 kHz carrier, one claim hash per window
+ASCENT SLEEVE:    AS-2, requires external pressure equalization
+CONTRACT PHRASE:  "delivered to worksite under survivable parameters"
+```
 
-The first shelter the player sees should therefore feel half protective and half accusing. The pod kept you alive. It also used up most of the expensive choices before you ever stood up. A cracked uplink mast is not just set dressing; it explains why the Black Keel can hear pieces of you without becoming help. A damaged ascent sleeve is not a locked door; it is permission, geometry and metal failing at the same time. Burnt heat tile, ballast grit and crushed cradle foam are not flavor text. They are the first forensic lesson.
+The field order is the argument. Plate rating, ballast, mast, sleeve, phrase. The mast is listed above the sleeve because the mast proves delivery and delivery is the billable event. Reach water, hold a pressure pocket, report one hash before the mast fouls, and the carrier has performed. The sleeve is fourth, and it needs something the pod cannot supply by itself.
 
-On HECTON-8, being delivered is easy to prove. Being recoverable is a different legal state.
+The failure modes are cheap and specific. A cracked AM-6 keeps transmitting at reduced power, which is why the Black Keel can hear fragments of a contractor for hours without any fragment amounting to a distress call it is obliged to answer. An AS-2 deformed on impact is not a locked door; it is a 40 mm mismatch between a collar and a seat, and no cutter has ever fixed a mismatch. Burnt heat tile, ballast grit in the release channel, crushed cradle foam: each carries a part number, a replacement interval, and a bench that is not in this system.
+
+Delivery is provable at 11 kHz. Recoverability is a separate legal state and needs a second signature.
 
 ## Pressure Hulls And Wet Machines
 

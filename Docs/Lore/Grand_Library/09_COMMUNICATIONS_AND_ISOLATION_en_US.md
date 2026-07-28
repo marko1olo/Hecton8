@@ -1,57 +1,94 @@
 <!-- localization_status: source_authority_en_US -->
 # COMMUNICATIONS, TELEMETRY, AND ORBITAL SILENCE
 
-> **Source:** Black Keel communications watch manual, salvage relay training notes, recovered Marauder annotations.  
-> **Scope:** Why crews on HECTON-8 feel alone, what can actually be transmitted through the ocean, and how silence becomes both physics and policy.  
-> **Reader note:** There is no faster-than-light call home, no instant rescue channel, and no clean line between a failed signal and a withheld answer.
+> **Source:** Black Keel communications watch manual, revision 9. Packet desk log extracts, relay roster, and Marauder plate annotations. Contractor mirror, shelf copy RAN-B:H8 / COMM-09.  
+> **Scope:** Timing, payload limits, relay custody, queue behaviour, and the difference between an answer and a receipt.  
+> **Reader note:** There is no faster-than-light channel. Every figure printed here was measured on this moon, and the figures are the argument.
 
 ---
 
-## 1. No Miracle Channel
+## 1. The Card On The Bulkhead
 
-HECTON-8 teaches every new diver the same lesson: distance is not the only thing that separates you from help.
+Watch card COMM-09/A is printed on plate and bolted beside the packet desk. It settles most arguments in eight lines.
 
-Ran is far enough away that ordinary interstellar traffic arrives as schedule, not conversation. Aegir orbit is close enough to see on instruments and still too far to feel merciful. Between the diver and the Black Keel sits an ocean full of salt, metal ions, thermal layers, suspended mineral dust, broken infrastructure, living film, brine mirrors, and the bad habit of pressure turning small faults into system failures.
+```text
+COMMUNICATIONS WATCH CARD COMM-09/A          BLACK KEEL / PACKET DESK
+ONE-WAY LEG, SUIT TO SURFACE BUOY...: 2.1 s from 3,200 m (1,510 m/s)
+ONE-WAY LEG, BUOY TO HULL...........: 0.008 s
+RELAY HOLD, SPINE 0-100 m...........: 90 s slot interval
+RELAY HOLD, 100-1,500 m.............: 240 s slot interval
+RELAY HOLD, BELOW 2,500 m...........: 900 s slot interval
+KEEL RECEIVE WINDOW.................: 11 min 40 s every 3 h 14 min
+PAYLOAD CAP, NOTARISED PACKET.......: 480 bytes
+CORE QUERY ROUND TRIP, SOL..........: 21 years
+```
 
-There is no ansible. No emergency beam that punches through the moon. No rescue operator waiting to hear a heroic last sentence. Deep Reach sold "continuous operational awareness" in contracts because the phrase was useful. What crews received was a chain of narrow, delayed, lossy channels that worked best when nobody desperately needed them.
+The water leg is two seconds. Nobody has died of the two seconds. Everything below that line is scheduling, and scheduling is where the years are kept.
 
-That difference matters. On HECTON-8, isolation is not only emotional. It is engineered out of physics, bandwidth, legal language, and the cost of keeping a human awake on the other end.
+A distress packet leaving a suit at 3,400 m clears the water in about two seconds, waits up to fifteen minutes for a relay slot, waits up to three hours and two minutes for the Keel to come back over the horizon, and then enters a queue. The card does not print the queue.
 
-*[Margin Note: If the brochure says "connected," ask connected to what. A payroll server is not a friend.]*
+*[Margin Note: The contract clause is "continuous operational awareness". Continuous modifies the awareness. It does not modify the answering.]*
 
-## 2. What The Ocean Does To Signal
+## 2. What The Water Does To A Carrier
 
-The ocean does not block every signal in the same way. It is worse than that.
+The survey put numbers on the failures, which is more than the brochure did.
 
-Radio fails quickly because conductive water, dissolved salts, metal-rich sediment, hull wreckage, cable mass, and pressure glass dust eat useful range. Laser links die in scatter and particulate bloom. Tight optical signals work only in short, clean sightlines, and HECTON-8 rarely gives crews clean sightlines for long. Magnetic induction can limp across very short distances, enough for docked equipment, paired tools, or a suit handshake, but not for a conversation with orbit.
+At 2 MHz the useful radio range in HECTON-8 brine is under 3 m. At 30 kHz it is about 40 m in clean water and 6 m through the Cable Reef, where trunk mass, repair clamps and conductive biofilm all load the field. Optical links hold 4 Mbit/s across a clean 200 m sightline and collapse to nothing in a particulate bloom; the basin gives a clean 200 m sightline perhaps two days in nine. Magnetic induction works at contact range only: a suit handshake, a docked tool, a hatch plate. Nothing has reached orbit from below 1,000 m except low-frequency acoustics.
 
-Acoustics travel farther, but they carry their own problems. Sound bends through thermal gradients. Brine layers reflect it. Moving machinery muddies it. Large animals and old hulls can mask it. A density boundary can throw a packet sideways and make a receiver think the sender moved. The ocean does not need to be a perfect cage. It only needs to be inconsistent enough that certainty becomes expensive.
+Acoustics carry, and charge for it in certainty. The thermocline at 340 m bends ray paths downward. The brine layer near 1,480 m reflects most of what hits it at a shallow angle. Machinery still running in the factory levels raises the noise floor by 14 dB inside a 200 m radius, and a density boundary can throw a packet sideways far enough that the receiver's bearing solution places the sender 600 m east of where the sender is standing.
 
-This is why "blackout" is a misleading word. A blackout sounds like absence. HECTON-8 gives crews something more cruel: fragments. A pressure warning arrives without the route that explains it. A distress ping arrives after the room has changed. A name comes through cleanly, but the coordinate checksum fails. A dead channel repeats yesterday's packet until a tired diver starts answering it.
+`Blackout` is the wrong word for what the desk logs. Three consecutive lines from the same window:
 
-## 3. Acoustic Telemetry
+```text
+PKT 44-9-0771  RX 04:12:18  pressure alarm; sector tag present; route field null
+PKT 44-9-0774  RX 04:19:02  distress code valid; coordinate checksum FAIL
+PKT 44-9-0662  RX 04:31:55  duplicate (first RX 19 d prior); suppressed per rule 6
+```
 
-Most long-range communication through the water uses low-frequency acoustic telemetry.
+0771 reports that something is wrong and cannot say where. 0774 says where and cannot prove it. 0662 was nineteen days old, and the desk suppressed it correctly under rule 6; the crew that sent the original had re-entered the flooded compartment it described eleven days before the copy arrived.
 
-In ideal training diagrams, the diver sends a packet to a local relay. The relay pushes it through a low-frequency channel. A higher buoy, cable spine, or orbit-facing receiver receives the packet, validates it, and forwards the event to Black Keel systems. In the field, each step can be bent by geology, traffic, power loss, corrosion, or a relay that still has a serial number but no useful loyalty to the network around it.
+## 3. What Fits In 480 Bytes
 
-The bandwidth is not cinematic. It is tight, slow, and rationed. A crew can send status codes, suit pressure warnings, route tags, manifest hashes, short text bursts, claim signatures, and compressed evidence flags. They cannot stream a helmet feed from the basin floor. They cannot hold a normal call with orbit. They cannot explain a complicated room quickly unless they already prepared the right tags before the room became complicated.
+The channel is 1.1 kHz centre, 340 bit/s on the spine, 40 bit/s below 2,500 m. At 40 bit/s a full packet takes 96 seconds to leave the suit, and the suit cannot listen while it sends.
 
-The delay is also not one number. A good shallow route may feel almost responsive. A deep route through brine canyon clutter may turn a reply into a ritual. Eight minutes is common enough to become a joke; fifteen is common enough to stop being funny. Under pressure, even ninety seconds can be longer than a human decision.
+The 480 bytes buy a status code, a suit pressure figure, a route tag, a manifest hash, a claim signature, one evidence flag, and 60 characters of free text. They do not buy a helmet feed, a conversation, or the description of a compartment that has become complicated. Crews who come back prepare their tags before the compartment becomes complicated.
 
-*[Margin Note: The manual says "send distress code." It does not say what to do while the ocean decides whether the code is still yours.]*
+Admissibility is a separate matter from arrival. A packet the Keel will later treat as a record carries a notary block, applied at the first relay still holding a valid key:
 
-## 4. Relays, Bones, And Dead Infrastructure
+```text
+NOTARY BLOCK / PACKET NOTARY INTERFACE
+PKT.........: 44-9-0774
+ORIGIN KEY..: suit 44-S-311, Class-IV, solvency current
+FIRST RELAY.: R-19, spine mast 4, key valid to 2191
+HASH........: 8c4f 21b0 (truncated on card)
+CUSTODY.....: Aegir Reclamation Pool
+ADMISSIBLE..: yes
+```
 
-Deep Reach did not rely on one clean transmitter. It built layers.
+An unnotarised packet still arrives, still gets read by a human at the desk, and is not a record. Deck shorthand for one of those is a shout. Packet 44-9-0774 was fully admissible; its free-text field read `H16 dogs binding do not send 2nd crew`, thirty-seven characters, in a field the schema stores and does not index.
 
-The upper routes used buoy masts, service pylons, tether nodes, and platform repeaters. The Cable Reef became a dense, ugly communication skeleton: power trunks, data umbilicals, repair clamps, relay housings, and biofilm-coated hardware that still wakes under the right voltage. Deeper systems used acoustic pingers, maintenance caches, pressure-rated memory spools, and route beacons that could store a message until a receiver passed within range.
+*[Margin Note: The manual says send the distress code. It does not say what to do with the 900 seconds after you send it.]*
 
-After the Great Tide, those layers did not simply die. Some died. Some looped. Some became local only. Some accepted packets and never forwarded them. Some forwarded old packets with fresh timestamps. Some still answer to Atlas continuity logic rather than Black Keel procedure. Some are useful precisely because no office remembers they exist.
+## 4. The Relay Chain And Its Ghosts
 
-Good Marauders learn the difference between a relay and a ghost. A relay proves a path. A ghost proves only that something once had power and a reason to speak.
+Deep Reach never relied on one transmitter. It built layers, and the layers aged unevenly.
 
-That distinction becomes gameplay. A player can restore a route beacon and open safer navigation. They can find a memory spool and recover a message no one above wanted indexed. They can use a dead relay as a lure, a decoy, or a listening post. Communication hardware is not scenery. It is old power, old custody, and old fear still trying to move.
+Upper routes used buoy masts, service pylons, tether nodes and platform repeaters. The Cable Reef became a dense communication skeleton of power trunks, data umbilicals, repair clamps and relay housings, most of it under biofilm that still conducts when the right voltage reaches it. Deeper systems used acoustic pingers, maintenance caches, pressure-rated memory spools and route beacons that hold a message until a receiver passes close enough to take it.
+
+```text
+RELAY ROSTER EXTRACT / RAN-B:H8 / rev 9
+ID     DEPTH     LAST FORWARD   KEY OWNER                   STATE
+R-04      40 m   2190 current   Aegir Reclamation Pool      forwards
+R-19      90 m   2190 current   Aegir Reclamation Pool      forwards
+R-31     410 m   2147-06        Deep Reach Sector 44        accepts, holds
+R-44   1,180 m   2148-02        Atlas continuity            forwards inward
+R-58   2,510 m   2147-05        unassigned                  answers, no path
+R-63   3,340 m   --             Recovery Compliance Office  spool only
+```
+
+R-31 has accepted 4,700 packets since 2147 and forwarded none. Its spool filled in the first fortnight and the acknowledgement it still returns is genuine, correctly formed, and worth nothing. R-44 forwards, but inward, to Atlas continuity logic rather than to the packet desk. R-58 is the expensive one: it answers on the correct carrier with a route table from 2147, which is how a crew ends up trusting a coordinate that predates four collapses. R-63 stores until a receiver comes within 200 m, and the Return Action Queue has an open item asking for whatever is on it.
+
+A relay proves a path. Something that answers proves only that a battery and a key survived. The difference is one column on the roster and roughly six hours of a crew's air.
 
 ## 5. The Black Keel Listening Regime
 

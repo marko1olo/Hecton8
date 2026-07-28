@@ -1,74 +1,115 @@
 <!-- localization_status: source_authority_en_US -->
-# ABYSSAL RITES, PRESSURE FAITH AND BAD LISTENING
+# MORALE DEVIATION FILE 44-MD-7: MARKS, KNOCKS AND ONE REPAINT INVOICE
 
-> **Source:** Sector 44 psychological logs, maintenance superstition reports, Black Keel salvage interviews and recovered private marks from drowned work spaces.  
-> **Speaker:** Dr. Silas Vane's clinical archive, corrected by later Marauders who found out which "delusions" were bad medicine and which were fieldcraft.  
-> **Reviewer Note:** Abyssal belief should not be written as generic insanity. On HECTON-8, ritual begins as a working habit under pressure. It becomes dangerous when debt, isolation, bad data and corporate tolerance give it teeth.
+> **Source:** Sector 44 personnel conduct file 44-MD-7, opened 2144, closed resolved 2146. Black Keel contractor mirror, shelf copy RAN-B:H8 / CULT-12.  
+> **Scope:** Unofficial worker practice in the service spine and upper factory levels, the forms that classified it, and what the marks were for.  
+> **Mirror note:** This file survives because a facilities charge needed evidence. Defect class 4 required one photograph per instance to survive dispute, and those thirty-one attachments are now the only record of most of the marks. Dr. Silas Vane's clinical wording is quoted where the conduct file copied it into the left column; his case notes proper are withheld under `Asset Silence Board` seal.
 
 ---
 
-## 1. The Ocean Becomes a Clock
+## 1. The Work Order
 
-People do not go mad because the ocean is spooky.
+The file opens with the charge, not the behaviour.
 
-They go strange because every part of life below pressure starts counting them. Pumps count. Air recyclers count. Tides count. Debt clocks count. Door cycles count. Meal printers count grams. Suit telemetry counts breath, pulse, tremor, hesitation and tool drift. The hull counts in groans too slow to be music and too regular to ignore.
+```text
+WORK ORDER FAC-118-3311                  SECTOR 44 FACILITIES / LEVEL 2
+LOCATION.......: Service spine, hatch run H-12 to H-19, depth 214 m
+DEFECT CLASS...: 4 - surface defacement, non-structural
+DESCRIPTION....: Unauthorised scribing and grease paint, 31 instances,
+                 hatch frames and dog housings, corridor side
+DISPOSITION....: Abrade, prime, recoat to spec 9 grey
+LABOUR.........: 6.5 h x 2 technicians
+CHARGE TO......: Crew pool 44-C-9, morale deviation recovery
+AUTHORISED.....: Contract Continuity Desk, process continuity line 4
+```
 
-After months below, workers stopped asking whether a sound meant anything. They asked what it meant this time. A pipe knock before a brine surge. A dead lamp before a predator pass. A pressure door that sang before sticking. A coworker who heard the wrong rhythm and refused to enter a room that later flooded. Pattern became caution. Caution became habit. Habit became rule. Rule became faith when the company kept calling the workers irrational and the ocean kept proving some of them right.
+Thirty-one instances, counted and priced. The order does not record what any of them said. Thirteen labour hours removed a legend that took two years of shift handovers to agree on, and the recovery line put the cost back onto the pay of the crews who wrote it.
 
-Dr. Vane called it pressure-induced ideation. The crews called it listening.
+Eleven of the thirty-one attached photographs show the same shape: a horizontal scratch roughly 40 mm long with two short strokes crossing it, cut through the paint about 200 mm above the hatch dog.
 
-Both descriptions were incomplete.
+## 2. What Eleven Of The Marks Meant
 
-## 2. Work Habits That Grew Teeth
+Accession 44-C-51 is a page torn out of a shift book and folded into a glove liner. It is the legend.
 
-Most abyssal rites began as practical behavior.
+```text
+--- do not re-dog dry. frame is walking. tap, wait a 3 count, then seat
+=== dogged wet last shift. water above the sill on the far side
+o   grate feeds here. keep the lamp off the far wall, they come up it
+x   claim tag lifted off this frame. not ours. do not carry it up
+||  air line taped. rated 40 min, not 90
+```
 
-Tap twice on a hatch before opening it, because small life hides in seams and vibration tells you if the frame moved. Leave a lamp dim for ten breaths before crossing a corridor, because sudden white light trains predators. Mark a safe room high instead of low, because floodlines lie and walls creep. Do not speak over a pump restart, because a bad bearing has a voice. Tie a red thread to borrowed gear, because clean ownership is a legal fiction in dirty water.
+The crossing strokes mean the frame has crept on the hinge side and the dogs will bind if they are driven home cold. A bound dog on a pressure hatch does not fail loudly. It seats at an angle, holds through a bench test, and lets go under load.
 
-None of this is religion at first. It is tired people turning field lessons into memory. The ritual form makes it portable. A new worker can remember "three knocks for wet steel" faster than a maintenance appendix on pressure-shifted hinges. A frightened diver can obey a counting rhyme when their hands are shaking too hard to parse a diagnostic.
+Maintenance card MC-207 gives the same instruction in eleven lines and calls for a torque wrench and a witness signature. Line one of 44-C-51 gives it in three glyphs, needs no tools, and can be read by a gloved hand under a failed corridor lamp. That is the entire advantage, and it is why the legend spread.
 
-The danger begins when the habit survives after the reason is gone, or when the reason changes and nobody is allowed to say so. A dim lamp that once avoided a hunter becomes a ban on light. A silence drill becomes a ban on distress calls. A quarantine practice becomes a purity rule. A useful marker becomes a curse tag. Good fieldcraft fossilizes into law, and law kills people when the water changes.
+44-C-51 was copied by hand at least four times. Two surviving copies disagree about the fourth line: one reads `not ours`, the other reads `ours, tag pulled by 9`. Nobody in the conduct file was asked which copy the crew on shift had memorised.
 
-## 3. Three Currents of Belief
+## 3. Where The Habits Came From
 
-Deep Reach filed every unofficial practice under morale deviation. That was cheaper than understanding it.
+Every practice in the file has a measurement behind it, and most of the measurements are Deep Reach's own.
 
-The crews had their own names. Hush circles were quiet-work groups who believed every unnecessary noise shortened the room's patience. They were not entirely wrong. In some ruins, quiet work avoids animals, old microphones, failing seals and Atlas routines that wake on rhythm. But hush practice can turn cruel when it shames coughing, panic, pain or a worker trying to call for help.
+Tap the frame and wait three counts before seating a dog. A frame that has crept returns a flatter note, because the gasket is loaded on one edge and the steel no longer rings across the span. MC-207 calls this a percussive integrity check and allocates four minutes to it. The scratch above the dog calls for the same four minutes and does not require booking a wrench out of the tool board.
 
-Vent-tithe crews left controlled waste, heat or bait at specific grates to keep local food webs away from living areas. Again, not entirely wrong. A fed bloom can pull grazers from a door. A warm panel can keep scavengers out of a tool locker. But a tithe becomes a hazard when people start feeding a system they no longer understand, teaching larger animals a new route and calling the result mercy.
+Hold the lamp low for a count of ten before crossing an open corridor. Fauna log F-88 recorded eighteen approaches to a lamp front between 300 m and 600 m over one quarter, and none to a lamp held under 20 lux. Vane's column called this photophobic ritualisation. The fauna officer's column, on the facing page of a different file, called it correct.
 
-Ledger pilgrims treated debt, injury and claim marks as moral stains that had to be balanced before a room would "open." Their language sounds foolish until one remembers that on HECTON-8 paperwork decides air, medicine, rescue order and who gets blamed after death. They saw the company as a god because the company behaved like one: distant, procedural, hungry, and able to turn a human life into a line item.
+Work quiet through a pump restart. The H-series circulation pumps drop about a third of an octave in the two days before a sleeve bearing seizes, and Sector 44 held no instrument that heard it earlier than a person standing still with their hood off. Six seizures were logged in 2145. Four were called by ear, in writing, before the telemetry flagged them.
 
-None of these currents were pure. None were harmless. None were only madness.
+Tie a red thread on borrowed gear. Tool custody on HECTON-8 was a paperwork state and not a physical one, so a cutter returned to the wrong slot billed to whichever number was chalked on the board, at 40 percent of replacement, whether or not that hand had touched it.
 
-## 4. Bad Listening
+## 4. The Two Columns
 
-The abyss does not need lies to hurt people. It only needs a half-true pattern repeated too long.
+Every page of 44-MD-7 is ruled into `CLINICAL NOTE` on the left and `DISPOSITION` on the right.
 
-Bad listening starts when a crew trusts the sign more than the situation. A corridor is "safe" because the old thread is still there, even though the thread is clean and the room is newly wet. A door is "cursed" because three workers died past it, even though the real killer was a pressure schedule nobody updated. A machine is "hungry" because it wakes after blood exposure, when the sensor is actually detecting iron, salt and warmth. A bloom is "protective" because it sealed one leak, then spreads into an air scrubber and makes every breath expensive.
+```text
+CASE 44-MD-7/019
+CLINICAL NOTE: Percussive check before every hatch entry, compulsive
+               quality. Describes "the frame telling you". Insight partial.
+DISPOSITION..: No restriction. Practice does not affect output.
 
-Black Keel crews learn to respect belief without surrendering to it. A superstition is a field report with the evidence damaged. Ask what it protected, when it protected it, who benefited from keeping it vague and what has changed since. If the answer is "nothing," the superstition is probably noise. If the answer is "somebody got paid," it is probably policy in ritual clothing.
+CASE 44-MD-7/026
+CLINICAL NOTE: Refuses entry to Room 12-North. Cites marks made by a
+               deceased coworker. Grief-adjacent. Monitor.
+DISPOSITION..: Reassign. Room 12-North remains scheduled.
 
-The most dangerous rites are not the strange ones. They are the ones that sound like procedure.
+CASE 44-MD-7/031
+CLINICAL NOTE: Group practice, 4 workers, voice suppression during pump
+               restart. States a failing bearing "has a voice".
+DISPOSITION..: No restriction. Recorded complaint volume down 22 pct.
+```
 
-## 5. Corporate Tolerance
+Vane wrote ritualisation because ritualisation was one of the eleven terms the form would accept. The percussive check in case 019 is MC-207 performed without a wrench. The voice in case 031 is a measurable third of an octave.
 
-Deep Reach did not fear abyssal belief while it improved output.
+Across two hundred and six pages, the `DISPOSITION` column never once reads inspect the frame. It reads no restriction while a practice cost nothing and reassign the moment a practice cost a shift. Room 12-North stayed on the schedule until it flooded in 2147, with `occupancy status under determination` entered in the door log.
 
-A crew that refused bright lights damaged fewer lamps. A crew that worked in silence logged fewer recorded complaints. A crew that treated overtime as penance made schedule targets look natural. A crew that blamed a door spirit for a crushed hand did not immediately file a design defect. Management called these practices "localized coping culture," "non-disruptive morale structure" and "worker-led hazard adaptation."
+## 5. Why Nobody Stopped It
 
-The company intervened only when ritual threatened custody, quota or liability. Not when workers suffered. Not when a hush circle punished panic. Not when a vent tithe attracted larger animals to the wrong shaft. Not when a ledger pilgrim refused treatment because the debt line had not been "balanced." Intervention came when a practice made a claim harder to sell, a sample harder to certify or a death harder to classify.
+Marks that cost nothing were tolerated for two hundred and six pages, and the reasons are written down.
 
-This is why the rites survived. They were useful to workers, useful to predators, useful to broken machines and useful to management for different reasons.
+Crews who kept lamps low broke fewer lamp heads, which showed up as a consumables saving on the level 2 return. Crews who worked quiet filed fewer recorded complaints, and recorded complaint volume was a line on the shift supervisor's rating. A crew that blamed a bad frame instead of a design defect did not open a defect docket, and a defect docket on a pressure hatch went to Aegir Operations Risk, where Varnek's office priced it.
 
-That is the shape of a real cult under pressure: not a room full of fools, but a system where everyone gets something until the bill arrives.
+Facilities intervened at the point where the marks touched money. Not when case 026 was reassigned into another wet room. Not when the hush habit hardened enough that a rigger with a chest injury worked two shifts before anyone raised it in writing, incident 44-IR-1877. Not when the grate-feeding practice on shaft 6 pulled grazers past a door frame they had previously avoided and Atlas-6 rerouted a filter loop through the new growth. The intervention came when the paint stopped matching spec and the hatch run failed a visual on a scheduled walk, and the walk was scheduled because a buyer's surveyor was aboard.
 
-## 6. Marks in the Ruins
+The marks were also wrong sometimes, and the file is no help there either. Nothing on 44-C-51 carries a date. Four of the eleven crossing-stroke marks in the FAC-118-3311 photographs sit on frames that had already been shimmed and returned to service, which means four crews had been tapping and waiting three counts for a fault that facilities had fixed and not recorded.
 
-The player finds the rites before anyone explains them.
+Black Keel intake now asks four questions of any mark recovered from the water: what it protected, when, what has changed, and who was billed. Three of the four can usually be answered out of a work order.
 
-Red fiber tied above a hatch instead of beside it. Three scrape marks on a pump housing. Handprints around a dead speaker. A row of meal tokens glued to a vent frame. Salt circles on the floor that are not decoration but old drip timing. Lamp covers painted half black. A claim tag scratched through but not removed. A medical locker with apology marks around the handle. A clean tool left in a dirty room because taking it would move the blame.
+## 6. The Repaint
 
-These marks should not all mean the same thing. Some are warnings. Some are grief. Some are route memory. Some are fraud. Some are intimidation. Some are attempts to keep biology, machines or people calm. Some are old enough that their original purpose is gone and only the habit remains.
+The hatch run came back spec 9 grey on 09 of the month. Fourteen days later:
 
-The player can use them. A hush mark may identify a route where sound matters. A tithe mark may reveal where animals feed. A ledger mark may point to hidden evidence, unpaid debt or a body that was never logged. A false mark may lure another crew away from a prize. A real mark may save the player if they do not treat it like folklore.
+```text
+INCIDENT 44-IR-2209                    LEVEL 2 SERVICE SPINE / 214 m
+HATCH......: H-16
+EVENT......: Dog 2 seated to torque, released under load on second cycle.
+             Hatch opened 40 mm against the stops. Two workers wet to the
+             waist. No fatality. Corridor pumped down in 26 min.
+CAUSE......: Pressure variance at frame
+CORRECTIVE.: Frame shimmed 1.5 mm hinge side, hatch returned to service
+EQUIPMENT LOSS: nil
+CHARGE.....: nil
+```
+
+`Pressure variance at frame` is the company's phrase for a frame that had walked. H-16 had been marked. The mark had been abraded, primed and recoated to spec 9 grey at thirteen labour hours, charged to crew pool 44-C-9 under morale deviation recovery.
+
+44-MD-7 was closed resolved in 2146. The marks came back inside a month in grease pencil, which wipes off with a rag and does not raise a defect class 4. Facilities logged no further work orders against the H-12 to H-19 run before the Tide.
