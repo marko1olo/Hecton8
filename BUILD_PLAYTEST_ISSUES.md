@@ -67,6 +67,70 @@ Not proven by that log:
 | Data Monolith runtime boot | `[~]` | Unity import/player boot/checksum proof for `static_data.h8bin` |
 | RT/VRAM retained owner set | `[!]` | Memory Profiler / Frame Debugger owner isolation |
 | Tool durability does not persist | `[!]` | load a save after breaking a tool and read its durability back |
+| The content vacuum, measured: 4 items, 3 creatures, 0 quests | `[!]` | run the authoring generators, re-bake, and re-read this census |
+
+### The Data Monolith content census — measured from the shipped blob, 2026-07-29
+
+The vacuum is no longer an impression. `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`
+(7,457,664 bytes) was parsed byte-wise and every count below comes out of the section table, not out of a
+document. Two self-checks passed before any number was believed: the first non-empty section starts at 576,
+which is exactly `AlignUp(HeaderSizeBytes 64 + DirectorySizeBytes 64 + 28*16, 64)`, and the last section ends
+at 7,457,664 — the file size to the byte. Field order taken from `H8DataSectionEntry`
+(`H8DataMonolithTypes.cs:249-255`): `SectionId(0), RecordSize(4), Count(8), OffsetBytes(12)`. Names from
+`H8DataSectionId` (`:87-117`). My first attempt had `Count` and `OffsetBytes` transposed and the self-check
+caught it — without that check the numbers below would have been fiction.
+
+**Empty — zero rows, offset zero:**
+`QuestNodes` (6), `QuestEdges` (7), `NarrativeTriggers` (15), `RadiationIntensityMap` (18).
+The quest graph has no nodes AND no edges. The narrative trigger table is empty.
+
+**Authored gameplay tables, all stubs:**
+`Items` 4, `Creatures` 3, `Recipes` 3, `Biomes` 2, `VoxelMaterials` 2, `LootCdf` 4, `AudioClipRegistry` 3,
+`VfxScalars` 2, `ToolHeatCapacity` 2, `SubmarineHullConstants` 2, `PhysicsMaterials` 3, `GhostModules` 2,
+`SpawnCreditCosts` 3, `SopErrors` 2, `HudLayouts` 2, `SectorPageDirectory` 2, `Economy` 3,
+`PhysicsConstants` 3.
+
+**Genuinely populated — and note what they have in common:**
+`BiomeHeatmap` 65536, `DepthPressureCurve` 256, `LightAttenuationCurve` 256, `LocalizationUtf8` 5,444,599
+bytes, `AppliedLorePackets` 6960, `AppliedLoreRoutes` 458.
+
+The pattern is the finding. **Every machine-generated grid or curve is full, the lore corpus is full, and
+every hand-authored gameplay table is a 2-to-4-row stub.** That is the shape of a pipeline where the
+generators for procedural data and the lore lane both ran, and the authoring lane never did. A survival game
+with four items and three creatures has no economy, no crafting tree and no bestiary to balance, regardless
+of how good the systems consuming them are.
+
+**Why boot never told anyone.** A zero-length section is structurally legal, through two independent
+bypasses rather than one — patching either alone would not help:
+- `H8StaticDataArena.cs:3388` — `if (section.Count == 0u) return section.OffsetBytes == 0u;` so range
+  validation short-circuits.
+- `:3255` — the contiguity walk in `IsDirectoryValid` is wrapped in `if (section.Count != 0u)`, so an empty
+  section consumes no layout budget and breaks no adjacency.
+Then `:1009` closes it: every public accessor is a `TryGet*`/`TryFind*` returning false on an empty span, so
+an empty section never crashes and never logs — it fails every lookup, forever, in silence. Only
+`IsAppliedLoreContractValid` (`:3280`, floor check at `:3291`) enforces a minimum count, and only for the two
+AppliedLore sections, which is exactly why those two are the populated ones.
+
+**The census must NOT abort boot, and this is load-bearing.** A minimum-count floor of 1 applied to all 28
+sections would reject the blob that is on disk right now — ids 6, 7, 15 and 18 are empty — turning
+`InvalidSectionTable` into a dead boot with a misattributed cause, since that is the same status code a
+genuinely corrupt table produces. Fail-closed belongs in the editor bake and the test suite, where a bad
+build is never produced in the first place; the runtime gets a diagnostic. That split is also why the
+minimum-count table belongs in `H8DataLayoutAudit` (`H8DataMonolithTypes.cs`, beside `GetExpectedRecordSize`
+at `:749-783`) rather than in the arena — that class is already the shared audit surface for tests, editor
+bakes and boot guards, so the baker's idea of "required" cannot drift from the loader's.
+
+**Emission trap, worth naming before someone trips it.** `H8StaticDataArena.cs` contains zero `Debug.Log`,
+`LogError` or `LogWarning` calls across all 4,162 lines; its only outward channel is
+`H8DataBlobLoadStatus`. Do not add a `LoadedWithEmptySections` member to that enum — it is consumed as
+pass/fail and every `status == Loaded` comparison in the codebase would silently stop matching. The 28-bit
+deficit mask fits a single `uint`, and `H8DataMonolithTelemetryEntry` (`:716`) has spare reserved uints at a
+fixed 64-byte size, so it can carry the mask with no allocation and no string.
+
+**Two smaller findings from the same parse.** The world-seed and app-version bindings at `:3157` and `:3163`
+are guarded by `expected != 0u && _directory.X != 0u`, so a blob baked with `AppVersionHash` 0 silently
+matches every app version. And `visual_tuning.h8bin`, the sibling artifact, is 64 bytes — header and
+directory only, no payload.
 | A failed save is shown to the player as a completed save | `[!]` | force a save write failure in a build and watch the HUD |
 
 ### A failed save is rendered as success — verified 2026-07-29
