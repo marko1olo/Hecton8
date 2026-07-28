@@ -1597,9 +1597,33 @@ namespace Hecton8.Tools.ToolKinematics
             _coldRegistered = false;
         }
 
+        /// <summary>
+        /// The ARM64 layout gate, and the hardest kill switch in this file: OnEnable returns before every
+        /// tick registration when this returns false, so the tool ships authored and inert.
+        /// It used to compare <c>UnsafeUtility.SizeOf&lt;T&gt;()</c> against a literal and nothing else.
+        /// Every type below is declared <c>[StructLayout(LayoutKind.Explicit, Size = N)]</c>, and that
+        /// attribute PINS the size on every platform - so a size-only gate agreed with itself by
+        /// construction and could not fail for the ARM64 reason it exists. It also skipped four of the six
+        /// SignalBus payloads this runtime configures and pushes, which data.md:123-134 covers explicitly.
+        /// What actually varies, and what actually breaks ARM64, is where each field SITS: a 16-byte
+        /// <c>float4</c> lane or an 8-byte field parked on a 4-aligned offset is the "misaligned read on
+        /// ARM64" of data.md:34. So the offsets are now proven too, using the pattern this project already
+        /// established for exactly this in GlobalDataVault.ValidateInternalDtoAbiOffsets
+        /// (Core/Memory/GlobalDataVault.cs:1061-1146). Cold, once per component Awake.
+        /// </summary>
         private static bool ValidateAbiLayout()
         {
-            bool valid =
+            bool valid = ValidateAbiSizes() && ValidateAbiFieldOffsets();
+
+            if (!valid)
+                Hecton8.Core.H8Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
+
+            return valid;
+        }
+
+        private static bool ValidateAbiSizes()
+        {
+            return
                 UnsafeUtility.SizeOf<ToolStateDTO>() == 64 &&
                 UnsafeUtility.SizeOf<ToolHitResultDTO>() == 32 &&
                 UnsafeUtility.SizeOf<ToolScreenExportDTO>() == 16 &&
@@ -1610,14 +1634,126 @@ namespace Hecton8.Tools.ToolKinematics
                 UnsafeUtility.SizeOf<ToolBeamVertexDTO>() == 32 &&
                 UnsafeUtility.SizeOf<ToolPoseOutputDTO>() == 96 &&
                 UnsafeUtility.SizeOf<ToolKinematicsTelemetryEntry>() == 64 &&
+                UnsafeUtility.SizeOf<ToolTriggerPullSignal>() == 16 &&
+                UnsafeUtility.SizeOf<ToolCarveRequestSignal>() == 64 &&
+                UnsafeUtility.SizeOf<ToolHeatSignal>() == 32 &&
                 UnsafeUtility.SizeOf<ToolPowerDepletedSignal>() == 32 &&
+                UnsafeUtility.SizeOf<VfxSparkRequestSignal>() == 64 &&
                 UnsafeUtility.SizeOf<HapticPulseSignal>() == 16 &&
-                UnsafeUtility.SizeOf<ToolProceduralSdfSample>() == 8;
+                UnsafeUtility.SizeOf<ToolProceduralSdfSample>() == 8 &&
 
-            if (!valid)
-                Hecton8.Core.H8Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
+                // Element k of a vault buffer inherits the record's interior alignment only if the stride
+                // is a multiple of it. Both records below carry a 16-byte float4 lane, so their strides
+                // must stay multiples of 16 or the lane is aligned for element 0 alone. The arena base is
+                // 64-aligned (Core/Memory/GlobalDataVault.cs:448 VaultBlockAlignment).
+                (UnsafeUtility.SizeOf<ToolKinematicsFrameInputDTO>() & 15) == 0 &&
+                (UnsafeUtility.SizeOf<ToolIkOutputDTO>() & 15) == 0;
+        }
 
-            return valid;
+        /// <summary>
+        /// Proves the byte offset of every field of the records whose interior layout is load-bearing:
+        /// the two Burst records that carry a 16-byte float4 lane, the only record with an 8-byte field
+        /// (<c>ToolStateDTO.AUP</c>), the telemetry entry whose field order IS the on-disk field order of
+        /// <c>Docs/AgentLogs/Dump_TOOL_KINEMATICS.bin</c> (WriteTelemetryEntryLittleEndian above walks it
+        /// in declaration order against a fixed 64-byte row), and the four SignalBus payloads with 8-byte
+        /// padding fields. A wrong <c>[FieldOffset]</c> in any of them is invisible to a size check.
+        /// </summary>
+        private static unsafe bool ValidateAbiFieldOffsets()
+        {
+            ToolStateDTO state = default;
+            ToolKinematicsFrameInputDTO frameInput = default;
+            ToolIkOutputDTO ikOutput = default;
+            ToolKinematicsTelemetryEntry telemetry = default;
+            ToolCarveRequestSignal carve = default;
+            ToolHeatSignal heat = default;
+            ToolPowerDepletedSignal depleted = default;
+            VfxSparkRequestSignal spark = default;
+
+            byte* stateBase = (byte*)&state;
+            byte* frameInputBase = (byte*)&frameInput;
+            byte* ikOutputBase = (byte*)&ikOutput;
+            byte* telemetryBase = (byte*)&telemetry;
+            byte* carveBase = (byte*)&carve;
+            byte* heatBase = (byte*)&heat;
+            byte* depletedBase = (byte*)&depleted;
+            byte* sparkBase = (byte*)&spark;
+
+            return
+                ByteOffset(stateBase, &state.AUP) == 0 &&
+                ByteOffset(stateBase, &state.Forward) == 24 &&
+                ByteOffset(stateBase, &state.HeatLevel) == 36 &&
+                ByteOffset(stateBase, &state.ToolTypeHash) == 40 &&
+                ByteOffset(stateBase, &state.EnergyRemaining) == 44 &&
+                ByteOffset(stateBase, &state.MaxEnergyCapacity) == 48 &&
+                ByteOffset(stateBase, &state.StateFlags) == 52 &&
+                ByteOffset(stateBase, &state.LastOutputPower01) == 56 &&
+                ByteOffset(stateBase, &state._pad0) == 60 &&
+                ByteOffset(frameInputBase, &frameInput.CameraAup) == 0 &&
+                ByteOffset(frameInputBase, &frameInput.TriggerFlags) == 24 &&
+                ByteOffset(frameInputBase, &frameInput.FrameIndex) == 28 &&
+                ByteOffset(frameInputBase, &frameInput.ControllerRotation) == 32 &&
+                ByteOffset(frameInputBase, &frameInput.ControllerLocalPosition) == 48 &&
+                ByteOffset(frameInputBase, &frameInput.DeltaTime) == 60 &&
+                ByteOffset(frameInputBase, &frameInput.ShoulderLocalPosition) == 64 &&
+                ByteOffset(frameInputBase, &frameInput.SystemHealthIndex) == 76 &&
+                ByteOffset(frameInputBase, &frameInput.PoleLocalDirection) == 80 &&
+                ByteOffset(frameInputBase, &frameInput._pad0) == 92 &&
+                ByteOffset(ikOutputBase, &ikOutput.UpperRotation) == 0 &&
+                ByteOffset(ikOutputBase, &ikOutput.Shoulder) == 16 &&
+                ByteOffset(ikOutputBase, &ikOutput.Flags) == 28 &&
+                ByteOffset(ikOutputBase, &ikOutput.Elbow) == 32 &&
+                ByteOffset(ikOutputBase, &ikOutput.ComputeMicrosecondsEstimate) == 44 &&
+                ByteOffset(ikOutputBase, &ikOutput.Wrist) == 48 &&
+                ByteOffset(ikOutputBase, &ikOutput._pad0) == 60 &&
+                ByteOffset(telemetryBase, &telemetry.FrameIndex) == 0 &&
+                ByteOffset(telemetryBase, &telemetry.ToolHash) == 4 &&
+                ByteOffset(telemetryBase, &telemetry.ToolHeatLevel) == 8 &&
+                ByteOffset(telemetryBase, &telemetry.EnergyRemaining) == 12 &&
+                ByteOffset(telemetryBase, &telemetry.HitDistance) == 16 &&
+                ByteOffset(telemetryBase, &telemetry.RaymarchStepCount) == 20 &&
+                ByteOffset(telemetryBase, &telemetry.IkComputeTimeMicroseconds) == 24 &&
+                ByteOffset(telemetryBase, &telemetry.Flags) == 28 &&
+                ByteOffset(telemetryBase, &telemetry.ToolLocalPosition) == 32 &&
+                ByteOffset(telemetryBase, &telemetry.HitPoint) == 44 &&
+                ByteOffset(telemetryBase, &telemetry.MaterialHash) == 56 &&
+                ByteOffset(telemetryBase, &telemetry._pad0) == 60 &&
+                ByteOffset(carveBase, &carve.HitPoint) == 0 &&
+                ByteOffset(carveBase, &carve.Normal) == 12 &&
+                ByteOffset(carveBase, &carve.ToolHash) == 24 &&
+                ByteOffset(carveBase, &carve.MaterialHash) == 28 &&
+                ByteOffset(carveBase, &carve.Frame) == 32 &&
+                ByteOffset(carveBase, &carve.Power01) == 36 &&
+                ByteOffset(carveBase, &carve.Flags) == 40 &&
+                ByteOffset(carveBase, &carve._pad0) == 44 &&
+                ByteOffset(carveBase, &carve._pad1) == 48 &&
+                ByteOffset(carveBase, &carve._pad2) == 56 &&
+                ByteOffset(heatBase, &heat.ToolHash) == 0 &&
+                ByteOffset(heatBase, &heat.Frame) == 4 &&
+                ByteOffset(heatBase, &heat.Heat01) == 8 &&
+                ByteOffset(heatBase, &heat.Energy01) == 12 &&
+                ByteOffset(heatBase, &heat.Flags) == 16 &&
+                ByteOffset(heatBase, &heat._pad0) == 20 &&
+                ByteOffset(heatBase, &heat._pad1) == 24 &&
+                ByteOffset(depletedBase, &depleted.ToolHash) == 0 &&
+                ByteOffset(depletedBase, &depleted.Frame) == 4 &&
+                ByteOffset(depletedBase, &depleted.Energy01) == 8 &&
+                ByteOffset(depletedBase, &depleted.Flags) == 12 &&
+                ByteOffset(depletedBase, &depleted._pad0) == 16 &&
+                ByteOffset(depletedBase, &depleted._pad1) == 24 &&
+                ByteOffset(sparkBase, &spark.HitPoint) == 0 &&
+                ByteOffset(sparkBase, &spark.Normal) == 12 &&
+                ByteOffset(sparkBase, &spark.MaterialHash) == 24 &&
+                ByteOffset(sparkBase, &spark.ToolHash) == 28 &&
+                ByteOffset(sparkBase, &spark.Intensity01) == 32 &&
+                ByteOffset(sparkBase, &spark.Frame) == 36 &&
+                ByteOffset(sparkBase, &spark._pad0) == 40 &&
+                ByteOffset(sparkBase, &spark._pad1) == 48 &&
+                ByteOffset(sparkBase, &spark._pad2) == 56;
+        }
+
+        private static unsafe int ByteOffset(void* basePtr, void* fieldPtr)
+        {
+            return (int)((byte*)fieldPtr - (byte*)basePtr);
         }
 
 #if UNITY_EDITOR

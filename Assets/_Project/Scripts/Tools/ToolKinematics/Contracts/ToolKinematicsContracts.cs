@@ -99,30 +99,44 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         [FieldOffset(44)] public uint _pad0;
     }
 
+    /// <summary>
+    /// Burst-read frame input, vault-resident (<c>BufferID.ToolKinematicsFrameInputs</c>).
+    /// <c>ControllerRotation</c> is a 16-byte <c>float4</c> lane and therefore sits at a 16-byte-aligned
+    /// offset, not at 36 where it used to: data.md:20/32/34 require natural alignment for a NativeArray
+    /// record a Burst job loads whole, and a 4-aligned vector lane is exactly the "misaligned read on
+    /// ARM64" that rule names. Total size stays 96 - a multiple of 16 - so element k of the vault buffer
+    /// keeps that alignment, not just element 0 (arena base is 64-aligned,
+    /// Core/Memory/GlobalDataVault.cs:448 <c>VaultBlockAlignment</c>).
+    /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct ToolKinematicsFrameInputDTO
     {
         [FieldOffset(0)] public double3 CameraAup;
-        [FieldOffset(24)] public float3 ControllerLocalPosition;
-        [FieldOffset(36)] public quaternion ControllerRotation;
-        [FieldOffset(52)] public float3 ShoulderLocalPosition;
-        [FieldOffset(64)] public float3 PoleLocalDirection;
-        [FieldOffset(76)] public float DeltaTime;
-        [FieldOffset(80)] public float SystemHealthIndex;
-        [FieldOffset(84)] public uint TriggerFlags;
-        [FieldOffset(88)] public uint FrameIndex;
+        [FieldOffset(24)] public uint TriggerFlags;
+        [FieldOffset(28)] public uint FrameIndex;
+        [FieldOffset(32)] public quaternion ControllerRotation;
+        [FieldOffset(48)] public float3 ControllerLocalPosition;
+        [FieldOffset(60)] public float DeltaTime;
+        [FieldOffset(64)] public float3 ShoulderLocalPosition;
+        [FieldOffset(76)] public float SystemHealthIndex;
+        [FieldOffset(80)] public float3 PoleLocalDirection;
         [FieldOffset(92)] public uint _pad0;
     }
 
+    /// <summary>
+    /// Burst-written IK result, vault-resident (<c>BufferID.ToolKinematicsIkOutputs</c>). Same rule as
+    /// <see cref="ToolKinematicsFrameInputDTO"/>: the 16-byte <c>UpperRotation</c> lane leads the record
+    /// so it is 16-byte aligned at every element of a 64-byte stride.
+    /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ToolIkOutputDTO
     {
-        [FieldOffset(0)] public float3 Shoulder;
-        [FieldOffset(12)] public float3 Elbow;
-        [FieldOffset(24)] public float3 Wrist;
-        [FieldOffset(36)] public quaternion UpperRotation;
-        [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] public float ComputeMicrosecondsEstimate;
+        [FieldOffset(0)] public quaternion UpperRotation;
+        [FieldOffset(16)] public float3 Shoulder;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public float3 Elbow;
+        [FieldOffset(44)] public float ComputeMicrosecondsEstimate;
+        [FieldOffset(48)] public float3 Wrist;
         [FieldOffset(60)] public uint _pad0;
     }
 
