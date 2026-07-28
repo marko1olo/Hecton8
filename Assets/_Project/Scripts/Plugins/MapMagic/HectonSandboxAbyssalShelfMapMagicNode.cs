@@ -31,6 +31,14 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static readonly uint _mapMagicContextHash =
             unchecked((uint)LocHash.Compute("MapMagic.SandboxAbyssalShelf"));
 
+        /// <summary>
+        /// Last reported terrain-height-vs-geology-span mismatch, hashed from the value PAIR. Written
+        /// only through <see cref="System.Threading.Interlocked.Exchange(ref int, int)"/> because
+        /// Generate runs on MapMagic worker threads. See the mismatch check in Generate for why this is
+        /// keyed on values rather than being a one-shot bool.
+        /// </summary>
+        private static int _heightMismatchReportKey;
+
         [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 2000f;
         [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -5000f;
         [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 15000f;
@@ -100,9 +108,37 @@ namespace MapMagic.Nodes.MatrixGenerators
             float globalsHeight = data.globals.height;
             if (math.abs(globalsHeight - expectedHeight) > 1f)
             {
-                UnityEngine.Debug.LogWarning(
-                    $"[HectonMacroGeology] TerrainData.size.y ({globalsHeight:F1}m) != geology Y-span ({expectedHeight:F1}m). " +
-                    $"Graph terrain height should equal HighWorldY - LowWorldY = {expectedHeight:F1}m.");
+                // This compares two GLOBAL configuration values - one pair of graph-asset fields and one
+                // MapMagicObject scene field - neither of which can vary per tile. Generate runs once per
+                // tile-generation task on MapMagic worker threads (TerrainTile.cs:550 ->
+                // ThreadManager.cs:221), and draft and main are separate passes, so it re-tested and
+                // re-reported the same global mismatch 52-53 times per headless run: 52 in
+                // omega_route18, 53 in omega_route19, 52 in omega_route20. That volume buried the log.
+                //
+                // Keyed on the VALUE PAIR rather than a one-shot bool on purpose. A bool would report the
+                // first mismatch and then stay permanently silent, so if someone later fixed the height
+                // and broke it again to a different value, the project would never hear about it - and
+                // this warning is currently the only signal that authored relief of 12000m is being
+                // rendered into 250m of terrain, a 48x vertical collapse of every slope, cliff,
+                // shelf-break and trench in the world. Keying on the values means each DISTINCT mismatch
+                // reports exactly once and a genuine later change still speaks up.
+                //
+                // Interlocked, not a plain field: this executes on MapMagic worker threads, and several
+                // tiles hit it concurrently. The golden-ratio multiply is the usual 32-bit mix; unchecked
+                // is explicit for the uint->int cast, and key 0 is remapped because 0 is the initial
+                // field value and would otherwise suppress the first genuine report.
+                int reportKey = unchecked((int)(math.asuint(globalsHeight) ^ (math.asuint(expectedHeight) * 0x9E3779B9u)));
+                if (reportKey == 0)
+                    reportKey = 1;
+
+                if (System.Threading.Interlocked.Exchange(ref _heightMismatchReportKey, reportKey) != reportKey)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"[HectonMacroGeology] TerrainData.size.y ({globalsHeight:F1}m) != geology Y-span ({expectedHeight:F1}m). " +
+                        $"Graph terrain height should equal HighWorldY - LowWorldY = {expectedHeight:F1}m. " +
+                        "Run Hecton8/World/MapMagic/Sync Terrain Height To Geology Span - REPORT ONLY to see " +
+                        "what a repair would change. Reported once per distinct value pair, not per tile.");
+                }
             }
 #endif
 
