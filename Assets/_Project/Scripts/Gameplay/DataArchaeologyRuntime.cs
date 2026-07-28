@@ -445,6 +445,23 @@ namespace Hecton8.Gameplay
         private bool _registeredRenderable;
         private bool _registeredColdTick;
         private bool _registeredOriginShift;
+
+        /// <summary>
+        /// Latched once the authored reconstruction MATERIAL gap is reported, so the IRenderable lane can
+        /// never be re-entered and the assert can never fire a second time.
+        /// </summary>
+        /// <remarks>
+        /// Keyed on the material, not the mesh. A missing instanced material is unrecoverable - this project
+        /// forbids runtime material synthesis - while <c>reconstructionMesh</c> is a documented fallback that
+        /// <see cref="RegisterHologram"/> can still satisfy from <c>ScannableFragment.CachedSharedMesh</c>.
+        /// </remarks>
+        private bool _reconstructionSetupPermanentlyFailed;
+
+        /// <summary>
+        /// Set once the missing authored fallback mesh has been announced, so the report is one line per
+        /// session instead of one per Awake/OnEnable of every pooled scanner instance.
+        /// </summary>
+        private bool _missingReconstructionMeshAnnounced;
         private bool _mmfDirty;
         private float _nextMmfFlushTime = float.PositiveInfinity;
         private bool _disposed;
@@ -815,7 +832,7 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Render(float deltaTime)
         {
-            if (_hologramCount <= 0)
+            if (_reconstructionSetupPermanentlyFailed || _hologramCount <= 0)
                 return;
 
             if (!AreReconstructionResourcesReady())
@@ -881,11 +898,18 @@ namespace Hecton8.Gameplay
         {
             CacheRegistryServicesCold();
             EnsureNativeState();
-            EnsureReconstructionResources();
+
+            // Registration runs BEFORE the authored-asset check on purpose. EnsureReconstructionResources can
+            // still throw once through its asserts, and this tail is what the throw used to destroy: the
+            // component silently stopped being an ISaveable, IColdTickable and IOriginShiftListener on every
+            // pooled activation. Nothing below depends on the reconstruction mesh or material - Render
+            // null-guards both - so the reorder costs nothing and removes the orphaning entirely.
             TryRegisterHotSwapListener();
             RegisterOriginShiftListener();
             TryRegisterRuntime();
             TryLoadMmfCold(requireExistingSaveState: false);
+
+            EnsureReconstructionResources();
         }
 
         private void Start()
@@ -997,7 +1021,10 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
-            if (!_registeredRenderable)
+            // The latch must be honoured HERE, not only at the failure site. This method is the re-arm path:
+            // clearing _registeredRenderable without refusing here would let OnEnable/Start/hot-swap push the
+            // component back into the render lane it was just removed from.
+            if (!_registeredRenderable && !_reconstructionSetupPermanentlyFailed)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
 
             if (!_registeredColdTick)
@@ -1212,12 +1239,106 @@ namespace Hecton8.Gameplay
             handle = default;
         }
 
+        /// <summary>
+        /// Resolves the authored hologram mesh/material pair, or latches reconstruction off permanently.
+        /// </summary>
+        /// <remarks>
+        /// Statement ORDER is the whole fix. <c>UnityEngine.Assertions.Assert</c> THROWS in this project -
+        /// nothing under Assets ever sets <c>Assert.raiseExceptions = false</c> - so every statement after an
+        /// assert that fires is unreachable. Two earlier repairs of this same defect class in
+        /// HectonMarineSnowRenderer were wasted by placing the cleanup BELOW the assert.
+        ///
+        /// The measured damage was not in this method, it was in its CALLERS. Awake and OnEnable both
+        /// call this; omega_route20.log:15824-15831 caught the throw escaping Awake during
+        /// PlayerToolManager pool warmup. When OnEnable took the same throw, TryRegisterHotSwapListener,
+        /// RegisterOriginShiftListener, TryRegisterRuntime and TryLoadMmfCold never ran, so the component
+        /// silently stopped being an ISaveable, IColdTickable and IOriginShiftListener - archaeology
+        /// discoveries stopped persisting and fragment positions stopped being rebased on floating-origin
+        /// shifts. The scanner prefab is POOLED, so that loss repeated on every activation. OnEnable now
+        /// calls this last, and the latch keeps the throw out of any caller tail on every later call.
+        ///
+        /// The three original asserts also hid each other: the mesh assert threw first, so the material and
+        /// GPU-instancing asserts could never report. That is why no log has ever named the material state.
+        /// </remarks>
         private void EnsureReconstructionResources()
         {
+            if (_reconstructionSetupPermanentlyFailed)
+                return;
+
             _resolvedReconstructionMesh = _resolvedReconstructionMesh != null ? _resolvedReconstructionMesh : reconstructionMesh;
-            UnityEngine.Assertions.Assert.IsNotNull(_resolvedReconstructionMesh, "Fatal: DataArchaeologyRuntime requires an authored reconstruction mesh.");
+
+            bool materialAuthored = reconstructionMaterial != null;
+            bool instancingAuthored = materialAuthored && reconstructionMaterial.enableInstancing;
+            if (materialAuthored && instancingAuthored)
+            {
+                // A missing fallback mesh is SURVIVABLE and must not latch the lane off. The serialized field
+                // is documented as a fallback "used when a completed fragment has no MeshFilter";
+                // RegisterHologram fills _resolvedReconstructionMesh from ScannableFragment.CachedSharedMesh
+                // when it is null, and Render null-guards mesh and material before DrawMeshInstanced. Latching
+                // here would kill that live fragment-supplied path to punish an unassigned fallback, and the
+                // old fatal assert took the whole component's registration down with it.
+                if (_resolvedReconstructionMesh == null && !_missingReconstructionMeshAnnounced)
+                {
+                    _missingReconstructionMeshAnnounced = true;
+                    LogMissingReconstructionMeshFallback();
+                }
+
+                return;
+            }
+
+            // LEAVE THE RENDER LANE AND LATCH FIRST - everything below the first failing assert is
+            // unreachable. The material gap is unrecoverable: runtime material synthesis is forbidden here,
+            // so an authored asset plus an inspector assignment is the only fix.
+            DisableReconstructionAfterUnrecoverableSetupFailure();
+            LogMissingReconstructionMaterial(materialAuthored);
+
             UnityEngine.Assertions.Assert.IsNotNull(reconstructionMaterial, "Fatal: DataArchaeologyRuntime requires an authored reconstruction material.");
-            UnityEngine.Assertions.Assert.IsTrue(reconstructionMaterial == null || reconstructionMaterial.enableInstancing, "Fatal: DataArchaeologyRuntime reconstruction material must enable GPU instancing in the asset.");
+            UnityEngine.Assertions.Assert.IsTrue(!materialAuthored || instancingAuthored, "Fatal: DataArchaeologyRuntime reconstruction material must enable GPU instancing in the asset.");
+        }
+
+        /// <summary>
+        /// Gives up on hologram reconstruction permanently and leaves the IRenderable lane.
+        /// </summary>
+        /// <remarks>
+        /// Latch FIRST; the unregister alone is worse than doing nothing. Clearing
+        /// <c>_registeredRenderable</c> re-arms <see cref="TryRegisterRuntime"/>, whose three live callers -
+        /// OnEnable, Start and OnGlobalRegistryServiceReplaced - would push the component straight back into
+        /// the lane it just left. That is the churn cycle that made the HectonMarineSnowRenderer assertion
+        /// count RISE from 48 to 69 per headless run when its unregister landed without a latch.
+        ///
+        /// Scope is deliberately narrower than the marine-snow fix: <c>enabled = false</c> is NOT set, and the
+        /// cold-tick, save and origin-shift registrations are left untouched. Those lanes own archaeology
+        /// persistence; disabling them to silence a cosmetic hologram gap would trade a missing hologram for
+        /// lost save data.
+        /// </remarks>
+        private void DisableReconstructionAfterUnrecoverableSetupFailure()
+        {
+            _reconstructionSetupPermanentlyFailed = true;
+            _hologramCount = 0;
+
+            if (_registeredRenderable)
+            {
+                GlobalRegistry.Renderables.Unregister(this);
+                _registeredRenderable = false;
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingReconstructionMeshFallback()
+        {
+            Hecton8.Core.H8Debug.LogError("DataArchaeologyRuntime: serialized field 'reconstructionMesh' is unassigned on the scanner tool prefab. Completed fragments without their own CachedSharedMesh will draw no hologram. Scan, discovery, save and origin-shift duties stay live. Fix by authoring a low-poly wireframe reconstruction mesh and assigning it in the inspector; runtime mesh synthesis is forbidden.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingReconstructionMaterial(bool materialAuthored)
+        {
+            if (!materialAuthored)
+            {
+                Hecton8.Core.H8Debug.LogError("DataArchaeologyRuntime: reconstructionMaterial is unassigned. Hologram reconstruction is latched off for this session. Runtime material synthesis is forbidden - assign an authored GPU-instanced wireframe material.");
+                return;
+            }
+
+            Hecton8.Core.H8Debug.LogError("DataArchaeologyRuntime: reconstructionMaterial has Enable GPU Instancing off. Hologram reconstruction is latched off for this session. Enable instancing on the authored material asset.");
         }
 
         private bool AreReconstructionResourcesReady()
@@ -1490,7 +1611,11 @@ namespace Hecton8.Gameplay
 
         private void RegisterHologram(ScannableFragment fragment, float3 position)
         {
-            if (_hologramCount >= HologramInstanceCapacity || !math.all(math.isfinite(new float4(position, 1f))))
+            // Latched means Render can never draw these, so stop accumulating matrices RebaseRuntimePositions
+            // would then walk on every floating-origin shift.
+            if (_reconstructionSetupPermanentlyFailed ||
+                _hologramCount >= HologramInstanceCapacity ||
+                !math.all(math.isfinite(new float4(position, 1f))))
                 return;
 
             if (_resolvedReconstructionMesh == null)
