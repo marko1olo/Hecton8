@@ -1369,6 +1369,43 @@ namespace Hecton8.EditorTools.Diagnostics
             RecordContentBlockedMoments();
             ReportRouteMoments();
 
+            // A FAILED Required Route row must reach the exit code when the caller asked for gameplay.
+            //
+            // Until now it did not, and the gap was load-bearing in the wrong direction: a run printed
+            // "MOMENT FAIL Boot" and "RESULT failures=0" in the same breath, so anything reading the exit
+            // code - a batch script, CI, an agent - saw a pass on a boot that never activated the scene. The
+            // MOMENTS line said one thing and the exit status said the opposite, and the exit status is what
+            // automation believes.
+            //
+            // Gated on _startNewGame rather than applied unconditionally, because a menu-only headless run
+            // legitimately never reaches gameplay: the harness stops at 01_MAIN_MENU by design, which is a
+            // Boot-row failure against the Required Route but not a defect in the product. Only a run that
+            // was ASKED to start the game (-h8StartGame, or a nonzero gameplay-frame target) is entitled to
+            // fail on it.
+            //
+            // Counted once per failed row rather than as a single flag so the number carries information, and
+            // only Fail is counted: Blocked, Partial and NotExercised are already reported honestly in the
+            // MOMENTS summary and each means "not proven", not "proven broken". Turning those into exit-code
+            // failures would make the gate unreadable while four rows are content-blocked.
+            if (_startNewGame)
+            {
+                int failedRows = 0;
+                for (int i = 0; i < _routeMoments.Count; i++)
+                {
+                    if (_routeMoments[i].Verdict == MomentVerdict.Fail)
+                        failedRows++;
+                }
+
+                if (failedRows > 0)
+                {
+                    _failures += failedRows;
+                    Debug.LogError(
+                        $"{Marker} RESULT {failedRows} Required Route row(s) reported FAIL on a run that was " +
+                        "asked to start the game, so the exit code now reflects them. Read the MOMENT lines " +
+                        "above for which rows and why.");
+                }
+            }
+
             Debug.Log($"{Marker} RESULT failures={_failures}");
         }
 
