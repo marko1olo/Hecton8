@@ -67,6 +67,59 @@ Not proven by that log:
 | Data Monolith runtime boot | `[~]` | Unity import/player boot/checksum proof for `static_data.h8bin` |
 | RT/VRAM retained owner set | `[!]` | Memory Profiler / Frame Debugger owner isolation |
 | Tool durability does not persist | `[!]` | load a save after breaking a tool and read its durability back |
+| A failed save is shown to the player as a completed save | `[!]` | force a save write failure in a build and watch the HUD |
+
+### A failed save is rendered as success — verified 2026-07-29
+
+This is the worst-shaped defect found so far: it does not hide a failure, it reports it as a success, in a
+survival game where the player's decision to keep playing depends on believing the save landed.
+
+**The publisher is not at fault.** `SaveManager` raises the failure lane on every failure path — the
+verified-pipeline failure at `:5701-5729` (failureCode 3) and the catch-all at `:5758-5762` (failureCode 1)
+both funnel into `HandleSaveFailure`, which calls `SaveEvents.TryRaiseSaveFailed` at `SaveManager.cs:5476`
+next to the `LogError`. Eleven more preflight and reject paths raise it too (`:2196`, `:2205`, `:2216`,
+`:2292`, `:2303`, `:5046`, `:5486`, `:5495`, `:5507`, `:5520`, `:5536`). It does not merely log.
+
+**The break is on the subscriber side, and there are exactly three candidate surfaces. None works.**
+
+1. `HUDSaveNotificationLink` is the ONLY component in the repository that renders a save failure to the
+   HUD — `notificationSystem.ShowCritical` for `SaveFailed`/`LoadFailed` at `:88-92`, building the literal
+   `"SAVE FAILED"` at `:142`. Its script guid `473b7a7cc5029354e85995ce5c763e8f` appears in ZERO `.unity`
+   and ZERO `.prefab` files, including zero nibble-swapped hits in the binary scenes, and it has no
+   `AddComponent` site in any `.cs` — the only matches are two editor smoke testers that read its source as
+   text. So `SaveEvents.Register(this)` at `:43` never runs and the component never exists.
+2. `PauseMenuController.HandleSaveFailed` (`:579-581`) is real code, but the controller's only construction
+   site is `PauseMenuHost.cs:38`, and `PauseMenuHost` (guid `99b935f9beb2c9d48a71477cfadfbaea`) is itself in
+   zero scenes. Same one-link-too-short chain as `PDAMapTab` behind `PDASpectrumTab`.
+3. `SuitHUDV4CanvasOverlay` IS reachable — and it is the one that lies. `OnSaveEvent` at
+   `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:1747-1748` reads:
+   `if (eventType == SaveEventType.SaveCompleted || eventType == SaveEventType.SaveFailed)`
+   `    RequestSavingProgressHide();`
+   One branch for both outcomes. `RequestSavingProgressHide` (`:1792`) sets
+   `_savingProgressTargetAlpha = 0f`, so on a failed write the saving indicator fades out exactly as it does
+   on a successful one. Visually indistinguishable from "saved".
+
+**Why this is filed rather than fixed by me.** Checked directly: `SuitHUDV4CanvasOverlay` owns no
+notification API at all — zero matches for `ShowCritical`, `ShowWarning` or `Notification` in the file. It
+owns only the saving-progress indicator (`_savingProgressRoot`, `_savingProgressDataLamp`,
+`_savingProgressTargetAlpha` and siblings). So every way of making a failure visible from inside that class
+is a new player-visible visual state, which `AGENTS.md` puts behind the Visual Reference Parity Gate and
+`TASTE.md`, and that gate needs the reference folder plus a capture I cannot produce without a Unity slot.
+Inventing a failure visual and calling it done would be exactly the unverified visual claim the rules reject.
+
+**The fix that needs no visual judgement, and is the recommended one.** Wire up
+`HUDSaveNotificationLink`. Its presentation is already authored inside it, so activating it invents nothing.
+Candidate live hosts identified: `SuitHUDPresentationController.cs:705` and `SuitHUDV4CanvasOverlay.cs:633`.
+Open questions before wiring: whether the link resolves its notification system itself or needs it injected,
+and whether its `Register`/`Unregister` pair survives a host created and destroyed per scene load.
+
+**Second, independent fix, also low risk:** split the `SaveFailed` branch out of `OnSaveEvent:1747` so a
+failure stops sharing a code path with a completion. Keep `RequestSavingProgressHide` for `SaveCompleted`
+only. What the failure branch should then do is the visual decision above.
+
+**Third:** `SaveStation` reports nothing about the save the player explicitly asked for. It already has
+`ShowWarning` plumbing at `:316` and a lazy HUD notification resolve at `:194`, but implements no
+`ISaveEventListener` and contains no failure branch.
 | Two MonoBehaviour services cannot reach a scene | `[!]` | a pre-Ready bootstrap lane, then Play Mode proof that both slots resolve non-null |
 
 ### Two sole-implementation services are unreachable at runtime — verified 2026-07-28
