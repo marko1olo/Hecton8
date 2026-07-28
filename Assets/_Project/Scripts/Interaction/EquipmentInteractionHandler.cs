@@ -108,6 +108,7 @@ namespace Hecton8.Interaction
         private int _packetAdmissionFrame = -1;
         private int _packetAdmissionCount;
         private int _lastOverflowWarningFrame = -1;
+        private int _dispatcherRearmFrame = -1;
         private bool _scheduledSurfaceQueryActive;
         private bool _pendingDataVaultRebind;
         private bool _isInitialized;
@@ -162,6 +163,7 @@ namespace Hecton8.Interaction
                 return false;
 
             int currentFrame = ResolveSimulationFrameIndex();
+            EnsureDispatcherLanesForFrame(currentFrame);
             if (_packetAdmissionFrame != currentFrame)
             {
                 _packetAdmissionFrame = currentFrame;
@@ -278,7 +280,9 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            bool hasCompletedHit = TryGetCompletedSurfaceHit(requesterId, ResolveSimulationFrameIndex(), out InteractionSurfaceHit completedHit);
+            int currentFrame = ResolveSimulationFrameIndex();
+            EnsureDispatcherLanesForFrame(currentFrame);
+            bool hasCompletedHit = TryGetCompletedSurfaceHit(requesterId, currentFrame, out InteractionSurfaceHit completedHit);
             Vector3 normalizedDirection = NormalizeFinite(direction, Vector3.forward);
             InteractionSurfaceQueryDTO request = CreateSurfaceQueryRequest(origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
             bool hasCurrentHit = TryResolveKinematicSurfaceHit(in request, out InteractionSurfaceHit currentHit);
@@ -461,6 +465,7 @@ namespace Hecton8.Interaction
             System.Array.Clear(_equipmentSocketScratch, 0, _equipmentSocketScratch.Length);
             System.Array.Clear(_pendingEquipmentSocketClears, 0, _pendingEquipmentSocketClears.Length);
             _scheduledSurfaceQueryActive = false;
+            _dispatcherRearmFrame = -1;
             _scheduledRequestCount = 0;
             _stagedRequestCount = 0;
             _completedResultCount = 0;
@@ -517,6 +522,31 @@ namespace Hecton8.Interaction
             GlobalTelemetryBus.PublishInteractionPacketOverflow(MaxInteractionPacketsPerFrame, _queueCount);
         }
 
+        /// <summary>
+        /// Re-arms the dispatcher registrations from a tool-driven entry point, at most once per
+        /// simulation frame. This is the only live re-arm route after a scene unload:
+        /// <c>SceneRuntimeService.HandleSceneUnloaded</c> (SceneRuntimeService.cs:529) calls
+        /// <c>ClearRuntimeState</c> :542, which empties every dispatcher lane and the whole master
+        /// system array through <c>GlobalRegistry.ClearRuntimeBuckets</c> :545 ->
+        /// <c>SystemDispatcher.ClearAllLanes</c> (SystemDispatcher.cs:1602-1641) and then, at :553-554,
+        /// clears this service's queue - proving the service object itself survives the unload while its
+        /// drain does not. Nothing re-registers it: <c>InitializeService</c> is only reached from
+        /// <c>GameBootstrapper.EnsureEquipmentInteractionServiceRegistered</c>, which early-returns
+        /// because <c>GlobalRegistry.InteractionSignals</c> is still this instance (GameBootstrapper.cs
+        /// :6033-6034), and <c>OnEnable</c> does not fire again on a GameObject that was never disabled.
+        /// Without this the queue filled to <see cref="MaxQueuedSignals"/> and <see cref="Publish"/>
+        /// refused every later cut, drill, weld, and boil, so no interaction reached the target.
+        /// </summary>
+        /// <param name="currentFrame">Simulation frame index the caller already resolved.</param>
+        private void EnsureDispatcherLanesForFrame(int currentFrame)
+        {
+            if (!_isInitialized || _dispatcherRearmFrame == currentFrame)
+                return;
+
+            _dispatcherRearmFrame = currentFrame;
+            TryRegisterToDispatcher();
+        }
+
         private void TryRegisterToDispatcher()
         {
             if (!Application.isPlaying)
@@ -530,28 +560,36 @@ namespace Hecton8.Interaction
             if (_surfaceQueryPostSimulationPhase == null)
                 _surfaceQueryPostSimulationPhase = new PostSimulationPhaseSystem(this); // COLD ALLOC: IDispatcherSystem[1] - interaction surface query completion bridge - owner: EquipmentInteractionHandler
 
-            if (!_simulationSystemRegistered || !_postSimulationSystemRegistered)
+            // Deliberately NOT gated on the registered flags. The lanes are emptied behind this owner's
+            // back by ClearAllLanes, so a flag claiming registration is not evidence of it. Re-attempts
+            // are free and cannot double-register: SystemDispatcher.Register(IDispatcherSystem) returns
+            // true for a ReferenceEquals duplicate without inserting (SystemDispatcher.cs:1386-1387), and
+            // the late-frame lane is a RegistryBucket whose TryRegister rejects a duplicate via Contains
+            // (RegistryBucket.cs:112-116). The pairing below is kept because a Simulation registration
+            // without its PostSimulation partner would schedule surface queries that nothing completes,
+            // stranding _scheduledSurfaceQueryActive and its JobHandle forever.
+            bool simulationRegistered = GlobalRegistry.TryRegisterDispatcherSystem(_surfaceQuerySimulationPhase);
+            bool postSimulationRegistered = GlobalRegistry.TryRegisterDispatcherSystem(_surfaceQueryPostSimulationPhase);
+            if (simulationRegistered && postSimulationRegistered)
             {
-                bool simulationRegistered = _simulationSystemRegistered || GlobalRegistry.TryRegisterDispatcherSystem(_surfaceQuerySimulationPhase);
-                bool postSimulationRegistered = _postSimulationSystemRegistered || GlobalRegistry.TryRegisterDispatcherSystem(_surfaceQueryPostSimulationPhase);
-                if (simulationRegistered && postSimulationRegistered)
-                {
-                    _simulationSystemRegistered = true;
-                    _postSimulationSystemRegistered = true;
-                }
-                else
-                {
-                    if (simulationRegistered)
-                        GlobalRegistry.UnregisterDispatcherSystem(_surfaceQuerySimulationPhase);
-                    if (postSimulationRegistered)
-                        GlobalRegistry.UnregisterDispatcherSystem(_surfaceQueryPostSimulationPhase);
-                    _simulationSystemRegistered = false;
-                    _postSimulationSystemRegistered = false;
-                }
+                _simulationSystemRegistered = true;
+                _postSimulationSystemRegistered = true;
+            }
+            else
+            {
+                if (simulationRegistered)
+                    GlobalRegistry.UnregisterDispatcherSystem(_surfaceQuerySimulationPhase);
+                if (postSimulationRegistered)
+                    GlobalRegistry.UnregisterDispatcherSystem(_surfaceQueryPostSimulationPhase);
+                _simulationSystemRegistered = false;
+                _postSimulationSystemRegistered = false;
             }
 
-            if (!_lateFrameRegistered)
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            // Raised only on a successful insert and never cleared here: the late-frame bucket answers
+            // false BOTH when the entry is already present and when the insert failed, so clearing on
+            // false would strand a live lane entry with no owner willing to unregister it on teardown.
+            if (GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core))
+                _lateFrameRegistered = true;
 
             _dispatcherRegistered = _simulationSystemRegistered || _postSimulationSystemRegistered || _lateFrameRegistered;
         }
