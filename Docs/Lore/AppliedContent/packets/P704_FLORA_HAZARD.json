@@ -1,0 +1,313 @@
+{
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "release_set_id": "RS704_FLORA_HAZARD_LAYER",
+ "canon_owner": [
+  "Docs/Lore/Lore_Bible.md",
+  "Docs/Lore/Canon_Locks.md"
+ ],
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false,
+  "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+ },
+ "packets": [
+  {
+   "packet_id": "P704_GHOST_WEED",
+   "article_id": "hecton8.flora.ghost_weed",
+   "title_key": "LORE_P704_GHOST_WEED_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.ghost_weed",
+    "secondary": [
+     "unlock.first_open_shaft_mouth"
+    ],
+    "poi_tags": [
+     "poi.west_shaft_mouth",
+     "poi.flooded_wing"
+    ],
+    "biome_tags": [
+     "biome.industrial_shelf",
+     "biome.drowned_colony",
+     "biome.service_corridor"
+    ]
+   },
+   "image_targets": {
+    "codex": "flat mat of near-transparent pale blades stretched across an open industrial shaft mouth, a lamp beam visible passing through it onto rubble far below, corroded deck edge and holdfasts gripping the rim",
+    "scanner_thumbnail": "sonar display with a hard flat face at the shaft mouth and a faint second return twelve metres beneath it"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Ghost Weed",
+     "scanner": "Planar return, thickness 1.1 metres, spans shaft mouth. Confidence 46 percent. Classified deck plate. Hazard: none indicated. Limit: instrument cannot separate gas vesicle mat from steel.",
+     "in_game_wiki": "It returns sonar like a bulkhead and parts like nothing at all.\n\nThe blades are gas-filled and almost clear, so a lamp passes through and lights the room behind it. Sonar does the opposite: the vesicles hand back a hard flat face, and the plot draws a floor across an open shaft mouth. The name belongs to the return, not the plant.\n\nSteel gives one return. A mat gives that face and then the true bottom under it, twelve metres late and faint. Look for the second return before you put weight on anything at 340 metres.\n\nA mat closes behind whatever falls through it. Whoever comes looking pings a floor.\n\nCut blades hold gas for most of a shift, the cheapest lift on the floor.\n\nEvery mat in the west wing aligns to bearing 022, across the current. Assessment: work the rim, never cross the middle.",
+     "terminal": "SPECIMEN 44-F-118. CLASS: STRUCTURAL SURFACE, PROVISIONAL. ENTRY: MAT CARRIED FORWARD AS DECK PLATE ON WEST WING FLOOR PLAN 44-W-3. AMENDMENT: NOT SCHEDULED. FALL LOSSES: RECORDED UNDER PRESSURE VARIANCE.",
+     "field_note": "Floor plan 44-W-3 still shows deck plate at the west shaft mouth, and there was never plate there - the surveyor logged what the sonar handed him. Ping it twice, take the rim blades for lift, and cross on the beams.",
+     "external_site_article": "Aegir salvage crews report a pale, gas-vesicled plant that grows in flat mats across horizontal openings in flooded industrial structure, and that returns acoustic energy in a way consistent with plate steel. The name in use on HECTON-8 refers to the sonar return rather than to the organism, which is close to transparent under a working lamp.\n\nField practice at around 340 metres, roughly 3.4 megapascals, is to look for a second and later return beneath the apparent surface before loading it. Deep Reach survey records for Sector 44 carry mature mats forward as structural surface on floor plan 44-W-3, an entry that describes a flat return without describing what produced it. Cut blades retain vesicle gas for several hours and are used locally as lift.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P704_CATHEDRAL_KELP",
+   "article_id": "hecton8.flora.cathedral_kelp",
+   "title_key": "LORE_P704_CATHEDRAL_KELP_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.cathedral_kelp",
+    "secondary": [
+     "unlock.drop_column_entry"
+    ],
+    "poi_tags": [
+     "poi.kelp_column_fold",
+     "poi.route_12_transit_line"
+    ],
+    "biome_tags": [
+     "biome.industrial_shelf",
+     "biome.cable_reef"
+    ]
+   },
+   "image_targets": {
+    "codex": "immense stalk column receding upward into black water, matte non-reflective blades taking the lamp cone without returning it, one small bright disc of lamp light on a single blade at arm's length, sparse pale point nodes at regular intervals up the stalk, no god rays",
+    "scanner_thumbnail": "sonar display showing a return wall at five metres and empty water past it, depth scale marked 380 to 1240"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Cathedral Kelp",
+     "scanner": "Vertical biomass column, base 1,240 metres, top 380 metres. Confidence 63 percent. Hazard: acoustic return terminates at 5 metres. Limit: no through-mass reading, contents unresolved.",
+     "in_game_wiki": "A single holdfast at 1,240 metres carries stalk to within 380 metres of the surface, and the stand is four hundred metres wide.\n\nThe blades wear the same black film that grows on lamp housings, so they take light and give none back. Ten metres in, a Class-IV lamp lands a coin of light on one blade at arm's length and nothing else in eight hundred metres of water. The stalks are gas-cored and scatter sonar, so the plot shows stalk at five metres and open ocean past it. That works both ways: nothing inside can see you either.\n\nPale nodes mark the stalk every nine metres, identical, so they give height and no position. Nobody has found a young one. Every stand is full height.\n\nThe blades all fold downcurrent. Assessment: cross the fold to find an edge, eighteen minutes through or 1.4 kilometres around.",
+     "terminal": "DOCUMENT 44-D-2211. CLASS: NAVIGATION OBSTRUCTION, PERMANENT. ROUTE 12 REDRAWN THROUGH MASS: TRANSIT TIME REDUCED 26 MINUTES. LAMP AND SONAR PERFORMANCE INSIDE MASS: OUT OF SCOPE. CREW LOSSES: FILED, ROUTE 12 RETAINED.",
+     "field_note": "Route 12 goes through it because a desk saved twenty-six minutes and never had to swim it. Go in on the fold, count nodes on the way up, and keep a hand on stalk - the stand shifts a few degrees on the tide and your inbound track will not take you out.",
+     "audio": "-- lamp on full and I can see one blade. One. Nine-forty on the gauge, twelve nodes since the fold, and the fold has moved. Corran, if you are counting nodes to find the edge, count the --",
+     "external_site_article": "Deep-transit crews working the Aegir drop wall describe a single-holdfast growth form that carries stalk from roughly 1,240 metres, about 12.4 megapascals at the base, to within 380 metres of the surface, in stands several hundred metres across. Blade surfaces develop the same non-reflective film recorded on lamp housings and viewport frames, and return almost no light to a working lamp at any range.\n\nTwo consequences are reported consistently. Optical range inside a mature stand falls to a few metres. Acoustic range falls further, because gas-cored stalks scatter the outgoing ping and produce a return wall at about five metres with nothing readable beyond it. Crews inside a stand are correspondingly hard to locate from outside it, and recovery of an overdue diver from inside the mass has not been reported successful.\n\nDeep Reach route records for Sector 44 classify the mature form as permanent navigation obstruction while retaining a transit line through one stand, with lamp and sonar performance inside the mass recorded as out of scope.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P704_RIFT_RIBBON",
+   "article_id": "hecton8.flora.rift_ribbon",
+   "title_key": "LORE_P704_RIFT_RIBBON_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.rift_ribbon",
+    "secondary": [
+     "unlock.thermal_fissure_entry"
+    ],
+    "poi_tags": [
+     "poi.fissure_line_7",
+     "poi.sensor_tagged_fauna"
+    ],
+    "biome_tags": [
+     "biome.vent_forge",
+     "biome.abyssal_machine_field"
+    ]
+   },
+   "image_targets": {
+    "codex": "line of long flat strap blades anchored along the lip of a narrow open fissure, all leaning at one angle in the outflow, dark basalt reading as unbroken floor on either side, faint shimmer over the gap",
+    "scanner_thumbnail": "close view of a holdfast row on a fissure lip with a small pressed metal tag wired at one base"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Rift Ribbon",
+     "scanner": "Colonial strap growth, holdfast density rising toward bearing 210. Confidence 52 percent. Floor continuous. Hazard: thermal, 88 C intermittent. Limit: sub-metre voids below acoustic resolution.",
+     "in_game_wiki": "It sets only within twelve metres of an open fissure, which makes a ribbon line a fissure map readable at lamp range.\n\nSonar cannot draw that edge. Fissure walls return nothing and the warm outflow bends the ping upward, so the plot shows continuous floor over a gap wide enough to take a suit at 4,180 metres. The ribbons show the gap because they will not grow anywhere else.\n\nThe lean is the gauge. Forty degrees off vertical is a working vent and a safe standoff. Ribbons streaming flat with the holdfasts stripping mean outflow rising, and a thermal surge arrives about ninety seconds later.\n\nThe blades plate with harmonic-class substrate, which is why anyone works this edge at all.\n\nOne ribbon in forty carries a pressed tag at the holdfast, part number 6-441-C, which appears in no survey. Assessment: harvest upcurrent of the lean, and never straddle a ribbon line.",
+     "terminal": "SPECIMEN 44-T-506. CLASS: BOUNDARY INDICATOR, UNCONTRACTED. FISSURE LINE 7 MAPPED FROM GROWTH EXTENT. SURVEY 44-T-7: CANCELLED, INSTRUMENT SPEND RECOVERED. THERMAL EXPOSURE LIMITS: SEE SCHEDULE 9.",
+     "field_note": "They cancelled survey 44-T-7 because the ribbons drew line 7 for free, filed the ribbons as an indicator, and never bought the shift a thermal gauge. Watch the lean, and when the blades go flat you have a minute and a half, not five.",
+     "external_site_article": "Survey crews working the thermal fissure lines at around 4,180 metres, roughly 41.8 megapascals, report a strap-form organism that colonises only the immediate margin of open fissures, within about twelve metres of a vertical gap. Because fissure walls return little acoustic energy and warm outflow refracts an outgoing ping upward, plotted floor across these margins is frequently continuous where the floor is not.\n\nPractice on HECTON-8 is to treat the growth line as the boundary and the lean angle of the blades as an outflow reading, with blades flattened and streaming taken as warning of a rising thermal surge. Deep Reach records for Sector 44 classify the species as an uncontracted boundary indicator and record survey 44-T-7 as cancelled with instrument spend recovered.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  }
+ ]
+}
