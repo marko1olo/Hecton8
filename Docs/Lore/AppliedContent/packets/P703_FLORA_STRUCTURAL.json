@@ -1,0 +1,410 @@
+{
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "release_set_id": "RS703_FLORA_STRUCTURAL_LAYER",
+ "canon_owner": [
+  "Docs/Lore/Lore_Bible.md",
+  "Docs/Lore/Canon_Locks.md"
+ ],
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false,
+  "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+ },
+ "packets": [
+  {
+   "packet_id": "P703_TUBULAR_CORAL",
+   "article_id": "hecton8.flora.tubular_coral",
+   "title_key": "LORE_P703_TUBULAR_CORAL_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.tubular_coral",
+    "secondary": [
+     "unlock.first_sealed_room"
+    ],
+    "poi_tags": [
+     "poi.repair_scar",
+     "poi.overgrown_panel_stamp"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories",
+     "biome.pressure_base"
+    ]
+   },
+   "image_targets": {
+    "codex": "pale tube coral growing in a single run along a cracked concrete and steel factory wall, tips light and bases iron-stained, painted panel stamp half buried under the growth, cold work light, no glow, no fantasy",
+    "scanner_thumbnail": "close view of a welded seam bridged by tube growth, stencilled panel number disappearing under the base"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Tubular Coral",
+     "scanner": "Colonial tube growth on load-bearing plate. Coverage 60 percent. Confidence 84 percent. Hazard: none at contact. Limit: cannot separate surface deposit from filled fracture.",
+     "in_game_wiki": "A tube run on a factory wall means the wall behind it is cracked. The growth tracks fractures and fills them; it has held Room 6 of the West Wet Store at 3.4 MPa since 2147.\n\nLive runs are pale at the tip, iron-stained at the base; dead ones keep their shape for decades. Read colour, not outline.\n\nThe plate stamp is under the coral. A room whose panel number cannot be read cannot be certified, so the Room 6 file closed on exterior survey and one signature.\n\nCut a run crossing a seam and you cut the patch, not the plant. A torch took forty-three years of seal off in under a minute.\n\nEvery filled fracture is closed from the pressure side first. Yield: biofiber sealant, heaviest at the stained base. Take it off sound plate only.",
+     "terminal": "REPAIR RECORD 44-W-0612. CLASS: STRUCTURAL REMEDIATION, MATERIAL SOURCED LOCALLY. PANEL IDENTIFICATION: NOT RECOVERABLE. ROOM 6: CERTIFIED ON EXTERIOR SURVEY. INSPECTION INTERVAL: WAIVED. FILED: ATLAS CONTINUITY OFFICE.",
+     "field_note": "Certified on exterior survey means somebody walked the outside of a flooded room, could not find the panel number, and signed for it anyway. Colour-check the tips before you trust a wall, and never put a torch through a run that crosses a seam.",
+     "external_site_article": "Aegir salvage crews on HECTON-8 report a colonial tube-forming organism that establishes along fractures in industrial plate rather than across sound surface, filling and pressure-sealing cracks in structure left unattended since 2147. Rooms have been recovered holding several megapascals on growth alone.\n\nThe same growth covers the stamped panel identification used for structural certification. Deep Reach repair records from Sector 44 close such rooms on exterior survey, a method that establishes a room is intact without establishing which room it is. Field practice is to treat any run crossing a welded seam as load-bearing.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P703_IRON_CORAL",
+   "article_id": "hecton8.flora.iron_coral",
+   "title_key": "LORE_P703_IRON_CORAL_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.iron_coral",
+    "secondary": [
+     "unlock.first_mineral_lot"
+    ],
+    "poi_tags": [
+     "poi.buried_hull_plate",
+     "poi.overgrown_weld_seam"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories",
+     "biome.abyssal_machine_field"
+    ]
+   },
+   "image_targets": {
+    "codex": "thick rust-red mineral crust sheeting a half-buried steel plate and bent rebar in grey silt, one patch dull blue, hard directional lamp light, no glow",
+    "scanner_thumbnail": "mineral crust bridging a welded seam, visibly thicker along a hairline crack than on the plate beside it"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Iron Coral",
+     "scanner": "Mineralised colonial growth on ferrous substrate. Metal return strong. Confidence 77 percent. Hazard: abrasive to glove seams. Limit: crust and substrate return as one mass.",
+     "in_game_wiki": "It only grows on metal. A stand in open silt maps what is buried under it.\n\nColour reads the substrate: rust-red over structural steel, grey-black over machine alloy, dull blue where the plate below carries trace XO.\n\nThe skeleton is harder than a Class-IV palm plate. Two shifts hauling across a stand will open a glove seam, which will not read as a leak until you flex the hand.\n\nCrust over a crack runs three times thicker than crust on sound plate 200 mm away. Nothing in the metal explains it. Where it bridges a weld, the seam cannot be inspected again.\n\nYield is the crust itself, richest where it is thickest. Plate cut with crust on it bills at gross, and a 4.8 tonne window does not itemise, so chip it at the wreck and not on the Keel.",
+     "terminal": "ASSAY LOT 44-N-118. CLASS: RECOVERABLE MINERAL, GRADE PENDING. SUBSTRATE: STRUCTURAL STEEL, ORIGIN NOT ESTABLISHED. SEAMS 12 TO 19: OVERGROWN, INSPECTION CLOSED. MASS CREDITED AT GROSS. DESK: KEELMARK LOSS DESK.",
+     "field_note": "Mass credited at gross means the crust rides on your window and the desk keeps the difference. If a break comes up blue, that is not a grade, that is blue debt, and you log it before you touch it.",
+     "external_site_article": "Salvage registers from HECTON-8 describe a mineralising colonial growth that establishes only on ferrous and alloy substrate, which makes standing crust a reliable surface indicator of buried structure. Crust colour is used in the field to estimate what lies beneath, including a blue discoloration associated with trace Xenon-Omega content.\n\nTwo practical costs are on record. The skeleton abrades suit glove seams, producing failures that pass a static seal check, and Deep Reach assay lots credit recovered crust at gross mass against the recovering party's tonnage without separating crust from substrate. Sector 44 records also close seam inspections marked overgrown.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P703_THERMAL_TUBEWORM",
+   "article_id": "hecton8.flora.thermal_tubeworm",
+   "title_key": "LORE_P703_THERMAL_TUBEWORM_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.thermal_tubeworm",
+    "secondary": [
+     "unlock.thermal_field_entry"
+    ],
+    "poi_tags": [
+     "poi.active_vent_fissure",
+     "poi.sensor_tagged_fauna"
+    ],
+    "biome_tags": [
+     "biome.vent_forge",
+     "biome.atlas_basin"
+    ]
+   },
+   "image_targets": {
+    "codex": "dense mat of pale tubes with dark plumes crowding an active vent fissure at extreme depth, mineral chimney and thermal shimmer behind, one small stamped metal node visible at a tube base",
+    "scanner_thumbnail": "suit gauge readout with dissolved oxygen trending upward against a shimmering vent floor"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Thermal Tubeworm",
+     "scanner": "Vent-associated tube colony, dense. Confidence 66 percent. Dissolved oxygen 21 percent and rising. Hazard: thermal contact. Limit: cell not rated for sulphide interference.",
+     "in_game_wiki": "It grows only where hot fluid leaves the floor, which is the one place a cheap oxygen cell reads upward.\n\nVent chemistry loads the cell. A Class-IV reserve gauge inside a field climbs four to nine percent, smoothly, while the water gets worse. Top off against that number and you surface short.\n\nThe colony gives one warning. A field that pulls into its tubes together has already registered a change in flow that reaches you two or three seconds later.\n\nYield: micronodes seated at the base of tubes over a metre long. Prying one out vents the tube onto your hand at 4,830 m, near 60 C.\n\nTwo nodes recovered from fields 1,100 m apart carry the same stamped part number. Assessment: inside a field, treat a rising oxygen number as a fault and confirm on a second cell.",
+     "terminal": "SAMPLE LOT 44-T-4830. DEPTH 4,830 M. CLASS: SENSOR HOST, SERVICEABLE. RECOVERY: NODE ONLY, HOST NOT REQUIRED. ATMOSPHERE LOG 22-B: CALIBRATION DRIFT, ENTRY SUPPRESSED. FILED: RECOVERY COMPLIANCE OFFICE.",
+     "field_note": "Calibration drift is the desk's word for a gauge that climbs in vent water, and it means the warning got deleted instead of the manual getting fixed. Carry a second cell into every field and believe the lower one.",
+     "audio": "-- gauge is up again. Twenty-two, twenty-two point four. It has been climbing since I came over the rim and nothing climbs down here. Tender, log the raw cell and not the display, log the --",
+     "external_site_article": "Thermal field survey on HECTON-8 reports dense tube-forming colonies restricted to active vent outflow between roughly 4,000 and 5,500 m. Colonies retract together seconds ahead of measurable changes in flow, and crews use that behaviour as a thermal pulse warning.\n\nThe recorded hazard is instrumentation. Vent chemistry interferes with low-cost electrochemical oxygen cells, driving indicated dissolved oxygen and suit reserve readings upward while conditions deteriorate, and the error is smooth enough that it does not present as a fault. Deep Reach sample lots from Sector 44 record recovery of embedded nodes from colony bases, with the host listed as not required.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P703_BLOOD_KELP",
+   "article_id": "hecton8.flora.blood_kelp",
+   "title_key": "LORE_P703_BLOOD_KELP_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.blood_kelp",
+    "secondary": [
+     "unlock.amber_lens_fitted"
+    ],
+    "poi_tags": [
+     "poi.buried_roof_slab",
+     "poi.kelp_stand_rim"
+    ],
+    "biome_tags": [
+     "biome.brine_canyon",
+     "biome.old_colony_ruins"
+    ]
+   },
+   "image_targets": {
+    "codex": "dense stand of dark red blade flora anchored on a buried structural roof slab in near-black water, amber lamp picking the blades out, a blue-white lamp cone beside it showing nothing",
+    "scanner_thumbnail": "two lamp views of identical water, one blue-white and apparently empty, one amber showing a wall of red blades"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Blood Kelp",
+     "scanner": "Anchored frond growth, dark pigment. Confidence 49 percent. Return sparse. Hazard: none logged. Limit: pigment absorbs survey lamp band; extent understated.",
+     "in_game_wiki": "Your work lamp cannot see it. The pigment absorbs the blue-green band the lamp is weighted for, so a stand reads as open water at 12 m and as a wall at 3.\n\nThe amber emergency lens brings it up solid. It roots only on hard structure, so a stand in open water at 1,900 m has a roof slab under it, whatever the chart says.\n\nContact fires the photophores, edge first, travelling inward, never outward from the touch. The light holds near ninety seconds, long enough to show anything at the rim where you entered.\n\nStipes carry a diver's weight; a fouled harness will not tear free. Cut from the edge in, because cutting from inside is how the four Bay 12 entanglements ended.\n\nYield: bioluminescent compound, heaviest in blades that have not discharged. The edge is always spent. Cut on the amber lens.",
+     "terminal": "HARVEST LOT 44-K-0774. CLASS: ILLUMINATION FEEDSTOCK, GRADE B. SITE: BAY 12 ROOF, 1,900 M. ENTANGLEMENT EVENTS: 4. CLASSIFICATION UNCHANGED: NON-HAZARD, VEGETATION. REVIEW: ASSET SILENCE BOARD, CLOSED.",
+     "field_note": "Four entanglements and the classification still reads non-hazard, vegetation, because nothing on that form has a box for a plant that holds. Run the amber lens on approach; white light shows you nothing until you are already inside it.",
+     "external_site_article": "Deep water survey on HECTON-8 records a red-pigmented anchored macroflora forming discrete stands on hard substrate between roughly 1,400 and 2,600 m. The pigment absorbs the blue-green band standard work lamps are weighted for, so a stand returns almost nothing to a lamp cone and resolves only at contact range, while amber emergency filters render it clearly.\n\nContact triggers photophore discharge across the stand, persisting on the order of ninety seconds. Salvage crews treat the resulting light as a disclosure of position rather than an aid. Deep Reach harvest records from Sector 44 list the growth as illumination feedstock and retain a non-hazard vegetation classification alongside four logged entanglement events.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  }
+ ]
+}
