@@ -1022,19 +1022,35 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(walPath) || !File.Exists(walPath))
                 return true;
 
+            // Validation and rollback must never overlap on the same file. Win32 ReplaceFile refuses a
+            // destination that still carries an open handle, so the WAL read stream is scoped to the record
+            // scan below and is closed before the .bak is promoted over the primary.
+            if (TryValidateWalRecords(walPath, out string corruptionReason))
+                return true;
+
+            return TryRestoreBackup(walPath, backupPath, corruptionReason, out error);
+        }
+
+        private static bool TryValidateWalRecords(string walPath, out string corruptionReason)
+        {
+            corruptionReason = string.Empty;
             try
             {
                 using FileStream stream = new FileStream(walPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
                 int headerByteCount = UnsafeUtility.SizeOf<SaveMerkleWalAppendHeader>();
                 Span<byte> headerBytes = stackalloc byte[64];
                 if (headerByteCount > headerBytes.Length)
-                    return TryRestoreBackup(walPath, backupPath, "Merkle WAL header size exceeds stack parser budget.", out error);
+                {
+                    corruptionReason = "Merkle WAL header size exceeds stack parser budget.";
+                    return false;
+                }
 
                 while (stream.Position < stream.Length)
                 {
                     if (!TryReadExact(stream, headerBytes.Slice(0, headerByteCount)))
                     {
-                        return TryRestoreBackup(walPath, backupPath, "Merkle WAL header truncated.", out error);
+                        corruptionReason = "Merkle WAL header truncated.";
+                        return false;
                     }
 
                     SaveMerkleWalAppendHeader header;
@@ -1049,7 +1065,8 @@ namespace Hecton8.SaveSystem
                         header.StoredBytes <= 0 ||
                         header.StoredBytes > stream.Length - stream.Position)
                     {
-                        return TryRestoreBackup(walPath, backupPath, "Merkle WAL header invalid.", out error);
+                        corruptionReason = "Merkle WAL header invalid.";
+                        return false;
                     }
 
                     long payloadStart = stream.Position;
@@ -1061,7 +1078,8 @@ namespace Hecton8.SaveSystem
                             continue;
                         }
 
-                        return TryRestoreBackup(walPath, backupPath, "Merkle WAL LZ4 sub-block CRC failed.", out error);
+                        corruptionReason = "Merkle WAL LZ4 sub-block CRC failed.";
+                        return false;
                     }
 
                     stream.Position = payloadStart;
@@ -1082,7 +1100,8 @@ namespace Hecton8.SaveSystem
                             continue;
                         }
 
-                        return TryRestoreBackup(walPath, backupPath, "Merkle WAL record CRC failed.", out error);
+                        corruptionReason = "Merkle WAL record CRC failed.";
+                        return false;
                     }
                 }
 
@@ -1090,7 +1109,8 @@ namespace Hecton8.SaveSystem
             }
             catch (Exception exception)
             {
-                return TryRestoreBackup(walPath, backupPath, exception.GetType().Name + ": " + exception.Message, out error);
+                corruptionReason = exception.GetType().Name + ": " + exception.Message;
+                return false;
             }
         }
 
@@ -1304,75 +1324,165 @@ namespace Hecton8.SaveSystem
 
         private static bool TryRestoreBackup(string walPath, string backupPath, string reason, out string error)
         {
-            if (!string.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
+            error = reason + " No .bak available.";
+            if (string.IsNullOrEmpty(backupPath) || !File.Exists(backupPath))
+                return false;
+
+            string restoreTempPath = walPath + ".restore.tmp";
+            try
             {
+                string absoluteWalPath = Path.GetFullPath(walPath);
+                string absoluteBackupPath = Path.GetFullPath(backupPath);
+
+                // Same file as restoreTempPath - File.* and CreateFileW both resolve a relative path against
+                // the process CWD - but the native length/flush route needs a rooted path so it can also
+                // fsync the parent directory.
+                string absoluteRestoreTempPath = absoluteWalPath + ".restore.tmp";
+                if (!AsyncWriteManager.TryGetFileLength(absoluteBackupPath, out long backupBytes, out string backupLengthError))
+                {
+                    error = reason + " .bak length could not be resolved. " + backupLengthError;
+                    return false;
+                }
+
+                HectonPersistentPathPolicy.EnsureParentDirectory(absoluteWalPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteWalPath);
                 try
                 {
-                    string absoluteWalPath = Path.GetFullPath(walPath);
-                    string absoluteBackupPath = Path.GetFullPath(backupPath);
-                    if (!AsyncWriteManager.TryGetFileLength(absoluteBackupPath, out long backupBytes, out string backupLengthError))
+                    // Stage the .bak into a fresh temp, force it to the platter, prove its length, and only
+                    // then replace the primary. Copying the .bak straight over the live WAL truncates the
+                    // primary to zero first, so a crash mid-copy destroys the very file the rollback exists
+                    // to restore. The temp is deleted before the copy so overwrite: false is a real
+                    // assertion that nothing stale is being promoted.
+                    DeleteRestoreTempIfExists(restoreTempPath);
+                    File.Copy(backupPath, restoreTempPath, false);
+                    if (!AsyncWriteManager.TryGetFileLength(absoluteRestoreTempPath, out long stagedBytes, out string stagedLengthError))
                     {
-                        error = reason + " .bak length could not be resolved. " + backupLengthError;
+                        error = reason + " Staged .bak length could not be resolved. " + stagedLengthError;
                         return false;
                     }
 
-                    HectonPersistentPathPolicy.EnsureParentDirectory(absoluteWalPath);
-                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteWalPath);
-                    try
+                    if (stagedBytes != backupBytes)
                     {
+                        error = reason + " Staged .bak length mismatch.";
+                        return false;
+                    }
+
+                    if (!AsyncWriteManager.FlushCriticalSavePath(absoluteRestoreTempPath, stagedBytes, out string stagedFlushError))
+                    {
+                        error = reason + " Staged .bak flush failed. " + stagedFlushError;
+                        return false;
+                    }
+
+                    if (!TryPromoteRestoreTemp(restoreTempPath, walPath))
+                    {
+                        // ReplaceFile refused the hand-off (a filesystem without rename-over support, or a
+                        // handle this call does not own). Completing the rollback still beats leaving a
+                        // corrupt primary in place, so fall back to a direct overwrite from the .bak; the
+                        // length and flush proof below is what actually gates acceptance either way.
                         File.Copy(absoluteBackupPath, absoluteWalPath, true);
                     }
-                    finally
-                    {
-                        AsyncWriteManager.InvalidateCachedReadWindows(absoluteWalPath);
-                    }
-
-                    if (!AsyncWriteManager.TryGetFileLength(absoluteWalPath, out long restoredBytes, out string restoredLengthError))
-                    {
-                        error = reason + " Restored .bak length could not be resolved. " + restoredLengthError;
-                        return false;
-                    }
-
-                    if (restoredBytes != backupBytes)
-                    {
-                        error = reason + " Restored .bak length mismatch.";
-                        return false;
-                    }
-
-                    if (!AsyncWriteManager.FlushCriticalSavePath(absoluteWalPath, restoredBytes, out string flushError))
-                    {
-                        error = reason + " Restored .bak flush failed. " + flushError;
-                        return false;
-                    }
-
-                    error = reason + " Restored .bak.";
                 }
-                catch (IOException exception)
+                finally
                 {
-                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
-                }
-                catch (UnauthorizedAccessException exception)
-                {
-                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
-                }
-                catch (System.Security.SecurityException exception)
-                {
-                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
-                }
-                catch (ArgumentException exception)
-                {
-                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
-                }
-                catch (NotSupportedException exception)
-                {
-                    error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteWalPath);
+                    DeleteRestoreTempIfExists(restoreTempPath);
                 }
 
-                return false;
+                if (!AsyncWriteManager.TryGetFileLength(absoluteWalPath, out long restoredBytes, out string restoredLengthError))
+                {
+                    error = reason + " Restored .bak length could not be resolved. " + restoredLengthError;
+                    return false;
+                }
+
+                if (restoredBytes != backupBytes)
+                {
+                    error = reason + " Restored .bak length mismatch.";
+                    return false;
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(absoluteWalPath, restoredBytes, out string flushError))
+                {
+                    error = reason + " Restored .bak flush failed. " + flushError;
+                    return false;
+                }
+
+                error = reason + " Restored .bak.";
+            }
+            catch (IOException exception)
+            {
+                error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+            }
+            catch (System.Security.SecurityException exception)
+            {
+                error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+            }
+            catch (ArgumentException exception)
+            {
+                error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
+            }
+            catch (NotSupportedException exception)
+            {
+                error = reason + " .bak restore failed. " + exception.GetType().Name + ": " + exception.Message;
             }
 
-            error = reason + " No .bak available.";
             return false;
+        }
+
+        /// <summary>
+        /// Atomic hand-off of the staged restore temp onto the primary WAL path. ReplaceFile is the only
+        /// crash-safe option so it is the only one tried here; a refusal is reported to the caller, which
+        /// owns the non-atomic last resort. Win32 ReplaceFile fails if the destination still has an open
+        /// handle, which is why the WAL validation stream is closed before any rollback begins.
+        /// </summary>
+        private static bool TryPromoteRestoreTemp(string restoreTempPath, string walPath)
+        {
+            try
+            {
+                if (!File.Exists(walPath))
+                {
+                    File.Move(restoreTempPath, walPath);
+                    return true;
+                }
+
+                File.Replace(restoreTempPath, walPath, null, true);
+                return true;
+            }
+            catch (PlatformNotSupportedException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+        private static void DeleteRestoreTempIfExists(string restoreTempPath)
+        {
+            if (string.IsNullOrEmpty(restoreTempPath))
+                return;
+
+            try
+            {
+                if (File.Exists(restoreTempPath))
+                    File.Delete(restoreTempPath);
+            }
+            catch (IOException)
+            {
+                // A stranded restore temp must never become the crash path; File.Copy below fails loudly
+                // instead because it is called with overwrite: false.
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
 
         private static bool TryReadExact(FileStream stream, Span<byte> destination)

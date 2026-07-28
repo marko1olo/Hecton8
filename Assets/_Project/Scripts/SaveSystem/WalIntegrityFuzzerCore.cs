@@ -728,6 +728,11 @@ namespace Hecton8.SaveSystem
             int compressedCapacity = SaveStateMerkleTree.ResolveRequiredCompressedCapacity(deltaCapacity, config.SubBlockBytes);
             int blockHeaderCapacity = SaveStateMerkleTree.ResolveRequiredSubBlockCount(deltaCapacity, config.SubBlockBytes);
 
+            // One leaf per LeafCount slice of the payload. The sum of the leaf byte lengths is exactly
+            // sourcePayload.Length and the record count never exceeds LeafCount, which is the layout
+            // deltaCapacity above is sized for (payload + LeafCount record headers + slack).
+            int leafByteStride = math.max(1, (sourcePayload.Length + SaveStateMerkleTree.LeafCount - 1) / SaveStateMerkleTree.LeafCount);
+
             SaveMerkleVaultBufferSet buffers = default;
             NativeArray<byte> replayedDeltaBytes = default;
             NativeArray<int> replayCounters = default;
@@ -735,8 +740,12 @@ namespace Hecton8.SaveSystem
             try
             {
                 buffers.CurrentTree = AllocateTrackedTempJobArray<MerkleNodeDTO>(SaveStateMerkleTree.RequiredNodeCount, MerkleCurrentTreeScratchLabel, NativeArrayOptions.UninitializedMemory);
-                buffers.PreviousTree = AllocateTrackedTempJobArray<MerkleNodeDTO>(SaveStateMerkleTree.RequiredNodeCount, MerklePreviousTreeScratchLabel, NativeArrayOptions.UninitializedMemory);
-                buffers.LeafDescriptors = AllocateTrackedTempJobArray<StateLeafDescriptor>(SaveStateMerkleTree.LeafCount, MerkleLeafDescriptorsScratchLabel, NativeArrayOptions.UninitializedMemory);
+                // PreviousTree and LeafDescriptors must match the vault provisioning contract in
+                // SaveStateMerkleTree.TryResolveVaultBuffers: EnsureCommittedBaselineJob decides whether to
+                // rebuild the baseline from TreeNodes[RootIndex]._pad0, and MerkleLeafHashJob reads the
+                // descriptors, so both are read before anything writes them and cannot start as garbage.
+                buffers.PreviousTree = AllocateTrackedTempJobArray<MerkleNodeDTO>(SaveStateMerkleTree.RequiredNodeCount, MerklePreviousTreeScratchLabel, NativeArrayOptions.ClearMemory);
+                buffers.LeafDescriptors = AllocateTrackedTempJobArray<StateLeafDescriptor>(SaveStateMerkleTree.LeafCount, MerkleLeafDescriptorsScratchLabel, NativeArrayOptions.ClearMemory);
                 buffers.DeltaRecords = AllocateTrackedTempJobArray<StateDeltaRecordDTO>(SaveStateMerkleTree.LeafCount, MerkleDeltaRecordsScratchLabel, NativeArrayOptions.UninitializedMemory);
                 buffers.DeltaBytes = AllocateTrackedTempJobArray<byte>(deltaCapacity, MerkleDeltaBytesScratchLabel, NativeArrayOptions.UninitializedMemory);
                 buffers.PrunedDeltaBytes = AllocateTrackedTempJobArray<byte>(deltaCapacity, MerklePrunedDeltaBytesScratchLabel, NativeArrayOptions.UninitializedMemory);
@@ -749,13 +758,26 @@ namespace Hecton8.SaveSystem
                 replayCounters = AllocateTrackedTempJobArray<int>(MerkleCounterCapacity, MerkleReplayCountersScratchLabel, NativeArrayOptions.ClearMemory);
 
                 Stopwatch pipelineTimer = Stopwatch.StartNew();
+
+                // MerkleLeafHashJob consumes LeafDescriptors read-only, so the caller owns the partition.
+                // Without it every leaf hashes to default, the current root equals the cleared committed
+                // baseline, MerkleChangedLeafExtractionJob reports zero changed bytes, and the WAL backup
+                // is never written - leaving nothing to promote or hash-validate.
+                JobHandle leafPartition = new SaveStateMerkleTree.MockInventoryLeafDescriptorJob
+                {
+                    Descriptors = buffers.LeafDescriptors,
+                    SourceByteLength = sourcePayload.Length,
+                    LeafByteStride = leafByteStride,
+                    SectorKeyBase = 0u
+                }.Schedule(SaveStateMerkleTree.LeafCount, 64);
+
                 JobHandle pipeline = SaveStateMerkleTree.ScheduleVaultDeltaWalPipeline(
                     sourcePayload,
                     buffers,
                     config,
                     profile.GlobalQualityWeight,
                     1f - math.saturate(profile.GlobalQualityWeight),
-                    default);
+                    leafPartition);
                 CompleteColdValidationBarrier(pipeline);
                 pipelineTimer.Stop();
 
@@ -921,7 +943,7 @@ namespace Hecton8.SaveSystem
                 Thread.Yield();
 
             yieldTimer.Stop();
-            yieldMicros = TicksToMicros(yieldTimer.ElapsedTicks);
+            yieldMicros = ResolvePartialWalCopyStallMicros(state, yieldTimer.ElapsedTicks);
             if (!TryJoinPartialWalCopyWorkerNoThrow(worker, PartialWalCopyJoinMilliseconds))
             {
                 Volatile.Write(ref state.Cancel, 1);
@@ -964,6 +986,7 @@ namespace Hecton8.SaveSystem
         private static void PartialWalCopyThread(object boxed)
         {
             PartialCopyState state = (PartialCopyState)boxed;
+            long workerEnteredTimestamp = Stopwatch.GetTimestamp();
             try
             {
                 using FileStream source = new FileStream(state.SourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
@@ -982,6 +1005,7 @@ namespace Hecton8.SaveSystem
                     copied += read;
                     if (Volatile.Read(ref state.Yielded) == 0)
                     {
+                        Volatile.Write(ref state.StallTicks, Stopwatch.GetTimestamp() - workerEnteredTimestamp);
                         Volatile.Write(ref state.Yielded, 1);
                         Thread.Yield();
                     }
@@ -993,6 +1017,24 @@ namespace Hecton8.SaveSystem
             {
                 Volatile.Write(ref state.ErrorCode, 1);
             }
+        }
+
+        /// <summary>
+        /// An async stall is a property of the copy worker's I/O, not of OS thread bootstrap. Once the
+        /// worker has published its own first-yield latency that measurement wins; the caller's spin time
+        /// is only used when the worker never reached a yield point, which is the genuine stall case and
+        /// still trips <see cref="AsyncStallFailure"/>.
+        /// </summary>
+        private static long ResolvePartialWalCopyStallMicros(PartialCopyState state, long callerWaitTicks)
+        {
+            if (state != null && Volatile.Read(ref state.Yielded) != 0)
+            {
+                long workerTicks = Volatile.Read(ref state.StallTicks);
+                if (workerTicks >= 0L)
+                    return TicksToMicros(workerTicks);
+            }
+
+            return TicksToMicros(callerWaitTicks);
         }
 
         private static bool TryStartPartialWalCopyWorkerNoThrow(Thread worker, PartialCopyState state)
@@ -1798,6 +1840,13 @@ namespace Hecton8.SaveSystem
             public int Yielded;
             public int ErrorCode;
             public int Cancel;
+
+            /// <summary>
+            /// Stopwatch ticks the worker itself spent between entering its body and reaching the first
+            /// yield point. Published before <see cref="Yielded"/> so a reader that sees the flag also
+            /// sees the measurement.
+            /// </summary>
+            public long StallTicks;
         }
     }
 }

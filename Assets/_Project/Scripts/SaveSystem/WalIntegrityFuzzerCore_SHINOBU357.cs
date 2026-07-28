@@ -454,6 +454,13 @@ namespace Hecton8.SaveSystem
                     return;
                 }
 
+                // This loop redefines the recovered pair in the file-hash domain: RecoveredHash/RecoveredBytes
+                // below are the promoted primary's, so the truth has to move with them. The verified .bak is
+                // that truth, which makes TruthHash == RecoveredHash the literal statement that promotion
+                // produced a byte-identical primary. Leaving TruthHash on the delta-arena hash published by
+                // RunProductionMerkleWalRecovery compares two different domains and can never agree.
+                result.TruthHash = backupHash;
+
                 uint highestInterrupted = state.InterruptedByteOffset;
                 for (int i = 0; i < iterations; i++)
                 {
@@ -594,7 +601,7 @@ namespace Hecton8.SaveSystem
                 Thread.Yield();
 
             yieldTimer.Stop();
-            yieldMicros = TicksToMicros(yieldTimer.ElapsedTicks);
+            yieldMicros = ResolvePartialWalCopyStallMicros(state, yieldTimer.ElapsedTicks);
             if (!TryJoinPartialWalCopyWorkerNoThrow(worker, PartialWalCopyJoinMilliseconds))
             {
                 Volatile.Write(ref state.Cancel, 1);
