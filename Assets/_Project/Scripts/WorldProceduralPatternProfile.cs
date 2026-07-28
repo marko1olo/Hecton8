@@ -97,14 +97,31 @@ namespace Hecton8.World
             };
         }
 
+        /// <summary>
+        /// Per-layer placement ceiling. The ceiling can never sit below the floor the same profile
+        /// guarantees through <see cref="GetMinimumPlacements"/>, because the acceptance pass treats
+        /// this value as a hard reject (WorldProceduralScatterDirector.cs:5027/5054/5081 and
+        /// WorldProceduralScatterDirectorCandidateAcceptance.cs:832/853/867 all return false once the
+        /// layer count reaches it). A profile whose ceiling sits under its own floor therefore
+        /// solicits placements that the acceptance pass rejects one by one, and the layer silently
+        /// ends up empty instead of reporting a contradiction.
+        /// Ground and Cluster already folded their guaranteed minimum in; Structure and Spawn read
+        /// only their target pair, so <c>minStructurePlacements</c> and <c>minSpawnPlacements</c>
+        /// could be authored above the ceiling under their <c>[Min(0)]</c> ranges. Structure is the
+        /// layer that carries every technogenic accent, and
+        /// <see cref="ResolveGuaranteedStructureAccentFloor"/> spends this exact value as its whole
+        /// budget - so a Structure ceiling of zero also silently voids the TechFragment guarantee.
+        /// </summary>
         public int GetTargetMax(WorldPrefabFamilyProfile.ScatterLayer layer)
         {
             return layer switch
             {
                 WorldPrefabFamilyProfile.ScatterLayer.Ground => Mathf.Max(minGroundPlacements, groundTargetMax),
                 WorldPrefabFamilyProfile.ScatterLayer.Cluster => Mathf.Max(minClusterPlacements, clusterTargetMax),
-                WorldPrefabFamilyProfile.ScatterLayer.Structure => Mathf.Max(structureTargetMin, structureTargetMax),
-                WorldPrefabFamilyProfile.ScatterLayer.Spawn => Mathf.Max(spawnTargetMin, spawnTargetMax),
+                WorldPrefabFamilyProfile.ScatterLayer.Structure =>
+                    Mathf.Max(minStructurePlacements, Mathf.Max(structureTargetMin, structureTargetMax)),
+                WorldPrefabFamilyProfile.ScatterLayer.Spawn =>
+                    Mathf.Max(minSpawnPlacements, Mathf.Max(spawnTargetMin, spawnTargetMax)),
                 _ => 0
             };
         }
