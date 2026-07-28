@@ -125,7 +125,7 @@ import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 from mathutils import Matrix, Vector  # noqa: E402
 
-from h8forge import law, mesh_ops, preview, vertexcolor  # noqa: E402
+from h8forge import export_unity, law, mesh_ops, preview, validate, vertexcolor  # noqa: E402
 from h8forge.blackbox import BlackBox, GenerationAborted  # noqa: E402
 
 
@@ -350,6 +350,9 @@ class CoralResult:
     topology: list = field(default_factory=list)
     preview_paths: tuple = ()
     channel_stats: tuple = ()
+    mesh_reports: list = field(default_factory=list)
+    fbx_path: str = ""
+    manifest_path: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -1050,7 +1053,8 @@ def author_channels(obj: bpy.types.Object, spec: CoralSpec,
 
 def generate(spec: CoralSpec, *, name: Optional[str] = None,
              render_preview: bool = True,
-             preview_dir: str = "") -> CoralResult:
+             preview_dir: str = "",
+             export_package: bool = True) -> CoralResult:
     """Full package: geometry, UVs, bakes, channels, LODs, collider, proof renders."""
     asset_name = name or "Coral_Branching_{s:04d}".format(s=spec.seed % 10000)
     blackbox = BlackBox("CoralBranching", "s{s}q{q:02d}".format(
@@ -1111,6 +1115,41 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
         lods = mesh_ops.build_lod_chain(
             obj, family=law.Family.FLORA, name=asset_name,
             quality_weight=spec.quality, blackbox=blackbox)
+
+        # POST-DECIMATION non-manifold repair, and it is not redundant with the one inside
+        # weld_and_clean. That runs before the LOD chain; Blender's Decimate/COLLAPSE then
+        # creates a fresh one. MEASURED on this asset: every LOD carries exactly 1
+        # non-manifold edge with exactly 3 faces on it, at LOD0, LOD1 and LOD2 alike.
+        #
+        # It is not cosmetic. FBX cannot express an edge shared by three faces, so
+        # export_lod_group's round-trip verification found LOD2 coming back 287 -> 286
+        # triangles, 861 -> 858 corner normals and 3444 -> 3432 colour elements - exactly
+        # one triangle, its three corners and their twelve channel bytes - with the signed
+        # volume off by 2.43%. The exporter correctly REFUSED to write the file, so the
+        # asset did not exist at all until this ran.
+        #
+        # My first hypothesis was degenerate faces from the decimator, and a probe REFUTED
+        # it: zero faces under 1e-9 at any LOD, smallest area at LOD2 is 1.924e-05, zero
+        # loose vertices. A purge written on that hypothesis would have done nothing while
+        # risking the custom split normals.
+        for level in lods:
+            level_bm = bmesh.new()
+            level_bm.from_mesh(level.obj.data)
+            doomed = []
+            for edge in level_bm.edges:
+                if len(edge.link_faces) <= 2:
+                    continue
+                # Keep the two largest, drop the rest: the extras are interior sheets
+                # buried where two branches merge, invisible from outside.
+                ordered = sorted(edge.link_faces, key=lambda f: f.calc_area(),
+                                 reverse=True)
+                doomed.extend(ordered[2:])
+            if doomed:
+                bmesh.ops.delete(level_bm, geom=list(dict.fromkeys(doomed)),
+                                 context="FACES")
+                level_bm.to_mesh(level.obj.data)
+                level.obj.data.update()
+            level_bm.free()
 
         # topology_report is what turns a missed budget into a CAUSE. It had no callers
         # in the whole forge, which is why "coral LOD2 is stuck at 584" survived two
@@ -1180,6 +1219,102 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
             result.channel_stats = tuple(
                 preview.measure_channel_png(path) for path in channels.tile_paths)
 
+        # STAGE: package. Until now this generator produced FOUR HUNDRED renders and not
+        # one mesh. It was the only generator in the forge with no export call -- kelp,
+        # rock, flora_capstem and prop_handtool all had one -- so a coral that passed the
+        # visual gate existed solely as pixels in a contact sheet and died with the Blender
+        # process. `PROCEDURAL_ASSET_PIPELINE.md` "Proof Artifacts": "A generator report
+        # that only says 'created assets' is invalid" -- and a generator that reports
+        # measurements while creating no asset at all is the same failure inverted.
+        #
+        # Deliberately after the previews: `proof_paths` is a bible-required manifest field
+        # and writing the manifest first would name sheets that do not exist yet.
+        if export_package:
+            for level in lods:
+                # hero only on LOD0: LOD1/LOD2 carry a smart_project solve over collapsed
+                # topology, which always yields some slivers, so the tight hero UV limit
+                # there would enforce a rule the bible does not state.
+                result.mesh_reports.append(validate.validate_mesh(
+                    level.obj.data, family=law.Family.FLORA, lod_index=level.index,
+                    surface_class=law.SurfaceClass.ORGANIC, blackbox=blackbox,
+                    hero=(level.index == 0)))
+
+            identity = law.GeneratorIdentity(
+                generator="coral_branching", generator_version=GENERATOR_VERSION,
+                seed=spec.seed, quality_weight=spec.quality,
+                family=law.Family.FLORA,
+                scale_meters=result.silhouette.get("heightM", spec.height_m),
+                camera_distance_class="near", platform_lane="windows_copper_wire",
+                source_references=("3DMODEL_FLORA_CORAL.md", "3dmodel.md",
+                                   "PROCEDURAL_ASSET_PIPELINE.md"))
+
+            # One file carrying all three LOD nodes plus the COL_ collider, so the name
+            # drops the _LOD<n> suffix that law.NAME_MESH puts on individual meshes.
+            # Matches the precedent in rock.py export_package.
+            #
+            # os.path.join("", name) yields a bare relative name, which lands wherever
+            # Blender's CWD happens to be - the first run of this stage wrote the FBX into
+            # the REPOSITORY ROOT. An empty --out is the default, so the common path was the
+            # broken one.
+            out_dir = preview_dir or os.path.join(
+                "Docs", "AgentLogs", "ForgeCoral")
+            os.makedirs(out_dir, exist_ok=True)
+            fbx_path = os.path.join(out_dir, "MESH_{f}_{n}.fbx".format(
+                f=law.Family.FLORA.value, n=asset_name))
+            # None, not the ColliderResult, when flora declined a collider. export_lod_group
+            # handles a missing collider correctly, but _as_object RAISES on a
+            # ColliderResult whose .obj is None rather than reading it as "no collider" -
+            # and flora's default IS no collider, so the common path was the crashing one.
+            collider_arg = collider if getattr(collider, "obj", None) is not None else None
+            export_result = export_unity.export_lod_group(
+                lods, collider_arg, fbx_path, identity=identity, blackbox=blackbox)
+            result.fbx_path = getattr(export_result, "path", fbx_path)
+
+            result.manifest_path = export_unity.write_manifest(
+                os.path.join(preview_dir, export_unity.manifest_filename(
+                    law.Family.FLORA, asset_name)),
+                identity, result.mesh_reports,
+                # No MAT_* asset and no TX_* set is authored here. Coral pigment lives in
+                # the material base colour and every mask lives in a vertex-colour channel,
+                # so naming files that do not exist would be a false reference; the manifest
+                # records the gap instead.
+                [], [],
+                [collider] if getattr(collider, "obj", None) is not None else [],
+                list(result.preview_paths), export_result=export_result,
+                uv_summary=result.sway_report.get("uv"),
+                alpha_meaning="harvest_yield_mask",
+                extra={
+                    "growthAlgorithm":
+                        "encrusting foot with one launch lobe per stem, so the colony "
+                        "branches AT THE SUBSTRATE; then repeated dichotomous forking in "
+                        "a plane turning ~88 degrees per generation (Acropora orthogonal "
+                        "alternation, not a whorl around one axis, which is a "
+                        "bottle-brush by construction); blunt digit clusters at parent "
+                        "radius. Radius is constant within an internode and steps down "
+                        "only at forks; radius_decay is DERIVED from the declared "
+                        "stem:tip ratio so it is an invariant rather than the emergent "
+                        "product of several multipliers.",
+                    "biomeRoute": "photic shallows; references beauty.webp, shallows.webp",
+                    "silhouette": result.silhouette,
+                    "topology": [{"lod": index, "report": census.as_dict()}
+                                 if hasattr(census, "as_dict") else
+                                 {"lod": index, "report": str(census)}
+                                 for index, census in result.topology],
+                    "channelMeasurements": [
+                        stat.as_dict() if hasattr(stat, "as_dict") else str(stat)
+                        for stat in result.channel_stats],
+                    "consumerDefectOpen":
+                        "Hecton_CoralMaster.shader reads input.color.a as ambient "
+                        "occlusion and this mesh writes AO to B per the 2026-07-29 "
+                        "ruling. The mesh is correct; the consumer is not fixed yet, so "
+                        "in-engine this asset's ray-traced AO will be consumed as the "
+                        "harvest mask and vice versa.",
+                    "unityPrefabAssembly":
+                        "NOT PERFORMED. .prefab/.mat/.asset creation is Unity-only per "
+                        "AGENTS.md Evidence Law; this generator emits mesh + manifest for "
+                        "a Unity-side assembler.",
+                })
+
         return result
     except GenerationAborted:
         raise
@@ -1204,7 +1339,12 @@ def _parse_args(argv: list) -> argparse.Namespace:
                         help="colony is large enough to block a path; emits a convex collider")
     parser.add_argument("--out", type=str, default="")
     parser.add_argument("--no-preview", dest="preview", action="store_false")
-    parser.set_defaults(preview=True)
+    # Export is ON by default, and the flag only exists to make the silhouette loop fast.
+    # An asset generator whose default run produces no asset is the defect this stage was
+    # added to fix, so the default must not be the cheap path.
+    parser.add_argument("--no-export", dest="export", action="store_false",
+                        help="skip FBX + manifest; for fast silhouette iteration only")
+    parser.set_defaults(preview=True, export=True)
     return parser.parse_args(argv)
 
 
@@ -1220,7 +1360,8 @@ def main() -> None:
             fork_generations=args.generations,
             large_enough_to_block_path=args.blocking,
         )
-        result = generate(spec, render_preview=args.preview, preview_dir=args.out)
+        result = generate(spec, render_preview=args.preview, preview_dir=args.out,
+                          export_package=args.export)
 
         print("=" * 78)
         print("CORAL {n}  seed={s} quality={q:.2f} generator={g}".format(
@@ -1305,6 +1446,18 @@ def main() -> None:
                       g=stats.has_gradient, v=stats.subject_visible))
         for path in result.preview_paths:
             print("  PREVIEW " + path)
+        for report in result.mesh_reports:
+            failures = list(getattr(report, "failures", ()) or ())
+            print("  VALIDATE LOD{i} tris={t} gates={g}{f}".format(
+                i=getattr(report, "lod", -1),
+                t=getattr(report, "triangle_count",
+                          getattr(report, "triangles", -1)),
+                g="PASS" if not failures else "FAIL",
+                f="" if not failures else "  " + "; ".join(str(x) for x in failures)))
+        # An empty FBX line is the signal that the asset does not exist, so print the
+        # absence rather than only the success.
+        print("  FBX      " + (result.fbx_path or "NONE - no mesh artifact was written"))
+        print("  MANIFEST " + (result.manifest_path or "NONE"))
     print("CORAL_GENERATOR_DONE")
 
 

@@ -71,9 +71,29 @@
 //   exactly those two things over the three binding facts this repair owns, and
 //   nothing else.
 //
+// CATALOG SHAPE RULING (2026-07-29) — WHY THERE ARE NOW THREE ENTRY POINTS:
+//   The catalog reached 16 rows: these ten authored recipes plus six generated
+//   H8_A1712_*_Buildable recipes appended by ModuleArchitect1712
+//   (ModuleArchitect1712.cs:717-757, append at :746). Five of those six bind a
+//   prefab an authored recipe already binds, so one mesh had two recipes, two
+//   proxy-bounds contracts, two socket-plane sets, two socket lanes, two
+//   simulation-parameter sets, and two persisted identities.
+//   RULING: the ten authored recipes own the catalog; the six generated recipes
+//   leave it and keep their assets. Enacted by
+//   AdoptGeneratedGeometryIntoAuthoredRecipes below, which is opt-in and never
+//   fires from RepairConstructionCatalog. Full reasoning lives on that method.
+//   VerifyConstructionCatalogBindings now fails on a duplicate finalPrefab and on
+//   catalog-wide hash/alias ambiguity, so the defect cannot return silently: those
+//   two checks read catalog.Count/GetAt and therefore see rows this tool does not
+//   own, which the per-recipe loop structurally cannot.
+//
 // ORDERING WARNING FOR THE OPERATOR:
 //   Re-running Hecton8/Authoring/Rebuild Starter Construction Kit AFTER this repair
 //   truncates ModuleCatalog_Starter.asset back to five rows. Run repair last.
+//   Full order: fabricate (Agent 1712) -> Repair Construction Catalog Bindings ->
+//   Adopt Generated Geometry Into Authored Recipes -> Verify. Fabricating again
+//   re-appends the six generated rows, so Adopt has to run after every fabricate
+//   until that generator stops registering its buildables in the catalog.
 //
 // UPSTREAM BLOCKER THIS TOOL CANNOT FIX (core territory, not data):
 //   Repairing the data is necessary and NOT sufficient. The catalog never reaches the
@@ -601,6 +621,249 @@ namespace Hecton8.Editor.Authoring
         }
 
         // ══════════════════════════════════════════════════════════
+        //  ENTRY POINT: ADOPT GENERATED GEOMETRY (OPT-IN, MUTATES CATALOG MEMBERSHIP)
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Enacts the catalog-shape ruling: the ten authored recipes own the catalog and
+        /// the six Agent1712 <c>*_Buildable</c> recipes leave it.
+        ///
+        /// NOT wired into <see cref="RepairConstructionCatalog"/> and never runs by
+        /// default, because it does two things that tool is forbidden to do: it
+        /// overwrites a non-null <c>finalPrefab</c> binding, and it removes catalog rows.
+        ///
+        /// WHY THE GENERATED RECIPES LOSE:
+        ///   • All six carry <c>buildCost: []</c>. The FIRST_20_MINUTES contract's
+        ///     craft/build moment requires a recipe that "consumes the resource"
+        ///     (Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md, Required
+        ///     Route). A costless recipe cannot serve it, and construction.md section 7
+        ///     rejects a buildable whose economy is filler.
+        ///   • Their simulation numbers are mesh-derived, not authored:
+        ///     H8_A1712_Airlock_01_Template gives an airlock airVolumeM3 82.43 against the
+        ///     authored 18, and moduleYieldStrengthNewtons 3342834.8 against the authored
+        ///     170000 — an order of magnitude outside the fitted family band this file
+        ///     already documents (MinimumYieldNewtons..MaximumYieldNewtons above).
+        ///     H8_A1712_ReactorRoom_01_Buildable claims powerRating 450 while its own
+        ///     template declares powerDrawKW 0. construction.md section 8 assigns
+        ///     "buildable function, resource taste, recipe meaning, and infrastructure
+        ///     role" to the construction owner, not to a mesh generator.
+        ///   • Three authored stableIds are compiled into runtime role resolution as
+        ///     string literals — "Build_Foundation_Platform", "Build_Utility_Pylon" and
+        ///     "Build_Airlock_Hatch" (BaseModule.cs:311-313), re-used by
+        ///     HabitatGraphManager.ResolveStructuralAnchorState and
+        ///     ResolveEmergencyAirlockState (HabitatGraphManager.cs:5985-5998). Deleting
+        ///     the authored side instead would silently retire the emergency-bulkhead role
+        ///     fallback and orphan the Build_Airlock_Hatch row in
+        ///     Data/Survival/SurvivalDatabaseRuntime.txt:154.
+        ///
+        /// WHY THE GENERATED GEOMETRY STILL WINS: nothing here touches the prefabs,
+        /// meshes, materials, or templates under the Agent1712 folder. Five authored
+        /// recipes already point at those prefabs; step 1 below completes the set by
+        /// giving Build_Corridor_Straight the sixth, so all six generated meshes stay
+        /// reachable through authored recipes and the legacy PFB_Module_Corridor —
+        /// which carries a BaseModule with a null moduleTemplate — stops shipping.
+        ///
+        /// HASH SAFETY: repointing finalPrefab and dropping catalog rows are both
+        /// hash-neutral. BaseModuleTemplate.OnValidate folds stableId alone
+        /// (BaseModuleTemplate.cs:242); no geometric field, prefab reference, or catalog
+        /// index reaches any persisted identity, and no catalog index is persisted at all
+        /// (SaveData.cs keys modules on prefabId plus moduleHashId).
+        ///
+        /// ORDERING: run this LAST. ModuleArchitect1712 re-appends every generated
+        /// buildable to allModules on each fabricate run (ModuleArchitect1712.cs:717-757,
+        /// append at :746), so fabricate first, repair second, adopt third. Re-running is
+        /// safe and idempotent.
+        ///
+        /// Batch usage:
+        /// -executeMethod Hecton8.Editor.Authoring.ConstructionCatalogRepairAuthoring.AdoptGeneratedGeometryIntoAuthoredRecipes
+        /// </summary>
+        [MenuItem("Hecton8/Authoring/Adopt Generated Geometry Into Authored Recipes", priority = 221)]
+        public static void AdoptGeneratedGeometryIntoAuthoredRecipes()
+        {
+            ModuleCatalog catalog = AssetDatabase.LoadAssetAtPath<ModuleCatalog>(ModuleCatalogPath);
+            if (catalog == null)
+            {
+                Debug.LogError(
+                    $"{LogPrefix} DECLINED: module catalog not found at '{ModuleCatalogPath}'. Nothing written.");
+                return;
+            }
+
+            StringBuilder report = new StringBuilder(4096);
+            report.AppendLine($"{LogPrefix} ADOPT GENERATED GEOMETRY REPORT");
+
+            bool corridorChanged = false;
+            bool catalogChanged = false;
+            int prunedRowCount = 0;
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                corridorChanged = TryAdoptGeneratedCorridorGeometry(report);
+                catalogChanged = TryPruneGeneratedCatalogRows(catalog, report, out prunedRowCount);
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+            }
+
+            bool wroteAnything = corridorChanged || catalogChanged;
+            if (wroteAnything)
+                AssetDatabase.SaveAssets();
+
+            report.AppendLine(
+                $"  SUMMARY: corridorRebound={(corridorChanged ? "yes" : "no")}, " +
+                $"catalogRowsRemoved={prunedRowCount}, " +
+                $"assetsSaved={(wroteAnything ? "yes" : "no — already in the ruled shape")}.");
+            report.Append(
+                "  NO .asset FILE WAS DELETED. The six Agent1712 *_Buildable assets remain on disk, " +
+                "unreferenced by the catalog, because ModuleArchitect1712.cs:586 recreates them on every " +
+                "fabricate run — deleting them is churn, not a durable fix. The durable fix belongs to that " +
+                "generator's owner: stop registering generated buildables into ModuleCatalog_Starter " +
+                "(ModuleArchitect1712.cs:717-757).");
+
+            Debug.Log(report.ToString());
+        }
+
+        /// <summary>
+        /// Repoints <c>Build_Corridor_Straight.finalPrefab</c> at the generated corridor.
+        /// This is the one recipe whose bound prefab is still the legacy
+        /// PFB_Module_Corridor, whose BaseModule carries <c>moduleTemplate: {fileID: 0}</c>
+        /// — a null template on the placed instance until ApplyBuildableTemplate
+        /// overwrites it. The generated corridor is also the only Agent1712 module whose
+        /// mesh no authored recipe claims, so without this step pruning its recipe row
+        /// would strand the geometry.
+        /// </summary>
+        private static bool TryAdoptGeneratedCorridorGeometry(StringBuilder report)
+        {
+            const string corridorRecipeName = "Build_Corridor_Straight";
+            const string corridorPrefabName = "H8_A1712_Corridor_01";
+
+            string recipePath = $"{ConstructionDataFolder}/{corridorRecipeName}.asset";
+            BuildableData recipe = AssetDatabase.LoadAssetAtPath<BuildableData>(recipePath);
+            if (recipe == null)
+            {
+                report.AppendLine($"  CORRIDOR: DECLINED — recipe missing at '{recipePath}'.");
+                return false;
+            }
+
+            string generatedPath = $"{Agent1712OutputFolder}/{corridorPrefabName}.prefab";
+            GameObject generated = AssetDatabase.LoadAssetAtPath<GameObject>(generatedPath);
+            if (generated == null)
+            {
+                report.AppendLine(
+                    $"  CORRIDOR: SKIPPED — '{generatedPath}' is not fabricated. Run " +
+                    "Hecton8/Structures/Agent 1712/Fabricate Default Module Set Now, then re-run.");
+                return false;
+            }
+
+            SerializedObject serializedRecipe = new SerializedObject(recipe);
+            SerializedProperty finalPrefabProperty = serializedRecipe.FindProperty(FinalPrefabField);
+            if (finalPrefabProperty == null)
+            {
+                report.AppendLine(
+                    $"  CORRIDOR: DECLINED — serialized field '{FinalPrefabField}' not found on BuildableData " +
+                    "(BuildableData.cs:93). Nothing written.");
+                return false;
+            }
+
+            UnityEngine.Object existing = finalPrefabProperty.objectReferenceValue;
+            if (ReferenceEquals(existing, generated))
+            {
+                report.AppendLine($"  CORRIDOR: NO CHANGE — already bound to '{corridorPrefabName}'.");
+                return false;
+            }
+
+            finalPrefabProperty.objectReferenceValue = generated;
+            serializedRecipe.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(recipe);
+
+            report.AppendLine(
+                $"  CORRIDOR: finalPrefab REBOUND '{(existing != null ? existing.name : "null")}' -> " +
+                $"'{corridorPrefabName}'. Hash-neutral: the recipe keeps " +
+                "BaseModuleTemplate_CorridorStraight, so its ModuleHashId does not move " +
+                "(BuildableData.cs:213-225, BaseModuleTemplate.cs:242).");
+            return true;
+        }
+
+        /// <summary>
+        /// Removes every catalog row whose asset lives under the Agent1712 output folder,
+        /// plus any null row. Rebuilds the array from a survivor list computed off the
+        /// CURRENT array rather than calling DeleteArrayElementAtIndex: for a
+        /// SerializedProperty array of object references that call nulls the element on
+        /// the first invocation instead of removing it, and a half-removed row is a null
+        /// catalog entry, which is the state being cleaned up. Survivors keep their
+        /// relative order, so the build browser order is preserved for every row that
+        /// stays (ModuleCatalog.cs:350-397).
+        /// </summary>
+        private static bool TryPruneGeneratedCatalogRows(
+            ModuleCatalog catalog,
+            StringBuilder report,
+            out int removedCount)
+        {
+            removedCount = 0;
+
+            SerializedObject serializedCatalog = new SerializedObject(catalog);
+            SerializedProperty modules = serializedCatalog.FindProperty(AllModulesField);
+            if (modules == null || !modules.isArray)
+            {
+                report.AppendLine(
+                    $"  CATALOG: DECLINED — '{AllModulesField}' is not a serialized array on ModuleCatalog " +
+                    "(ModuleCatalog.cs:32). Nothing written to the catalog.");
+                return false;
+            }
+
+            int sizeBefore = modules.arraySize;
+            string generatedFolderPrefix = Agent1712OutputFolder + "/";
+
+            // COLD ALLOC: List<BuildableData>[catalog rows] - surviving catalog rows in original order - owner: ConstructionCatalogRepairAuthoring
+            List<BuildableData> survivors = new List<BuildableData>(sizeBefore);
+
+            for (int i = 0; i < sizeBefore; i++)
+            {
+                BuildableData row = modules.GetArrayElementAtIndex(i).objectReferenceValue as BuildableData;
+                if (row == null)
+                {
+                    removedCount++;
+                    report.AppendLine(
+                        $"  CATALOG: REMOVED row {i} — null reference. ModuleCatalog.Count counts it " +
+                        "(ModuleCatalog.cs:147-155) while every viewable path skips it " +
+                        "(ModuleCatalog.cs:499-502), so it inflated the browser's count without ever rendering.");
+                    continue;
+                }
+
+                string rowPath = AssetDatabase.GetAssetPath(row);
+                if (!string.IsNullOrEmpty(rowPath) &&
+                    rowPath.StartsWith(generatedFolderPrefix, System.StringComparison.Ordinal))
+                {
+                    removedCount++;
+                    report.AppendLine(
+                        $"  CATALOG: REMOVED row {i} '{row.name}' at '{rowPath}' — generated recipe. " +
+                        "The asset file itself is left on disk; only catalog membership is removed.");
+                    continue;
+                }
+
+                survivors.Add(row);
+            }
+
+            if (removedCount <= 0)
+            {
+                report.AppendLine(
+                    $"  CATALOG: NO CHANGE — all {sizeBefore} rows are authored recipes outside " +
+                    $"'{Agent1712OutputFolder}'.");
+                return false;
+            }
+
+            modules.arraySize = survivors.Count;
+            for (int i = 0; i < survivors.Count; i++)
+                modules.GetArrayElementAtIndex(i).objectReferenceValue = survivors[i];
+
+            serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(catalog);
+            report.AppendLine($"  CATALOG: rows {sizeBefore} -> {survivors.Count}, surviving order preserved.");
+            return true;
+        }
+
+        // ══════════════════════════════════════════════════════════
         //  ENTRY POINT: VERIFY
         // ══════════════════════════════════════════════════════════
 
@@ -727,6 +990,18 @@ namespace Hecton8.Editor.Authoring
                 }
             }
 
+            // Whole-catalog checks. The loop above only walks the ten rows in Recipes,
+            // so it is structurally blind to a row this tool does not own — which is
+            // exactly how six generated recipes joined the catalog and bound five
+            // prefabs that authored recipes were already binding. These two checks read
+            // catalog.Count / GetAt (ModuleCatalog.cs:147-155, :350-364) and therefore
+            // see every row, owned or not.
+            if (catalog != null)
+            {
+                failureCount += ReportDuplicateFinalPrefabBindings(catalog, report);
+                failureCount += ReportCatalogWideHashAmbiguity(catalog, report);
+            }
+
             AppendRuntimeReachabilityAdvisory(report);
 
             report.AppendLine(
@@ -751,6 +1026,197 @@ namespace Hecton8.Editor.Authoring
 
             if (Application.isBatchMode)
                 EditorApplication.Exit(failureCount > 0 ? 1 : 0);
+        }
+
+        /// <summary>
+        /// Fails when two catalog rows bind the SAME finalPrefab. Two recipes over one
+        /// prefab is not a harmless alias: BaseModule.ApplyBuildableTemplate
+        /// (BaseModule.cs:4802-4816) stamps the SELECTED recipe's template onto the
+        /// placed instance on both the placement path (ConstructionManager.cs:825) and
+        /// the save-restore path (ConstructionManager.cs:2873). So one mesh acquires two
+        /// different proxy-bounds footprints, two different socket planes, two different
+        /// socket lanes, two different mass/drag/air-volume sets, and two different
+        /// persisted identities, depending on which browser row the player picked. The
+        /// two instances then cannot snap to each other whenever their lanes differ
+        /// (ModuleSocket.cs:71-74), which is a player-visible build-route failure and not
+        /// a data-hygiene note.
+        /// The report prints both templates' bounds and lane sets so the operator can see
+        /// which of the two recipes is wrong without opening either asset.
+        /// </summary>
+        private static int ReportDuplicateFinalPrefabBindings(ModuleCatalog catalog, StringBuilder report)
+        {
+            int rowCount = catalog.Count;
+
+            // COLD ALLOC: Dictionary<GameObject,BuildableData>[catalog count] - first claimant per finalPrefab - owner: ConstructionCatalogRepairAuthoring
+            Dictionary<GameObject, BuildableData> prefabOwners = new Dictionary<GameObject, BuildableData>(rowCount);
+            int failures = 0;
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                BuildableData recipe = catalog.GetAt(i);
+                if (recipe == null || recipe.finalPrefab == null)
+                    continue;
+
+                if (!prefabOwners.TryGetValue(recipe.finalPrefab, out BuildableData firstOwner))
+                {
+                    prefabOwners.Add(recipe.finalPrefab, recipe);
+                    continue;
+                }
+
+                failures++;
+                report.AppendLine(
+                    $"  FAIL duplicate finalPrefab: catalog row {i} '{recipe.name}' and '{firstOwner.name}' both " +
+                    $"bind '{recipe.finalPrefab.name}'. {DescribeRecipeContract(firstOwner)} vs " +
+                    $"{DescribeRecipeContract(recipe)}. One of the two recipes is wrong; the placed module takes " +
+                    "the template of whichever row the player selected (BaseModule.cs:4802-4816).");
+            }
+
+            return failures;
+        }
+
+        /// <summary>
+        /// Fails when two catalog rows resolve to the same <c>ModuleHashId</c>. This is
+        /// the exact condition ModuleCatalog.AddHashAlias raises as lookup ambiguity
+        /// (ModuleCatalog.cs:580-598), and its consequence is total: with
+        /// <c>HasLookupAmbiguity</c> set, ConstructionManager.LoadFromSaveData aborts the
+        /// ENTIRE construction load for every module in every base
+        /// (ConstructionManager.cs:2697-2704), and TryRegisterRuntimeModule refuses every
+        /// mod buildable (ModuleCatalog.cs:225-229). Two rows sharing a
+        /// <c>moduleTemplate</c> asset is the cheapest way to cause it, because
+        /// BuildableData.ModuleHashId returns the TEMPLATE's hash whenever a template is
+        /// bound (BuildableData.cs:213-225) — so pointing a second recipe at an existing
+        /// template silently fuses their save identities. The string-alias half of the
+        /// same trap is checked too, since AddLookupAlias raises the same flag
+        /// (ModuleCatalog.cs:545-565).
+        /// </summary>
+        private static int ReportCatalogWideHashAmbiguity(ModuleCatalog catalog, StringBuilder report)
+        {
+            int rowCount = catalog.Count;
+
+            // COLD ALLOC: Dictionary<int,BuildableData>[catalog count] - first claimant per module hash - owner: ConstructionCatalogRepairAuthoring
+            Dictionary<int, BuildableData> hashOwners = new Dictionary<int, BuildableData>(rowCount);
+            // COLD ALLOC: Dictionary<string,BuildableData>[catalog count * 2] - first claimant per string alias - owner: ConstructionCatalogRepairAuthoring
+            Dictionary<string, BuildableData> aliasOwners =
+                new Dictionary<string, BuildableData>(rowCount * 2, System.StringComparer.Ordinal);
+            int failures = 0;
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                BuildableData recipe = catalog.GetAt(i);
+                if (recipe == null)
+                    continue;
+
+                int hashId = recipe.ModuleHashId;
+                if (hashId != 0)
+                {
+                    if (hashOwners.TryGetValue(hashId, out BuildableData hashOwner) &&
+                        !ReferenceEquals(hashOwner, recipe))
+                    {
+                        failures++;
+                        report.AppendLine(
+                            $"  FAIL catalog hash ambiguity: row {i} '{recipe.name}' and '{hashOwner.name}' both " +
+                            $"resolve ModuleHashId {hashId}. ModuleCatalog.AddHashAlias sets " +
+                            "_hasLookupAmbiguity on this (ModuleCatalog.cs:585-594) and " +
+                            "LoadFromSaveData then aborts the whole construction load, every module in every " +
+                            "base (ConstructionManager.cs:2697-2704). Give one of the two its own " +
+                            "BaseModuleTemplate asset.");
+                    }
+                    else
+                    {
+                        hashOwners[hashId] = recipe;
+                    }
+                }
+
+                CheckCatalogAlias(recipe, recipe.PersistentId, aliasOwners, report, ref failures);
+                CheckCatalogAlias(recipe, recipe.name, aliasOwners, report, ref failures);
+            }
+
+            return failures;
+        }
+
+        /// <summary>
+        /// Mirrors one AddLookupAlias insertion (ModuleCatalog.cs:545-565), including its
+        /// trim and its IsNullOrWhiteSpace skip, so the gate and the runtime agree on
+        /// what counts as a colliding alias.
+        /// </summary>
+        private static void CheckCatalogAlias(
+            BuildableData recipe,
+            string alias,
+            Dictionary<string, BuildableData> aliasOwners,
+            StringBuilder report,
+            ref int failures)
+        {
+            if (string.IsNullOrWhiteSpace(alias))
+                return;
+
+            alias = alias.Trim();
+            if (aliasOwners.TryGetValue(alias, out BuildableData owner))
+            {
+                if (ReferenceEquals(owner, recipe))
+                    return;
+
+                failures++;
+                report.AppendLine(
+                    $"  FAIL catalog alias ambiguity: '{alias}' resolves to both '{owner.name}' and " +
+                    $"'{recipe.name}'. ModuleCatalog.AddLookupAlias raises lookup ambiguity " +
+                    "(ModuleCatalog.cs:551-562) and LoadFromSaveData aborts the whole construction load " +
+                    "(ConstructionManager.cs:2697-2704).");
+                return;
+            }
+
+            aliasOwners.Add(alias, recipe);
+        }
+
+        /// <summary>
+        /// One-line description of the geometry contract a recipe imposes on its bound
+        /// prefab: template name, proxy bounds, and the distinct socket lanes. Used to
+        /// make a duplicate-binding failure self-explanatory in the log.
+        /// </summary>
+        private static string DescribeRecipeContract(BuildableData recipe)
+        {
+            BaseModuleTemplate template = recipe != null ? recipe.ModuleTemplate : null;
+            if (template == null)
+                return $"'{(recipe != null ? recipe.name : "null")}' has no template";
+
+            StringBuilder text = new StringBuilder(160);
+            text.Append('\'').Append(template.name).Append("' bounds ")
+                .Append(FormatVector(template.ProxyBoundsSize)).Append(" lanes[");
+
+            BaseModuleTemplate.SocketDefinition[] definitions = template.SocketDefinitions;
+            int appended = 0;
+            if (definitions != null)
+            {
+                for (int i = 0; i < definitions.Length; i++)
+                {
+                    string lane = definitions[i].CompatibleType;
+                    if (string.IsNullOrEmpty(lane))
+                        lane = "<universal>";
+
+                    bool alreadyListed = false;
+                    for (int j = 0; j < i && !alreadyListed; j++)
+                    {
+                        string previous = definitions[j].CompatibleType;
+                        if (string.IsNullOrEmpty(previous))
+                            previous = "<universal>";
+
+                        alreadyListed = string.Equals(previous, lane, System.StringComparison.Ordinal);
+                    }
+
+                    if (alreadyListed)
+                        continue;
+
+                    if (appended > 0)
+                        text.Append(',');
+
+                    text.Append(lane);
+                    appended++;
+                }
+            }
+
+            if (appended == 0)
+                text.Append("none");
+
+            return text.Append(']').ToString();
         }
 
         /// <summary>
