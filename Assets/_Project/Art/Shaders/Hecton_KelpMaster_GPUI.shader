@@ -241,9 +241,9 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 return (half)((octave0 * 0.58 + octave1 * 0.29 + octave2 * 0.13) * tipParabola);
             }
 
-            void ApplyKelpLivingBiota(inout float3 positionOS, float3 normalOS, half4 vertexColor, half2 uv)
+            void ApplyKelpLivingBiota(inout float3 positionOS, float3 normalOS, half4 vertexColor, half2 uvMask)
             {
-                half heightMask = isfinite((float)uv.y) ? saturate(uv.y) : 0.0h;
+                half heightMask = isfinite((float)uvMask.y) ? saturate(uvMask.y) : 0.0h;
                 float tipParabola = (float)(heightMask * heightMask);
                 float3 positionWS = GetVertexPositionInputs(positionOS).positionWS;
                 half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, heightMask);
@@ -255,10 +255,13 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 // Sway amplitude is COLOR.r: "Anchor/root = 0 ... Flexible frond tips = 192 to 255"
                 // (3DMODEL_FLORA_CORAL.md section 2), with that section's per-family stiffness
                 // exponent already baked in by the generator, so a stiff organism and a flexible
-                // one no longer share one hardcoded curve. uv.y is the fallback for a non-finite
-                // red channel, and heightMask below still pins the holdfast, so a mesh whose red
-                // channel is a flat constant degrades to a linear gradient instead of violating
-                // the "Root vertices sway as much as tips" rejection gate in section 8.
+                // one no longer share one hardcoded curve. uvMask.y is the fallback for a
+                // non-finite red channel -- TEXCOORD1, the generator's "UVMask" set, whose V is
+                // the geodesic root-to-tip distance and is the same field as COLOR.r by
+                // construction (Tools/Blender/generators/kelp.py UV_MASK_LAYER). heightMask below
+                // still pins the holdfast, so a mesh whose red channel is a flat constant degrades
+                // to that gradient instead of violating the "Root vertices sway as much as tips"
+                // rejection gate in section 8.
                 half swayMask = isfinite((float)vertexColor.r) ? saturate(vertexColor.r) : heightMask;
                 swayAmplitude *= swayMask;
 
@@ -324,6 +327,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 float4 tangentOS : TANGENT;
                 float4 color : COLOR;
                 float2 uv : TEXCOORD0;
+                float2 uvMask : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -333,7 +337,11 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 float3 positionWS : TEXCOORD0;
                 half3 normalWS : TEXCOORD1;
                 half4 color : TEXCOORD2;
-                half2 uv : TEXCOORD3;
+                // TEXCOORD3 carries the MASK set (TEXCOORD1 in), not UV0. UV0 stays a vertex
+                // input only: no fragment consumer remains once the height and width masks read
+                // the mask set, and every map here is sampled triplanar from world position, so
+                // interpolating the atlas unwrap as well would be dead bandwidth.
+                half2 uvMask : TEXCOORD3;
                 half3 viewDirWS : TEXCOORD4;
                 half fogFactor : TEXCOORD5;
                 half4 tangentWS : TEXCOORD6;
@@ -483,7 +491,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 float3 positionOS = all(isfinite(input.positionOS.xyz)) ? input.positionOS.xyz : float3(0.0, 0.0, 0.0);
                 float3 normalOS = HectonKelpSafeNormalize(input.normalOS, float3(0.0, 1.0, 0.0));
                 float4 tangentOS = all(isfinite(input.tangentOS)) ? input.tangentOS : float4(1.0, 0.0, 0.0, 1.0);
-                ApplyKelpLivingBiota(positionOS, normalOS, input.color, input.uv);
+                ApplyKelpLivingBiota(positionOS, normalOS, input.color, input.uvMask);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(positionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(normalOS, tangentOS);
@@ -493,7 +501,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 output.tangentWS = half4((half3)HectonCoreLitSafeNormalize(normalInputs.tangentWS), tangentOS.w);
                 output.bitangentWS = (half3)HectonCoreLitSafeNormalize(normalInputs.bitangentWS);
                 output.color = input.color;
-                output.uv = input.uv;
+                output.uvMask = input.uvMask;
                 output.viewDirWS = SafeNormalize(GetWorldSpaceViewDir(positionInputs.positionWS));
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 output.biolumLocalAupCoord = positionInputs.positionWS - TransformObjectToWorld(float3(0.0, 0.0, 0.0));
@@ -520,8 +528,25 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 // parameter below instead of being read out of R/G/B.
                 half bakedBiolumMask = saturate(input.color.g);
                 half bakedVertexAo = saturate(input.color.b);
-                half heightMask = saturate(input.uv.y);
-                half widthMask = saturate(input.uv.x);
+                // UV SET CONTRACT. The height and width masks come from TEXCOORD1, the generator's
+                // "UVMask" set (Tools/Blender/generators/kelp.py UV_MASK_LAYER): V = geodesic
+                // distance from the holdfast, root 0 to farthest tip 1; U = 0 and 1 at the blade
+                // margins, 0.5 on the midrib. They do NOT come from UV0. Every map in this pass is
+                // sampled triplanar from world position, so UV0 is never a texture coordinate
+                // here; UV0 is the atlas-packed conformal unwrap that the 3dmodel.md section 6
+                // padding/density/island gates measure, which makes each island's V an atlas band
+                // rather than a root-to-tip parameter. 3dmodel.md section 3 assigns TexCoord1 to
+                // "atlas remap, or packed baked masks"; section 6 states that triplanar assignment
+                // "still requires UV0 or object-space coordinates for decals and masks".
+                // MEASURED 2026-07-29 and UNRESOLVED: all 472 kelp mesh assets currently under
+                // Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_*,
+                // Assets/_Project/Prefabs/GeneratedEcosystem and
+                // Art/Generated/Flora/BioForge/Shallows/Kelp serialize TexCoord1 with dimension 0.
+                // They carry no UVMask, so every mask below reads 0 on them. The forge FBX that
+                // does carry UVMask is not imported under Assets/. Do not bind this material to
+                // those meshes until the writer emits TexCoord1 or the forge asset is imported.
+                half heightMask = saturate(input.uvMask.y);
+                half widthMask = saturate(input.uvMask.x);
                 half centerDistance = abs(widthMask - 0.5h) * 2.0h;
                 half midribMask = saturate(1.0h - centerDistance * centerDistance * 6.0h);
                 half edgeMask = saturate((centerDistance - 0.24h) / 0.76h);
@@ -629,7 +654,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                     float3 biolumLocalAupCoord = input.biolumLocalAupCoord;
                     half4 globalBiolumState = ResolveKelpGlobalBiolum(biolumLocalAupCoord);
                     half globalBiolumMask = step(0.001h, globalBiolumState.w);
-                    half proceduralBiolumMask = (half)HectonCoreLitTrianglePulse01(biolumLocalAupCoord.x * 0.043h + biolumLocalAupCoord.z * 0.061h + input.uv.y * 1.7h);
+                    half proceduralBiolumMask = (half)HectonCoreLitTrianglePulse01(biolumLocalAupCoord.x * 0.043h + biolumLocalAupCoord.z * 0.061h + input.uvMask.y * 1.7h);
                     // COLOR.g is the authored bioluminescence mask/phase, and section 2 fixes
                     // "Non-emissive tissue = 0", so it GATES emission rather than merely biasing
                     // it. The edge/thickness/pulse terms now shape that baked mask instead of
@@ -756,6 +781,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 float3 normalOS : NORMAL;
                 float4 color : COLOR;
                 float2 uv : TEXCOORD0;
+                float2 uvMask : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -836,9 +862,9 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 return (half)((octave0 * 0.58 + octave1 * 0.29 + octave2 * 0.13) * tipParabola);
             }
 
-            void ApplyKelpShadowBiota(inout float3 positionOS, float3 normalOS, half4 vertexColor, half2 uv)
+            void ApplyKelpShadowBiota(inout float3 positionOS, float3 normalOS, half4 vertexColor, half2 uvMask)
             {
-                half heightMask = isfinite((float)uv.y) ? saturate(uv.y) : 0.0h;
+                half heightMask = isfinite((float)uvMask.y) ? saturate(uvMask.y) : 0.0h;
                 float tipParabola = (float)(heightMask * heightMask);
                 float3 positionWS = TransformObjectToWorld(positionOS);
                 half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, heightMask);
@@ -850,10 +876,13 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 // Sway amplitude is COLOR.r: "Anchor/root = 0 ... Flexible frond tips = 192 to 255"
                 // (3DMODEL_FLORA_CORAL.md section 2), with that section's per-family stiffness
                 // exponent already baked in by the generator, so a stiff organism and a flexible
-                // one no longer share one hardcoded curve. uv.y is the fallback for a non-finite
-                // red channel, and heightMask below still pins the holdfast, so a mesh whose red
-                // channel is a flat constant degrades to a linear gradient instead of violating
-                // the "Root vertices sway as much as tips" rejection gate in section 8.
+                // one no longer share one hardcoded curve. uvMask.y is the fallback for a
+                // non-finite red channel -- TEXCOORD1, the generator's "UVMask" set, whose V is
+                // the geodesic root-to-tip distance and is the same field as COLOR.r by
+                // construction (Tools/Blender/generators/kelp.py UV_MASK_LAYER). heightMask below
+                // still pins the holdfast, so a mesh whose red channel is a flat constant degrades
+                // to that gradient instead of violating the "Root vertices sway as much as tips"
+                // rejection gate in section 8.
                 half swayMask = isfinite((float)vertexColor.r) ? saturate(vertexColor.r) : heightMask;
                 swayAmplitude *= swayMask;
 
@@ -901,7 +930,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
 
                 float3 positionOS = all(isfinite(input.positionOS.xyz)) ? input.positionOS.xyz : float3(0.0, 0.0, 0.0);
                 float3 normalOS = HectonKelpSafeNormalize(input.normalOS, float3(0.0, 1.0, 0.0));
-                ApplyKelpShadowBiota(positionOS, normalOS, input.color, input.uv);
+                ApplyKelpShadowBiota(positionOS, normalOS, input.color, input.uvMask);
 
                 float3 positionWS = TransformObjectToWorld(positionOS);
                 float3 normalWS = TransformObjectToWorldNormal(normalOS);
@@ -1019,6 +1048,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 float3 normalOS : NORMAL;
                 float4 color : COLOR;
                 float2 uv : TEXCOORD0;
+                float2 uvMask : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -1099,9 +1129,9 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 return (half)((octave0 * 0.58 + octave1 * 0.29 + octave2 * 0.13) * tipParabola);
             }
 
-            void ApplyKelpDepthBiota(inout float3 positionOS, float3 normalOS, half4 vertexColor, half2 uv)
+            void ApplyKelpDepthBiota(inout float3 positionOS, float3 normalOS, half4 vertexColor, half2 uvMask)
             {
-                half heightMask = isfinite((float)uv.y) ? saturate(uv.y) : 0.0h;
+                half heightMask = isfinite((float)uvMask.y) ? saturate(uvMask.y) : 0.0h;
                 float tipParabola = (float)(heightMask * heightMask);
                 float3 positionWS = TransformObjectToWorld(positionOS);
                 half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, heightMask);
@@ -1113,10 +1143,13 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 // Sway amplitude is COLOR.r: "Anchor/root = 0 ... Flexible frond tips = 192 to 255"
                 // (3DMODEL_FLORA_CORAL.md section 2), with that section's per-family stiffness
                 // exponent already baked in by the generator, so a stiff organism and a flexible
-                // one no longer share one hardcoded curve. uv.y is the fallback for a non-finite
-                // red channel, and heightMask below still pins the holdfast, so a mesh whose red
-                // channel is a flat constant degrades to a linear gradient instead of violating
-                // the "Root vertices sway as much as tips" rejection gate in section 8.
+                // one no longer share one hardcoded curve. uvMask.y is the fallback for a
+                // non-finite red channel -- TEXCOORD1, the generator's "UVMask" set, whose V is
+                // the geodesic root-to-tip distance and is the same field as COLOR.r by
+                // construction (Tools/Blender/generators/kelp.py UV_MASK_LAYER). heightMask below
+                // still pins the holdfast, so a mesh whose red channel is a flat constant degrades
+                // to that gradient instead of violating the "Root vertices sway as much as tips"
+                // rejection gate in section 8.
                 half swayMask = isfinite((float)vertexColor.r) ? saturate(vertexColor.r) : heightMask;
                 swayAmplitude *= swayMask;
 
@@ -1164,7 +1197,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
 
                 float3 positionOS = all(isfinite(input.positionOS.xyz)) ? input.positionOS.xyz : float3(0.0, 0.0, 0.0);
                 float3 normalOS = HectonKelpSafeNormalize(input.normalOS, float3(0.0, 1.0, 0.0));
-                ApplyKelpDepthBiota(positionOS, normalOS, input.color, input.uv);
+                ApplyKelpDepthBiota(positionOS, normalOS, input.color, input.uvMask);
 
                 output.positionCS = TransformObjectToHClip(positionOS);
                 return output;
