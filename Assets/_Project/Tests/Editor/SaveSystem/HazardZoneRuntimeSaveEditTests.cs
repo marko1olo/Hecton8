@@ -3234,31 +3234,93 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void BuildableIdentityRuntime_SaveDataSanitizesPersistenceIds()
         {
-            string saveDataSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/SaveData.cs"));
+            // This test used to read SaveData.cs as text and require four literals in file order, one of
+            // them "return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();" positioned
+            // INSIDE ModuleDTO.SanitizePersistenceId. It went red with no behaviour change at all when that
+            // body became a one-line delegate: SaveData.cs:2785-2788 is now
+            // "return SaveData.SanitizePersistenceString(value);" and the trim itself moved to
+            // SaveData.cs:99-102. The declaration-order asserts had no behavioural content whatsoever.
+            //
+            // Replaced by the behaviour the text match was standing in for - the persistence-id normalizer
+            // must fold a blank or whitespace-only id to string.Empty and trim a padded one, and
+            // ModuleGraphNodeDTO.SanitizeForPersistence must route prefabId through that SAME normalizer.
+            //   - " \t\r\n" is the discriminator against the wrong shape: string.IsNullOrEmpty is FALSE for
+            //     whitespace, so a normalizer written with it stores raw whitespace as a module identity.
+            //   - The padded case is the load-time consequence. ModuleCatalog.FindDataById trims the id it
+            //     is handed before the dictionary probe (ModuleCatalog.cs), so an untrimmed persisted
+            //     prefabId resolves to no BuildableData at all and the saved module never comes back.
+            //   - PersistenceEquals is asserted last because it is what a graph delta compares: a padded
+            //     node and its trimmed twin must be indistinguishable AFTER sanitization, or the same
+            //     unchanged module is rewritten on every save forever.
+            Assert.AreEqual(string.Empty, ModuleDTO.SanitizePersistenceId(null));
+            Assert.AreEqual(string.Empty, ModuleDTO.SanitizePersistenceId(string.Empty));
+            Assert.AreEqual(string.Empty, ModuleDTO.SanitizePersistenceId(" \t\r\n"));
+            Assert.AreEqual("Habitat_Corridor", ModuleDTO.SanitizePersistenceId(" Habitat_Corridor "));
+            Assert.AreEqual("Habitat_Corridor", ModuleDTO.SanitizePersistenceId("Habitat_Corridor"));
+            Assert.AreEqual(
+                "Habitat_Corridor",
+                ModuleDTO.SanitizePersistenceId(ModuleDTO.SanitizePersistenceId(" Habitat_Corridor ")),
+                "Persistence-id normalization must be idempotent or a second save pass changes the identity.");
 
-            int sanitizePersistenceIdIndex = saveDataSource.IndexOf(
-                "internal static string SanitizePersistenceId(string value)",
-                StringComparison.Ordinal);
-            Assert.GreaterOrEqual(sanitizePersistenceIdIndex, 0, saveDataSource);
-            int sanitizePersistenceTrimIndex = saveDataSource.IndexOf(
-                "return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();",
-                sanitizePersistenceIdIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(sanitizePersistenceTrimIndex, sanitizePersistenceIdIndex, saveDataSource);
-
-            int graphNodeSanitizeIndex = saveDataSource.IndexOf(
-                "internal static ModuleGraphNodeDTO SanitizeForPersistence(in ModuleGraphNodeDTO value)",
-                sanitizePersistenceTrimIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(graphNodeSanitizeIndex, sanitizePersistenceTrimIndex, saveDataSource);
-            int graphNodePrefabSanitizeIndex = saveDataSource.IndexOf(
-                "dto.prefabId = ModuleDTO.SanitizePersistenceId(dto.prefabId);",
-                graphNodeSanitizeIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(graphNodePrefabSanitizeIndex, graphNodeSanitizeIndex, saveDataSource);
+            AssertGraphNodePrefabIdIsNormalizedForPersistence(null, string.Empty);
+            AssertGraphNodePrefabIdIsNormalizedForPersistence(string.Empty, string.Empty);
+            AssertGraphNodePrefabIdIsNormalizedForPersistence(" \t\r\n", string.Empty);
+            AssertGraphNodePrefabIdIsNormalizedForPersistence(" Habitat_Corridor ", "Habitat_Corridor");
+            AssertGraphNodePrefabIdIsNormalizedForPersistence("Habitat_Corridor", "Habitat_Corridor");
         }
+
+        private static void AssertGraphNodePrefabIdIsNormalizedForPersistence(
+            string authoredPrefabId,
+            string expectedPrefabId)
+        {
+            ModuleGraphNodeDTO authored = new ModuleGraphNodeDTO
+            {
+                prefabId = authoredPrefabId,
+                moduleHashId = 12345,
+                aupGridX = 7,
+                aupGridY = -3,
+                aupGridZ = 11,
+                aupLocalX = 1.5f,
+                aupLocalY = -2.25f,
+                aupLocalZ = 3.75f,
+                rotX = 0f,
+                rotY = 0f,
+                rotZ = 0f,
+                rotW = 1f
+            };
+
+            ModuleGraphNodeDTO sanitized = ModuleGraphNodeDTO.SanitizeForPersistence(in authored);
+
+            Assert.AreEqual(
+                expectedPrefabId,
+                sanitized.prefabId,
+                "Graph-node prefabId was not normalized for persistence: '" +
+                    (authoredPrefabId ?? "<null>") + "'.");
+            Assert.AreEqual(
+                ModuleDTO.SanitizePersistenceId(authoredPrefabId),
+                sanitized.prefabId,
+                "Graph-node prefabId did not agree with ModuleDTO's persistence-id normalizer, so the " +
+                    "graph and the module list can persist two different identities for one module.");
+
+            // The normalizer must not pass by wiping the node: identity and placement have to survive, or
+            // sanitization would silently relocate every saved module to the universe origin.
+            Assert.AreEqual(12345, sanitized.moduleHashId);
+            Assert.AreEqual(7L, sanitized.aupGridX);
+            Assert.AreEqual(-3L, sanitized.aupGridY);
+            Assert.AreEqual(11L, sanitized.aupGridZ);
+            Assert.AreEqual(1.5f, sanitized.aupLocalX);
+            Assert.AreEqual(-2.25f, sanitized.aupLocalY);
+            Assert.AreEqual(3.75f, sanitized.aupLocalZ);
+            Assert.AreEqual(1f, sanitized.rotW);
+
+            ModuleGraphNodeDTO trimmedTwin = authored;
+            trimmedTwin.prefabId = expectedPrefabId;
+            ModuleGraphNodeDTO sanitizedTwin = ModuleGraphNodeDTO.SanitizeForPersistence(in trimmedTwin);
+            Assert.IsTrue(
+                ModuleGraphNodeDTO.PersistenceEquals(in sanitized, in sanitizedTwin),
+                "A padded prefabId and its trimmed twin must be persistence-identical after normalization.");
+        }
+
         [Test]
         public void BuildableIdentityRuntime_TemplateHashIdDirectReadsStayOutOfRuntimeBindingPaths()
         {
