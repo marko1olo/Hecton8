@@ -144,7 +144,23 @@ both funnel into `HandleSaveFailure`, which calls `SaveEvents.TryRaiseSaveFailed
 next to the `LogError`. Eleven more preflight and reject paths raise it too (`:2196`, `:2205`, `:2216`,
 `:2292`, `:2303`, `:5046`, `:5486`, `:5495`, `:5507`, `:5520`, `:5536`). It does not merely log.
 
-**The break is on the subscriber side, and there are exactly three candidate surfaces. None works.**
+**Corrected 2026-07-29: the defect is scene-scoped, not global — I first wrote "three surfaces, none works"
+and that was wrong.** There are seven runtime `ISaveEventListener` implementations, and two of them handle a
+failure correctly:
+- `MainMenuController` (`MainMenuController.cs:24`) is genuinely reachable — its script guid
+  `759f3087469a99f40ab0dc8c4a3b6fb3` sits at `01_MAIN_MENU.unity:394`, and that scene is `enabled: 1` in
+  `ProjectSettings/EditorBuildSettings.asset:12`. On `SaveFailed` it calls `OnSaveFailed` (`:2347`), clears
+  `_isSaveLoadBusy`, re-enables the buttons and raises a real
+  `ModalWindow.ShowWithCustomLabels("Save Failed", ...)` with the localized `ERROR_SAVE_FAILED_MESSAGE`
+  (`:2354-2360`). Verified by hand, all three facts.
+- `ModWorldPersistenceManager` is reachable through `GameBootstrapper.cs:6043`.
+
+So a save that fails **in the main menu** — load, delete, slot management — does tell the player. What is
+broken is the **gameplay scene**: the player saving mid-run gets nothing, and worse, gets a false success.
+That narrows the blast radius and it also makes the defect sharper, because mid-run is exactly when a lost
+save costs the most.
+
+**The gameplay-scene surfaces, and why each fails:**
 
 1. `HUDSaveNotificationLink` is the ONLY component in the repository that renders a save failure to the
    HUD — `notificationSystem.ShowCritical` for `SaveFailed`/`LoadFailed` at `:88-92`, building the literal
@@ -173,9 +189,24 @@ Inventing a failure visual and calling it done would be exactly the unverified v
 
 **The fix that needs no visual judgement, and is the recommended one.** Wire up
 `HUDSaveNotificationLink`. Its presentation is already authored inside it, so activating it invents nothing.
-Candidate live hosts identified: `SuitHUDPresentationController.cs:705` and `SuitHUDV4CanvasOverlay.cs:633`.
-Open questions before wiring: whether the link resolves its notification system itself or needs it injected,
-and whether its `Register`/`Unregister` pair survives a host created and destroyed per scene load.
+
+**Host choice, and one of the two obvious candidates is a trap.** `SuitHUDV4CanvasOverlay` is the correct
+owner, but NOT at `:633`, and NOT `SuitHUDPresentationController.cs:705`. That site is
+`CreateProjectionSourceOverlay()`, which builds the *duplicate* projection-source canvas for the visor, not
+the player's HUD: it sets `go.layer = ProjectionSourceLayer` (`:698`), is reached only when `projectedMode`
+is true and `visorProjectionCamera != null` (`:657-666`), only on a cold pass (`:669`, and the COLD ALLOC
+comment at `:691` says tick calls disallow creation), and its layout is a mirror —
+`projectionSourceOverlay.CopyConfigurationFrom(canvasOverlay)` (`:684`). Hosting the link there breaks in at
+least three ways: in flat or non-visor mode the surface is never created, so a save failure is invisible
+exactly when the player is not in projected mode; when projected mode flips off,
+`SetOverlayCanvasVisible` → `SetBehaviourEnabledIfChanged` (`:759`) hides the canvas through its CanvasGroup
+and would suppress the notification mid-display; and it renders into the visor projection render texture
+rather than the player's screen. Picking the plausible-looking site would have shipped a fix that appears to
+work in exactly one camera mode.
+
+Open questions still to settle before wiring: whether the link resolves its notification system itself or
+needs it injected, and whether its `Register`/`Unregister` pair survives a host created and destroyed per
+scene load.
 
 **Second, independent fix, also low risk:** split the `SaveFailed` branch out of `OnSaveEvent:1747` so a
 failure stops sharing a code path with a completion. Keep `RequestSavingProgressHide` for `SaveCompleted`
