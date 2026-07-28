@@ -20,6 +20,15 @@ namespace Hecton8.Dev
     [AddComponentMenu("Hecton8/Dev/Tool Loadout Provisioner")]
     public sealed class ToolLoadoutProvisioner : MonoBehaviour
     {
+        // Precomputed stable telemetry hashes. GlobalTelemetryBus.PublishPerformanceWarning
+        // (Core/GlobalTelemetryBus.cs:365) carries no [Conditional] attribute, so unlike H8Debug these
+        // survive into a shipped build - which is the point: this component's whole failure mode was
+        // being silent.
+        private const uint StartupLoadoutEmptyWarningHash = 0x544C4530u;        // TLE0
+        private const uint StartupLoadoutSourceInertWarningHash = 0x544C5349u;  // TLSI
+        private const uint DevelopmentGrantRefusedWarningHash = 0x544C4447u;    // TLDG
+        private const uint ToolLoadoutProvisionerContextHash = 0x544C5650u;     // TLVP
+
         internal static ToolLoadoutProvisioner ActiveRuntimeInstance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -73,11 +82,7 @@ namespace Hecton8.Dev
             if (_appliedAtRuntime)
                 return;
 
-            if (!CanProvisionInCurrentBuild())
-            {
-                _appliedAtRuntime = true;
-                return;
-            }
+            _appliedAtRuntime = true;
 
             if (provisionInventoryOnStart)
                 ProvisionFullToolKit();
@@ -87,19 +92,62 @@ namespace Hecton8.Dev
 
             if (assignCoreLoadoutOnStart)
             {
-                if (startupPreset != null)
-                    ApplyStartupPreset();
-                else
-                    AssignCoreLoadout();
+                // Startup provisioning FILLS GAPS. It is not the owner of quick-slot truth -
+                // PlayerToolManager is, and ContentSanityValidator.cs:2490 validates its serialized
+                // toolPrefabs as the production starter loadout - so an automatic pass must never
+                // overwrite or clear a slot the owner already holds.
+                int contributedSlots = startupPreset != null
+                    ? ApplyStartupLoadout(startupPreset.slotPrefabs, overwriteAssignedSlots: false)
+                    : ApplyStartupLoadout(coreQuickSlotPrefabs, overwriteAssignedSlots: false);
+
+                if (contributedSlots <= 0)
+                {
+                    Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
+                        StartupLoadoutSourceInertWarningHash,
+                        ToolLoadoutProvisionerContextHash,
+                        0f);
+                }
             }
 
-            _appliedAtRuntime = true;
+            ReportStartupLoadoutOutcome();
+        }
+
+        /// <summary>
+        /// Reports the only fact that matters to the first-20-minutes tool contract: how many quick
+        /// slots actually hold a tool once startup provisioning has finished. Zero means the player
+        /// begins the route with no tool verb at all, whichever owner was supposed to supply it.
+        /// </summary>
+        private void ReportStartupLoadoutOutcome()
+        {
+            AutoResolveSceneReferences();
+
+            // scalarValue carries the slot count the owner exposes, or 0 when the owner could not be
+            // resolved at all - both are the same player-visible outcome and both need a marker.
+            int assignedSlots = 0;
+            int slotCount = 0;
+            if (toolManager != null)
+            {
+                slotCount = toolManager.SlotCount;
+                for (int i = 0; i < slotCount; i++)
+                {
+                    if (toolManager.GetAssignedToolPrefab(i) != null)
+                        assignedSlots++;
+                }
+            }
+
+            if (assignedSlots > 0)
+                return;
+
+            Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
+                StartupLoadoutEmptyWarningHash,
+                ToolLoadoutProvisionerContextHash,
+                slotCount);
         }
 
         [ContextMenu("Provision Full Tool Kit")]
         public void ProvisionFullToolKit()
         {
-            if (!CanProvisionInCurrentBuild())
+            if (!CanGrantDevelopmentInventoryInCurrentBuild(provisionInventoryOnStart))
                 return;
 
             AutoResolveSceneReferences();
@@ -123,7 +171,7 @@ namespace Hecton8.Dev
         [ContextMenu("Provision Construction Materials")]
         public void ProvisionConstructionMaterials()
         {
-            if (!CanProvisionInCurrentBuild())
+            if (!CanGrantDevelopmentInventoryInCurrentBuild(provisionConstructionMaterialsOnStart))
                 return;
 
             AutoResolveSceneReferences();
@@ -147,20 +195,49 @@ namespace Hecton8.Dev
         [ContextMenu("Assign Core Loadout")]
         public void AssignCoreLoadout()
         {
-            if (!CanProvisionInCurrentBuild())
-                return;
+            // Explicit designer action: overwrite is what was asked for, empty entries included.
+            ApplyStartupLoadout(coreQuickSlotPrefabs, overwriteAssignedSlots: true);
+        }
 
+        /// <summary>
+        /// Writes a slot source into the tool owner and returns how many quick slots end up holding a
+        /// tool. With <paramref name="overwriteAssignedSlots"/> false this only fills gaps: an entry the
+        /// source leaves empty never clears an assigned slot, and a slot the owner already holds is left
+        /// alone. That is the automatic startup contract - a provisioning pass that can leave the player
+        /// with fewer tools than the prefab shipped with is worse than one that does nothing.
+        /// </summary>
+        private int ApplyStartupLoadout(GameObject[] slotSource, bool overwriteAssignedSlots)
+        {
             AutoResolveSceneReferences();
-            if (toolManager == null)
-                return;
+            if (toolManager == null || slotSource == null)
+                return 0;
 
-            if (holsterBeforeAssigning)
+            int count = Mathf.Min(slotSource.Length, toolManager.SlotCount);
+            if (count <= 0)
+                return 0;
+
+            if (holsterBeforeAssigning && overwriteAssignedSlots)
                 toolManager.Holster();
 
-            for (int i = 0; i < coreQuickSlotPrefabs.Length; i++)
+            int filledSlots = 0;
+            for (int i = 0; i < count; i++)
             {
-                toolManager.SetAssignedToolPrefab(i, coreQuickSlotPrefabs[i], holsterIfCurrentInvalid: false);
+                GameObject candidate = slotSource[i];
+                GameObject assigned = toolManager.GetAssignedToolPrefab(i);
+
+                if (!overwriteAssignedSlots && (assigned != null || candidate == null))
+                {
+                    if (assigned != null)
+                        filledSlots++;
+
+                    continue;
+                }
+
+                if (toolManager.SetAssignedToolPrefab(i, candidate, holsterIfCurrentInvalid: false) && candidate != null)
+                    filledSlots++;
             }
+
+            return filledSlots;
         }
 
         [ContextMenu("Provision And Assign Core Loadout")]
@@ -174,9 +251,6 @@ namespace Hecton8.Dev
         [ContextMenu("Apply Startup Preset")]
         public void ApplyStartupPreset()
         {
-            if (!CanProvisionInCurrentBuild())
-                return;
-
             AutoResolveSceneReferences();
             if (toolManager == null || startupPreset == null)
                 return;
@@ -204,11 +278,31 @@ namespace Hecton8.Dev
             }
         }
 
-        private static bool CanProvisionInCurrentBuild()
+        /// <summary>
+        /// Gates the two BULK INVENTORY GRANTS only - the 13-tool kit and the starter construction
+        /// stock. Those are development conveniences, so shipping them would hand a release player free
+        /// loot; that, and not a compile dependency, is the whole justification for a build gate here.
+        /// The quick-slot assignment paths no longer carry it: they hold no editor-only dependency
+        /// (every call they make - Holster, SetAssignedToolPrefab, ApplyLoadoutPreset,
+        /// GameBootstrapper.TryGetCurrentPlayerTransform - compiles on every platform, and the only
+        /// AssetDatabase code in this file sits under its own #if UNITY_EDITOR), and they are the sole
+        /// route from the four authored ToolLoadoutPreset assets into a running game.
+        /// The refusal is now audible when something actually asked for the grant, instead of returning
+        /// false into silence.
+        /// </summary>
+        private static bool CanGrantDevelopmentInventoryInCurrentBuild(bool grantWasRequested)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             return true;
 #else
+            if (grantWasRequested)
+            {
+                Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
+                    DevelopmentGrantRefusedWarningHash,
+                    ToolLoadoutProvisionerContextHash,
+                    1f);
+            }
+
             return false;
 #endif
         }
