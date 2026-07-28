@@ -3,25 +3,23 @@
 
 > **Source:** Black Keel station archive, custody-safe public mirror.  
 > **Scope:** Orbital geography, local sky behavior, claim-tender function, and what a Marauder actually sees before descent.  
-> **Reviewer note:** A tender above a water grave is still a cage. It just has a better view of the lock.
+> **Reviewer note:** The custody-safe mirror of the station archive: sky geometry, tender function, and the hold codes that decide whether any of it can be recorded.
 
 ---
 
-## 1. The Sky Is Working Machinery
+## 1. Why The Station Watches The Sky
 
-HECTON-8 is an ocean moon in the Aegir system. Ran is the star. Aegir is the giant. That sounds simple until you live under it.
+HECTON-8 is an ocean moon in the Aegir system. Ran is the star, Aegir is the giant, and the arrangement stays simple exactly until something has to be moved through it.
 
-From the surface, the sky is not a romantic dome. From orbit, it is not empty rescue space. It is a machine made from moving bodies, charged belts, shadow cones, relay lines, storm plumes, traffic reservations, and legal witness windows. Every useful action near HECTON-8 has to pass through that machine. A distress packet. A descent pod. A cargo release. A suit telemetry burst. A claim signature. A body bag with a custody tag.
+Six operations near HECTON-8 all require the same geometry: a distress packet, a descent pod, a cargo release, a suit telemetry burst, a claim signature, and a body bag with a custody tag. None of them is granted by the tender on its own judgement. Each one is granted against a witness pass, and a witness pass is a line on a clock.
 
-The Black Keel does not look down at the moon and decide what is true. It waits for the sky to allow truth to be recorded.
-
-That is why the station's oldest clocks are not decorative. They track occultations by Aegir, radiation belt crossings, moon-ladder traffic, charged dust from Skarn, Vela's ice-shadow events, Kestrel line-of-sight blocks, Ran-side thermal windows, and HECTON-8's own weather columns clawing above the ocean. Those clocks tell workers when a packet can be witnessed, when an ascent corridor is legally clean, and when the correct answer is still "hold".
+The station's oldest clocks run that ledger. They track occultations by Aegir, radiation belt crossings, moon-ladder traffic, charged dust off Skarn, Vela ice-shadow events, Kestrel line-of-sight blocks, Ran-side thermal windows, and HECTON-8's own weather columns standing up out of the ocean. The board they feed prints three states and no others: WITNESS OPEN, WITNESS DEGRADED, HOLD.
 
 ## 2. Aegir's Moon Ladder
 
 The Aegir system is a hierarchy of gravity and inconvenience. Aegir's mass shapes everything close to it: tides, safe orbits, radiation exposure, receiver geometry, and the price of moving one more crate.
 
-HECTON-8 sits inside a crowded moon ladder. Skarn is not important because it is pretty; it matters because charged noise can dirty an antenna at the worst possible minute. Vela matters because ice dust can shutter a relay path and turn a clean transmission into a partial witness. Kestrel matters because small bodies become big obstructions when the contract requires a clean line. Aegir itself matters most of all because its gravity well and magnetosphere decide which routes are cheap, which routes are survivable, and which routes only look safe on a diagram.
+HECTON-8 sits inside a crowded moon ladder, and each rung shows up on the board as a different failure. Charged noise off Skarn dirties an antenna at the minute a packet needs it clean. Vela ice dust shutters a relay path and turns a complete transmission into a partial witness, which is a different legal object. Kestrel is small and close, which is all a body needs to be when a contract requires an unbroken line. Aegir itself sets the cost of everything: gravity well and magnetosphere decide which routes are cheap, which are survivable, and which look safe only on a diagram.
 
 The result is a sky full of bookkeeping. The same geometry that gives a station sunrise also decides whether a dead worker is counted as recovered, whether a sealed crate is still in lawful transit, and whether a Marauder's dive log can be attached to a debt chain without challenge.
 
@@ -31,23 +29,21 @@ There are days when the ocean below is calm, the suit is green, the tender is re
 
 The Black Keel is not a heroic orbital city. It is an Aegir claim tender and custody platform with habitats bolted to its work.
 
-Public diagrams show modular berths, quarantine tanks, route witness racks, launch cradles, cargo meters, receiver-account consoles, and clean arrows that make the place look intentional. The lived station is narrower: patched pressure corridors, overworked scrubbers, condensation in the quiet corners, suit lockers smelling of salt and disinfectant, and debtors sleeping close enough to hear claim printers wake before shift change.
+Public diagrams show modular berths, quarantine tanks, route witness racks, launch cradles, cargo meters, receiver-account consoles, and clean arrows that make the place look intentional. The corridors those arrows describe are patched, the scrubbers run over rating, condensation collects in the corners nobody walks, and the contractor berths are close enough to the claim printers to hear them wake before a shift.
 
-Its purpose is not rescue. Its purpose is legibility.
+The station's product is a record. Rescue is not on the capability list, and the capability list is short by design: a skeleton crew and a great deal of automation cost less to insure than a staffed rescue tender.
 
-If a Marauder descends, the Black Keel records the debt chain, suit identity, cargo permission, route witness, and recovery terms. If a body returns, it records what legal category the body returned under. If only a beacon returns, it records whether that beacon can stand in for the body. If nothing returns, it records how long the nothing has to remain nothing before a claim can move.
-
-That makes the station cruel in a specific way. It does not need to hate anyone. It only needs to keep the categories intact.
+When a contractor descends, Black Keel records the debt chain, suit identity, cargo permission, route witness and recovery terms. When a body comes back it records the legal category the body came back under. When only a beacon comes back it records whether the beacon can stand in for the body. When nothing comes back it records how long the nothing must remain nothing before a claim can move, and that interval is the only one of the four with a number attached.
 
 ## 4. Orbital Isolation
 
-The people on the Black Keel are stranded in a practical, contractual sense. The station cannot leave Aegir on its own. It depends on scheduled nearlight haulers, receiver slots, custody windows, quarantine classes, and route insurance priced before the current emergency existed.
+Everyone aboard is stranded in a contractual sense. The tender cannot leave Aegir under its own power and depends on scheduled nearlight haulers, receiver slots, custody windows, quarantine classes, and route insurance priced before the current emergency existed.
 
-A cargo arrival can bring cold-sleep labor, synthetic feedstock, replacement modules, sealed orders, medical marrow, and corrected debt ledgers. It cannot become an instant rescue ship because a corridor worker starts suffocating or a Marauder dispute makes the ledger untidy. The ship has its own route obligations. The receiver has its own heat budget. The tender has authority over records, not over the shape of interstellar delay.
+A cargo arrival can deliver cold-sleep labour, synthetic feedstock, replacement modules, sealed orders, medical stock and corrected debt ledgers. It cannot become a rescue ship because a corridor worker stops breathing or a contractor dispute makes a ledger untidy. The hauler carries its own route obligations, the receiver holds its own heat budget, and the tender's authority ends at the record.
 
-If life support fails, if a quarantine class changes, if a recovery packet arrives during the wrong sky, the station can shout into the chain and still wait. Help is not two hours away. It is behind beam schedules, braking slots, tug hours, claim signatures, data quarantine, and the cold fact that a true emergency is not automatically a scheduled arrival.
+When life support degrades, when a quarantine class changes, when a recovery packet arrives under the wrong sky, the station can file into the chain and then wait. Help sits behind beam schedules, braking slots, tug hours, claim signatures and data quarantine. Nothing in that list responds to urgency, because none of it has a field for urgency.
 
-This is why Black Keel workers learn not to ask whether rescue is coming. They ask what category the failure belongs to.
+The practical result is a habit. Station staff open a failure by naming its category, because the category decides which queue it enters, and the queue decides everything after that.
 
 ## 5. The View From The Lower Decks
 

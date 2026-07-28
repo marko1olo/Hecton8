@@ -118,6 +118,10 @@ HARD: list[tuple[str, str, str, str]] = [
         "organic metaphor outside literal xenobiology",
     ),
     (
+        # writing.md permits these words when they are LITERAL and sourced: "'pulse' is allowed for
+        # pressure, signal, power, sonar, pump cadence, or biological rhythm with observed evidence".
+        # LITERAL_SENSORY_CONTEXT below suppresses the hit when real acoustics/power/biology is present,
+        # so a brine-mirror sonar article is not punished for saying "echoes".
         "fake_sensory",
         r"\b(?:whispers|breathes|echoes|hums|sings|hungers)\b",
         "writing.md AI Phrase Family Quarantine (fake sensory fog)",
@@ -130,6 +134,22 @@ HARD: list[tuple[str, str, str, str]] = [
         "abstraction performing a moral or metaphysical action with no owner",
     ),
 ]
+
+
+# A sensory verb is only "fake sensory fog" when nothing real produces the sensation. When the surrounding
+# text is actually about acoustics, power, signal, pressure or an organism, the word is literal and
+# writing.md Risk Word And Rhythm Firewall explicitly allows it. Checked against the paragraph, not the
+# sentence, because the sonar apparatus is usually established a clause or two earlier.
+LITERAL_SENSORY_CONTEXT = re.compile(
+    r"\b(?:sonar|ping|pinger|acoustic|hydrophone|carrier|transducer|decibel|dB|Hz|kHz|"
+    r"frequency|delay|reverberation|density boundary|brine mirror|thermocline|"
+    r"pump|compressor|scrubber|valve|turbine|generator|relay|signal|antenna|"
+    r"network|packet|beacon|telemetry|inbound|transmission|channel|uplink|"
+    r"organism|gill|siphon|colony of|biofilm|vocal|whale|fauna)\b",
+    re.IGNORECASE,
+)
+
+SENSORY_FAMILY = "fake_sensory"
 
 
 @dataclass(frozen=True)
@@ -180,7 +200,11 @@ def scan_text(path: str, raw: str) -> list[Finding]:
             continue
         if line.lstrip().startswith("<!--"):
             continue
+        # Paragraph window: a literal sonar/power/organism source is often established a line or two above.
+        window = "\n".join(lines[max(0, idx - 2) : idx + 3])
         for family, pattern, authority, why in HARD:
+            if family == SENSORY_FAMILY and LITERAL_SENSORY_CONTEXT.search(window):
+                continue
             for m in re.finditer(pattern, line, re.IGNORECASE):
                 out.append(
                     Finding(
