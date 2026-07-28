@@ -22,17 +22,34 @@ namespace Hecton8.EditorTools.Authoring
     /// switched off and the save made it permanent. There is no inverse tool, and the cleaner has no
     /// [MenuItem] - it is -executeMethod only.
     ///
-    /// WHY THAT IS THE WHOLE STORY. The surviving managers are present, registered and correct, which
-    /// is exactly why code review of this project reads clean; everything they were built to operate on
-    /// is inactive one level above them. Measured consequence in Logs/omega_route20.log: the boot
-    /// reaches "Step 7: Player Spawn", HectonPlayerSpawner waits on terrain readiness, the readiness
-    /// gate needs `HectonMapMagicVegetationBridge.ActiveRuntimeInstance`
-    /// (WorldRuntimeReferenceUtility.cs:435-437), Unity runs no OnEnable inside an inactive subtree so
-    /// that static is never published, the per-step no-progress deadline cancels the activation, and
-    /// GameBootstrapper.cs:7365 ActivatePlayer() never runs. Eight Required Route rows are unreachable
-    /// rather than broken.
+    /// WHAT THIS DOES AND DOES NOT EXPLAIN. The surviving managers are present, registered and correct,
+    /// which is why code review of this project reads clean; the authored world CONTENT they operate on is
+    /// inactive one level above them. That much holds.
     ///
-    /// WHY NOT THE REBUILD MENU ITEMS. WorldRuntimeBootstrapAuthoring.cs:1119-1121 reuses an existing
+    /// RETRACTION - an earlier version of this comment claimed the boot blocker was a consequence of the
+    /// graveyard: that HectonPlayerSpawner waits on
+    /// `HectonMapMagicVegetationBridge.ActiveRuntimeInstance`, that Unity runs no OnEnable inside an
+    /// inactive subtree, and that this is why activation times out. THAT CAUSAL CHAIN IS FALSE and this
+    /// tool will not fix the boot.
+    ///
+    /// The bridge is not buried, it does not exist. A format-agnostic GUID census over 31 scenes
+    /// (including the binary 02_HECTON_WORLD), 968 prefabs and every .asset finds its script GUID in ZERO
+    /// of them, with the spawner's own GUID as a positive control, and there is no
+    /// AddComponent&lt;HectonMapMagicVegetationBridge&gt; anywhere under Assets - recorded at
+    /// HectonPlayerSpawner.cs:977-995. Independently corroborated: the buried-component histogram in
+    /// Logs/omega_rootaudit3.log sums to exactly 117 components and the bridge is not among them.
+    ///
+    /// So the graveyard and the boot timeout are TWO INDEPENDENT FAULTS. This tool addresses the first.
+    /// Judge it on world content becoming live, not on gameReady turning true.
+    ///
+    /// KNOWN CONSEQUENCE OF LEAVING IT UNREPAIRED, which is now the strongest argument for running it:
+    /// WorldRuntimeBootstrapAuthoring no longer creates a duplicate root - its reuse check became
+    /// inactive-inclusive and depth-aware - so it now FINDS the buried root and ADOPTS it. Every route
+    /// path it writes (:1242-1256), plus the biolum zones and Starter_ReefField, is parented under the
+    /// disabled root and inherits activeInHierarchy=false. The graveyard is no longer just holding old
+    /// content; it is absorbing new content on every Rebuild.
+    ///
+    /// WHY NOT THE REBUILD MENU ITEMS. Historically WorldRuntimeBootstrapAuthoring reused an existing
     /// root via `GameObject.Find(WorldRootName)`, and GameObject.Find returns only ACTIVE objects. With
     /// the authored root disabled it finds nothing and creates a SECOND, active `--- WORLD ---` beside
     /// the graveyard copy - in a binary scene that cannot be diffed. FabricationBootstrapAuthoring.cs
