@@ -35,6 +35,9 @@ namespace Hecton8.Construction
         private const uint DuplicateRuntimeContextHash = 0xAD50966Cu;
         private const uint ExtractorPendingJobStallWarningHash = 0x41D71703u;
         private const uint ExtractorPendingJobStallContextHash = 0x1B26C087u;
+        private const uint RuntimeInstallFailedWarningHash = 0x2F63A11Du;
+        private const uint RuntimeInstallFailedContextHash = 0x7C4E5B90u;
+        private const string RuntimeRootName = "__HECTON_CONSTRUCTION_RUNTIME";
         private const SystemID NativeArrayOwnerSystem = SystemID.Construction;
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -205,6 +208,79 @@ namespace Hecton8.Construction
         {
             runtime = s_activeRuntime;
             return runtime != null;
+        }
+
+        /// <summary>
+        /// Owner-local factory route that brings the extractor SOA owner into existence.
+        /// <para>
+        /// This type had NO construction site of any kind. Nothing calls
+        /// <c>AddComponent&lt;AutonomousExtractorSystem&gt;</c> anywhere under <c>Assets/</c>, and a scene
+        /// census that walks the editor object model found it absent from 00_BOOTSTRAP, 01_MAIN_MENU and
+        /// 02_HECTON_WORLD. GlobalRegistry.cs holds only the slot (:648 field, :2252 accessor, :4511
+        /// register, :6283 unregister, :7960 slot read, :8383 type map) and nothing ever fills it, so
+        /// <see cref="GlobalRegistry.AutonomousExtractors"/> is permanently null in a shipped build. Two
+        /// consumers therefore fail without ever saying why: PlayerBuilder.cs:2135-2140 passes that null
+        /// into <see cref="AutonomousExtractorModule.ValidatePlacementWithRuntime"/>, which rejects the
+        /// placement with a reason that blames the world for missing an infinite vein, and
+        /// <see cref="AutonomousExtractorModule"/> never reaches <see cref="SlowTick"/> at all.
+        /// </para>
+        /// <para>
+        /// The route is not abandoned content. Nine authored ResourceNodeTemplate assets under
+        /// Assets/_Project/Data/Scavenging/ResourceNodes/ set <c>supportsAutonomousExtraction: 1</c>
+        /// (AbyssalCrystalSpire, AegiriumCrustNodule, CarbonGraphiteNodule, DeepMantleGeode,
+        /// PressureDiamond, RareEarthDustBed, Silicon7BGlassVein, TitaniumBasaltMass,
+        /// XenonOmegaVentCache), the vein-extraction fields those assets carry
+        /// (ResourceNodeTemplate.cs:526/:551/:561/:564) have exactly one consumer in the whole project -
+        /// this owner - and <see cref="Atlas6CorporateLiabilityManager.TryReportXenonOmegaExtracted"/>
+        /// consumes its yield for the liability route.
+        /// </para>
+        /// <para>
+        /// Shape follows the installer family - EcosystemRuntimeInstaller.cs:56-74 owns the identical
+        /// resolve-or-create runtime root, including the two traps it documents: a resolved root can come
+        /// back hidden or deactivated, and AddComponent on an inactive GameObject never runs OnEnable, so
+        /// the owner would exist and never register. Registration is verified against the registry rather
+        /// than assumed, because <see cref="TryRegisterToGlobalRegistry"/> can legally refuse.
+        /// .agents-skills/ARCH_Project_Bootstrap_Sequence_Init_Safety.txt Section3 names "source-proven
+        /// owner-local factory routes" as a legal registration source alongside 00_BOOTSTRAP bindings and
+        /// installer records; its [FORBID] entries cover self-heal and lazy creation after the first
+        /// gameplay frame, so this must be called from boot composition, never from a consumer that found
+        /// the service missing.
+        /// </para>
+        /// </summary>
+        /// <param name="runtime">Registered extractor owner, or null when the install could not complete.</param>
+        /// <returns>True when <see cref="GlobalRegistry.AutonomousExtractors"/> resolves to a live owner.</returns>
+        public static bool TryEnsureRuntimeOwner(out AutonomousExtractorSystem runtime)
+        {
+            runtime = GlobalRegistry.AutonomousExtractors;
+            if (runtime != null)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            GameObject runtimeRoot = null;
+            WorldRuntimeReferenceUtility.TryResolveScenePath(ref runtimeRoot, RuntimeRootName);
+            if (runtimeRoot == null)
+                runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: one construction runtime root per gameplay scene - owner: AutonomousExtractorSystem
+
+            runtimeRoot.hideFlags = HideFlags.None;
+            if (!runtimeRoot.activeSelf)
+                runtimeRoot.SetActive(true);
+
+            if (!runtimeRoot.TryGetComponent(out runtime) || runtime == null)
+                runtime = runtimeRoot.AddComponent<AutonomousExtractorSystem>();
+            else if (!runtime.enabled)
+                runtime.enabled = true;
+
+            if (runtime != null && ReferenceEquals(GlobalRegistry.AutonomousExtractors, runtime))
+                return true;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                RuntimeInstallFailedWarningHash,
+                RuntimeInstallFailedContextHash,
+                1f);
+            runtime = null;
+            return false;
         }
 
         private void OnEnable()
