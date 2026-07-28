@@ -61,7 +61,7 @@ Juno Kade's relay notes preserve the better version of it: "If the wall says a n
 
 The colony's social map followed tools more than corridors.
 
-A person with a rated clamp gauge could open routes another person could only stare at. A sealant patch gun with fresh cartridges made its holder briefly popular. A cutter contact could be worth more than a week's comfort allowance if it was certified for pressure work instead of scrap trimming. Sector 44's tool board reads like a family tree written by exhausted mechanics: names crossed out, hooks reassigned, tape marks, penalty notes, repair promises.
+A person with a rated clamp gauge could open routes another person could only stare at. Fresh cartridges in a sealant patch gun made their holder briefly popular. Certification decided the rest: a cutter contact rated for pressure work, not scrap trimming, traded for more than a week's comfort allowance. Sector 44's tool board reads like a family tree written by exhausted mechanics: names crossed out, hooks reassigned, tape marks, penalty notes, repair promises.
 
 Tool certification was supposed to keep people alive. It also kept people slow.
 
@@ -75,7 +75,7 @@ Sahana Iqbal's triage tags show the cost. She patched burns, pressure bruises, c
 
 Nobody needed to stand in a room and announce that people mattered less than material. The station did it through ordinary choices.
 
-When sample custody rose, comfort loads dropped first. When a brine run returned late, the canteen lost heat before the substrate vault lost stabilization. When a relay window opened, sleep shifted around it. When storm forecasts threatened access, maintenance tasks became "deferable" unless they protected extraction, communication or custody. Each choice could be defended. Each choice could be printed in clean language.
+When sample custody rose, comfort loads dropped first. When a brine run returned late, the canteen lost heat before the substrate vault lost stabilization. Sleep shifted around every relay window. A storm forecast made maintenance "deferable" unless the task protected extraction, communication or custody. Each choice could be defended. Each choice could be printed in clean language.
 
 Deep Reach did not have to say "suffocate them." It could say: conserve. Delay. Reclassify. Hold for review. Maintain continuity. Protect viable substrate. Reduce noncritical draw. Await external authorization.
 
@@ -97,10 +97,28 @@ The note is practical. That is what makes it difficult to read. It does not pred
 
 The west ladder jammed later. Not because the note was wrong. Because the station needed too many correct things at once.
 
-## What The Player Finds
+## What Shelf File 44-LQ Holds
 
-By 2190, Sector 44 should not feel like a museum of victims. It should feel like a workplace the ocean kept using after the people were gone.
+By 2190 none of this is a museum. The rooms are still in use; the users are simply not the people the rooms were built for.
 
-The water ledger tells the player who shared resources. Tool boards tell who had access and who was sent anyway. Triage tags tell which bodies were already compromised before the official emergency. Route slips tell when permissions followed liability instead of safety. Personal images tell what people thought was worth sealing against damp. Marauder corrections can turn all of it into survival information: which gauge lied, which ladder jammed, which seal was temporary, which room was trusted for the wrong reason.
+The shelf file is thin, because ordinary paper survived and important paper did not. Nine items, indexed:
 
-That is the human layer HECTON-8 needs. Not a wall of names and not a clean body count. A set of ordinary systems that still accuse the people who wrote them.
+```text
+44-LQ-1  canteen water ledger, 214 pages, handwritten  shared allowances, by name and shift
+44-LQ-2  Bay 3 tool board, photographed in place       who held a rated gauge, who did not
+44-LQ-3  triage tags, 61 recovered                     "fit for interior duty only", 18 times
+44-LQ-4  route-permission slips, partial run           exterior assignments dated after 44-LQ-3
+44-LQ-5  personal images, 16, laminated                6 faces, 10 objects
+44-LQ-6  private-board note, taped, 11:40              "take the west ladder"
+44-LQ-7  relay notes, J. Kade                          sound discipline, in order
+44-LQ-8  brine route maps, R. Okoye, annotated         safe routes, with dates
+44-LQ-9  requisition, vent-forge strips, L. Torres     "temporary environmental separation"
+```
+
+Items 3 and 4 are the pair that matters. Eighteen of Sahana Iqbal's tags restrict a named worker to interior duty. Slips in item 4 send some of the same names outside, each slip countersigned, dated and correctly filed. Getting from one to the other required no forgery at all, only two boards in two rooms and a storm window narrowing.
+
+Item 9 is the phrase that travelled. "Temporary environmental separation" appears on Torres's requisition for insulation strips in March 2147, then again in a Keelmark loss conversion file after the Tide, with the names stripped out of the paragraph around it. Four words, requisitioned once and reused as a category.
+
+Marauder annotation is what turns the file into survival information. The margins of item 8 carry corrections nobody in a dry office needed: which gauge read two low cold, which ladder jammed, which seal was logged temporary and stayed temporary for four years, which room a shift trusted because it was warm rather than because it was sound.
+
+Handling note for this shelf. Nothing in the box was forged and nothing in it was hidden. It was filled by people doing their jobs correctly, on the day, in ink. That is why it is admissible, and it is also why the Return Action Queue has never once asked for it.

@@ -11,7 +11,7 @@
 
 HECTON-8 does not have one ecosystem.
 
-It has stacked worlds. The bright shelf is thin, storm-filtered and mineral rich. The twilight slopes are full of suspended food, broken shell, drifting larvae and old colony waste. The abyssal basins run on vents, brine seams, pressure bacteria, falling carrion and heat leaking from stone. Ruined infrastructure adds a second geography: warm walls, dead pumps, leaking batteries, nutrient traps, light scars and corridors where animals learned that human machines make predictable food.
+It has stacked worlds. The bright shelf is thin, storm-filtered and mineral rich. Below it, suspended food, broken shell, drifting larvae and old colony waste fill the twilight slopes. Past 2,500 m the basins run on vents, brine seams, pressure bacteria, falling carrion and heat leaking out of stone. Ruined infrastructure adds a second geography: warm walls, dead pumps, leaking batteries, nutrient traps, light scars and corridors where animals learned that human machines make predictable food.
 
 This is why the old Deep Reach categories are only partly useful. "Flora" does not mean a garden. It means attached producers, filter mats, mineral-using growths, engineered cultures that escaped containment and native structures that function like plants without being Earth plants. "Fauna" does not mean animals waiting in the dark to attack. It means grazers, scavengers, cleaners, ambush predators, acoustic hunters, parasite swarms and large movers that will ignore a working crew for a whole shift and then investigate the moment one of them starts leaking something interesting.
 

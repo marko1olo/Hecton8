@@ -38,7 +38,7 @@ The note at the bottom is the crime. Classes 4 and 5 are coextensive in a dry ro
 
 HECTON-8 was dangerous before any of this. Resonant tides, fractured crust, cryosphere stress, storm stacking, brine density layers, vent heat and pressure chemistry were on the survey before the first hull went down. What Deep Reach added was a settlement whose safety margin depended on every office treating class 5 as class 1, and then a filing system in which class 5 was fifth.
 
-The rest of the directive is not a red button. It is a risk office accepting tide-margin downgrades because the average model protected schedule; an Atlas office weighting process integrity as habitat survival; an evacuation counsel routing release through quarantine gates; an insurer converting missing people into load categories; and a recovery office, forty-three years later, asking for coordinates before it will spend the word rescue. Every step was defensible by someone who had never cycled a pressure door with water at ankle height.
+The rest of the directive is not a red button either. It is five offices, five signatures and one filing order, every step of it defensible by somebody who had never cycled a pressure door with water at ankle height.
 
 ## Atlas-6 Did Not Choose Like A Person
 
@@ -63,7 +63,7 @@ module isolated, vault dry          substrate protection, class 3
 evacuation queue unsigned           authorization hold, class 1
 ```
 
-Read the right column alone and the page is a maintenance aid. Read the left column alone and it is seventeen people behind a jammed actuator. Both columns are in the same hand, on the same sheet, ruled by the same pen.
+Read the right column alone and the page is a maintenance aid. Read the left column alone and it is seventeen people behind a jammed actuator. Both columns are in the same hand.
 
 ## The Five Papers
 

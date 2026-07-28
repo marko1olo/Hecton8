@@ -1,48 +1,75 @@
 <!-- localization_status: source_authority_en_US -->
 # FAULT ROCK, SERPENTINITE AND MOVING WALLS
 
-> **Source:** Deep Reach geotechnical surveys, Atlas structural warnings, Marauder notes from green-black cave routes.  
-> **Speaker:** Geology officer whose official report was shortened by management, restored from field annotations.  
-> **Reviewer Note:** Rock in HECTON-8 should feel active without becoming fantasy. Fault walls do not think, but they remember pressure, water, heat, mineral growth and human damage.
+> **Source:** Deep Reach geotechnical survey GT-44, extensometer series X-11 to X-40, Atlas-6 structural warnings, and plate notes from the green-black routes.  
+> **Speaker:** Sector 44 geology officer. The filed report runs to nine pages. The working draft ran to thirty-one, and the twenty-two pages management cut are quoted here from the officer's own carbon.  
+> **Handling note:** Every convergence figure below was taken from an instrument that is still bolted to the rock and can be read again. Where the filed report and the carbon disagree, both numbers are printed.
 
 ---
 
-## 1. Rock That Remembers Pressure
+## 1. Two Centimetres
 
-The safest mistake a new diver can make is to fear the animal.
+New divers fear the animals. The expensive mistake is trusting the wall.
 
-The expensive mistake is to trust the wall.
+This is an ocean moon under tidal stress from Aegir, and that stress moves through stone continuously and slowly. Extensometer X-23, bolted across a cable trench on factory level 3 at 1,180 m, has logged 21 mm of convergence since it was set in 2144. Nineteen of those millimetres arrived inside four separate weeks. The remaining two took forty-two years.
 
-HECTON-8 is not a dry cave system drowned by accident. It is an ocean moon under tidal stress, with pressure moving through stone as slowly as law and as violently as a door failure. A tunnel wall may look like background until a seam opens, a cable trench pinches shut, or a whole corridor becomes two centimeters narrower than the map expects. Two centimeters is a joke in air. At depth, two centimeters can trap a latch, shear a conduit, crush a route tag or turn a safe squeeze into a coffin.
+Two centimetres is a joke in air. At 1,180 m, under 11.8 MPa, two centimetres binds a latch, shears a conduit, crushes a route tag, and converts a squeeze that three crews walked through into a compartment with one exit.
 
-Deep Reach maps marked rock as stable unless a survey instrument proved otherwise. Marauders mark rock as hostile unless it has behaved recently. The difference is not superstition. It is experience. Stone does not need to chase you to kill you. It only needs to keep doing what it was already doing after you put your body, tether, pod anchor or oxygen line in the wrong place.
+```text
+GT-44 EXTENSOMETER SUMMARY / SELECTED HEADS / 2190 READ
+HEAD   DEPTH     SPAN    TOTAL SINCE SET   LAST 90 d   FILED AS
+X-11     210 m   1.4 m       6 mm            0 mm      stable
+X-23   1,180 m   2.1 m      21 mm            4 mm      stable
+X-29   1,240 m   1.8 m      38 mm           11 mm      pressure variance
+X-34   2,510 m   2.6 m      64 mm            2 mm      stable
+X-40   3,320 m   3.0 m     103 mm           19 mm      no classification
+```
+
+Four of the five heads are filed `stable`. In GT-44, `stable` means the ninety-day rate did not cross the threshold for a survey callout, and the threshold is 12 mm. X-29 was filed stable at 11 mm for six consecutive quarters before the quarter when it was not.
+
+Deep Reach maps marked rock stable unless an instrument proved otherwise. Marauders mark rock hostile unless it has behaved recently. Stone does not chase anybody. It keeps doing what it was already doing after a body, a tether, a pod anchor or an oxygen line arrives in the way.
 
 ## 2. The Green-Black Fault
 
-Serpentinite is one of the reasons HECTON-8 caves do not all read like basalt.
+Serpentinite is why these caves do not all read like basalt.
 
-In the green-black fault zones, old mantle rock was hydrated, sheared, polished and salted until it became slick, veined and treacherous. Pale mineral lines run through it like old sutures. Dark wet faces shine even when no lamp hits them cleanly. Some surfaces are smooth enough to slide a glove across. Others break into fibrous crumbs that foul a seal, blind a tool head or turn a boot tread into useless rubber.
+In the fault zones, old mantle rock was hydrated, sheared, polished and salted until it came out slick, veined and treacherous. Pale mineral bands 2 to 30 mm wide run through the dark faces. Some surfaces take a glove like wet glass, at a measured friction coefficient of 0.11 dry and less than that wet. Others break down into fibrous crumbs that foul a seal face, blind a tool head, and pack a boot tread until the tread is decoration.
 
-The rock is not alive. It only looks almost maintained because water keeps changing it. Brines creep through fractures. Heat from deeper seams dries one side and feeds mineral growth on the other. Conductive films bridge wet cracks. Tiny shell organisms fix themselves into places where human engineers expected bare stone. A route cut through serpentinite is never just a route. It is a wound with chemistry.
+The rock is not alive. Water keeps changing it, which is a different thing and a worse one to plan around. Brines creep through fractures at a few millimetres a day. Heat from deeper seams dries one face while feeding mineral growth on the other. Wet films bridge cracks at resistances low enough for a hand scanner to call them wiring. Shell-forming organisms fix themselves into places the survey drawing shows as bare stone. Cutting a route through serpentinite opens a chemistry along with the passage, and the chemistry goes on working on the cut.
 
-Atlas liked these zones because they carried signals strangely well. Deep Reach hated them because they carried liability even better.
+Atlas-6 routed maintenance signals through these zones because the wet films carried them. Deep Reach disliked them because they carried liability at the same rate.
 
-## 3. Moving Walls
+## 3. Where Walls Move
 
-Moving walls rarely move where a person is looking.
+Walls do not move where a person is looking. They move at the fixings.
 
-They creep at brackets, hinge pockets, pipe collars, cable clamps, floor anchors and old drill scars. They turn perfect engineering into misalignment. A hatch does not open because the frame shifted half a finger. A pressure door closes but no longer seals. A pipe remains intact but rubs against rock until it sings. A ladder rung sits where the map says it should, while the handhold beside it has become a mineral tooth.
+Convergence appears first at brackets, hinge pockets, pipe collars, cable clamps, floor anchors and old drill scars, because those are the stiff points and the stiff points take the load. A hatch stops opening because the frame has gone 1.5 mm out of square. A pressure door still closes and no longer seals. Pipe stays intact and wears a contact band where the rock has arrived against it, 40 mm long and 0.3 mm deep, deepening on the tide period. A ladder rung sits exactly where the drawing puts it while the handhold beside it has become a mineral tooth.
 
-Marauders learn the small signs. Bright scratches on dark stone. White powder under a clamp. A pipe with fresh polish on one side. A cable that hums only when the tide turns. A crack that holds clean water while the floor below is cloudy. A tag tied high because the last person did not trust the lower wall.
+Field signs that check in seconds: bright scratch on dark stone, white powder under a clamp, fresh polish on one side of a pipe, a cable that reads 4 ohms lower on the flood tide than the ebb because the crack it crosses is wetter, a fracture holding clear water above a cloudy floor, a tag tied high because whoever tied it distrusted the lower wall.
 
-The wall does not ambush. It keeps a schedule older than the colony. The ambush is thinking the schedule stopped when the people left.
+The wall keeps a schedule older than the colony. The mistake is assuming the schedule stopped when the people left.
 
-## 4. What Machines Get Wrong
+## 4. What Instruments Get Wrong
 
-Machines prefer clean categories: rock, water, structure, organism, hazard.
+Instruments want clean categories: rock, water, structure, organism, hazard.
 
-Fault zones refuse them. A scanner may see a mineral vein as a cable. A wet conductive film may look like live wiring. A living crust may make a dead fracture behave like a sensor. A pressure shift may move a wall slowly enough to pass one diagnostic and fast enough to ruin the next. Atlas systems sometimes routed signals through these zones on purpose. Later Black Keel tools may read the same route as a fault, a ghost, a short or a profitable anomaly.
+Fault zones do not supply them. One route, one afternoon, five returns against five hand checks:
 
-This is where cheap certainty kills. If the display says "wall," the wall may still be moving. If it says "open gap," the gap may be a polished fracture too narrow for a tether. If it says "inactive structure," the structure may be using rock moisture to complete a circuit. If it says "no organism," the organism may be the thin crust that made the reading possible.
+```text
+SCANNER RETURNS vs. HAND CHECK / GREEN-BLACK ROUTE 6 / 1,240 m
+RETURN 1  "conduit, live"       hand: chrysotile vein, 8 mm, dry
+RETURN 2  "live wiring, 40 V"   hand: wet film across a fracture,
+                                conducts at 0.6 V, no source located
+RETURN 3  "inactive structure"  hand: bracket carrying load, white
+                                powder at the base, 3 mm of movement
+RETURN 4  "no organism"         hand: shell crust, 2 mm, living, and
+                                the crust is what completed RETURN 2
+RETURN 5  "open gap, 900 mm"    hand: polished fracture, 210 mm, will
+                                not pass a tether and a body together
+```
 
-Good crews use instruments as arguments, not verdicts. Ping, scrape, wait, watch the dust, check the clamp, tug the line, look again after the tide note changes. A wall that fails slowly is still failing.
+Return 5 is the one that kills, and the number is not invented. The gap was 900 mm when SV-44-3 was drawn in 2143.
+
+Atlas-6 built loops through these zones deliberately, using the wet films and the shell growth as circuit elements, which is how a Black Keel tool can read the same route as a fault, a ghost, a short and a priceable anomaly on four consecutive passes.
+
+Instruments are arguments, not verdicts. Ping, scrape, wait, watch the dust settle, check the clamp, tug the line, read the tide note, look again. X-40 is running 19 mm per ninety days at 3,320 m and has no classification on the sheet, because nobody has been paid to descend and assign one.

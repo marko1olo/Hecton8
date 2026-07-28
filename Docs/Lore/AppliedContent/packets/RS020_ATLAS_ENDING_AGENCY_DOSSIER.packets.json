@@ -32,8 +32,8 @@
      "field_note": "Do not make Atlas human. Let it become intimate by being wrong precisely.",
      "terminal": "ATLAS CLASSIFICATION: mobile operator / revoked Deep Reach procedure key / biological repair anomaly. Personhood confidence below action threshold.",
      "audio": "It knows how you work. That is not the same as knowing you.",
-     "in_game_wiki": "Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.",
-     "external_site": "Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories."
+     "in_game_wiki": "GOVERNOR RECOGNITION RECORD, printed on request at the Bay 3 terminal.\n\n  ENTITY .......... KEY 4471, DEEP REACH FIELD SYSTEMS, STATUS INACTIVE\n  PATTERN ......... matches maintenance rounds, Sector 44, 2144-2147\n  ANOMALY ......... repairs performed outside schedule\n  CLASSIFICATION .. procedure holder\n\nThe governor holds an access pattern, a key number and a repair history, and it addresses that bundle in the vocabulary the bundle used in 2147. Nothing in the record is hostile and nothing in it is invented.\n\nThe record is accurate in every field it has. It has no field for a person.",
+     "external_site": "Recognition records printed from the RAN-B:H8 factory governor list access pattern, key number, maintenance history and classification. No recovered record carries a name field. The categories are damaged rather than hostile."
     },
     "ru_RU": {
      "title": "Граница личности Atlas",
@@ -188,8 +188,8 @@
      "field_note": "A living faction makes pressure current without turning the whole corporation into a single shouting villain.",
      "terminal": "RECOVERY COMPLIANCE OFFICE: Aegir return action opened. Priorities: XO custody, Atlas access, liability containment, contractor silence if available.",
      "audio": "They are late enough to be legal and current enough to be dangerous.",
-     "in_game_wiki": "The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.",
-     "external_site": "Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow."
+     "in_game_wiki": "RECOVERY COMPLIANCE OFFICE / STANDING NOTICE 2190-06. Posted at the carrier link, countersigned V. Sato-Ren.\n\n  1. Return actions on RAN-B:H8 proceed by window, not by request.\n  2. Proxy authority is delegated to the claim-tender in transit.\n  3. Cleanup orders attach to payload class, not to persons.\n  4. Packets received out of class are held pending review.\n\nThe office issues no commands to licensees and has no need of any. Clause 4 is the whole instrument. It waits for a payload filed in the wrong class and then owns it, and clause 3 means the hold does not have to name anyone to work.\n\nThe posted copy is a photocopy of a photocopy. The countersignature is a stamp.",
+     "external_site": "Recovery Compliance Office standing notices from 2190 route return actions by window and proxy authority, attach cleanup orders to payload class rather than to persons, and hold out-of-class packets pending review."
     },
     "ru_RU": {
      "title": "Офис контроля восстановления",
@@ -500,8 +500,8 @@
      "field_note": "The dossier remembers evidence and warnings; it does not make pressure forgiving.",
      "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories, route warnings, and public-ledger consequences retained. Equipment power, world truth, and local pressure state reset per seed.",
      "audio": "The next run starts with scars in the file, not muscles in the suit.",
-     "in_game_wiki": "The Marauder dossier is the campaign memory that survives between salvage attempts. It keeps endings, discovered contract types, rumor families, evidence categories, route warnings, and the consequences of what the player already chose to publish or hide. It does not carry over suit strength, safe pressure, cleared rooms, or a kinder ocean. Knowledge changes decisions. It does not make the depth harmless.",
-     "external_site": "Marauder Dossier Persistence defines HECTON-8's replay contract: the player inherits context, not power. The dossier lets later attempts read old mistakes faster, recognize contract traps earlier, and understand which endings were incomplete without turning memory into a mechanical advantage that breaks survival pressure."
+     "in_game_wiki": "MARAUDER DOSSIER, front sheet. Barnard Yards issue, one binder per licence, refilled each descent.\n\n  CARRIED FORWARD ..... closed outcomes, contract types seen, rumour families, evidence classes, route warnings, publication record\n  NOT CARRIED FORWARD . suit condition, rated depth, cleared rooms, open hatches\n\nThe binder is paper because paper survives a claim audit and a flooded locker. The first list is knowledge. The second list is hardware, and hardware goes back to the yard condition it was issued in.\n\nA licensee who has read the binder twice recognises a contract trap earlier. The water is at the depth it was.",
+     "external_site": "A Marauder dossier is a paper binder issued per licence at Barnard Yards. It carries closed outcomes, contract types, rumour families, evidence classes, route warnings and publication record forward between descents. It carries no hardware state."
     },
     "ru_RU": {
      "title": "Постоянство мародерского досье",
@@ -655,8 +655,8 @@
      "scanner": "FINAL PAYLOAD // Coordinates, samples, names, Atlas access, quarantine orders, public proof. What leaves HECTON-8 decides who can act afterward.",
      "terminal": "PAYLOAD MATRIX: sell coordinates and XO proof; sever Atlas continuity; preserve or quarantine the ocean-machine ecology; publish evidence to the public ledger; withhold the payload and leave Deep Reach blind.",
      "audio": "There is no clean ownership for a crime scene that learned to breathe.",
-     "in_game_wiki": "The last decision is not a clean victory screen. It is a shipping problem with moral weight. The Marauder decides what rises from the moon: coordinates, samples, worker names, Atlas access, quarantine instructions, public proof, or nothing useful at all. Every payload creates a different owner for the aftermath. Deep Reach can regain control. Public law can get a wound it can finally see. Atlas continuity can be cut or caged. The ocean-machine ecology can be protected, sold, or left outside human language. The ending is not who escapes with clean hands. It is who receives enough truth to move first.",
-     "external_site": "Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas, and the ocean-machine ecology.",
+     "in_game_wiki": "ASCENT PAYLOAD DECLARATION, form PD-2. One sheet, filled at the gantry, no continuation page.\n\n  DECLARED CONTENTS, TICK APPLICABLE:\n  [ ] route coordinates        [ ] biological samples\n  [ ] worker name index        [ ] governor access keys\n  [ ] quarantine instructions  [ ] public ledger copy\n  [ ] none of the above\n  CONSIGNED TO: ______________________\n\nEach tick creates a different owner for the aftermath. Coordinates returned to the principal restore control of the site. A worker name index lodged with a public notary creates an injury the law can see. Governor access can be cut or held. Samples can be protected, sold, or left off the sheet entirely.\n\nThere is one consignee line and no box for intent. Whoever holds the sheet moves first.",
+     "external_site": "Ascent payload declaration PD-2 is a single sheet carrying a tick list and one consignee line. What leaves RAN-B:H8, and who it is consigned to, decides who can act on the site afterwards.",
      "field_note": "The best ending should be defensible, not clean."
     },
     "ru_RU": {

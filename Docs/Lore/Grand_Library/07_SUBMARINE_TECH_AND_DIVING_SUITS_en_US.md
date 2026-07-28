@@ -53,9 +53,9 @@ CGB-3   cargo beetle, wet frame             plate 2,200 m   latch lips define cu
 PMP-6   pump frame, no crew space           plate 3,000 m   entry after pressure ritual only
 ```
 
-The ratings column carries the whole design argument. The one dry interior on the list is rated shallowest, and it is the only frame that needs all seven of its gaskets at once. The flooded crawler needs its motors dry and is indifferent to the rest. Let the water into the spaces that do not care and the machine survives neglect, which on a forty-three-year-old claim is the only kind of survival available. A flooded motor compartment can be rinsed, drained, cursed at and restarted. A compromised crew cabin is a tomb with a rating plate bolted to it.
+The ratings column carries the design argument. The one dry interior on the list is rated shallowest, and it needs all seven of its gaskets at once. A flooded crawler cares only about keeping its motors dry. Let the water into the spaces that do not care and the machine survives neglect, which on a forty-three-year-old claim is the only kind of survival available. A flooded motor compartment can be rinsed, drained, cursed at and restarted. A compromised crew cabin is a tomb with a rating plate bolted to it.
 
-Hence the ruins full of machines that look unfinished to anyone raised on spacecraft: open frames, exposed ribs, tool rails, external bottles, clamp points on every face. Every one of those is a space the designer agreed in advance to lose.
+Hence the ruins full of machines that look unfinished to anyone raised on spacecraft: open frames, exposed ribs, tool rails, external bottles, clamp points on every face. Each one is a space the designer agreed in advance to lose.
 
 Marauders read the registry backwards. Clean ballast scars on a CRW-2 mean ballast cycled recently enough to leave marks. Smooth cable wear on an SLD-4 means the sled was drawn under load, so whatever route memory it holds was written under load and may be honest. Intact latch lips on a CGB-3 are worth more than the motor, because latch lips are what keep a custody-grade canister legally separate from the rest of the bag. Nobody useful asks whether a frame still works. They ask which part of its failure is still worth something.
 
@@ -88,7 +88,7 @@ DEPTH RATING SET BY:     fitted hull module and its plate, only
 
 The second line is the reason the note exists. A high-capacity tank buys minutes, not metres. Crush depth comes from the hull module and nothing else; no quantity of breathing gas has ever moved a crush rating by one metre in either direction. Crews argue about it at the rail anyway, and the argument gets settled every few years by a suit that comes up empty from a depth its plate never claimed.
 
-The manual lists the parts. Crews keep the rest. Never trust a seal that came back too clean -- a spotless GR-12 bead means somebody wiped it, and wiping is what you do to a bead that was weeping. Never kneel in old silt without probing whether the floor is still floor. Never mute an alarm you cannot name.
+The manual lists the parts. Crews keep the rest. Never trust a seal that came back too clean: a spotless GR-12 bead means somebody wiped it, and wiping is what you do to a bead that was weeping. Old silt gets probed before anybody kneels in it. And no alarm gets muted until somebody can name it.
 
 ## Sound, Tethers And The Lie Of Contact
 
@@ -96,7 +96,7 @@ Radio dies in the first few metres. Everything after that is acoustics, and acou
 
 The contractor bands are narrow and slow: 11 kHz for pod masts, 7 kHz for suit receivers. A packet crossing two kilometres of layered brine arrives about 1.4 seconds late, clipped at the edges, sometimes repeated, sometimes flattened where a density boundary bent it into terrain. Storm water dirties it further. What alarms an experienced ear is a clean packet in bad water: perfection means either an unusually good channel or a receiver that rebuilt the sentence after the middle of it was lost, and one of those two possibilities is a lie with a timestamp on it.
 
-At the other end of the channel sits a claim tender with windows, queues, insurers and thresholds. The Black Keel can log a status burst and refuse recovery inside the same window. It can receive a biological indication and rank it below a payload handshake, because the handshake has a form number and the indication does not. It can ask for coordinates before anything else, because comfort is not a billable operation.
+At the other end of the channel sits a claim tender with windows, queues, insurers and thresholds. The Black Keel can log a status burst and refuse recovery inside the same window. A biological indication ranks below a payload handshake, because the handshake has a form number and the indication does not, and coordinates get asked for first because comfort is not a billable operation.
 
 Tethers are shorter and meaner than the stories suggest: work leads, receiver cords, suit-cage handling lines, sample-chain tags, rescue hooks, damaged cables that remember only direction. Their value is not connection to safety. Their value is that a TC-9 clamp, a tag number and a measured length make direction, ownership and last motion difficult to argue about afterwards.
 
@@ -106,7 +106,7 @@ Weapons are tools with worse circumstances and the same service grades.
 
 A CT-11 cutter is rated for hull lips, jammed pressure doors, pipe cages, dead bolts and salvage cuts, at 6 mm of service metal per pass. Pointing one at living biology means distance was lost several minutes earlier. Harpoon drivers buy space and do nothing else. The charge lance opens a route and creates a second problem in the same second. Drills take a sample, wake a sensor path, or ruin the exact surface that would have proved custody, the same 12 mm bit doing all three depending on where it lands.
 
-Pressure changes every tool by making reaction expensive. Gas pockets behave badly. Heat becomes steam, stress and noise. Fast projectiles lose their arrogance inside two metres. Edge sharpness matters less than anchoring, timing and whatever is standing behind the target. Most good equipment down here is not built to win a fight. It is built to buy four or five seconds in which work is still an option for a frightened person.
+Pressure makes every reaction expensive. Gas pockets behave badly, heat becomes steam and stress and noise, and a fast projectile loses its arrogance inside two metres. Anchoring, timing and whatever stands behind the target all outrank edge sharpness. Most good equipment down here is built to buy four or five seconds in which work is still an option for a frightened person.
 
 Which is why the valuable kit looks unimpressive on a bench: seal picks, marked repair tape, cable splints, scrubber keys, sample sleeves, bolt splitters, sludge brushes, pressure chalk, quiet clamps, tether hooks. None of it carries a plate rating worth quoting. All of it carries a replacement interval that nobody has honoured since 2147.
 

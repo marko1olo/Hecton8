@@ -60,8 +60,15 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Küstenstreifer",
+     "scanner": "Schwarmfresser der Oberflächenschicht, 0 bis 8 m. Konfidenz 84 Prozent. Gefahr: keine erfasst. Einschränkung: Einzeltiere ab 3 m/s nicht mehr auflösbar.",
+     "in_game_wiki": "Unter acht Meter geht er nicht, weshalb sein Fehlen mehr wert ist als seine Anwesenheit.\n\nDer Schwarm zieht als durchgehende Linie über die Oberfläche und frisst, was die Dünung zusammenschiebt. Wo diese Linie abbricht und vierzig Meter weiter wieder anfängt, ist das Wasser in der Lücke grün und abgeräumt. Kein Streifer geht dort hinein, und ein Taucher am Wassereinlass hat dort ebenfalls nichts zu suchen.\n\nAlles, was flackert, wird angeschlagen; eine Lampe knapp unter der Oberfläche zieht die ganze Linie für zwei Sekunden auf die Sichtscheibe. Mit vollem Hebegurt am Mann reicht das, um den Horizont zu verlieren.\n\nDie Formation bricht etwa vierzig Sekunden vor einer Bö auf, früher als das Barometer der Class-IV es schafft. Was sie dabei ablesen, hat niemand geklärt.\n\nBewertung: der Linie folgen und die Lücke, an der sie endet, als gesperrtes Wasser behandeln.",
+     "terminal": "PROBE 44-S-016. KLASSE: OBERFLÄCHENZUSTANDSANZEIGE, NICHT INSTANDGEHALTEN. STATION: SCHELF-BOJENLINIE 3, DIENST AUSGESETZT 2146. VERWENDUNG: ERSATZMESSUNG SAUERSTOFF, RASTER 0 BIS 8 M. KALIBRIERUNG: NICHT DURCHGEFÜHRT.",
+     "field_note": "Deep Reach hat den Schwarm als Sauerstoffmesser ins Formular geschrieben und im selben Quartal den Bojenvertrag gekündigt. Der Schwarm liegt öfter richtig als die letzte Boje, also zähl, wo die Linie abbricht, nicht wie viele Fische drin sind.",
+     "audio": "-- ganze Linie ist gerade auseinandergefallen, ohne Grund, glattes Wasser, und das Decksbarometer hat sich nicht bewegt. Drittes Mal diesen Monat. Gurt rein und rein mit dir, Corran, ich streite mit Fischen nicht übers Wetter --",
+     "external_site_article": "Schelfmannschaften von Aegir melden auf HECTON-8 einen schnellen Oberflächenfresser, der sich in den oberen acht Metern hält und in einer durchgehenden Linie entlang windverdichteter Dünung frisst. Die Linie bricht um Wasser mit verminderter Oberflächensauerstoffkonzentration herum auf, wodurch ihre Lücken auf Entfernung ablesbar sind.\n\nFeldpraxis ist, die Unterbrechung zu lesen und nicht den Schwarm, und eine Lücke in der Linie als nicht atembares Wasser zu behandeln, nicht als offenes. Deep-Reach-Unterlagen aus Sektor 44 führen die Art als Oberflächenzustandsanzeige und vermerken, dass der von ihr ersetzte Schelf-Bojendienst 2146 ausgesetzt wurde.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Schelfmannschaften von Aegir melden auf HECTON-8 einen schnellen Oberflächenfresser, der sich in den oberen acht Metern hält und in einer durchgehenden Linie entlang windverdichteter Dünung frisst. Die Linie bricht um Wasser mit verminderter Oberflächensauerstoffkonzentration herum auf, wodurch ihre Lücken auf Entfernung ablesbar sind."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -80,8 +87,15 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "岸すくい",
+     "scanner": "表層の群れ採餌種、0〜8メートル。信頼度84パーセント。危険：記録なし。限界：毎秒3メートル超では個体を分離できない。",
+     "in_game_wiki": "八メートルより下には行かない。だから在ることより、無いことのほうが使える。\n\n群れは水面を切れ目のない一本の線になって進み、うねりが寄せたものを食う。その線が途切れて四十メートル先で再開しているとき、切れ目の水は緑色で、食い尽くされている。すくいは一匹も入らない。取水中の潜水士も入る必要はない。\n\nちらつくものはすべて叩かれる。水面近くでランプを構えれば、線ごと二秒間フェイスプレートに来る。スリングを満載していれば、それだけで水平が分からなくなる。\n\nスコールの四十秒ほど前に隊列が崩れる。Class-IVの気圧計より早い。何を読んでいるのかは誰も突き止めていない。\n\n評価：線をたどり、線が終わる切れ目は閉鎖水域として扱う。",
+     "terminal": "標本 44-S-016。区分：表層状態指示体、保守なし。配置：シェルフ・ブイライン3、業務停止 2146。用途：酸素計測の代替、格子 0〜8 M。校正：未実施。",
+     "field_note": "Deep Reachは群れを酸素計として書式に載せ、同じ四半期にブイの契約を切った。最後のブイより群れのほうが当たる回数が多い。だから線が途切れる場所を数えろ。中の魚の数ではない。",
+     "audio": "――線が今まるごとばらけた、理由もなく、水面は平ら、甲板の気圧計は動いていない。今月三度目だ。スリングを入れて、お前も入れ、コラン。魚と天気の議論はしない――",
+     "external_site_article": "Aegirのシェルフ班は、HECTON-8で上層八メートルに留まり、風で寄せられたうねりに沿って切れ目のない線を作って採餌する高速の表層採餌種を報告している。この線は表層酸素が低下した水を避けて途切れるため、切れ目が離れた位置からでも読める。\n\n現場では群れではなく途切れを読み、線の切れ目は開けた水ではなく呼吸できない水として扱う。セクター44のDeep Reach記録はこの種を表層状態指示体に分類し、これが代替したシェルフ・ブイ業務が2146年に停止されたことを記載している。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegirのシェルフ班は、HECTON-8で上層八メートルに留まり、風で寄せられたうねりに沿って切れ目のない線を作って採餌する高速の表層採餌種を報告している。この線は表層酸素が低下した水を避けて途切れるため、切れ目が離れた位置からでも読める。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -100,16 +114,30 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Прибрежный скользун",
+     "scanner": "Стайный собиратель поверхностного слоя, 0–8 м. Достоверность 84 процента. Опасность: не зафиксирована. Ограничение: при скорости выше 3 м/с отдельные особи не различаются.",
+     "in_game_wiki": "Ниже восьми метров он не идёт, поэтому его отсутствие полезнее его присутствия.\n\nСтая тянется по поверхности непрерывной линией и кормится тем, что сгоняет волна. Там, где линия обрывается насухо и возобновляется через сорок метров, вода в разрыве зелёная и выработанная. Ни один скользун туда не войдёт, и водолазу на водозаборе — тоже незачем.\n\nВсё, что мелькает, получает удар, а лампа у самой поверхности стянет всю линию тебе на стекло на две секунды. С гружёной стропой этого хватает, чтобы потерять горизонт.\n\nСтрой они ломают примерно за сорок секунд до шквала — раньше, чем это успевает барометр Class-IV. Что они при этом считывают, никто не выяснил.\n\nОценка: идти по линии, а разрыв, где она кончается, считать закрытой водой.",
+     "terminal": "ОБРАЗЕЦ 44-S-016. КЛАСС: ИНДИКАТОР СОСТОЯНИЯ ПОВЕРХНОСТИ, БЕЗ ОБСЛУЖИВАНИЯ. ПОСТ: ШЕЛЬФОВАЯ ЛИНИЯ БУЁВ 3, ОБСЛУЖИВАНИЕ ПРИОСТАНОВЛЕНО В 2146. ПРИМЕНЕНИЕ: ЗАМЕНА ЗАМЕРА КИСЛОРОДА, СЕТКА 0–8 М. КАЛИБРОВКА: НЕ ВЫПОЛНЯЛАСЬ.",
+     "field_note": "Deep Reach внесла стаю в форму как кислородный датчик и в том же квартале закрыла контракт на буи. Стая права чаще, чем был прав последний буй, так что считай, где линия обрывается, а не сколько в ней рыбы.",
+     "audio": "-- вся линия только что рассыпалась, без причины, вода гладкая, и палубный барометр не сдвинулся. Третий раз за месяц. Заводи стропу и заходи внутрь, Корран, я не собираюсь спорить с рыбой о погоде --",
+     "external_site_article": "Шельфовые команды Aegir сообщают о быстром собирателе поверхностного слоя на HECTON-8, который держится в верхних восьми метрах и кормится непрерывной линией по волне, сгоняемой ветром. Линия разрывается вокруг воды с упавшим содержанием кислорода на поверхности, из-за чего разрывы в ней читаются с дистанции.\n\nНа практике читают именно разрыв, а не саму стаю, и разрыв в линии считают недышащей водой, а не открытой. Записи Deep Reach по Сектору 44 относят вид к индикаторам состояния поверхности и отмечают, что обслуживание шельфовой линии буёв, которую он заменил, приостановлено с 2146 года.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Шельфовые команды Aegir сообщают о быстром собирателе поверхностного слоя на HECTON-8, который держится в верхних восьми метрах и кормится непрерывной линией по волне, сгоняемой ветром. Линия разрывается вокруг воды с упавшим содержанием кислорода на поверхности, из-за чего разрывы в ней читаются с дистанции."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "岸掠鱼",
+     "scanner": "表层集群觅食种，0至8米。置信度84%。危险：无记录。限制：速度超过3米/秒时无法分辨个体。",
+     "in_game_wiki": "它不下八米，所以它不在的地方比它在的地方更有用。\n\n鱼群沿水面拉成一条不断的线，吃涌浪聚起来的东西。线在某处断掉、四十米之后重新开始，断口里的水就是发绿的、被吃空的。没有一条岸掠鱼会进去，正在取水的潜水员也不必进去。\n\n任何闪动的东西都会被撞击，靠近水面举灯会把整条线拉到你的面罩上两秒。挂满吊索的时候，这两秒足够让你丢掉水平线。\n\n起风前大约四十秒它们散队，比Class-IV的气压计更早。它们读的是什么，没人弄清。\n\n评估：沿线走，线终止的断口按封闭水域处理。",
+     "terminal": "标本 44-S-016。类别：表层状态指示物，未维护。站位：陆架浮标线3，服务已于2146年暂停。用途：替代氧气读数，网格 0至8 M。校准：未执行。",
+     "field_note": "Deep Reach把鱼群当成氧气表写进表格，同一季度取消了浮标合同。鱼群对的次数比最后那只浮标多，所以数线在哪里断，别数里面有多少鱼。",
+     "audio": "——整条线刚刚散了，没有原因，水面平的，甲板气压计没动。这个月第三次。把吊索收进来，你也进来，科兰，我不跟鱼争天气——",
+     "external_site_article": "Aegir的陆架作业队报告，HECTON-8上有一种快速的表层觅食种，停留在上层八米内，沿风力聚集的涌浪拉成一条不断的线觅食。这条线在表层氧气下降的水域周围断开，因此它的断口在远距离上就能读出。\n\n现场做法是读断开处而不是读鱼群，并把线上的断口当作不可呼吸的水，而不是开阔水。44区的Deep Reach记录把该物种列为表层状态指示物，并注明它所替代的陆架浮标服务已于2146年暂停。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegir的陆架作业队报告，HECTON-8上有一种快速的表层觅食种，停留在上层八米内，沿风力聚集的涌浪拉成一条不断的线觅食。这条线在表层氧气下降的水域周围断开，因此它的断口在远距离上就能读出。"
     }
    }
   },
@@ -159,8 +187,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Schlickdrifter",
+     "scanner": "Bodenlebender Sedimentfresser, 40 bis 90 m. Konfidenz 66 Prozent. Gefahr: Sichtverlust bei Kontakt. Einschränkung: kein Echo durch aufgewirbeltes Sediment. Kontakt wird verloren, nicht geklärt.",
+     "in_game_wiki": "Die Furche eines Drifters läuft gerade über offenen Grund und knickt dort ab, wo etwas noch Wasser zieht.\n\nEr frisst, was die Strömung ihm bringt, also ist der Knick ein aktiver Einlass zwischen fünfzig und neunzig Metern, und damit ein Modul, das nach dreiundvierzig Jahren noch unter Spannung steht. Er ist auch die Gefahr: ein Gitter, das stark genug ist, Sediment zu sortieren, zieht eine Sicherungsleine ein, und geprüft wurde dort unten seit damals keines.\n\nWird er aufgeschreckt, kippt er den Grund ins Wasser. Ein breiter Lichtkegel schneidet diese Wolke nicht, er füllt sie. Auf schwache Stufe zurück, Kurs halten und seitlich aus der Bahn heraus, nicht nach oben.\n\nDie Furche knickt um den Einlass immer gegen den Uhrzeigersinn. Die Strömung erklärt die Richtung nicht.\n\nBewertung: erst den Knick lesen, dann das Gitter von außerhalb der Bahn bearbeiten.",
+     "terminal": "DOKUMENT 44-M-1180. KLASSE: SEDIMENTBEWIRTSCHAFTUNG, PASSIV. UMFANG: EINLASSGITTER 6 BIS 11, 40 BIS 90 M. GEPLANTE BAGGERUNG: ÜBERHOLT. GITTERPRÜFUNG: ALS AKTUELL GEWERTET.",
+     "field_note": "Gitterprüfung als aktuell gewertet heißt, dass seit 2147 niemand eines angesehen hat. Wenn ein Drifter einen Knick hält, zieht dieser Einlass noch, also halte die Sicherungsleine außerhalb der Bahn und geh das Gitter von der Seite an.",
+     "external_site_article": "Bergungsberichte von HECTON-8 beschreiben einen breiten Bodenfresser, der Schelfsediment abweidet und eine dauerhafte Furche hinterlässt. Mannschaften nutzen die Form der Furche als Hinweis auf die örtliche Strömung: gerade Spuren über offenem Sediment, gekrümmte Spuren dort, wo Wasser durch einen versunkenen Einlass gezogen wird.\n\nKontakt löst eine schwere Sedimentwolke aus, die Lampe und Sonar gleichermaßen unbrauchbar macht; die Feldvorschrift verlangt reduzierten Lichtkegel und Navigation auf Kurs bis ins Freie. Deep-Reach-Unterlagen führen die Art unter Sedimentbewirtschaftung und werten die Prüfung der Einlassgitter im betroffenen Tiefenbereich als aktuell.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Bergungsberichte von HECTON-8 beschreiben einen breiten Bodenfresser, der Schelfsediment abweidet und eine dauerhafte Furche hinterlässt. Mannschaften nutzen die Form der Furche als Hinweis auf die örtliche Strömung: gerade Spuren über offenem Sediment, gekrümmte Spuren dort, wo Wasser durch einen versunkenen Einlass gezogen wird."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -179,8 +213,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "泥漂い",
+     "scanner": "底層の堆積物食者、40〜90メートル。信頼度66パーセント。危険：接触時に視界喪失。限界：巻き上がった堆積物越しでは反射が返らない。接触は失われ、回復しない。",
+     "in_game_wiki": "泥漂いの掘り跡は開けた底では直線に走り、まだ水を引いているものがある場所で曲がる。\n\n流れが運んでくるものを食うので、曲がりは五十から九十メートルの生きた取水口であり、四十三年たってなお通電している設備ということになる。それが同時に危険でもある。堆積物を選り分けられる強さの格子は命綱を引き込むし、そこは当時から一度も点検されていない。\n\n驚かせれば底ごと水中に吐き出す。広い光束はその濁りを切らない、満たすだけだ。弱い光に落とし、方位を保ち、上ではなく横へ、通路の外へ抜けろ。\n\n掘り跡は取水口の周りで必ず反時計回りに曲がる。流れではこの向きを説明できない。\n\n評価：まず曲がりを読み、格子は通路の外側から扱う。",
+     "terminal": "文書 44-M-1180。区分：堆積物管理、受動。範囲：取水格子6〜11、40〜90 M。予定浚渫：廃止。格子点検：現行とみなす。",
+     "field_note": "「格子点検は現行とみなす」とは、2147年以降だれも見ていないという意味だ。泥漂いが曲がりを保っているなら、その取水口はまだ引いている。命綱は通路の外に置き、格子は横から取れ。",
+     "external_site_article": "HECTON-8のサルベージ報告は、シェルフの堆積物を食んで持続的な掘り跡を残す幅広の底生種を記述している。作業班は掘り跡の形を局所的な流れの指標として使う。開けた堆積物の上では直線、水没した取水口へ水が引かれている場所では曲線になる。\n\n接触は重い堆積物の濁りを起こし、ランプもソナーも無効になる。現場手順では光束を落とし、濁りを抜けるまで方位航行を行う。Deep Reachの記録はこの種を堆積物管理に分類し、該当深度帯の取水格子点検を現行とみなして記載している。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8のサルベージ報告は、シェルフの堆積物を食んで持続的な掘り跡を残す幅広の底生種を記述している。作業班は掘り跡の形を局所的な流れの指標として使う。開けた堆積物の上では直線、水没した取水口へ水が引かれている場所では曲線になる。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -199,16 +239,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Дрейфующий илоед",
+     "scanner": "Донный седиментофаг, 40–90 м. Достоверность 66 процентов. Опасность: потеря видимости при контакте. Ограничение: сквозь взвесь возврата нет. Контакт будет потерян, а не восстановлен.",
+     "in_game_wiki": "Борозда илоеда идёт прямо по открытому дну и загибается там, где что-то до сих пор тянет воду.\n\nОн кормится тем, что приносит течение, поэтому загиб — это живой водозабор на глубине от пятидесяти до девяноста метров, а значит модуль, который спустя сорок три года всё ещё под питанием. Он же и опасность: решётка, способная сортировать осадок, затянет страховочный трос, и ни одну из них с тех пор не осматривали.\n\nИспугай его — и он выбросит дно в воду. Широкий луч эту муть не пробьёт, он её заполнит. Уходи на малый свет, держи курс и выходи из полосы в сторону, а не вверх.\n\nБорозда загибается вокруг водозабора всегда против часовой стрелки. Течением это направление не объясняется.\n\nОценка: сначала прочитать загиб, потом работать решётку снаружи полосы.",
+     "terminal": "ДОКУМЕНТ 44-M-1180. КЛАСС: УПРАВЛЕНИЕ ОСАДКОМ, ПАССИВНОЕ. ОБЪЁМ: ВОДОЗАБОРНЫЕ РЕШЁТКИ 6–11, 40–90 М. ПЛАНОВОЕ ДРАГИРОВАНИЕ: ОТМЕНЕНО КАК УСТАРЕВШЕЕ. ОСМОТР РЕШЁТОК: СЧИТАЕТСЯ АКТУАЛЬНЫМ.",
+     "field_note": "«Осмотр решёток считается актуальным» означает, что ни одну не видели с 2147 года. Если илоед держит загиб, этот водозабор ещё тянет, так что держи трос снаружи полосы и заходи на решётку сбоку.",
+     "external_site_article": "Отчёты по спасательным работам на HECTON-8 описывают широкого донного седиментофага, который пасётся на шельфовом осадке и оставляет устойчивую борозду. Команды используют форму борозды как показатель местного потока: прямые следы — по открытому осадку, изогнутые — там, где воду тянет через затопленный водозабор.\n\nКонтакт вызывает тяжёлое облако осадка, которое сводит на нет и лампу, и сонар; на практике предписано уменьшить луч и идти по курсу до выхода из мути. Записи Deep Reach относят вид к управлению осадком и отмечают осмотр водозаборных решёток на этом диапазоне глубин как считающийся актуальным.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Отчёты по спасательным работам на HECTON-8 описывают широкого донного седиментофага, который пасётся на шельфовом осадке и оставляет устойчивую борозду. Команды используют форму борозды как показатель местного потока: прямые следы — по открытому осадку, изогнутые — там, где воду тянет через затопленный водозабор."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "漂泥者",
+     "scanner": "底栖沉积物摄食种，40至90米。置信度66%。危险：接触即失去可见度。限制：悬浮沉积物中没有回波。接触会丢失，不会恢复。",
+     "in_game_wiki": "漂泥者的犁沟在开阔底面上是直的，在还有东西在抽水的地方会弯。\n\n它吃水流带来的东西，所以弯折处就是五十到九十米之间一个仍在工作的取水口，也就是一个四十三年后仍然带电的舱段。它同时也是危险：能筛分沉积物的格栅会把安全绳吸进去，而那下面从那时起没有一处受过检查。\n\n惊动它，它会把底面倒进水里。宽光束切不开这团浑浊，只会把它填满。降到弱光，守住方位，横向退出通道，不要向上。\n\n犁沟绕取水口总是逆时针弯。水流解释不了这个方向。\n\n评估：先读弯折，再从通道外侧处理格栅。",
+     "terminal": "文件 44-M-1180。类别：沉积物管理，被动。范围：取水格栅6至11，40至90 M。计划疏浚：已废止。格栅检查：视为现行。",
+     "field_note": "“格栅检查视为现行”的意思是2147年之后没人看过任何一处。如果漂泥者守着一个弯折，那个取水口就还在抽水，所以把安全绳留在通道外面，从侧面上格栅。",
+     "external_site_article": "HECTON-8的打捞报告描述了一种宽体底栖摄食种，它啃食陆架沉积物并留下持久的犁沟。作业队用犁沟的形状判断局部水流：开阔沉积物上是直线，水下取水口抽水处是曲线。\n\n接触会引发浓重的沉积物浑浊，灯光和声呐同时失效，现场规程要求收窄光束并按方位航行直到脱离。Deep Reach的记录把该物种归入沉积物管理，并把该深度段的取水格栅检查记为视为现行。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8的打捞报告描述了一种宽体底栖摄食种，它啃食陆架沉积物并留下持久的犁沟。作业队用犁沟的形状判断局部水流：开阔沉积物上是直线，水下取水口抽水处是曲线。"
     }
    }
   },
@@ -259,8 +311,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Wandgleiter",
+     "scanner": "Oberflächenhaftender Weidegänger auf gefertigter Beplattung. Konfidenz 77 Prozent. Gefahr: leitfähiger Belag, geringer Strom. Einschränkung: Spuralter nicht auflösbar. Eine tote Spur liest sich wie eine lebende.",
+     "in_game_wiki": "Er bewegt sich ausschließlich auf gefertigter Oberfläche. Beplattung, Kabelbahn, Leitungsrohr, Handlauf, nie auf blankem Gestein und nie über einen offenen Riss.\n\nDiese Verweigerung ist die Prüfung. Wo eine Spur ununterbrochen läuft, ist die Platte darunter intakt. Wo sie umkehrt, öffnet sich die Platte.\n\nDer Film, den er hinterlässt, ist leitfähig. Auf spannungsführender Platte steht er unter Strom, und die Durchgangsprüfung des Fabrikgouverneurs läuft direkt durch ihn hindurch, weshalb ein Haarriss unter einer Gleiterspur als intakt gemessen wird. Ein flach auf frischen Film gelegtes Werkzeug klebt eine Sekunde und legt das Messgerät für zehn lahm.\n\nDie gelbe Schichtbahnmarkierung auf dem Deck des Annex überqueren sie nicht. Die meiste Farbe ist seit dreiundvierzig Jahren weg, und sie tun es weiterhin nicht.\n\nBewertung: der Spur trauen, nicht dem Durchgangswert, und dort aufhören, wo die Spur aufhört.",
+     "terminal": "DOKUMENT 44-H-0742. KLASSE: STRUKTURÜBERWACHUNG, BIOLOGISCH, ERSATZWEISE ANERKANNT. ABDECKUNG: HÜLLENBEPLATTUNG ANNEX P-63, 0 BIS 100 M. BEFUND: KEINE DRUCKABWEICHUNG AUF ERFASSTER SPUR. NICHT ERFASSTE SPUR: NICHT AUSGEWIESEN.",
+     "field_note": "Die abgezeichnete Hüllenprüfung war da, wo die Tiere zufällig gekrochen sind, und die Platte, auf der sie nie gekrochen sind, stand nicht im Bericht; genau die hat nachgegeben. Wo die Spur aufhört, hörst du auf.",
+     "external_site_article": "Berichte aus der Schelfbergung auf HECTON-8 beschreiben einen oberflächenhaftenden Weidegänger, der sich ausschließlich auf gefertigten Oberflächen bewegt, darunter Hüllenbeplattung, Leitungsrohre und Kabelbahnen, und der Risse in dem Material, an dem er haftet, nicht überquert. Mannschaften lesen die Ausdehnung seiner Spuren als Hinweis auf intakte Platte.\n\nDas Tier hinterlässt entlang seiner Route einen leitfähigen Belag, der dort geringen Strom führt, wo die darunterliegende Struktur noch unter Spannung steht. Weil der Belag Haarrisse elektrisch überbrückt, liefert die automatische Durchgangsprüfung ein intaktes Ergebnis über Platte, die mechanisch versagt. Deep-Reach-Unterlagen zum Annex P-63 erkennen die dadurch entstandene Abdeckung ersatzweise für die geplante Strukturüberwachung an und melden keine Druckabweichung auf erfasster Spur, ohne den nicht erfassten Rest zu beschreiben.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Berichte aus der Schelfbergung auf HECTON-8 beschreiben einen oberflächenhaftenden Weidegänger, der sich ausschließlich auf gefertigten Oberflächen bewegt, darunter Hüllenbeplattung, Leitungsrohre und Kabelbahnen, und der Risse in dem Material, an dem er haftet, nicht überquert. Mannschaften lesen die Ausdehnung seiner Spuren als Hinweis auf intakte Platte."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -279,8 +337,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "壁滑り",
+     "scanner": "加工面に付着して食む種。信頼度77パーセント。危険：導電性の付着物、微弱電流。限界：跡の新旧を判別できない。死んだ跡も生きた跡と同じに読める。",
+     "in_game_wiki": "移動するのは加工された面の上だけだ。板、ケーブル路、配管、手すり。裸岩の上は通らず、開いた亀裂も越えない。\n\nこの拒否がそのまま検査になる。跡が途切れず走っていれば、その下の板は健全だ。跡が折り返していれば、板は開きかけている。\n\n残す膜は導電性がある。通電している板の上では膜も通電し、工場ガバナーの導通確認はその膜をそのまま通るので、壁滑りの跡の下にある髪筋の亀裂は健全と測定される。新しい膜の上に工具を平らに置くと一秒張り付き、計器は十秒落ちる。\n\nAnnexのデッキにある黄色い作業帯の塗装は越えない。塗装の大半は四十三年前に消えているが、それでも越えない。\n\n評価：導通の値ではなく跡を信じ、跡が終わる所で止まる。",
+     "terminal": "文書 44-H-0742。区分：構造監視、生物、代替として受理。対象：ANNEX P-63 船体板、0〜100 M。所見：調査済みの跡に圧力偏差なし。未調査の跡：報告なし。",
+     "field_note": "署名された船体点検は、動物がたまたま這った場所のことだ。這わなかった板は報告から落ちていて、抜けたのはその板だった。跡が終わる所で止まれ。",
+     "external_site_article": "HECTON-8のシェルフ・サルベージからの報告は、船体板、配管、ケーブル路を含む加工面の上だけを移動し、付着している素材の亀裂を越えない付着性の摂食種を記述している。作業班はその跡の範囲を、板が健全であることの指標として読む。\n\nこの動物は経路に沿って導電性の付着物を残し、下の構造がまだ通電している区間ではその付着物に微弱電流が流れる。付着物が髪筋の亀裂を電気的に橋渡しするため、自動導通試験は機械的に破断しつつある板を健全と判定する。ANNEX P-63に関するDeep Reachの記録は、これによる調査範囲を予定された構造監視の代替として受理し、調査済みの跡に圧力偏差がないと報告する一方、未調査の残りについては記述していない。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8のシェルフ・サルベージからの報告は、船体板、配管、ケーブル路を含む加工面の上だけを移動し、付着している素材の亀裂を越えない付着性の摂食種を記述している。作業班はその跡の範囲を、板が健全であることの指標として読む。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -299,16 +363,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Стенной ползун",
+     "scanner": "Пасущийся вид, держится на изготовленной обшивке. Достоверность 77 процентов. Опасность: проводящий налёт, слабый ток. Ограничение: возраст следа не определяется. Мёртвый след читается как живой.",
+     "in_game_wiki": "Он передвигается только по изготовленной поверхности. Обшивка, кабельная трасса, кабелепровод, поручень — никогда по обнажённой породе и никогда через открытую трещину.\n\nЭтот отказ и есть обследование. Где след идёт без разрывов, обшивка под ним целая. Где он поворачивает назад на себя, обшивка расходится.\n\nПлёнка, которую он оставляет, проводит ток. На обшивке под напряжением она под током, и заводская проверка целостности от губернатора проходит прямо по ней, поэтому волосяная трещина под следом ползуна проверку проходит. Инструмент, положенный плашмя на свежую плёнку, липнет на секунду и гасит твой прибор на десять.\n\nЧерез жёлтую разметку сменных полос на настиле Annex они не переходят. Большей части этой краски сорок три года как нет, и они всё равно не переходят.\n\nОценка: доверять следу, а не показанию целостности, и останавливаться там, где кончается след.",
+     "terminal": "ДОКУМЕНТ 44-H-0742. КЛАСС: МОНИТОРИНГ КОНСТРУКЦИИ, БИОЛОГИЧЕСКИЙ, ПРИНЯТ В ЗАМЕНУ. ОХВАТ: ОБШИВКА КОРПУСА ANNEX P-63, 0–100 М. ЗАКЛЮЧЕНИЕ: ОТКЛОНЕНИЙ ПО ДАВЛЕНИЮ НА ОБСЛЕДОВАННОМ СЛЕДУ НЕТ. НЕОБСЛЕДОВАННЫЙ СЛЕД: НЕ ОТРАЖЁН.",
+     "field_note": "Осмотр корпуса, который они подписали, — это то, где случилось проползти животным, а обшивку, по которой они не ползали, в отчёт не внесли; именно она и разошлась. Где кончается след — там останавливайся.",
+     "external_site_article": "Сообщения с шельфовых спасательных работ HECTON-8 описывают вид, который держится на поверхности и передвигается исключительно по изготовленным материалам — обшивке корпуса, кабелепроводам и кабельным трассам — и не переходит через трещины в том, за что держится. Команды читают протяжённость его следов как признак целой обшивки.\n\nЖивотное оставляет по маршруту проводящий налёт, который несёт слабый ток там, где конструкция ещё под напряжением. Поскольку налёт электрически перекрывает волосяные трещины, автоматическая проверка целостности даёт исправный результат на обшивке, которая механически разрушается. Записи Deep Reach по Annex P-63 принимают полученный охват в замену планового мониторинга конструкции и сообщают об отсутствии отклонений по давлению на обследованном следе, не описывая остаток.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Сообщения с шельфовых спасательных работ HECTON-8 описывают вид, который держится на поверхности и передвигается исключительно по изготовленным материалам — обшивке корпуса, кабелепроводам и кабельным трассам — и не переходит через трещины в том, за что держится. Команды читают протяжённость его следов как признак целой обшивки."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "壁滑者",
+     "scanner": "附面啃食种，只在人造板材上活动。置信度77%。危险：导电残留物，微弱电流。限制：无法判定痕迹的新旧。死痕与活痕读数相同。",
+     "in_game_wiki": "它只在人造表面上行走。板材、电缆走线、管路、扶手，从不上裸岩，也从不跨过开口的裂缝。\n\n这种拒绝本身就是一次勘验。痕迹连续不断的地方，下面的板材完好。痕迹折回自身的地方，板材正在开裂。\n\n它留下的膜是导电的。在带电板材上这层膜也带电，工厂总控的导通检查会直接从膜上过去，所以壁滑者痕迹下面的发丝裂缝测出来是完好的。工具平放在新鲜的膜上会粘住一秒，仪表会空白十秒。\n\n它们不越过Annex甲板上黄色的班次通道漆线。那些漆已经消失四十三年，它们仍然不越过。\n\n评估：信痕迹，不信导通读数；痕迹停在哪里，你就停在哪里。",
+     "terminal": "文件 44-H-0742。类别：结构监测，生物，替代受理。覆盖：ANNEX P-63 船体板，0至100 M。结论：已勘验痕迹上无压力偏差。未勘验痕迹：未报告。",
+     "field_note": "他们签掉的船体检查，就是动物碰巧爬过的地方；它们没爬过的板材没进报告，而松脱的正是那块板。痕迹停在哪里，你就停在哪里。",
+     "external_site_article": "HECTON-8陆架打捞的报告描述了一种附面啃食种，它只在人造表面上移动，包括船体板、管路和电缆走线，并且不跨过它所附着材料上的裂缝。作业队把它痕迹的范围读作板材完好的指标。\n\n这种动物沿路线留下导电残留物，在下方结构仍带电的区段里，这层残留物带有微弱电流。由于残留物在电学上桥接了发丝裂缝，自动导通测试在机械上正在失效的板材上给出完好结果。Deep Reach关于ANNEX P-63的记录把由此得到的覆盖范围作为计划结构监测的替代予以受理，并报告已勘验痕迹上无压力偏差，却没有描述未勘验的其余部分。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8陆架打捞的报告描述了一种附面啃食种，它只在人造表面上移动，包括船体板、管路和电缆走线，并且不跨过它所附着材料上的裂缝。作业队把它痕迹的范围读作板材完好的指标。"
     }
    }
   },
@@ -358,8 +434,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Eisengründling",
+     "scanner": "Dichter Schwarmfresser, eisenhaltige Partikel auf der Körperoberfläche. Konfidenz 91 Prozent. Gefahr: keine. Einschränkung: Schwarmecho verdeckt Struktur auf Entfernung. Verstärkung senken, bevor eine Wand gelesen wird.",
+     "in_game_wiki": "Der Messwert ist die Form des Schwarms, nicht der Fisch. Über offenes Wasser verteilt bedeuten sie nichts. Zu einem flachen Band von zwei oder drei Metern Dicke zusammengedrückt halten sie die Kante einer Sauerstofftasche, und eine Class-IV kann in diesem Wasser aufbereiten statt Reserve zu verbrennen.\n\nEin leeres Band über einem bekannten Erzgang ist der umgekehrte Befund. Die Tasche ist gekippt, das Wasser darüber wird grün laufen, und dort hat seit Wochen nichts gefressen.\n\nIhre Schuppen tragen eisenhaltigen Grus, weshalb sie im Scan so stark zurückkommen, dass sie alles dahinter löschen. Verstärkung herunter, bevor du eine Wand durch einen Schwarm liest.\n\nJeder Schwarm über einem Erzgang zählt zwischen 1100 und 1300 Tiere aus. Warum die Zahl hält, weiß niemand.\n\nBewertung: die Oberkante eines Bandes abschwimmen, niemals hindurch.",
+     "terminal": "PROBENPOSTEN 44-XO-0091. KLASSE: SPURENANALYSE, BEILÄUFIG. METHODE: SCHWARMDICHTE, SCHELFRASTER 0 BIS 100 M. GEHALT: SPUR, AN DER GRENZE VERWERTBAR. TONNAGEGRUNDLAGE: IN DAS ANSPRUCHSVERZEICHNIS ÜBERTRAGEN.",
+     "field_note": "Die Tonnage, an der dein Pfandrecht hängt, wurde 2146 geschätzt, indem man diese Fische über ein Schelfraster gezählt hat, und die Analyse ist nie wiederholt worden. Folge dem Band für Luft. Für Erz traue ihm nicht.",
+     "external_site_article": "Schelfvermessungen auf HECTON-8 verzeichnen einen kleinen Schwarmfresser, der eisenhaltige Partikel auf der Körperoberfläche trägt und dadurch ein für seine Größe ungewöhnlich starkes akustisches und Scan-Echo erzeugt. Mannschaften berichten, dass sie die Schwarmgeometrie als Umweltwert nutzen: ein zusammengedrücktes waagerechtes Band markiert eine örtliche Sauerstoffkonzentration, ein fehlendes Band über einem bekannten Erzgang eine, die gekippt ist.\n\nDasselbe Echo übersteuert Instrumente auf kurze Entfernung und verdeckt Struktur hinter dem Schwarm. Deep-Reach-Unterlagen aus Sektor 44 führen die Art als beiläufige Methode der Spurenanalyse und übertragen die Werte der Schwarmdichte ohne erneute Vermessung in die Anspruchstonnage.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Schelfvermessungen auf HECTON-8 verzeichnen einen kleinen Schwarmfresser, der eisenhaltige Partikel auf der Körperoberfläche trägt und dadurch ein für seine Größe ungewöhnlich starkes akustisches und Scan-Echo erzeugt."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -378,8 +460,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "鉄モロコ",
+     "scanner": "密集する群れ採餌種、体表に鉄質微粒子。信頼度91パーセント。危険：なし。限界：遠距離では群れの反射が構造を隠す。壁を読む前に利得を下げること。",
+     "in_game_wiki": "読むのは群れの形で、魚ではない。開けた水域に散っているうちは何の意味もない。厚さ二、三メートルの平らな帯に圧縮されているときは、酸素ポケットの縁を押さえている。その水ならClass-IVは予備を燃やさずに再生できる。\n\n既知の鉱脈の上に帯が無いのは逆の読みだ。ポケットは反転し、その上の水は緑に変わり、そこでは数週間なにも食っていない。\n\n鱗に鉄質の粒を抱えているので、走査での反射が強すぎて背後にあるものを消してしまう。群れ越しに壁を読むなら、先に利得を落とせ。\n\n鉱脈の上の群れはどれも1100から1300匹で数え上がる。なぜこの数が保たれるのかは分かっていない。\n\n評価：帯の上縁を泳ぐ。帯の中は決して通らない。",
+     "terminal": "試料ロット 44-XO-0091。区分：微量分析、付随。方法：群れ密度、シェルフ格子 0〜100 M。品位：微量、限界で採算可。トン数根拠：請求明細へ繰越。",
+     "field_note": "あんたの担保が測られているトン数は、2146年にこの魚をシェルフ格子で数えて見積もったもので、分析はその後一度も取り直されていない。空気のためなら帯をたどれ。鉱石については信じるな。",
+     "external_site_article": "HECTON-8のシェルフ調査は、体表に鉄質微粒子を持つ小型の群れ採餌種を記録している。体格に対して異常に強い音響反射と走査反射を生じる。作業班は群れの形状を環境値として使うと報告している。圧縮された水平の帯は局所的な酸素の濃集を示し、既知の鉱脈上に帯が無いことは濃集が失われたことを示す。\n\n同じ反射は近距離で計器を飽和させ、群れの背後の構造を隠す。セクター44のDeep Reach記録はこの種を付随的な微量分析法として分類し、再調査を行わずに群れ密度の数値を請求トン数へ繰り越している。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8のシェルフ調査は、体表に鉄質微粒子を持つ小型の群れ採餌種を記録している。体格に対して異常に強い音響反射と走査反射を生じる。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -398,16 +486,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Железный гольян",
+     "scanner": "Плотная стайная кормящаяся форма, железистая крошка на покрове. Достоверность 91 процент. Опасность: нет. Ограничение: возврат от стаи маскирует конструкцию на дистанции. Убавить усиление перед чтением стены.",
+     "in_game_wiki": "Показание — это форма стаи, а не рыба. Разбросанные по открытой воде, они не значат ничего. Сжатые в плоскую полосу два-три метра толщиной, они держат край кислородного кармана, и Class-IV может регенерировать в этой воде вместо расхода резерва.\n\nПустая полоса над известной жилой — обратное показание. Карман перевернулся, вода выше пойдёт зелёной, и там уже недели никто не кормился.\n\nНа чешуе железистая крошка, поэтому на скане они возвращают так сильно, что стирают всё, что за ними. Убавь усиление до того, как читать стену через стаю.\n\nКаждая стая над жилой насчитывается в пределах от 1100 до 1300 особей. Почему это число держится, никто не знает.\n\nОценка: идти по верхней кромке полосы, никогда — сквозь неё.",
+     "terminal": "ПАРТИЯ ПРОБ 44-XO-0091. КЛАСС: АНАЛИЗ СЛЕДОВОГО СОДЕРЖАНИЯ, ПОПУТНЫЙ. МЕТОД: ПЛОТНОСТЬ СТАИ, ШЕЛЬФОВАЯ СЕТКА 0–100 М. СОРТНОСТЬ: СЛЕДОВАЯ, РЕНТАБЕЛЬНА НА ГРАНИЦЕ. БАЗА ТОННАЖА: ПЕРЕНЕСЕНА В ПРЕТЕНЗИОННУЮ ВЕДОМОСТЬ.",
+     "field_note": "Тоннаж, по которому мерят твоё залоговое удержание, оценили в 2146 году, пересчитав этих рыб по шельфовой сетке, и анализ с тех пор не повторяли. По полосе иди за воздухом. За руду ей не верь.",
+     "external_site_article": "Шельфовые съёмки HECTON-8 фиксируют мелкую стайную рыбу, несущую железистую крошку на поверхности тела, что даёт непропорционально сильный акустический и сканерный возврат для её размера. Команды сообщают, что используют геометрию стаи как показание среды: сжатая горизонтальная полоса отмечает локальное скопление кислорода, а отсутствие полосы над известной минеральной жилой — скопление, которое уже перевернулось.\n\nТот же возврат перегружает приборы на малой дистанции и скрывает конструкцию за стаей. Записи Deep Reach по Сектору 44 относят вид к попутному методу анализа следового содержания и переносят цифры плотности стаи в претензионный тоннаж без повторной съёмки.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Шельфовые съёмки HECTON-8 фиксируют мелкую стайную рыбу, несущую железистую крошку на поверхности тела, что даёт непропорционально сильный акустический и сканерный возврат для её размера."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "铁鲦鱼",
+     "scanner": "密集集群觅食种，体表附铁质微粒。置信度91%。危险：无。限制：远距离上鱼群回波遮蔽结构。读墙之前先降增益。",
+     "in_game_wiki": "读的是鱼群的形状，不是鱼。散在开阔水里的时候它们没有意义。压成两到三米厚的一条平带时，它们守着一个氧气囊的边缘，Class-IV可以在那片水里再生，而不必烧掉储备。\n\n已知矿脉上方出现空带是相反的读数。囊已经翻了，上面的水会发绿，那里已经几周没有东西进食。\n\n它们的鳞上带着铁质砂粒，所以扫描回波强到能把身后的一切抹掉。要透过鱼群读墙，先把增益调下来。\n\n矿脉上方的每一群都数出1100到1300条。这个数字为什么稳定，没人知道。\n\n评估：沿带的上缘走，绝不穿过带里。",
+     "terminal": "样品批次 44-XO-0091。类别：微量化验，附带。方法：鱼群密度，陆架网格 0至100 M。品位：微量，临界可采。吨数依据：结转至索赔清单。",
+     "field_note": "衡量你留置权的那个吨数，是2146年在陆架网格上数这些鱼估出来的，化验此后一次也没重做。为了空气可以跟着带走。为了矿石不要信它。",
+     "external_site_article": "HECTON-8的陆架勘测记录了一种小型集群觅食种，体表携带铁质微粒，因此产生了与体型不相称的强声学与扫描回波。作业队报告说他们把鱼群的几何形状当作环境读数使用：压缩的水平带标示局部氧气富集，已知矿脉上方缺失的带则标示富集已经失效。\n\n同一回波在近距离上会使仪器饱和，并遮蔽鱼群后面的结构。44区的Deep Reach记录把该物种列为附带的微量化验方法，并在没有重新勘测的情况下把鱼群密度数据结转进索赔吨数。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8的陆架勘测记录了一种小型集群觅食种，体表携带铁质微粒，因此产生了与体型不相称的强声学与扫描回波。"
     }
    }
   }

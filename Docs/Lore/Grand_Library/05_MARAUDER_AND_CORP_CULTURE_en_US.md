@@ -77,7 +77,7 @@ Marauders keep three other ledgers because the corporate one does not describe r
 
 **The Dead** are counted because Deep Reach prefers disappearance to memory. A missing worker can become an unresolved load, a sealed casualty, an unverified claimant, a corrupted biometric, a file awaiting reconciliation. Marauders inventory the dead so that a name remains heavier than the paperwork trying to dissolve it.
 
-This is why salvage on HECTON-8 never feels clean. A crate of process glass can pay down a lien. A recovered badge can reopen a loss claim. A body can make a room unsafe, valuable, sacred, or legally poisonous depending on who reads the report first.
+This is why salvage here never feels clean. A crate of process glass pays down a lien; a recovered badge reopens a loss claim the Keelmark desk had already closed. Bring up a body and the room it came out of becomes unsafe, valuable, sacred or legally poisonous, depending on which office reads the report first.
 
 *[Margin Note: Air keeps you alive. Debt keeps you moving. The dead keep you from becoming company property with a pulse.]* 
 
@@ -85,7 +85,17 @@ This is why salvage on HECTON-8 never feels clean. A crate of process glass can 
 
 Corporate hierarchy works until a room floods.
 
-Inside a live route, Marauder crews follow a harder chain of authority. The scout owns the return path. The cutter owns the door only after the scout marks the way back. The suit tech can overrule the pilot if the gauges are lying. The medic can stop a profitable extraction if a pulse is still negotiating with pressure. The newest diver is allowed to call out small wrongness: frost around a hatch, a fish school pressed against current, a repeating voice on a dead channel, a clamp scar where no clamp should be.
+Inside a live route the chain of authority is harder than anything Deep Reach files. One version of it is scratched into the inside of a bunkroom hatch on the Black Keel, five lines deep, in three different hands:
+
+```text
+RETURN PATH  -- scout, always
+DOOR         -- cutter, and only after the scout marks the way back
+GAUGES       -- suit tech overrules the pilot
+PULSE        -- medic stops the extraction, cost irrelevant
+WRONGNESS    -- newest diver, and nobody argues with the call
+```
+
+The last line is the one no office can copy. Small wrongness means frost around a hatch, a fish school pressed against the current, a repeating voice on a dead channel, a clamp scar where no clamp should be. It has no form number, and the person most likely to notice it is the one with the least standing everywhere else.
 
 That rule exists because HECTON-8 kills through details. A proud crew dies faster than an honest one. A quiet rookie can save a veteran by naming the thing everyone else wanted to ignore.
 
@@ -117,14 +127,23 @@ That contradiction is the Black Keel's real culture. It is not a refuge. It is w
 
 *[Margin Note: Do not love the Keel. Learn its noises. There is a difference.]* 
 
-## 8. What The Player Inherits
+## 8. What The Form Already Knows
 
-The player does not enter HECTON-8 as a blank explorer.
+Nobody arrives at Aegir as a blank explorer, and the intake file says so before the pod is loaded. Fields 11 through 15 of this copy read:
 
-They inherit a working-class route into space, a debt structure that calls itself opportunity, a damaged colony whose rooms still speak corporate language, and a Marauder culture built from practical blasphemy: cut the lock, mark the dead, share the route, mistrust the euphemism, bring back more truth than the contract requested.
+```text
+FORM 88-C, FIELDS 11-15
+  11  prior employer      Deep Reach Extraterrestrial Development Combine
+  12  prior role          field-systems specialist
+  13  separation class    reassigned
+  14  origin yard         Barnard Yards
+  15  lien at intake      4.8 t recovery window
+```
 
-That makes the player dangerous in a specific way. Not because they are free. They are not. Not because they are pure. Nobody who survives long in the basin stays pure. They are dangerous because they can move between systems: corporate forms, salvage practice, pressure physics, crew loyalty, evidence, hunger, fear.
+Field 13 is the one worth reading twice. "Reassigned" is the same word the Keelmark loss desk used for workers who never came back up, and the form spends it here on a worker who did. Read 11, 12 and 13 in order and the file describes somebody who once helped write the procedures now being used to price them.
 
-Every descent asks the same question in a different shape. Are you recovering assets, or are you recovering the story Deep Reach paid to sink?
+What comes with those five fields is not freedom. It is a working-class route into space, a debt structure that calls itself opportunity, a drowned colony whose rooms still answer in corporate language, and a crew culture assembled out of practical blasphemy: cut the lock, mark the dead, share the route, mistrust the euphemism, bring up more than the contract asked for.
 
-Most Marauders answer badly at least once. The ocean keeps receipts.
+That combination is inconvenient to Deep Reach for one narrow reason, and the reason is not purity. Nobody stays clean in the basin. It is fluency. A contractor who can read a continuity clause, a proof-load stamp, a brine layer and a crew argument inside the same shift can usually work out which of the four is lying.
+
+*[Margin Note: They wrote "reassigned" on you and on the ones still down there. Same word, same form, same pen. Keep the page.]*
