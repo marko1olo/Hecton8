@@ -42,6 +42,8 @@ Subagent use by an ordinary implementation, content, QA, or docs agent is govern
 
 Read `HECTON8_ORCHESTRATOR.md` only when the agent is actually creating/judging standalone agent batches, writing `taskslocal` files, controlling external IDE/browser/GUI sessions, operating local external-agent processes, or acting as the explicit controller for a multi-agent wave. Internal subagent spawning for bounded review, evidence gathering, synthesis, or disjoint implementation remains ordinary delegation, not local orchestration.
 
+The deciding test is export, not agent count. While prompts and output stay inside the current harness run, any number of internal subagents is ordinary delegation, and no lane roster, `LANE_CLASS`, or `taskslocal` file is owed. The work turns into orchestration once it is exported as a task file, an XML batch prompt, a hand-distributed agent, or an external IDE/GUI/browser agent process. Root `AGENTS.md` `Delegation And Subagents` carries that criterion, the eight-field subagent assignment contract, and the fan-out limits that survive delegation.
+
 Read `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` only when the user explicitly asks for local VS Code Codex GUI control, autonomous workstation control, or a night/day run that launches and monitors Codex GUI agents on this machine. It is process-control law, not ordinary implementation or subagent authority.
 
 ## Task Classes

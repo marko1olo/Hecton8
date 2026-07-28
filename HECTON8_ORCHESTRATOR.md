@@ -138,6 +138,7 @@ A single active Unity owner can be the primary blocker, but it must not consume 
 CONTROLLER SIDE-DELEGATION NOTE
 This section applies only after `HECTON8_ORCHESTRATOR.md` was legitimately routed for explicit standalone batch, controller, task-file, external-agent process, or GUI/workstation control.
 Ordinary internal subagent spawning is governed by root `AGENTS.md` `Delegation And Subagents` and `Docs/AGENT_AUTHORITY_ROUTING.md`; it does not require this document.
+The routing test is export, not agent count: while prompts and output stay inside the current harness run, any number of internal subagents remains ordinary delegation. This document starts applying once the work is exported as `taskslocal` task files, XML batch prompts, hand-distributed agents, or external IDE/GUI/browser agent processes.
 
 In controller mode, use side-delegation when it reduces risk or wall-clock time on bounded evidence work:
 - source/proof inspection for a narrow route;
@@ -146,15 +147,9 @@ In controller mode, use side-delegation when it reduces risk or wall-clock time 
 - static checks that do not require Unity ownership;
 - lane-specific critique before dispatching a serious batch.
 
-Every subagent assignment must state:
-- role;
-- reason it is delegated;
-- exact authority docs already routed for the parent task;
-- owned read/edit scope;
-- forbidden scope;
-- expected output format;
-- evidence standard;
-- whether file edits are allowed.
+Every subagent assignment must state the eight fields listed in root `AGENTS.md` `Delegation And Subagents`, under `Subagent assignment contract`: role, reason delegated, authority docs already routed, owned read/edit scope, forbidden scope, expected output format, evidence standard, and whether file edits are allowed.
+
+Those eight fields were moved to root `AGENTS.md` on 2026-07-28 and are deliberately not duplicated here. They bind ordinary internal delegation as well as controller mode, and ordinary delegation is forbidden to open this file, so a copy that lived only here was a rule nobody was allowed to read. Controller mode adds the lane contract below on top of the eight fields; it does not replace them.
 
 Side-delegated agents inherit HECTON-8 law, but they do not become authority.
 The primary agent remains responsible for:
@@ -210,12 +205,23 @@ Batch index files must include a lane roster:
 - evidence budget;
 - kill switch or exact blocker label.
 
-Every task file and XML prompt for serious agent work must include:
+Every task file and XML prompt for serious agent work must include all seven fields the strict gate parses. Corrected 2026-07-28: this list previously named five, omitting `DELIVERABLE_CLASS` and `PROOF_ROUTE`, so a batch authored from this document failed `--strict` on two fields it was never told about.
 - `LANE_CLASS`: one of the classes below;
+- `DELIVERABLE_CLASS`: `SOURCE_CHANGE`, `ASSET_CHANGE`, `CONTENT_ARTIFACT`, `FRESH_PROOF`, `BLOCKER`, or `POLICY_DOC`, and it must be one the lane allows;
 - `VALID_COMPLETION`: concrete artifact and proof that can close the task;
 - `INVALID_COMPLETION`: common fake-success shapes rejected for this lane;
 - `KILL_SWITCH`: when to stop the current route and report root cause;
+- `PROOF_ROUTE`: the executable proof route, naming an action verb and lane-specific proof terms;
 - `EVIDENCE_BUDGET`: maximum reasonable proof attempts before escalation.
+
+Lane-to-deliverable allowlist enforced by the gate:
+- `GAME_VISUAL`, `RUNTIME_SYSTEM`, `ASSET_PIPELINE`: `SOURCE_CHANGE`, `ASSET_CHANGE`, `FRESH_PROOF`, `BLOCKER`;
+- `LORE_CONTENT`: `CONTENT_ARTIFACT`, `SOURCE_CHANGE`, `FRESH_PROOF`, `BLOCKER`;
+- `DOCS_RULES`, `ORCHESTRATION`: `POLICY_DOC`, `SOURCE_CHANGE`, `FRESH_PROOF`, `BLOCKER`;
+- `QA_PROOF`: `FRESH_PROOF`, `SOURCE_CHANGE`, `POLICY_DOC`, `BLOCKER`;
+- `TOOLING_AUTOMATION`: `SOURCE_CHANGE`, `FRESH_PROOF`, `BLOCKER`.
+
+`PROOF_ROUTE` is rejected when it is report/status/rationale/route-card/TBD wording, when it is too short to name a concrete route, when it carries no action verb such as run, execute, capture, audit, validate, test, check, compile, import, export, bake, or readback, and when it carries no proof term belonging to its lane. `LORE_CONTENT` additionally needs an AppliedLore/Grand Library export, import, or coverage proof term. `Tools/Docs/TestTaskLocalLaneContracts.py` is the authority on the exact term lists; read it before arguing with a rejection.
 
 Before dispatching a new or materially rewritten serious `taskslocal` batch, run:
 `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict`
@@ -315,9 +321,11 @@ Recommended long-prompt shape:
 
   <LANE_CONTRACT>
   LANE_CLASS: GAME_VISUAL | RUNTIME_SYSTEM | ASSET_PIPELINE | LORE_CONTENT | DOCS_RULES | QA_PROOF | ORCHESTRATION | TOOLING_AUTOMATION.
+  DELIVERABLE_CLASS: SOURCE_CHANGE | ASSET_CHANGE | CONTENT_ARTIFACT | FRESH_PROOF | BLOCKER | POLICY_DOC, restricted to what the lane allows.
   VALID_COMPLETION: concrete artifact and proof that can close this lane.
   INVALID_COMPLETION: report-only or fake-success shapes rejected for this lane.
   KILL_SWITCH: exact repeated-failure condition that stops this route.
+  PROOF_ROUTE: executable proof route with an action verb and lane-specific proof terms.
   EVIDENCE_BUDGET: proof attempts/time/artifact limit before escalation.
   </LANE_CONTRACT>
 
@@ -402,9 +410,11 @@ Recommended shape:
 
   <LANE_CONTRACT>
   LANE_CLASS: one primary lane class from AGENT LANE CONTRACTS.
+  DELIVERABLE_CLASS: one class the lane allows, per the allowlist in AGENT LANE CONTRACTS.
   VALID_COMPLETION: artifact plus proof.
   INVALID_COMPLETION: rejected paper-success shapes.
   KILL_SWITCH: when to stop the current route.
+  PROOF_ROUTE: executable proof route with an action verb and lane-specific proof terms.
   EVIDENCE_BUDGET: bounded proof attempts before escalation.
   </LANE_CONTRACT>
 
@@ -460,7 +470,7 @@ The local Codex creates one large `.txt` task file per agent:
 Each task file must be directly distributable to one agent without requiring XML extraction.
 Each task file must include:
 - explicit ID and role;
-- `LANE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, and `EVIDENCE_BUDGET`;
+- all seven lane-contract fields: `LANE_CLASS`, `DELIVERABLE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, `PROOF_ROUTE`, and `EVIDENCE_BUDGET`;
 - source batch or evidence packet name;
 - why this task is still unstarted or still needed;
 - authority docs to read;
@@ -652,7 +662,7 @@ Before returning a batch, self-check:
 - No immediate deletion.
 - No task requires unrelated archive reading.
 - Batch index includes a lane roster for serious multi-agent work.
-- Every serious agent prompt has `LANE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, and `EVIDENCE_BUDGET`.
+- Every serious agent prompt has all seven fields: `LANE_CLASS`, `DELIVERABLE_CLASS`, `VALID_COMPLETION`, `INVALID_COMPLETION`, `KILL_SWITCH`, `PROOF_ROUTE`, and `EVIDENCE_BUDGET`.
 - Lane completion matches the assigned class; report-only is valid only for explicit `DOCS_RULES`, `QA_PROOF`, or orchestration audit work.
 - Batch composition includes builder lanes when the objective needs player-facing, runtime, asset, or tooling changes.
 - Each prompt has 20-30 tasks for serious heavy waves, or 6-12 tasks for narrow housekeeping/follow-up work.
