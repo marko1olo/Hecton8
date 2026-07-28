@@ -1,4 +1,4 @@
-// H8_ScreenshotTaker.cs
+﻿// H8_ScreenshotTaker.cs
 // Editor-only. Renders scene cameras via URP RenderPipeline.SubmitRenderRequest.
 // cam.Render() alone does NOT invoke URP in batchmode — SubmitRenderRequest is required.
 using UnityEditor;
@@ -70,7 +70,14 @@ namespace Hecton8.EditorTools
                 {
                     RenderPipeline.SubmitRenderRequest(cam, request);
                     Debug.Log("[H8Screenshot] Used URP SubmitRenderRequest.");
-                    request.destination.Release();
+                    // DO NOT Release() the destination here. SingleCameraRequest.destination is
+                    // declared `public RenderTexture destination` (URP
+                    // Runtime/UniversalRenderPipeline.cs:2706), and RTHandles.Alloc(rt) converts
+                    // implicitly to it - so this call was RenderTexture.Release(), freeing the GPU
+                    // surface that ReadPixels reads a few lines below. Unity lazily recreates a
+                    // released RenderTexture with undefined contents, so the capture returned a
+                    // blank frame no matter what the camera saw. The caller already releases and
+                    // destroys `rt` after ReadPixels, so this was also a double release.
                 }
                 else
                 {

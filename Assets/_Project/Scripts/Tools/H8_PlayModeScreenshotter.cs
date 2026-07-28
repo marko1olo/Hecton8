@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System;
 using System.Globalization;
 using System.IO;
@@ -338,7 +338,13 @@ namespace Hecton8.Tools
                 if (RenderPipeline.SupportsRenderRequest(targetCam, request))
                 {
                     RenderPipeline.SubmitRenderRequest(targetCam, request);
-                    request.destination.Release();
+                    // DO NOT Release() the destination. SingleCameraRequest.destination is declared
+                    // `public RenderTexture destination` (URP
+                    // Runtime/UniversalRenderPipeline.cs:2706) and RTHandles.Alloc(rt) converts
+                    // implicitly to it, so this was RenderTexture.Release() on the surface
+                    // ReadPixels reads below - Unity recreates a released RT with undefined
+                    // contents, producing a blank frame whatever the camera saw. `rt` is released
+                    // by this method after ReadPixels, so this was a double release too.
                 }
                 else
                 {

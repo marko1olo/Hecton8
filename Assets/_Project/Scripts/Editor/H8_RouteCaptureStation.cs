@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System;
 using System.Globalization;
 using System.IO;
@@ -611,11 +611,18 @@ namespace Hecton8.EditorTools
                 if (RenderPipeline.SupportsRenderRequest(camera, request))
                 {
                     RenderPipeline.SubmitRenderRequest(camera, request);
-                    request.destination.Release();
+                    // DO NOT Release() here - see the note below; the caller owns `target` and
+                    // reads it with ReadPixels after this returns.
                     return;
                 }
 
-                request.destination.Release();
+                // Safe on this path only: URP declined the request, so nothing was rendered into
+                // the target and the caller falls back to Camera.Render(). Even so it is dropped,
+                // because SingleCameraRequest.destination is declared `public RenderTexture`
+                // (URP Runtime/UniversalRenderPipeline.cs:2706) and RTHandles.Alloc converts
+                // implicitly to it, making this RenderTexture.Release() on a surface this method
+                // does not own. On the SUCCESS path above it freed the very frame the caller was
+                // about to read, which returned a blank capture regardless of scene contents.
                 Debug.LogWarning(
                     $"{Marker} URP declined the render request for '{camera.name}'; falling back to " +
                     "Camera.Render(), which under URP can yield clear colour only. Treat the frame " +
