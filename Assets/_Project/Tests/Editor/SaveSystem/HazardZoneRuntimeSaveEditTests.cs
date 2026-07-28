@@ -2780,59 +2780,135 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes_PersistentWorldRegistry()
         {
-            string persistentWorldSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"));
+            // This used to be an ordered IndexOf chain over PersistentWorldRegistry.cs. Every literal it
+            // wanted is still present in the file today, verified one by one - it went red purely because
+            // the chain is positional: "string persistentId = itemData.PersistentId;" no longer occurs
+            // inside TryRegisterDroppedItemStateful (that method now takes the id out of
+            // CanRegisterDroppedItemData's out parameter), so the search anchor jumped forward past the
+            // ComputePersistentIdHash call it was supposed to find next and the next IndexOf returned -1.
+            // A guard that reports a defect when a local variable is inlined, and cannot report one when
+            // the two hash routes disagree, is measuring the wrong thing.
+            //
+            // The behaviour it was standing in for is a hard round-trip requirement, not a style rule:
+            // TryRegisterDroppedItemStateful stores the STRING hash in record.ItemPersistentIdHash and the
+            // id itself in record.ItemPersistentId (a FixedString128Bytes), and UID_VALIDATE
+            // (PersistentWorldRegistry.cs:11002-11012) later RECOMPUTES the hash from the FixedString and
+            // rejects the record outright when it is zero or differs. So:
+            //   - a blank or whitespace-only id must hash to 0 on BOTH overloads, or a dropped item is
+            //     registered under an identity no lookup can reproduce;
+            //   - for every id the register path can actually persist, the two overloads must agree
+            //     exactly, or the dropped item is silently deleted by its own validator on the next pass.
+            // " \t\r\n" is the discriminator against the wrong guard: string.IsNullOrEmpty is FALSE for
+            // whitespace, and FixedString.Length is NON-ZERO for whitespace, which is exactly why the
+            // FixedString overload needs its own hasNonWhiteSpace fold rather than a length check.
+            AssertPersistentIdHashRoundTripsBetweenStringAndFixedString("Data_TitaniumScrap", true);
+            AssertPersistentIdHashRoundTripsBetweenStringAndFixedString("Data_TitaniumScrap_02", true);
+            AssertPersistentIdHashRoundTripsBetweenStringAndFixedString(string.Empty, false);
+            AssertPersistentIdHashRoundTripsBetweenStringAndFixedString(" ", false);
+            AssertPersistentIdHashRoundTripsBetweenStringAndFixedString("\t", false);
+            AssertPersistentIdHashRoundTripsBetweenStringAndFixedString(" \t\r\n", false);
 
-            int registerDroppedIndex = persistentWorldSource.IndexOf(
-                "private bool TryRegisterDroppedItemStateful(",
-                StringComparison.Ordinal);
-            Assert.GreaterOrEqual(registerDroppedIndex, 0, persistentWorldSource);
-            int droppedIdIndex = persistentWorldSource.IndexOf(
-                "string persistentId = itemData.PersistentId;",
-                registerDroppedIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(droppedIdIndex, registerDroppedIndex, persistentWorldSource);
-            int droppedGuardIndex = persistentWorldSource.IndexOf(
-                "string.IsNullOrWhiteSpace(persistentId)",
-                droppedIdIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(droppedGuardIndex, droppedIdIndex, persistentWorldSource);
-            int droppedHashIndex = persistentWorldSource.IndexOf(
-                "ulong persistentIdHash = ComputePersistentIdHash(persistentId);",
-                droppedGuardIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(droppedHashIndex, droppedGuardIndex, persistentWorldSource);
-            int recordHashIndex = persistentWorldSource.IndexOf(
-                "ItemPersistentIdHash = persistentIdHash",
-                droppedHashIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(recordHashIndex, droppedHashIndex, persistentWorldSource);
+            Assert.AreEqual(
+                0UL,
+                Hecton8.World.PersistentWorldRegistry.ComputePersistentIdHash((string)null),
+                "A null persistent id must not produce a record identity.");
 
-            int persistentHashStringIndex = persistentWorldSource.IndexOf(
-                "internal static ulong ComputePersistentIdHash(string value)",
-                StringComparison.Ordinal);
-            Assert.GreaterOrEqual(persistentHashStringIndex, 0, persistentWorldSource);
-            int persistentHashStringGuardIndex = persistentWorldSource.IndexOf(
-                "string.IsNullOrWhiteSpace(value)",
-                persistentHashStringIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(persistentHashStringGuardIndex, persistentHashStringIndex, persistentWorldSource);
+            // Distinct ids must not collide onto one identity - otherwise "hash is non-zero" would be
+            // satisfiable by a constant and the round-trip assertions above would prove nothing.
+            Assert.AreNotEqual(
+                Hecton8.World.PersistentWorldRegistry.ComputePersistentIdHash("Data_TitaniumScrap"),
+                Hecton8.World.PersistentWorldRegistry.ComputePersistentIdHash("Data_TitaniumScrap_02"));
 
-            int persistentHashFixedIndex = persistentWorldSource.IndexOf(
-                "internal static ulong ComputePersistentIdHash(in FixedString128Bytes value)",
-                StringComparison.Ordinal);
-            Assert.GreaterOrEqual(persistentHashFixedIndex, 0, persistentWorldSource);
-            int persistentHashFixedGuardIndex = persistentWorldSource.IndexOf(
-                "bool hasNonWhiteSpace = false;",
-                persistentHashFixedIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(persistentHashFixedGuardIndex, persistentHashFixedIndex, persistentWorldSource);
-            StringAssert.Contains("hasNonWhiteSpace |= !IsAsciiWhiteSpace(current);", persistentWorldSource);
-            StringAssert.Contains("return hasNonWhiteSpace ? hash : 0UL;", persistentWorldSource);
-            StringAssert.Contains("private static bool IsAsciiWhiteSpace(byte value)", persistentWorldSource);
-            StringAssert.Contains("private static int ComputeCatalogItemHash(ItemData itemData)", persistentWorldSource);
-            StringAssert.Contains("return ItemData.ResolvePersistentHashId(itemData);", persistentWorldSource);
+            // The catalog-facing hash must route through the canonical ItemData resolver rather than
+            // hashing PersistentId a second time on its own. Asserted on the returned VALUE for a real
+            // ItemData, so it fails when the routing changes, not when the call is reformatted.
+            MethodInfo computeCatalogItemHash = typeof(Hecton8.World.PersistentWorldRegistry).GetMethod(
+                "ComputeCatalogItemHash",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.IsNotNull(computeCatalogItemHash, "PersistentWorldRegistry.ComputeCatalogItemHash");
+
+            ItemData namedItem = null;
+            ItemData blankItem = null;
+            try
+            {
+                namedItem = UnityEngine.ScriptableObject.CreateInstance<ItemData>();
+                namedItem.name = "ItemIdentityRuntime.PersistentWorldRegistry.NamedItem";
+                SetPrivateInstanceField(namedItem, "stableId", "Data_TitaniumScrap");
+                InvokePrivateInstanceMethod(namedItem, "RefreshPersistentHash");
+
+                int expectedNamedHash = ItemData.ResolvePersistentHashId(namedItem);
+                Assert.AreNotEqual(0, expectedNamedHash);
+                Assert.AreEqual(
+                    expectedNamedHash,
+                    (int)computeCatalogItemHash.Invoke(null, new object[] { namedItem }),
+                    "The catalog item hash disagreed with ItemData.ResolvePersistentHashId, so a dropped " +
+                        "item would be persisted under a different identity than the catalog resolves.");
+
+                blankItem = UnityEngine.ScriptableObject.CreateInstance<ItemData>();
+                blankItem.name = string.Empty;
+                SetPrivateInstanceField(blankItem, "stableId", " \t\r\n");
+                InvokePrivateInstanceMethod(blankItem, "RefreshPersistentHash");
+
+                Assert.AreEqual(
+                    0,
+                    ItemData.ResolvePersistentHashId(blankItem),
+                    "A whitespace-only stable id must not resolve to a hash.");
+                Assert.AreEqual(
+                    0,
+                    (int)computeCatalogItemHash.Invoke(null, new object[] { blankItem }),
+                    "A whitespace-only stable id produced a catalog hash, so a blank item would be " +
+                        "registered into the persistent world under a garbage identity.");
+                Assert.AreEqual(
+                    0,
+                    (int)computeCatalogItemHash.Invoke(null, new object[] { null }),
+                    "A null ItemData produced a catalog hash.");
+            }
+            finally
+            {
+                if (namedItem != null)
+                    UnityEngine.Object.DestroyImmediate(namedItem);
+                if (blankItem != null)
+                    UnityEngine.Object.DestroyImmediate(blankItem);
+            }
+        }
+
+        private static void AssertPersistentIdHashRoundTripsBetweenStringAndFixedString(
+            string persistentId,
+            bool expectIdentity)
+        {
+            ulong stringHash = Hecton8.World.PersistentWorldRegistry.ComputePersistentIdHash(persistentId);
+            Unity.Collections.FixedString128Bytes storedId = new Unity.Collections.FixedString128Bytes(persistentId);
+            ulong storedHash = Hecton8.World.PersistentWorldRegistry.ComputePersistentIdHash(in storedId);
+
+            if (expectIdentity)
+            {
+                Assert.AreNotEqual(
+                    0UL,
+                    stringHash,
+                    "'" + persistentId + "' must produce a record identity at register time.");
+                Assert.AreNotEqual(
+                    0UL,
+                    storedHash,
+                    "'" + persistentId + "' must still produce a record identity when read back from the " +
+                        "stored FixedString.");
+            }
+            else
+            {
+                Assert.AreEqual(
+                    0UL,
+                    stringHash,
+                    "A blank id must be refused at register time, not hashed.");
+                Assert.AreEqual(
+                    0UL,
+                    storedHash,
+                    "A blank stored id must be refused by UID_VALIDATE, not hashed.");
+            }
+
+            Assert.AreEqual(
+                stringHash,
+                storedHash,
+                "The register-time string hash and the validate-time FixedString hash disagreed for '" +
+                    persistentId + "', so UID_VALIDATE would delete this dropped item record.");
         }
 
         [Test]
