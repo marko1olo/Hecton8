@@ -147,7 +147,7 @@ namespace Hecton8.Building
         [Tooltip("Pre-authored module-local VFX sockets used by degradation routing.")]
         [SerializeField] private VfxSocket[] vfxSockets = Array.Empty<VfxSocket>();
 
-        public string PersistentId => stableId;
+        public string PersistentId => ResolveCanonicalPersistentId(stableId, name);
         public int TemplateHashId => templateHashId;
         public int PersistentHashId => ResolvePersistentHashId();
         public float3[] SnapPoints => snapPoints;
@@ -178,12 +178,35 @@ namespace Hecton8.Building
             if (templateHashId != 0)
                 return templateHashId;
 
-            string id = !string.IsNullOrWhiteSpace(stableId)
-                ? stableId
-                : name;
-            return string.IsNullOrWhiteSpace(id)
+            return ComputeCanonicalPersistentHashId(PersistentId);
+        }
+
+        /// <summary>
+        /// Canonical form of an authored stable id.
+        /// This must stay behaviourally identical to <c>SaveData.SanitizePersistenceString</c>
+        /// (SaveData.cs:99-102), which is the normalizer the save layer applies to every persisted
+        /// module id through <c>ModuleDTO.SanitizePersistenceId</c> and
+        /// <c>ModuleGraphNodeDTO.SanitizeForPersistence</c>, and which <c>ModuleCatalog.FindDataById</c>
+        /// also applies to the id it is handed before the dictionary probe. A module carries two
+        /// persisted identities - the string prefabId and the integer moduleHashId - and if this form
+        /// diverges from the save layer's, the two identities describe different modules and the
+        /// saved module is never restored.
+        /// A blank or whitespace-only id resolves to <see cref="string.Empty"/> and is refused rather
+        /// than hashed, because a real hash over a blank id is one identity every blank template would
+        /// share.
+        /// </summary>
+        private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)
+        {
+            string id = !string.IsNullOrWhiteSpace(authoredId) ? authoredId : fallbackName;
+            return string.IsNullOrWhiteSpace(id) ? string.Empty : id.Trim();
+        }
+
+        private static int ComputeCanonicalPersistentHashId(string value)
+        {
+            string persistentId = ResolveCanonicalPersistentId(value, null);
+            return persistentId.Length == 0
                 ? 0
-                : Hecton.Localization.LocHash.Compute(id);
+                : Hecton.Localization.LocHash.Compute(persistentId);
         }
 
         private void OnValidate()
@@ -216,9 +239,7 @@ namespace Hecton8.Building
             if (proxyBoundsSize.x <= 0.01f || proxyBoundsSize.y <= 0.01f || proxyBoundsSize.z <= 0.01f)
                 DeriveProxyBoundsFromSocketsAndSnapPoints(out proxyBoundsCenter, out proxyBoundsSize);
 
-            templateHashId = string.IsNullOrWhiteSpace(stableId)
-                ? 0
-                : Hecton.Localization.LocHash.Compute(stableId);
+            templateHashId = ComputeCanonicalPersistentHashId(stableId);
         }
 
         private static ModuleSocketMask BuildSocketMask(SocketDefinition[] definitions)

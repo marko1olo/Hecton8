@@ -206,7 +206,7 @@ namespace Hecton8.Building
         /// <summary>
         /// Stable content identifier used by persistence-facing systems.
         /// </summary>
-        public string PersistentId => string.IsNullOrWhiteSpace(stableId) ? name : stableId;
+        public string PersistentId => ResolveCanonicalPersistentId(stableId, name);
 
         public BaseModuleTemplate ModuleTemplate => moduleTemplate;
 
@@ -214,8 +214,11 @@ namespace Hecton8.Building
         {
             get
             {
+                // ResolvePersistentHashId(), never the serialized templateHashId field: that field is
+                // baked at import and is 0 on a template that never ran OnValidate, so reading it
+                // directly hands out a second, different identity for the same module.
                 if (moduleTemplate != null)
-                    return moduleTemplate.TemplateHashId;
+                    return moduleTemplate.ResolvePersistentHashId();
 
                 return _persistentHashId;
             }
@@ -262,15 +265,21 @@ namespace Hecton8.Building
         /// </summary>
         public bool MatchesPersistentId(string id)
         {
-            if (string.IsNullOrEmpty(id))
+            // IsNullOrWhiteSpace, not IsNullOrEmpty: a whitespace-only id is not empty, so the old
+            // guard let "   " through as a real lookup key and a whitespace-named module would answer
+            // to it, restoring an arbitrary blueprint for a blank persisted prefabId.
+            if (string.IsNullOrWhiteSpace(id))
                 return false;
 
+            id = id.Trim();
             string persistentId = PersistentId;
             if (string.Equals(persistentId, id, StringComparison.Ordinal))
                 return true;
 
-            return !string.Equals(name, persistentId, StringComparison.Ordinal) &&
-                   string.Equals(name, id, StringComparison.Ordinal);
+            string legacyName = ResolveCanonicalPersistentId(name, null);
+            return legacyName.Length != 0 &&
+                   !string.Equals(legacyName, persistentId, StringComparison.Ordinal) &&
+                   string.Equals(legacyName, id, StringComparison.Ordinal);
         }
 
         public string FamilyShortCode
@@ -310,7 +319,32 @@ namespace Hecton8.Building
 
         private void RebuildCache()
         {
-            _persistentHashId = Hecton.Localization.LocHash.Compute(PersistentId);
+            _persistentHashId = ComputeCanonicalPersistentHashId(PersistentId);
+        }
+
+        /// <summary>
+        /// Canonical form of an authored stable id.
+        /// This must stay behaviourally identical to <c>SaveData.SanitizePersistenceString</c>
+        /// (SaveData.cs:99-102), which the save layer applies to every persisted module id through
+        /// <c>ModuleDTO.SanitizePersistenceId</c>, and which <c>ModuleCatalog.FindDataById</c>
+        /// (ModuleCatalog.cs:93-102) applies to the id it is handed before the dictionary probe. If
+        /// this form diverges, a module authored with a padded stable id is persisted under its
+        /// trimmed id and looked up under the padded one, so it resolves to no BuildableData on load.
+        /// A blank or whitespace-only id resolves to <see cref="string.Empty"/> and is refused rather
+        /// than hashed, because a real hash over a blank id is one identity every blank module shares.
+        /// </summary>
+        private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)
+        {
+            string id = !string.IsNullOrWhiteSpace(authoredId) ? authoredId : fallbackName;
+            return string.IsNullOrWhiteSpace(id) ? string.Empty : id.Trim();
+        }
+
+        private static int ComputeCanonicalPersistentHashId(string value)
+        {
+            string persistentId = ResolveCanonicalPersistentId(value, null);
+            return persistentId.Length == 0
+                ? 0
+                : Hecton.Localization.LocHash.Compute(persistentId);
         }
 
         // ══════════════════════════════════════════════════════════

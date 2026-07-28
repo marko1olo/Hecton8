@@ -880,8 +880,13 @@ namespace Hecton8.Gameplay
                 if (_moduleMarker != null && _moduleMarker.Data != null)
                     return _moduleMarker.Data.ModuleHashId;
 
+                // Route through the template's own resolver rather than re-deriving the hash here.
+                // Hashing PersistentId locally is a second derivation of the same identity, and it
+                // disagrees with the baked templateHashId that HabitatConstructionManager,
+                // HabitatGraphManager and BaseModuleCatalogRuntime resolve for the same module - so
+                // the telemetry hash below would attribute a warning to a module id nothing else uses.
                 return moduleTemplate != null
-                    ? Hecton.Localization.LocHash.Compute(moduleTemplate.PersistentId)
+                    ? moduleTemplate.ResolvePersistentHashId()
                     : 0;
             }
         }
