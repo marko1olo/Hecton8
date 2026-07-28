@@ -41,14 +41,14 @@ TagManager:
   - VoxelProxy
   - PlayerVehicle
   - ToolUI
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - World_Static
+  - World_Dynamic
+  - Fauna_Hitbox
+  - Flora_NonColliding
+  - Hazard_Trigger
+  -
+  -
+  -
   m_SortingLayers:
   - name: Default
     uniqueID: 0

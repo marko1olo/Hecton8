@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -7,13 +7,13 @@ namespace Hecton8.Editor.Structures
 {
     public sealed class WreckageFractureEngine1717 : EditorWindow
     {
-        private const string ForgeMenuPath = "HECTON-8/Wreckage Forge/Open Forge";
-        private const string BakeSelectionMenuPath = "HECTON-8/Wreckage Forge/Bake Selected Assets";
-        private const string ValidateSelectionMenuPath = "HECTON-8/Wreckage Forge/Validate Selected Source Assets";
-        private const string ScannerMenuPath = "HECTON-8/Wreckage Forge/Scan Runtime Destruction";
-        private const string OfflineLayoutMenuPath = "HECTON-8/Wreckage Forge/Validate Offline Wreckage Layouts";
-        private const string ProceduralLayoutMenuPath = "HECTON-8/Procedural Wreckage/Validate Layouts";
-        private const string MockBenchmarkMenuPath = "HECTON-8/Wreckage Forge/Run Mock Benchmark";
+        private const string ForgeMenuPath = "Hecton8/Wreckage Forge/Open Forge";
+        private const string BakeSelectionMenuPath = "Hecton8/Wreckage Forge/Bake Selected Assets";
+        private const string ValidateSelectionMenuPath = "Hecton8/Wreckage Forge/Validate Selected Source Assets";
+        private const string ScannerMenuPath = "Hecton8/Wreckage Forge/Scan Runtime Destruction";
+        private const string OfflineLayoutMenuPath = "Hecton8/Wreckage Forge/Validate Offline Wreckage Layouts";
+        private const string ProceduralLayoutMenuPath = "Hecton8/Procedural Wreckage/Validate Layouts";
+        private const string MockBenchmarkMenuPath = "Hecton8/Wreckage Forge/Run Mock Benchmark";
 
         [MenuItem("Hecton8/Structures/Wreckage Fracture Engine 1717")]
         [MenuItem("Hecton8/Wreckage Forge/Open Fracture Engine 1717")]
