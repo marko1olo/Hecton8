@@ -564,6 +564,10 @@ def author_channels(obj: bpy.types.Object, spec: CoralSpec,
         blackbox=blackbox)
 
     vertexcolor.remove_scratch_attributes(obj.data)
+    # Read the channels back off the mesh, area-weighted, so the report is comparable with
+    # the rendered tiles. min/max are weighting-independent and are what to assert on; a
+    # mean-vs-mean comparison across loop weighting and pixel weighting is invalid.
+    report["storedChannels"] = vertexcolor.channel_stats(obj)
     return report, ao_result
 
 
@@ -716,6 +720,10 @@ def main() -> None:
             hi=result.sway_report.get("swayMax", -1),
             u=result.sway_report.get("swayUniform"),
             c=law.SWAY_RIGID_MINERAL_MAX if spec.mineralised else 1.0))
+        stored = result.sway_report.get("storedChannels", {})
+        if stored.get("present"):
+            print("  STORED  areaWeightedMean=%s" % stored["areaWeightedMean"])
+            print("  STORED  min=%s max=%s" % (stored["min"], stored["max"]))
         for stats in result.channel_stats:
             print("  CHAN {c:<44} min={lo:.3f} max={hi:.3f} mean={m:.3f} "
                   "cover={cv:.3f} gradient={g} visible={v}".format(

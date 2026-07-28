@@ -255,6 +255,7 @@ class StemPlan:
     ridge_phase: float
     finger_count: int
     finger_phase: float
+    neck_ratio: float
     juvenile: bool
 
 
@@ -321,7 +322,10 @@ def _fit_density(*, rib_count: int, segments_per_rib: int, stem_rings: int,
     correctly at lower counts, spend saved budget on material detail" -- is the same
     priority ordering.
     """
-    minimums = {"stem_rings": 4, "cap_top_rings": 4, "cap_bottom_rings": 3,
+    # stem_rings floors at 10, not 4. Below that the stem bands become needles and the
+    # UV gate cannot close no matter how good the parameterisation is -- measured 12.0%
+    # of area over the organic limit purely from 17:1 slivers.
+    minimums = {"stem_rings": 10, "cap_top_rings": 4, "cap_bottom_rings": 3,
                 "rim_rings": 1}
     counts = {"stem_rings": stem_rings, "cap_top_rings": cap_top_rings,
               "cap_bottom_rings": cap_bottom_rings, "rim_rings": rim_rings}
@@ -368,11 +372,17 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
     # drawn from the RNG, not from quality: 3dmodel.md section 8 forbids quality from
     # changing the authored shape ("The silhouette must not step from low to high; it
     # must gain density along the same authored shape").
-    segments_per_rib = 2 + int(round(2.0 * q))          # 2..4
-    stem_rings = 5 + int(round(6.0 * q))                # 5..11
-    cap_top_rings = 4 + int(round(4.0 * q))             # 4..8
-    cap_bottom_rings = 3 + int(round(3.0 * q))          # 3..6
-    rim_rings = 1 + int(round(2.0 * q))                 # 1..3
+    # Ring counts are chosen for QUAD ASPECT, not only for triangle spend. A stem band
+    # 110 mm long against a 6.6 mm circumferential step is a 17:1 needle, and a needle
+    # makes sigma_max/sigma_min ill-conditioned however good the map is -- that alone
+    # held the UV gate at 12.0% against its 10% allowance. Stem bands became cheap once
+    # the stem dropped to half the cap's angular resolution, so the saved triangles go
+    # into LENGTH, where they fix the aspect.
+    segments_per_rib = 2 + int(round(1.0 * q))          # 2..3
+    stem_rings = 10 + int(round(8.0 * q))               # 10..18
+    cap_top_rings = 4 + int(round(3.0 * q))             # 4..7
+    cap_bottom_rings = 3 + int(round(2.0 * q))          # 3..5
+    rim_rings = 1 + int(round(1.0 * q))                 # 1..2
 
     stem_count = 2 + int(round(1.6 * q))                # 2..4 (a clump, never one)
     if rng.random() < 0.28:
@@ -460,8 +470,13 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
             gill_depth=_rng_range(rng, 0.24, 0.44),
             cup_sign=1.0 if rng.random() < 0.62 else -1.0,
             cup_amplitude=_rng_range(rng, 0.14, 0.34),
-            thickness_hub=_rng_range(rng, 0.115, 0.170),
-            thickness_rim=_rng_range(rng, 0.040, 0.072),
+            # Fractions of cap radius. 3DMODEL_FLORA_CORAL.md section 3 asks plate coral
+            # for "thick rims", and the earlier 0.040-0.072 rim gave a 6-11 mm band at a
+            # 155 mm radius -- a knife edge that also read as a 4 px UV island and a
+            # 15:1 sliver band. Thicker is both what the bible wants and what the
+            # geometry needs.
+            thickness_hub=_rng_range(rng, 0.165, 0.235),
+            thickness_rim=_rng_range(rng, 0.075, 0.115),
             tear_sectors=tuple(tears),
             edge_jitter=tuple(float(x) for x in rng.normal(0.0, 0.016, size=segments)),
             ridge_count=int(4 + round(_rng_range(rng, 0.0, 3.0))),
@@ -505,7 +520,11 @@ def _stem_axis(plan: StemPlan, samples: int) -> List[Tuple[Vector, Vector, float
         # a cone with a hard crease rather than a root pad, and no cylindrical UV map
         # can carry it (measured sigma ratio 21.9 on that one band). Clustering resolves
         # the flare axially the same way the tear clamp resolves a bite angularly.
-        t = (i / float(samples - 1)) ** 2.0
+        #
+        # Exponent 1.5 rather than 2.0: at 2.0 the clustering was paid for by a final
+        # band spanning 30% of the stem, 132 mm against a 6.6 mm circumferential step,
+        # which simply moved the sliver problem from the foot to the neck.
+        t = (i / float(samples - 1)) ** 1.5
         # Vertical rise slightly eased so the neck is not a straight ramp.
         rise = plan.height * (t ** 0.94)
         lateral = lean * (plan.height * plan.bend * (t ** 1.85))

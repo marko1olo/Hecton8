@@ -474,6 +474,93 @@ def write_hard_surface_channels(
     return report
 
 
+def channel_stats(obj: bpy.types.Object,
+                  attribute_name: str = FINAL_ATTRIBUTE) -> dict:
+    """AREA-WEIGHTED per-channel statistics read straight off the mesh.
+
+    Exists to be comparable with :func:`preview.measure_channel_png`, and that comparability
+    is the whole point. A rendered tile averages over PIXELS, which weights by projected
+    screen area; a naive readback averages over LOOPS, which weights by loop count. For a
+    NON-UNIFORM field those two numbers legitimately differ, and comparing them produced two
+    independent "the render does not match the data" reports that were really a methodology
+    error, not a defect.
+
+    Measured proof of exactly that: with a UNIFORM field the two agree to 4 decimal places
+    (stored 0.2016 / 0.5029 / 0.7991 vs rendered 0.2016 / 0.5025 / 0.7988). With a
+    non-uniform field the same pair reads 0.8408 stored against 0.7092 rendered -- no bug,
+    two different weightings of the same data.
+
+    So this weights each corner by a third of its triangle's world area, which is the
+    closest cheap analogue of what a pixel average measures. ``min``/``max`` are weighting-
+    independent and are therefore the values to compare when you want a hard assertion.
+    """
+    mesh = obj.data
+    attribute = mesh.color_attributes.get(attribute_name)
+    if attribute is None:
+        return {"present": False, "attribute": attribute_name}
+
+    mesh.calc_loop_triangles()
+    weights = [0.0] * len(mesh.loops)
+    for tri in mesh.loop_triangles:
+        p0 = mesh.vertices[tri.vertices[0]].co
+        p1 = mesh.vertices[tri.vertices[1]].co
+        p2 = mesh.vertices[tri.vertices[2]].co
+        area = (p1 - p0).cross(p2 - p0).length * 0.5
+        share = area / 3.0
+        for loop in tri.loops:
+            weights[loop] += share
+
+    totals = [0.0, 0.0, 0.0, 0.0]
+    minima = [1.0, 1.0, 1.0, 1.0]
+    maxima = [0.0, 0.0, 0.0, 0.0]
+    weight_sum = 0.0
+
+    if attribute.domain == "CORNER":
+        for loop_index in range(len(mesh.loops)):
+            colour = attribute.data[loop_index].color
+            weight = weights[loop_index]
+            weight_sum += weight
+            for channel in range(4):
+                value = colour[channel]
+                totals[channel] += value * weight
+                if value < minima[channel]:
+                    minima[channel] = value
+                if value > maxima[channel]:
+                    maxima[channel] = value
+    else:
+        # POINT domain: fold loop weights back onto their vertices.
+        vertex_weights = [0.0] * len(mesh.vertices)
+        for loop_index, loop in enumerate(mesh.loops):
+            vertex_weights[loop.vertex_index] += weights[loop_index]
+        for vertex_index in range(len(mesh.vertices)):
+            colour = attribute.data[vertex_index].color
+            weight = vertex_weights[vertex_index]
+            weight_sum += weight
+            for channel in range(4):
+                value = colour[channel]
+                totals[channel] += value * weight
+                if value < minima[channel]:
+                    minima[channel] = value
+                if value > maxima[channel]:
+                    maxima[channel] = value
+
+    if weight_sum <= 0.0:
+        return {"present": True, "attribute": attribute_name, "degenerate": True}
+
+    return {
+        "present": True,
+        "attribute": attribute_name,
+        "domain": attribute.domain,
+        "areaWeightedMean": [round(totals[c] / weight_sum, 5) for c in range(4)],
+        "min": [round(minima[c], 5) for c in range(4)],
+        "max": [round(maxima[c], 5) for c in range(4)],
+        "comparableWithRender": "min and max are weighting-independent; compare those. "
+                               "areaWeightedMean approximates a pixel average but is not "
+                               "identical to it, because a render also weights by "
+                               "visibility and projected foreshortening.",
+    }
+
+
 def curvature_edge_wear(obj: bpy.types.Object) -> list:
     """Per-vertex convexity in 0..1, for the hard-surface R (edge wear) channel.
 

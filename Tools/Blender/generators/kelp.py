@@ -1299,61 +1299,73 @@ def _heal_degenerate(obj, dist: float = 3.0e-4) -> dict:
     # any parameterisation of it reports a huge aspect distortion. Measured: a LOD1
     # triangle at 264.5 survived both an area filter and a degenerate-edge dissolve.
     # Collapsing its shortest edge heals the neighbourhood instead of punching a hole.
-    # Dissolve the sliver's MIDDLE vertex rather than collapsing an edge.
-    # bmesh.ops.collapse merges two vertices, and at a threshold aggressive enough to
-    # actually clear the outlier ceiling it folded the surface into NON-MANIFOLD
-    # configurations -- three faces on one edge, which recalc_face_normals cannot
-    # orient, so the validator reported inconsistent_winding at LOD0 and LOD1.
-    # dissolve_verts removes the offending vertex and re-forms the surrounding fan as a
-    # single n-gon, which stays manifold by construction; re-triangulating afterwards
-    # keeps the buffer triangular.
+    # Collapse the sliver's shortest edge, but only where the collapse is topologically
+    # legal. Two earlier variants failed for opposite reasons: a plain collapse at a
+    # threshold aggressive enough to clear the outlier ceiling folded the surface into
+    # NON-MANIFOLD configurations (three faces on an edge, which recalc_face_normals
+    # cannot orient, reported as inconsistent_winding), and dissolving the middle vertex
+    # instead produced n-gons whose re-triangulation created fresh slivers (worst
+    # triangle went to 116). The fix is the standard edge-collapse LINK CONDITION: an
+    # edge (u,v) may collapse only if the vertices adjacent to both u and v are exactly
+    # the vertices opposite that edge. That is precisely the test for "this collapse does
+    # not create a non-manifold join", and it lets the threshold go low enough to work.
     collapsed = 0
+    skipped_illegal = 0
     for _pass in range(8):
         candidates = []
         for face in bm.faces:
             area = face.calc_area()
             if area <= 1e-12:
                 continue
-            edges = list(face.edges)
-            longest = max(edges, key=lambda e: e.calc_length())
+            longest = max(face.edges, key=lambda e: e.calc_length())
             length = longest.calc_length()
             # length^2 / 2A is the ratio of the longest edge to the altitude onto it.
-            # Tuned against measurement, not guessed: 60 missed a 53.3 sliver entirely,
-            # and at 42 the pass converged leaving a 41.8 sliver that still mapped to
-            # 4.03 UV distortion against the 3.3 ceiling. The pass always converges just
-            # under whatever threshold is set, so it has to sit below the aspect that
-            # produces a breach.
-            if (length * length) / (2.0 * area) <= 30.0:
-                continue
-            middle = [v for v in face.verts if v not in longest.verts]
-            if len(middle) != 1:
-                continue
-            vertex = middle[0]
-            if vertex.is_boundary or not (3 <= len(vertex.link_faces) <= 8):
-                continue
-            candidates.append(vertex)
+            # Tuned against measurement: 60 missed a 53.3 sliver entirely, and at 42 the
+            # pass converged leaving a 41.8 sliver that still mapped to 4.03 UV
+            # distortion. The pass converges just under whatever threshold is set, so it
+            # must sit below the aspect that produces a breach.
+            if (length * length) / (2.0 * area) > 30.0:
+                candidates.append(min(face.edges, key=lambda e: e.calc_length()))
         if not candidates:
             break
-        # Independent set: dissolving two vertices that share a face in one op can leave
-        # a hole where their fans overlapped.
+
         claimed = set()
         chosen = []
-        for vertex in candidates:
-            ring = {vertex.index}
-            for edge in vertex.link_edges:
-                for other in edge.verts:
-                    ring.add(other.index)
+        for edge in candidates:
+            # Boundary edges count. mesh_ops._split_uv_seams deliberately splits every
+            # seam and material border before decimating, so a decimated LOD is covered
+            # in boundary edges -- and the one triangle that survived every earlier pass
+            # at 7.99 distortion was a sliver sitting on exactly such a boundary. For a
+            # boundary edge the link condition still applies, with one opposite vertex
+            # instead of two.
+            if len(edge.link_faces) not in (1, 2):
+                continue
+            u, v = edge.verts
+            ring_u = set()
+            for other in u.link_edges:
+                ring_u.add(other.other_vert(u).index)
+            ring_v = set()
+            for other in v.link_edges:
+                ring_v.add(other.other_vert(v).index)
+            opposite = set()
+            for face in edge.link_faces:
+                for vertex in face.verts:
+                    if vertex is not u and vertex is not v:
+                        opposite.add(vertex.index)
+            if (ring_u & ring_v) != opposite:
+                skipped_illegal += 1
+                continue
+            # Independent set as well: simultaneous collapses in one neighbourhood can
+            # still interact even when each is individually legal.
+            ring = {u.index, v.index} | ring_u | ring_v
             if ring & claimed:
                 continue
             claimed |= ring
-            chosen.append(vertex)
+            chosen.append(edge)
         if not chosen:
             break
-        bmesh.ops.dissolve_verts(bm, verts=chosen)
+        bmesh.ops.collapse(bm, edges=chosen, uvs=True)
         collapsed += len(chosen)
-        if bm.faces:
-            bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method="BEAUTY",
-                                  ngon_method="BEAUTY")
         bmesh.ops.dissolve_degenerate(bm, dist=dist, edges=bm.edges[:])
         bm.verts.index_update()
         bm.edges.index_update()
@@ -1368,7 +1380,8 @@ def _heal_degenerate(obj, dist: float = 3.0e-4) -> dict:
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     mesh_ops.bmesh_to_object(bm, obj)
     return {"facesBefore": before_faces, "faces": len(obj.data.polygons),
-            "sliverVertsDissolved": collapsed, "zeroAreaDeleted": len(dead),
+            "sliverEdgesCollapsed": collapsed,
+            "collapsesSkippedIllegal": skipped_illegal, "zeroAreaDeleted": len(dead),
             "looseDeleted": len(loose)}
 
 
@@ -1399,6 +1412,86 @@ def _fit_uv_into_padding(mesh, padding_uv: float) -> None:
         u, v = element.uv
         element.uv = (padding_uv + (u - lo_u) * scale,
                       padding_uv + (v - lo_v) * scale)
+
+
+def _collapse_uv_outliers(obj, ceiling: float) -> int:
+    """Collapse triangles whose MEASURED UV distortion breaches the outlier ceiling.
+
+    The geometric aspect filter in :func:`_heal_degenerate` is a PROXY for the gate: it
+    scores 3D shape, while the gate scores the parameterisation. Measured, the proxy has
+    real error in both directions -- slivers at aspect 41.8 that mapped fine, and
+    triangles under aspect 30 that still mapped to 8.0. Closing the loop on the gate's
+    own formula removes the proxy error, so this uses validate.uv_aspect_distortion
+    directly and acts only on what actually breaches.
+
+    Returns the number of edges collapsed. Uses the same edge-collapse link condition as
+    _heal_degenerate, so it cannot create the non-manifold joins that produced
+    inconsistent_winding failures.
+    """
+    mesh = obj.data
+    data = validate.extract_mesh_data(mesh)
+    if not data.uv_layers:
+        return 0
+    uv0 = data.uv_layers[0][1]
+
+    guilty = set()
+    for t in range(data.triangle_count):
+        distortion = validate.uv_aspect_distortion(
+            data.positions, uv0, data.tri_vertices, data.tri_loops, t)
+        if distortion > ceiling:
+            guilty.add((data.tri_vertices[t * 3], data.tri_vertices[t * 3 + 1],
+                        data.tri_vertices[t * 3 + 2]))
+    if not guilty:
+        return 0
+
+    bm = mesh_ops.bmesh_from_object(obj)
+    bm.verts.ensure_lookup_table()
+    claimed = set()
+    chosen = []
+    for triple in sorted(guilty):
+        try:
+            verts = [bm.verts[i] for i in triple]
+        except (IndexError, ReferenceError):
+            continue
+        edges = []
+        for a in range(3):
+            edge = bm.edges.get((verts[a], verts[(a + 1) % 3]))
+            if edge is not None:
+                edges.append(edge)
+        if not edges:
+            continue
+        edge = min(edges, key=lambda e: e.calc_length())
+        if len(edge.link_faces) not in (1, 2):
+            continue
+        u, v = edge.verts
+        ring_u = set(e.other_vert(u).index for e in u.link_edges)
+        ring_v = set(e.other_vert(v).index for e in v.link_edges)
+        opposite = set()
+        for face in edge.link_faces:
+            for vertex in face.verts:
+                if vertex is not u and vertex is not v:
+                    opposite.add(vertex.index)
+        if (ring_u & ring_v) != opposite:
+            continue
+        ring = {u.index, v.index} | ring_u | ring_v
+        if ring & claimed:
+            continue
+        claimed |= ring
+        chosen.append(edge)
+    if not chosen:
+        bm.free()
+        return 0
+    bmesh.ops.collapse(bm, edges=chosen, uvs=True)
+    bmesh.ops.dissolve_degenerate(bm, dist=3.0e-4, edges=bm.edges[:])
+    dead = [f for f in bm.faces if f.calc_area() <= 2.0e-6]
+    if dead:
+        bmesh.ops.delete(bm, geom=dead, context="FACES")
+    loose = [v for v in bm.verts if not v.link_faces]
+    if loose:
+        bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    mesh_ops.bmesh_to_object(bm, obj)
+    return len(chosen)
 
 
 def _unwrap_and_pack(obj, atlas_size: int, blackbox=None):
@@ -1473,8 +1566,45 @@ def _unwrap_and_pack(obj, atlas_size: int, blackbox=None):
     # preserves relative texel density, so it fixes the gate without touching quality.
     _fit_uv_into_padding(mesh, padding_uv)
 
+    # Measure with the gate's own formula and act until it is satisfied. Bounded, and
+    # each round is a real reduction, so it terminates.
+    ceiling = law.UV_STRETCH_MAX_BY_SURFACE[law.SurfaceClass.ORGANIC] *         law.UV_STRETCH_OUTLIER_MULTIPLIER
+    outliers_removed = 0
+    for _round in range(6):
+        removed = _collapse_uv_outliers(obj, ceiling)
+        if not removed:
+            break
+        outliers_removed += removed
+        mesh_ops._make_sole_active(obj)
+        bpy.ops.object.mode_set(mode="EDIT")
+        try:
+            bpy.ops.mesh.select_all(action="SELECT")
+            bpy.ops.uv.select_all(action="SELECT")
+            bpy.ops.uv.unwrap(method=method, margin=0.0, correct_aspect=True)
+            bpy.ops.uv.average_islands_scale(scale_uv=False, shear=False)
+            bpy.ops.uv.pack_islands(rotate=False, scale=True, merge_overlap=False,
+                                    margin_method="ADD", margin=padding_uv,
+                                    shape_method="CONCAVE", pin=False,
+                                    udim_source="CLOSEST_UDIM")
+        finally:
+            bpy.ops.object.mode_set(mode="OBJECT")
+        _fit_uv_into_padding(mesh, padding_uv)
+
+    # Final passes with NO re-solve. Each re-unwrap above fixes the triangle it was given
+    # and can hand back a different one, so the loop chases a moving target and stalls
+    # (measured: 7.99 down to 4.56 but never under the ceiling). Collapsing with
+    # uvs=True interpolates the existing parameterisation instead of re-deriving it, so
+    # the offender is removed without the solver introducing a fresh one.
+    for _final in range(4):
+        removed = _collapse_uv_outliers(obj, ceiling)
+        if not removed:
+            break
+        outliers_removed += removed
+        _fit_uv_into_padding(mesh, padding_uv)
+
     metrics = _uv_metrics(mesh, atlas_size)
     if metrics is not None:
+        metrics["uvOutliersCollapsed"] = outliers_removed
         metrics["solver"] = method
         metrics["islandsOriented"] = rotated
         metrics["seamEdges"] = sum(1 for e in mesh.edges if e.use_seam)
@@ -2044,6 +2174,11 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
         lod_uv[lod_index]["slotsRepaired"] = _preserve_material_slots(
             level_obj, slot_anchors)
 
+    # preserve_seams stays TRUE. Turning it off was tried and measured worse, not better:
+    # without the seam/material-border split, decimation welds across those borders and
+    # LOD2 came back with 32.8% of its area over the stretch limit plus 16 zero-length
+    # vertex normals, against a clean pass with splitting on. The boundary constraints
+    # cost a little UV quality at LOD1 and buy correct geometry at LOD2.
     lods = mesh_ops.build_lod_chain(
         obj, family=law.Family.FLORA, name=name, quality_weight=quality,
         levels=3, preserve_seams=True, blackbox=bb, reunwrap=_reunwrap)

@@ -562,6 +562,42 @@ def _composite(tile_paths: Sequence[str], out_path: str, columns: int,
     return out_path
 
 
+def _isolate_subject(objects: Sequence[bpy.types.Object]) -> dict:
+    """Hide every mesh object that is not the subject, returning state to restore.
+
+    This is the defect that produced three independent "the channel render does not match
+    the data" reports. ``build_lod_chain`` leaves LOD1 and LOD2 in the scene AT THE SAME
+    POSITION as LOD0 -- they are copies. The material swap only touches the subject, so the
+    camera photographed three stacked LODs with two of them still wearing a default grey
+    Principled material. Every channel then measured min 0.0 / max 1.0 with a plausible
+    mid mean, and the coverage fraction was identical across channels because the silhouette
+    came from the grey clones rather than from the channel-shaded subject.
+
+    Proof: with LODs hidden, a coral's stored R max of 0.12477 (its rigid mineral cap) reads
+    back as 0.12477 from the render. Before this, the same render reported 1.000.
+
+    Hides via ``hide_render`` rather than ``hide_viewport``, because background renders ignore
+    viewport visibility.
+    """
+    subjects = {obj.name for obj in objects}
+    saved = {}
+    for obj in bpy.data.objects:
+        if obj.type != "MESH" or obj.name in subjects:
+            continue
+        if obj.name.startswith("H8PREV_"):
+            continue  # rig geometry is managed separately by spec.scale_witness
+        saved[obj.name] = obj.hide_render
+        obj.hide_render = True
+    return saved
+
+
+def _restore_visibility(saved: dict) -> None:
+    for name, hidden in saved.items():
+        obj = bpy.data.objects.get(name)
+        if obj is not None:
+            obj.hide_render = hidden
+
+
 def _prepare(objects: Sequence[bpy.types.Object], spec: PreviewSpec):
     _purge_scene_rig()
     collection = _ensure_collection()
@@ -597,6 +633,7 @@ def render_contact_sheet(objects, spec: PreviewSpec) -> PreviewResult:
     elif spec.mode != "material":
         raise ValueError("unknown preview mode: " + str(spec.mode))
     saved = _apply_override_material(objects, override)
+    hidden = _isolate_subject(objects)
 
     tiles = []
     try:
@@ -611,6 +648,7 @@ def render_contact_sheet(objects, spec: PreviewSpec) -> PreviewResult:
             tiles.append(path)
     finally:
         _restore_materials(objects, saved)
+        _restore_visibility(hidden)
 
     columns = spec.columns if spec.columns > 0 else min(len(tiles), 2)
     sheet = os.path.join(out_dir, "{n}_SHEET_{m}.png".format(n=spec.name, m=spec.mode))
@@ -653,6 +691,7 @@ def render_channel_sheet(objects, spec: PreviewSpec,
     _place_camera(collection, direction, center, radius, spec.margin)
 
     labels = CHANNEL_LABELS.get(spec.surface_class, law.ORGANIC_VCOL)
+    hidden = _isolate_subject(objects)
     tiles = []
     notes = []
     try:
@@ -665,6 +704,7 @@ def render_channel_sheet(objects, spec: PreviewSpec,
             tiles.append(path)
             notes.append("channel {i} = {lab}".format(i=index, lab=labels[index]))
     finally:
+        _restore_visibility(hidden)
         bpy.context.scene.render.film_transparent = False
         bpy.context.scene.render.image_settings.color_mode = "RGB"
 
@@ -689,7 +729,20 @@ class ChannelStats:
 
     @property
     def has_gradient(self) -> bool:
-        return (self.max_value - self.min_value) > 0.20
+        """Spread judged RELATIVE to the range the channel actually occupies.
+
+        An absolute threshold repeats a bug already fixed in ``SwayField.is_uniform``: a
+        rigid mineralised coral is capped by ``3DMODEL_FLORA_CORAL.md`` section 2 at
+        32/255 = 0.1255, so its entire legal range is narrower than a 0.20 absolute
+        threshold and every compliant rigid asset reads as flat. Measured: a coral whose
+        channel correctly spanned 0.000..0.127 reported ``gradient=False``.
+
+        Judging against the observed maximum asks the right question -- does this channel
+        VARY across the surface -- instead of conflating "narrow band" with "constant".
+        """
+        span = self.max_value - self.min_value
+        reference = max(self.max_value, 1e-6)
+        return (span / reference) > 0.20
 
     @property
     def subject_visible(self) -> bool:
