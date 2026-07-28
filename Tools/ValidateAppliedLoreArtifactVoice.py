@@ -95,7 +95,10 @@ HARD: list[tuple[str, str, str, str]] = [
     ),
     (
         "thesis_contrast",
-        r"\bnot (?:just|merely|simply|only)\b[^.\n]{2,60}?\bbut\b|\bmore than (?:just|simply)\b|\bat once\b[^.\n]{2,40}?\band\b",
+        # "at once X and Y" is the banned balanced reveal. "at two depths at once, and ..." is literal
+        # simultaneity and must not trip: the comma immediately after "at once" distinguishes them, and
+        # the balanced form never puts a comma or full stop between its two halves.
+        r"\bnot (?:just|merely|simply|only)\b[^.\n]{2,60}?\bbut\b|\bmore than (?:just|simply)\b|\bat once\s+[^.,;\n]{2,40}?\band\b",
         "writing.md LLM Style Suppression Law (balanced thesis)",
         "banned balanced-reveal shape 'not merely X; it is Y'",
     ),

@@ -1,0 +1,311 @@
+{
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "release_set_id": "RS702_FAUNA_PREDATOR_LAYER",
+ "canon_owner": [
+  "Docs/Lore/Lore_Bible.md",
+  "Docs/Lore/Canon_Locks.md"
+ ],
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false,
+  "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+ },
+ "packets": [
+  {
+   "packet_id": "P702_POCKET_AMBUSHER",
+   "article_id": "hecton8.fauna.pocket_ambusher",
+   "title_key": "LORE_P702_POCKET_AMBUSHER_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.pocket_ambusher",
+    "secondary": [
+     "unlock.first_flooded_wing"
+    ],
+    "poi_tags": [
+     "poi.service_throat",
+     "poi.flooded_wing"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories",
+     "biome.cable_reef"
+    ]
+   },
+   "image_targets": {
+    "codex": "ambush predator wedged in a cut service opening, only the head margin visible, industrial concrete and cable around it, no glowing eyes, no fantasy",
+    "scanner_thumbnail": "close view of a cut opening with a clean wiped lip and silt on every neighbouring lip"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Pocket Ambusher",
+     "scanner": "Large-bodied ambush feeder occupying a cut opening. Confidence 71 percent. Hazard: strike range exceeds visible body length. Limit: cannot size the animal without a second angle.",
+     "in_game_wiki": "It does not hunt. It rents a hole and waits for the corridor to deliver.\n\nA pocket in use looks wrong before it looks dangerous. Every unoccupied lip in a flooded wing carries a soft collar of silt. An occupied one is wiped clean, because the animal has entered and left it a few hundred times. Read the lips, not the dark.\n\nIt strikes by pushing water out of the pocket first. On a Class-IV that arrives as a pressure tap on the chest plate roughly half a second before contact. Divers who trust the tap survive. Divers watching their lamp cone do not.\n\nIt prefers cut openings to natural ones. Nobody has explained the preference. Assessment: approach a clean lip from above and outside its throat, or route around the wing entirely.",
+     "terminal": "SPECIMEN 44-B-207. CLASS: ACCESS CONTROL ASSET, INCIDENTAL. LOCATION: EAST LOWER SERVICE THROAT. NOTE: WING CLOSURE MAINTAINED WITHOUT SCHEDULED LOCK REPAIR. REVIEW: NOT REQUIRED.",
+     "field_note": "Company logged it as access control because it kept people out of the east wing cheaper than a working door. It kept Hollis out too. Wipe test the lips before you commit a hand.",
+     "external_site_article": "Aegir salvage crews describe a heavy-bodied ambush feeder that occupies cut openings in flooded industrial structure rather than natural cavities. Reported strike range exceeds visible body length, which makes visual estimation of a safe standoff unreliable.\n\nField practice on HECTON-8 is to read the silt collar around an opening rather than attempt to see the animal. Deep Reach records from Sector 44 classify the species as an incidental access control asset, a category that describes a closed corridor without describing why the corridor closed.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P702_BRINE_STALKER",
+   "article_id": "hecton8.fauna.brine_stalker",
+   "title_key": "LORE_P702_BRINE_STALKER_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.brine_stalker",
+    "secondary": [
+     "unlock.brine_canyon_entry"
+    ],
+    "poi_tags": [
+     "poi.brine_canyon_rim",
+     "poi.evac_corridor_mark"
+    ],
+    "biome_tags": [
+     "biome.brine_canyon"
+    ]
+   },
+   "image_targets": {
+    "codex": "long pursuit predator holding station along a visible density boundary, body half above and half below the shimmer line, canyon wall behind",
+    "scanner_thumbnail": "sonar display showing one contact returned at two depths across a halocline"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Brine Stalker",
+     "scanner": "Pursuit predator holding a density interface. Confidence 58 percent. Hazard: contact depth unreliable across the halocline. Limit: return may be a mirror, not the animal.",
+     "in_game_wiki": "It hunts along the brine boundary because the boundary lies for it.\n\nSound bends at a density interface. A stalker riding that line returns to sonar at two depths at once, and the cleaner return is usually the false one. Station 88 was logged twice at two depths for the same reason. The animal did not invent the trick, but it uses the layer the way a Marauder uses a wreck.\n\nIt tests before it commits. The first pass is at distance, off your shoulder, to learn whether you turn. Turn and face it and the pass ends. Keep swimming and the second approach is not a pass.\n\nBrine sits on the skin. A grazed suit seal reads normal and fails a shift later.\n\nIt patrols the marked evacuation corridor out of Sector 44. Assessment: face it, then leave along a route it has no reason to know.",
+     "terminal": "SPECIMEN 44-B-311. CLASS: RECOVERABLE BIOMASS, DEFERRED. ROUTE OVERLAP: EVAC CORRIDOR 6 (DECOMMISSIONED 2147). SEAL EXPOSURE: BRINE, CLASS 2. CLAIM LANGUAGE: EQUIPMENT DEGRADATION, NOT PERSONNEL EXPOSURE.",
+     "field_note": "Turn and look at it. That is the whole rule and it costs you nothing. And check your seal at the end of the shift, not at the end of the route - the gauge will say fine right up until it says nothing.",
+     "audio": "-- it's on the shimmer line again, same as yesterday, and the plot has it twenty metres under me. It is not twenty metres under me. Corran, if you are reading the clean return you are reading the --",
+     "external_site_article": "Reports from the Aegir brine canyons describe a pursuit predator that holds position along density interfaces, where acoustic returns split and duplicate. Crews report a single animal appearing at two depths on the same display, with the sharper return proving false.\n\nHECTON-8 field practice is to face the animal on its first pass rather than accelerate. Deep Reach records from Sector 44 note the species' patrol overlapping a decommissioned evacuation corridor, and classify brine contact as equipment degradation.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P702_SHADOW_INTERCEPTOR",
+   "article_id": "hecton8.fauna.shadow_interceptor",
+   "title_key": "LORE_P702_SHADOW_INTERCEPTOR_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.scan.shadow_interceptor",
+    "secondary": [
+     "unlock.deep_abyss_entry"
+    ],
+    "poi_tags": [
+     "poi.open_crossing",
+     "poi.beacon_cluster"
+    ],
+    "biome_tags": [
+     "biome.deep_abyss",
+     "biome.abyssal_machine_field"
+    ]
+   },
+   "image_targets": {
+    "codex": "silhouette crossing ahead of a diver's intended path rather than behind, sparse emissive, black water, sense of geometry not aggression",
+    "scanner_thumbnail": "sonar display with a contact that has just dropped to no-contact, empty bearing line"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Shadow Interceptor",
+     "scanner": "Contact intermittent. Confidence falling. Hazard: closes on projected position, not present position. Limit: loss of contact does not indicate departure.",
+     "in_game_wiki": "It does not follow you. It arrives where you were going.\n\nOn an open crossing the contact holds a wide bearing, matches your speed without matching your heading, and then leaves the display. That gap is the attack. It has stopped returning sound because it is now on your bearing, and a diver reading the plot sees an empty screen and relaxes.\n\nSpeed does not help. It has already solved for your speed. Changing your destination does, because the solution was computed against the old one.\n\nThree suit beacons from Shift D stopped inside forty metres of each other on an open crossing with no structure to shelter in. The recovery queue listed the coordinates and closed the entry.\n\nAssessment: when contact drops on a crossing, change where you are going, not how fast you get there.",
+     "terminal": "SPECIMEN FIELD REF 2147-D-09. CLASS: RECOVERABLE BIOMASS. INCIDENT LINK: SHIFT D TRANSIT LOSS, 3 UNITS. CAUSE OF LOSS: ROUTE SELECTION. RECOVERY: COORDINATES FILED, ENTRY CLOSED.",
+     "field_note": "Cause of loss, route selection. Three people picked the same straight line across open water and the form blamed the line. Break your heading when the screen goes clean.",
+     "external_site_article": "Aegir deep-transit crews report a predator that closes on a diver's projected position rather than tracking from behind, and that ceases to return sonar contact in the seconds before contact is made.\n\nCurrent field practice on HECTON-8 treats loss of contact during an open crossing as the warning itself, and calls for a change of destination rather than an increase in speed. A 2147 Deep Reach transit loss involving three personnel is recorded with cause of loss given as route selection.",
+     "localization_status": "source_authority"
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  }
+ ]
+}
