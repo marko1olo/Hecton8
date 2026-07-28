@@ -18,6 +18,61 @@ namespace Hecton8.Tests.Editor.SaveSystem
 {
     public sealed class WorldPickupStateCodecEditTests
     {
+        // Batchmode starts the editor on an untitled scene that is never saved, and Unity rejects
+        // EditorSceneManager.NewScene(..., NewSceneMode.Additive) while such a scene is loaded:
+        // "System.InvalidOperationException : Cannot create a new scene additively with an untitled
+        // scene unsaved." Seven tests in this fixture create an additive scene, so all seven threw
+        // before reaching any product code. Giving the untitled scene a real asset path (and keeping
+        // it saved between tests) satisfies the precondition once for the whole fixture; the scratch
+        // scene asset is removed again in OneTimeTearDown.
+        private const string BatchmodeHostScenePath =
+            "Assets/_Project/Tests/Editor/SaveSystem/__WorldPickupStateCodecEditTests_BatchmodeHost.unity";
+
+        private bool _batchmodeHostSceneCreated;
+
+        [SetUp]
+        public void EnsureAdditiveSceneCreationIsPermitted()
+        {
+            // Interactively the editor already sits on a saved scene, or on a clean untitled one that
+            // Unity accepts, so leave a developer's open scene completely alone.
+            if (!Application.isBatchMode)
+                return;
+
+            Scene active = SceneManager.GetActiveScene();
+            if (string.IsNullOrEmpty(active.path))
+            {
+                Assert.IsTrue(
+                    EditorSceneManager.SaveScene(active, BatchmodeHostScenePath),
+                    "Could not give the untitled batchmode scene an asset path, so Unity refuses every additive NewScene in this fixture.");
+                _batchmodeHostSceneCreated = true;
+                return;
+            }
+
+            if (_batchmodeHostSceneCreated
+                && active.isDirty
+                && string.Equals(active.path, BatchmodeHostScenePath, StringComparison.Ordinal))
+            {
+                EditorSceneManager.SaveScene(active);
+            }
+        }
+
+        [OneTimeTearDown]
+        public void RemoveBatchmodeHostScene()
+        {
+            if (!_batchmodeHostSceneCreated)
+                return;
+
+            _batchmodeHostSceneCreated = false;
+
+            // Detach the editor from the scratch asset before deleting it. Only this fixture's own
+            // empty host scene is discarded here - it never held anything a developer authored.
+            Scene active = SceneManager.GetActiveScene();
+            if (string.Equals(active.path, BatchmodeHostScenePath, StringComparison.Ordinal))
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+
+            AssetDatabase.DeleteAsset(BatchmodeHostScenePath);
+        }
+
         [Test]
         public void TryBuildIdentity_StableIdIgnoresPositionForPersistenceKey()
         {
