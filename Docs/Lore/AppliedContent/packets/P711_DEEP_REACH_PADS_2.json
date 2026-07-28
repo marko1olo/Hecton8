@@ -1,0 +1,814 @@
+{
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "release_set_id": "RS711_DEEP_REACH_LIABILITY_PADS_2",
+ "canon_owner": [
+  "Docs/Lore/Lore_Bible.md",
+  "Docs/Lore/Canon_Locks.md"
+ ],
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false,
+  "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+ },
+ "packets": [
+  {
+   "packet_id": "P711_PAD_ATTENTION_DISCIPLINE",
+   "article_id": "hecton8.pad.attention_discipline",
+   "title_key": "LORE_P711_PAD_ATTENTION_DISCIPLINE_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.pad.attention_discipline",
+    "secondary": [
+     "unlock.mix_station_bay"
+    ],
+    "poi_tags": [
+     "poi.mix_station",
+     "poi.atmosphere_panel"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories",
+     "biome.industrial_shelf"
+    ]
+   },
+   "image_targets": {
+    "codex": "laminated procedure card screwed to a gas manifold frame, five regulators behind it, three handles turned to the same detent",
+    "scanner_thumbnail": "clip of carbon copies hanging behind a screwed-down procedure card"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Procedure AD-4, Attention Discipline",
+     "scanner": "Laminated card, bolted to manifold frame, legible. Confidence 90 percent. Hazard: manifold charged. Limit: issue table referenced on the card is not present in this bay.",
+     "terminal": "ATLAS CONTINUITY OFFICE / PROCEDURE AD-4 REV 2\nSCOPE: WET WORK ON TRANSFER LINE SUPPLY, 40 TO 140 M\nINDICATORS: DELAYED RESPONSE TO INSTRUCTION, REPEATED QUERY, INAPPROPRIATE AFFECT\nESCALATION: 1 VERBAL. 2 WRITTEN. 3 REMOVAL FROM BAND, SUPPLEMENT FORFEIT.\nBLEND AUTHORITY: MIX STATION, PER ISSUE TABLE.\nCLASSIFICATION: CONDUCT. NOT A MEDICAL EVENT.\nAPPROVED: S. ARENDT",
+     "in_game_wiki": "Procedure AD-4 lists the signs of gas narcosis and routes them through a conduct ladder: delayed response to instruction, repeated queries, inappropriate affect. Verbal warning, written warning, removal from the band with the depth supplement forfeit. Conduct is a supervisor matter, and it generates no incident number and no exposure record.\n\nAD-4 covers wet work to 140 metres, where the water reads 1.4 MPa. Blend authority sits with the mix station. The panel two metres from this card carries five regulators and three are set on Blend 2. Blend 1 is helium-bearing and metered; the helium bank valve behind it is shut under a decommission tag dated eleven months before AD-4 was revised.\n\nNineteen carbon copies hang on the clip behind the card. Seventeen are stage one. Assessment: Blend 2 fittings are serviceable and the manifold holds charge.",
+     "field_note": "Card says conduct, so the doctor never sees it and the file never shows it. Check the regulators before you trust anything printed in that bay - three of five still sit on the cheap blend.",
+     "external_site_article": "Deep Reach procedure documents recovered from HECTON-8 include AD-4, which lists the recognised indicators of gas narcosis and processes them through a three-stage conduct ladder ending in removal from the depth band and forfeit of the depth supplement.\n\nThe procedure classifies the presentation as conduct rather than a medical event, which keeps it inside supervisor discretion and outside incident reporting. Recovered mix stations in the same bays were commonly found configured to the nitrogen-bearing blend, with helium bank isolation valves closed under decommission tags.",
+     "localization_status": "source_authority",
+     "external_site": "Deep Reach procedure documents recovered from HECTON-8 include AD-4, which lists the recognised indicators of gas narcosis and processes them through a three-stage conduct ladder. The procedure classifies the presentation as conduct rather than a medical event, which keeps it inside supervisor discretion and outside incident reporting."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P711_PAD_QUARANTINE_HOLD",
+   "article_id": "hecton8.pad.quarantine_hold",
+   "title_key": "LORE_P711_PAD_QUARANTINE_HOLD_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.pad.quarantine_hold_44_1188",
+    "secondary": [
+     "unlock.quarantine_review_gate"
+    ],
+    "poi_tags": [
+     "poi.quarantine_gate",
+     "poi.containment_bay",
+     "poi.flooded_wing"
+    ],
+    "biome_tags": [
+     "biome.drop_wall",
+     "biome.factory_temple"
+    ]
+   },
+   "image_targets": {
+    "codex": "hold record screen above a sample rack, one sealed lot still seated in position, dry deck, outer door shut",
+    "scanner_thumbnail": "hold record showing three renewal timestamps in one column"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Quarantine Hold Record 44-1188",
+     "scanner": "Gate record, powered, three renewals logged. Confidence 84 percent. Hazard: stage 1 contamination per lot label. Limit: label read only, seal not sampled.",
+     "terminal": "QUARANTINE REVIEW GATE / HOLD RECORD 44-1188\nLOT: XO CONTINUITY SUBSTRATE, CLASS VIABLE, CONTAINMENT STAGE 1\nRELEASE REQUIRES TWO CONCURRENT READS AT SEPARATE BENCHES.\nENVELOPE: SAMPLE HOLD 2 AND HANDLING CREW, UNCLEARED.\nTRANSFERS SUSPENDED PENDING SECOND READ.\nRENEWED 0412. RENEWED 0708. RENEWED 1130.\nCLASSIFICATION: CONTAINMENT CONTROL.\nCOUNSEL: N. HALDANE",
+     "in_game_wiki": "Hold Record 44-1188 keeps a stage-one substrate lot inside its containment envelope until two instruments read it concurrently at separate benches. The envelope includes the handling crew. Seven people cleared when the lot cleared.\n\nThe second bench was in Assay 4, one deck down. The record's own timestamps put the pressure-variance alarm at 0341 and the third renewal of the hold at 1130.\n\nSample Hold 2 sits at 2,120 metres, 21.2 MPa on the wet side, and its outer door is still shut from the corridor. The rack inside is dry. Lot 44-1188 is seated with the seal unbroken, and a current read puts it at containment stage 0.\n\nAssessment: the lot is intact and light enough to carry. Assay 4 is the flooded half.",
+     "field_note": "Seven people stayed inside the envelope because a bench one deck down was under water. The lot reads stage zero now - take it, and take the record with it, because the record is the only thing that names the seven.",
+     "external_site_article": "Quarantine Review Gate records recovered from Sector 44 include Hold 44-1188, which suspended transfers on a class-viable Xenon-Omega lot pending two concurrent instrument reads at separate benches. The recorded containment envelope covers both the hold room and its handling crew.\n\nThe hold was renewed three times after a pressure-variance alarm was logged in the deck holding the second bench. Recovered lots under this hold have subsequently read at containment stage 0.",
+     "localization_status": "source_authority",
+     "external_site": "Quarantine Review Gate records recovered from Sector 44 include Hold 44-1188, which suspended transfers on a class-viable Xenon-Omega lot pending two concurrent instrument reads at separate benches. The recorded containment envelope covers both the hold room and its handling crew."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P711_PAD_TOOL_RECERT_INVOICE",
+   "article_id": "hecton8.pad.tool_recert_invoice",
+   "title_key": "LORE_P711_PAD_TOOL_RECERT_INVOICE_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.pad.tool_recert_invoice",
+    "secondary": [
+     "unlock.corridor_11_tool_cage"
+    ],
+    "poi_tags": [
+     "poi.tool_cage",
+     "poi.rib_corridor",
+     "poi.pressure_door_11_4"
+    ],
+    "biome_tags": [
+     "biome.drop_wall",
+     "biome.service_corridor"
+    ]
+   },
+   "image_targets": {
+    "codex": "invoice slip pinned to a tool cage, hydraulic door jack clipped in the rack behind it with one sheared jaw",
+    "scanner_thumbnail": "expired certification sticker on a door jack body, serial partly legible"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Recertification Invoice TC-3390",
+     "scanner": "Invoice slip, brittle, edge loss. Confidence 71 percent. Hazard: none. Limit: total line water-damaged, figure reconstructed from partial characters.",
+     "terminal": "AEGIR CONTINUITY HOLDINGS / CONTRACT CONTINUITY DESK\nINVOICE TC-3390\nITEM: DOOR JACK, PATTERN 6-B, SERIAL 44-J-217\nRECERTIFICATION, WITNESSED PRESSURE TEST: 4,120 UNITS\nREPLACEMENT VALUE, SAME PATTERN: 2,650 UNITS\nSTATUS: DEFERRED AT SECTION REQUEST.\nCLASSIFICATION: EQUIPMENT REGISTER, NON-SAFETY.\nUNLISTED EQUIPMENT FAILURE IS NOT A PROCESS EVENT.\nRISK ACCEPTANCE ON FILE: I. VARNEK",
+     "in_game_wiki": "Invoice TC-3390 bills 4,120 units to recertify one door jack. The same pattern costs 2,650 units new. Recertification needs a witnessed pressure test on a rated bench, and the nearest rated bench is off-site.\n\nSection 11 deferred. Deferral is a section decision, and an unlisted tool cannot generate a process incident, which is what sections were measured on.\n\nJack 44-J-217 is clipped to the cage in Corridor 11, three metres from this invoice, cert sticker four years expired. One jaw is sheared through the pin boss.\n\nDoor 11-4 stands forty millimetres open at 2,240 metres, 22.4 MPa on the wet side.\n\nAssessment: the jack body is salvage-grade steel. The door will not move for you either.",
+     "field_note": "Cheaper to buy than to certify, so the register stopped matching the rack, and a jack off the register cannot fail in a way anyone counts. Forty millimetres. Go and measure it.",
+     "external_site_article": "Contract Continuity Desk invoices recovered from HECTON-8 price the witnessed recertification of rated hand tools above the replacement cost of the same tool, with the nearest rated test bench located off-site. Sections routinely recorded these invoices as deferred at section request.\n\nThe invoices classify the affected items to the equipment register as non-safety, and record that failure of unlisted equipment is not a process event. Process continuity was the metric sections were assessed against.",
+     "localization_status": "source_authority",
+     "external_site": "Contract Continuity Desk invoices recovered from HECTON-8 price the witnessed recertification of rated hand tools above the replacement cost of the same tool, with the nearest rated test bench off-site. The invoices record that failure of unlisted equipment is not a process event."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P711_PAD_INTAKE_CATEGORY_OTHER",
+   "article_id": "hecton8.pad.intake_category_other",
+   "title_key": "LORE_P711_PAD_INTAKE_CATEGORY_OTHER_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.pad.intake_category_other",
+    "secondary": [
+     "unlock.clinic_ward"
+    ],
+    "poi_tags": [
+     "poi.clinic_ward",
+     "poi.recompression_bay"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.drowned_factories"
+    ]
+   },
+   "image_targets": {
+    "codex": "intake form on a bed-end clip with box six ticked, spike of identical forms on the wall above, stripped regulator bracket beside it",
+    "scanner_thumbnail": "six-box category row on a printed intake form, last box marked"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Intake Form MC-2, Bed 4",
+     "scanner": "Printed intake form, clipped, ink stable. Confidence 95 percent. Hazard: none. Limit: category codes resolve to a schedule not held on this deck.",
+     "terminal": "ATLAS CONTINUITY OFFICE / INTAKE MC-2\nBED 4  SHIFT 3  CATEGORY SET: LOSS DESK SCHEDULE 9\n1 LACERATION  2 CRUSH  3 THERMAL  4 CHEMICAL  5 RESPIRATORY  6 OTHER\nENTERED: 6.\nCLASSIFICATION: OTHER, NON-SPECIFIC.\nREPORTABLE: NO. CATEGORY 6 IS NOT AGGREGATED.\nCLINICIAN: T. OYELARAN",
+     "in_game_wiki": "Intake MC-2 offers six injury categories. Pressure injury is not one of them, so it enters as category six, other, non-specific.\n\nLoss Desk Schedule 9 fixed the list so every Aegir site returned comparable figures. Category six is recorded and not aggregated, and site injury rate is one input to a tide-margin review.\n\nForty-one forms are spiked on the wall above Bed 4. Twenty-nine are category six.\n\nThe recompression chamber in the next bay carries an hour meter on the compressor housing. It reads 1,940 hours.\n\nBed 4's regulator manifold has been stripped back to the wall bracket. Assessment: the chamber is rated to 60 metres equivalent, 0.6 MPa, and its hatch is dogged from the inside.",
+     "field_note": "There is no box for what the water does to you, so it goes in the box marked other, and other is not counted anywhere. The chamber next door logged nineteen hundred hours of something that officially never happened.",
+     "external_site_article": "Deep Reach clinical intake forms recovered from HECTON-8 use a fixed six-category injury list issued by the Keelmark Loss Desk for cross-site comparability. The list has no category for pressure injury, and recovered forms overwhelmingly record such presentations as category six, other, non-specific.\n\nCategory six is recorded but not aggregated into site injury rate, which was an input to tide-margin review. Recompression equipment recovered on the same decks carries hour meters in the low thousands.",
+     "localization_status": "source_authority",
+     "external_site": "Deep Reach clinical intake forms recovered from HECTON-8 use a fixed six-category injury list issued by the Keelmark Loss Desk. The list has no category for pressure injury, and such presentations were recorded as category six, other, non-specific, which is not aggregated into site injury rate."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P711_PAD_NOTARY_RECEIPT",
+   "article_id": "hecton8.pad.notary_receipt",
+   "title_key": "LORE_P711_PAD_NOTARY_RECEIPT_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.pad.notary_receipt",
+    "secondary": [
+     "unlock.records_office"
+    ],
+    "poi_tags": [
+     "poi.notary_interface",
+     "poi.records_office",
+     "poi.relay_terminal"
+    ],
+    "biome_tags": [
+     "biome.drowned_colony",
+     "biome.drowned_factories"
+    ]
+   },
+   "image_targets": {
+    "codex": "printer slip still hanging in a notary interface cutter, uncut, a second stamp line printed onto it in a different typeface",
+    "scanner_thumbnail": "uncut receipt slip in a cutter slot, two date fields decades apart"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Packet Notary Receipt 44-EV-0006",
+     "scanner": "Receipt slip, uncut, in cutter. Confidence 99 percent. Hazard: none. Limit: printed timestamp conflicts with device clock by decades.",
+     "terminal": "PACKET NOTARY INTERFACE / RECEIPT 44-EV-0006\nPACKET: EVACUATION ASSISTANCE REQUEST, PRIORITY 1\nORIGIN: HECTON-8 SECTOR 44   DESTINATION: TAU CETI CONTINUITY DESK\nNOTARISED 2147-11-04 0207. TRANSIT ESTIMATE 4.1 YEARS.\nCLASSIFICATION: NOTARIAL, EVIDENTIARY.\nTHIS RECEIPT ATTESTS TRANSMISSION. IT DOES NOT ATTEST RECEIPT, READING, OR ACTION.\nENDORSED 2190 / RECOVERY COMPLIANCE OFFICE: DUTY DISCHARGED AT NOTARISATION.",
+     "in_game_wiki": "Receipt 44-EV-0006 is proof that a priority-one evacuation assistance request left HECTON-8 at 0207 on 4 November 2147. It is proof of nothing else, and it says so on its face: a notary receipt attests transmission, not receipt, not reading, not action.\n\nThe distinction is standard notarial wording and it is also the whole of the 2190 defence. Transit to the Tau Ceti desk runs a little over four years.\n\nThe slip was never torn from the cutter. The 2190 endorsement was printed onto it in place through the carrier link and reads DUTY DISCHARGED AT NOTARISATION.\n\nAssessment: the interface still holds power and will print on demand. Its clock runs 43 years behind, so every slip it issues carries the wrong date.",
+     "field_note": "It proves the message went out, and it was built to prove nothing past that. Compliance endorsed the slip in 2190 without ever putting a hand on it - print a copy, wrong clock and all, because it is the only dated record that the request existed.",
+     "external_site_article": "Packet Notary Interface receipts recovered from HECTON-8 include evidentiary proof of transmission for a priority-one evacuation assistance request notarised in November 2147, with a transit estimate to the Tau Ceti continuity desk of slightly over four years.\n\nThe receipt states in its own terms that it attests transmission and not receipt, reading or action. Recovered copies carry a 2190 endorsement applied remotely by the Recovery Compliance Office recording duty as discharged at notarisation.",
+     "localization_status": "source_authority",
+     "external_site": "Packet Notary Interface receipts recovered from HECTON-8 include evidentiary proof of transmission for a priority-one evacuation assistance request notarised in November 2147. The receipt attests transmission and not receipt, reading or action, and carries a 2190 endorsement recording duty as discharged at notarisation."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P711_PAD_ROSTER_DOUBLE_ENTRY",
+   "article_id": "hecton8.pad.roster_double_entry",
+   "title_key": "LORE_P711_PAD_ROSTER_DOUBLE_ENTRY_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.pad.roster_double_entry",
+    "secondary": [
+     "unlock.frame_18_bulkhead"
+    ],
+    "poi_tags": [
+     "poi.shift_office",
+     "poi.pump_bay",
+     "poi.frame_18_bulkhead"
+    ],
+    "biome_tags": [
+     "biome.drop_wall",
+     "biome.industrial_shelf"
+    ]
+   },
+   "image_targets": {
+    "codex": "shift roster board with one name appearing on two station rows, headcount box filled in at the bottom, sealed bulkhead weld behind",
+    "scanner_thumbnail": "two roster rows carrying the same surname and initial at different stations"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Shift Roster 44-C, Shift 3",
+     "scanner": "Roster board, printed rows, water staining lower third. Confidence 88 percent. Hazard: none. Limit: one identity resolves to two stations, cannot rank.",
+     "terminal": "AEGIR CONTINUITY HOLDINGS / ROSTER 44-C, SHIFT 3\nPETROSSIAN L / PUMP 9 / IN 0600 / OUT: NOT LOGGED\nPETROSSIAN L / MUSTER 2 / IN 0600 / OUT 1412\nSTATUS: ASSET REASSIGNMENT PENDING DETERMINATION.\nA CARRIED STATION IS NOT A VACANCY. NO BACK-FILL AUTHORISED.\nCLASSIFICATION: ROSTER, OPERATIONAL.\nHEADCOUNT SHIFT 3: 31 OF 31\nSUPERVISOR: R. TOLEDANO / DETERMINATION: KEELMARK LOSS DESK, M. IBARRA",
+     "in_game_wiki": "Roster 44-C carries Petrossian L. twice in one shift. Pump 9, in at 0600, out not logged. Muster 2, in at 0600, out at 1412.\n\nA worker whose loss is not confirmed stays carried on their assigned station until determination, and a carried station is not a vacancy, so the supervisor who filled the gap at Muster 2 logged the fill against the same name. Two registers, both correct.\n\nShift 3 headcount reads 31 of 31 and was signed off on that basis.\n\nPump 9 sits behind the Frame 18 bulkhead at 2,060 metres, sealed during the shift this roster covers. The weld is original and unbroken.\n\nAssessment: the far side of Frame 18 is dry and the wet side reads 20.6 MPa. Cutting the weld equalises it.",
+     "field_note": "One name, two stations, and the count closed at thirty-one because both lines counted. Whatever is behind Frame 18 is dry right now - put a torch to that weld and it will not be.",
+     "external_site_article": "Operational shift rosters recovered from Sector 44 carry individual workers at two stations within a single shift. Under Deep Reach practice a worker whose loss is not confirmed remains carried on an assigned station until determination, and a carried station could not be back-filled on the register, so operational fills were logged against the same identity.\n\nAffected shift headcounts reconcile to full strength on that basis. Frame 18 rosters name a pump station behind a bulkhead sealed during the shift covered.",
+     "localization_status": "source_authority",
+     "external_site": "Operational shift rosters recovered from Sector 44 carry individual workers at two stations within a single shift, because a worker whose loss was unconfirmed remained carried on an assigned station while the operational fill was logged against the same identity. Affected headcounts reconcile to full strength."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P711_PAD_SILENCE_DIRECTIVE",
+   "article_id": "hecton8.pad.silence_directive",
+   "title_key": "LORE_P711_PAD_SILENCE_DIRECTIVE_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.pad.silence_directive",
+    "secondary": [
+     "unlock.first_safe_room_p63"
+    ],
+    "poi_tags": [
+     "poi.shallow_annex_p63",
+     "poi.acoustic_relay_spine",
+     "poi.beacon_cluster"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.spine_shallows"
+    ]
+   },
+   "image_targets": {
+    "codex": "enamel directive plate bolted to a relay mast, muster beacon housing three metres above it with its lamp still lit",
+    "scanner_thumbnail": "numbered clauses on a bolted enamel plate, one bolt head missing"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Silence Directive AS-19",
+     "scanner": "Enamel plate, bolted, four fixings of five. Confidence 93 percent. Hazard: mast bus live. Limit: appended term list absent from plate.",
+     "terminal": "ASSET SILENCE BOARD / DIRECTIVE AS-19, 2190\nAPPLIES: ALL LIEN HOLDERS ON OPEN CHANNEL, AEGIR RECLAMATION POOL WATER\n1. NO PERSONAL NAMES AGAINST UNCLEARED ASSETS.\n2. NO DEPTH AND BEARING PAIRS FOR HELD LOTS.\n3. NO ACCESSION CODES IN CLEAR.\nAPPROVED TERM LIST APPENDED.\nCLASSIFICATION: CHANNEL HYGIENE.\nBREACH: TENDER WINDOW SUSPENDED PENDING REVIEW.\nISSUED: RECOVERY COMPLIANCE OFFICE, V. SATO-REN",
+     "in_game_wiki": "Directive AS-19 sets what a lien holder may put on an open channel in Aegir Reclamation Pool water. No personal names against uncleared assets. No depth and bearing pairs for held lots. No accession codes in clear.\n\nBearings broadcast in clear draw uncontracted salvage into rooms that kill people, which is the stated ground. Breach suspends the tender window pending review.\n\nAS-19 is bolted to the mast at Shallow Annex P-63. Three metres above the plate a muster beacon has been repeating a 2147 recall in clear since the tide. The recall reads out eleven names.\n\nAssessment: the beacon runs off the mast bus and will mask a hail on the same band. Isolate it at the bus before transmitting.",
+     "field_note": "Saying a dead worker's name on open channel costs you a tender window. The board that says so is bolted three metres under a beacon that has been saying eleven of them for forty-three years.",
+     "external_site_article": "Asset Silence Board directives govern open-channel traffic by lien holders operating in Aegir Reclamation Pool water. Directive AS-19 prohibits personal names against uncleared assets, depth and bearing pairs for held lots, and accession codes transmitted in clear, on stated grounds of channel hygiene.\n\nBreach suspends the holder's tender window pending review. Recovered directive plates at Shallow Annex P-63 are mounted on masts still carrying automated 2147 muster recalls that transmit worker names in clear.",
+     "localization_status": "source_authority",
+     "external_site": "Asset Silence Board directives govern open-channel traffic by lien holders in Aegir Reclamation Pool water. Directive AS-19 prohibits personal names against uncleared assets, depth and bearing pairs for held lots, and accession codes in clear, and suspends the holder's tender window on breach."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P711_PAD_HANDSHAKE_WINDOWS",
+   "article_id": "hecton8.pad.handshake_windows",
+   "title_key": "LORE_P711_PAD_HANDSHAKE_WINDOWS_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.pad.handshake_windows",
+    "secondary": [
+     "unlock.black_keel_tender_board"
+    ],
+    "poi_tags": [
+     "poi.tender_board",
+     "poi.shallow_annex_p63",
+     "poi.shelf_buoy_line"
+    ],
+    "biome_tags": [
+     "biome.shallow_annex",
+     "biome.photic_shelf"
+    ]
+   },
+   "image_targets": {
+    "codex": "new schedule plate bolted over an older tender board, the old board's punch card column visible below the overlay, every hole struck through",
+    "scanner_thumbnail": "punch card column on a tender board, holes counted in rows of ten"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Receiver Handshake Schedule RH-4",
+     "scanner": "Schedule plate over older board, two layers. Confidence 76 percent. Hazard: none. Limit: revision 3 overlays revision 1, lower layer only partly legible.",
+     "terminal": "RECOVERY COMPLIANCE OFFICE / SCHEDULE RH-4 REV 3\nCARRIER: BLACK KEEL, AUTOMATED CLAIM-TENDER\nWINDOW A, CARGO TENDER: 0140 / 0940 / 1740. TONNAGE CREDIT AT CLOSE.\nWINDOW B, TRANSFER LINE: ON DEMAND, METERED.\nWINDOW C, RECOVERY ASSIST: DISPLACES NEXT WINDOW A. CREDIT FORFEIT.\nWINDOWS ARE NOT CUMULATIVE.\nCLASSIFICATION: TENDER SCHEDULING, BILLABLE.\nQUEUE: RETURN ACTION QUEUE.",
+     "in_game_wiki": "Schedule RH-4 sets the Black Keel's handshake windows. Window A is the cargo tender at 0140, 0940 and 1740, tonnage credited at close. Window B is the metered transfer line, on demand. Window C is recovery assist, and Window C displaces the next Window A with the credit forfeit.\n\nReceiver time is finite and the schedule attributes the cost of a displaced tender, which is defensible arithmetic. It also prices a call for help in the only currency a lien holder carries.\n\nRH-4 is bolted over the 2147 tender board at P-63. The old board's Window C punch card is full at sixty-one, and the forfeit column beside it carries sixty-one.\n\nAssessment: forfeit is per request, not per tonne. Windows do not stack.",
+     "field_note": "A C window takes the whole next cargo window with it and the credit never comes back, so if you are going to call one, call it once and clear the room while you are in there. Sixty-one punches on the old board.",
+     "external_site_article": "Receiver handshake schedules issued by the Recovery Compliance Office time the Black Keel's automated claim-tender windows. Cargo tender windows run three times daily with tonnage credited at close; recovery assist is scheduled as a displacing window that consumes the next cargo tender and forfeits its credit.\n\nThe stated basis is finite receiver time and attribution of displacement cost. Forfeit is assessed per request rather than per tonne. Punch tallies on 2147-era tender boards record recovery assist requests in the dozens.",
+     "localization_status": "source_authority",
+     "external_site": "Receiver handshake schedules issued by the Recovery Compliance Office time the Black Keel's automated claim-tender windows. Recovery assist is scheduled as a displacing window that consumes the next cargo tender and forfeits its tonnage credit, assessed per request rather than per tonne."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  }
+ ]
+}
