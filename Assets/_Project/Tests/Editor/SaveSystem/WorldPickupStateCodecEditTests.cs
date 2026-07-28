@@ -1136,7 +1136,24 @@ namespace Hecton8.Tests.Editor.SaveSystem
         private static PickupItem CreatePickup(string name)
         {
             GameObject host = new GameObject(name);
-            return host.AddComponent<PickupItem>();
+
+            // PickupItem carries [RequireComponent(typeof(InteractionHighlighter))] and
+            // [RequireComponent(typeof(Collider))] (PickupItem.cs:21-22). Collider is ABSTRACT, so
+            // AddComponent<PickupItem>() cannot satisfy that dependency on its own - Unity has no
+            // concrete collider to pick, refuses the add, and returns null. Every caller of this
+            // helper then dereferenced that null on the very next line, which is why all five tests
+            // that build a PickupItem threw NullReferenceException before reaching any product code,
+            // in all three recorded batchmode runs. Adding the concrete dependencies first is what
+            // lets the PickupItem add succeed; BoxCollider is the concrete collider this test suite
+            // already uses for the same purpose (PlayerHealthSaveBridgeEditTests.cs:94).
+            host.AddComponent<BoxCollider>();
+            host.AddComponent<InteractionHighlighter>();
+
+            PickupItem pickup = host.AddComponent<PickupItem>();
+            Assert.IsNotNull(
+                pickup,
+                "AddComponent<PickupItem> returned null - a [RequireComponent] dependency of PickupItem is not satisfiable on this host GameObject. Satisfy the concrete dependency here instead of letting callers dereference null.");
+            return pickup;
         }
 
         private static string ReadSerializedString(UnityEngine.Object target, string propertyName)
