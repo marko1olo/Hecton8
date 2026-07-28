@@ -105,7 +105,6 @@ namespace Hecton8.Gameplay
         [SerializeField] private Collider[] physicsCullingColliders = Array.Empty<Collider>();
 
         private Transform _cachedTransform;
-        private GameTickManager _tickManager;
         private bool _registeredSlowTick;
         private bool _hotSwapRegistered;
         private bool _usingSimplifiedCollider;
@@ -113,6 +112,23 @@ namespace Hecton8.Gameplay
         private bool _ownsSimplifiedCollider;
         private bool _distanceColliderLodGateOpen;
         private float _colliderLodNoThreatSeconds;
+
+        /// <summary>
+        /// Previous monotonic dispatcher clock sample, or negative when unsampled. Re-baselined whenever
+        /// the dwell accumulator is cleared, so time spent NOT accumulating is never billed on the next
+        /// tick as one enormous delta.
+        /// </summary>
+        private double _slowTickClockSampleSeconds = UnsampledSlowTickClock;
+
+        /// <summary>Sentinel for "no clock sample yet this dwell window".</summary>
+        private const double UnsampledSlowTickClock = -1d;
+
+        /// <summary>
+        /// Largest real gap billable to one slow tick. Matches the dispatcher's own worst-case legitimate
+        /// spacing (the homeostasis-emergency slow interval); anything longer is a pause, a scene load or
+        /// a hitch, and the submarine did not spend that time un-threatened.
+        /// </summary>
+        private const float MaxSlowTickDwellAdvanceSeconds = 1f;
 
         // COLD ALLOC: List<Collider>[32] - generated compound collider cache for runtime collider LOD toggles - owner: SubmarineCompoundColliderAuthoring
         private readonly List<Collider> _compoundColliderCache = new List<Collider>(32);
@@ -142,7 +158,6 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             _cachedTransform = transform;
-            CacheTickManagerCold();
             EnsureSimplifiedCollider();
             RebuildRuntimeColliderCache();
             ApplyColliderLodState(false);
@@ -179,11 +194,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!isActiveAndEnabled)
-                return;
-
-            if (serviceSlot == GlobalRegistryServiceSlot.TickManager)
-                _tickManager = currentService as GameTickManager;
+            // The TickManager slot used to be tracked here so the dwell accumulator could read its
+            // nominal SlowTickIntervalSeconds. Dwell now comes from the monotonic dispatcher clock, so
+            // this component has no reason to hold a TickManager reference at all - and a hot-swap
+            // handler that keeps a field nobody reads is a subscription paying rent for nothing.
         }
 
         public void SlowTick()
@@ -195,6 +209,7 @@ namespace Hecton8.Gameplay
                 _compoundColliderCache.Count <= 0)
             {
                 _colliderLodNoThreatSeconds = 0f;
+                _slowTickClockSampleSeconds = UnsampledSlowTickClock;
                 ApplyColliderLodState(false);
                 return;
             }
@@ -236,6 +251,7 @@ namespace Hecton8.Gameplay
             if (hasExternalThreat)
             {
                 _colliderLodNoThreatSeconds = 0f;
+                _slowTickClockSampleSeconds = UnsampledSlowTickClock;
                 ApplyColliderLodState(false);
                 return;
             }
@@ -243,7 +259,7 @@ namespace Hecton8.Gameplay
             if (_usingSimplifiedCollider)
                 return;
 
-            _colliderLodNoThreatSeconds += ResolveSlowTickIntervalSeconds();
+            _colliderLodNoThreatSeconds += ResolveSlowTickDeltaSeconds();
             ApplyColliderLodState(_colliderLodNoThreatSeconds >= Mathf.Max(0f, colliderLodSimplifyHysteresisSeconds));
         }
 
@@ -261,6 +277,7 @@ namespace Hecton8.Gameplay
             if (!allowSimplifiedColliderLod)
             {
                 _colliderLodNoThreatSeconds = 0f;
+                _slowTickClockSampleSeconds = UnsampledSlowTickClock;
                 return ApplyColliderLodState(false);
             }
 
@@ -360,6 +377,7 @@ namespace Hecton8.Gameplay
             _usingSimplifiedCollider = useSimplifiedCollider;
             if (!useSimplifiedCollider)
                 _colliderLodNoThreatSeconds = 0f;
+                _slowTickClockSampleSeconds = UnsampledSlowTickClock;
 
             int transitionCount = 0;
             if (simplifiedCollider != null)
@@ -387,17 +405,46 @@ namespace Hecton8.Gameplay
             return transitionCount;
         }
 
-        private float ResolveSlowTickIntervalSeconds()
+        /// <summary>
+        /// Real seconds since the previous slow tick, from the monotonic dispatcher clock.
+        ///
+        /// This used to return GameTickManager.SlowTickIntervalSeconds - the NOMINAL value - and 0.5f
+        /// when the manager was missing. The dispatcher's ACTUAL slow interval is not that constant:
+        /// SystemDispatcher.ResolveSlowTickIntervalSeconds returns 0.1 s normally, 0.2 s while
+        /// thermal-critical, 1.0 s during a homeostasis emergency, and a GlobalQualityWeight-dependent
+        /// lerp while the simulation bucketer idles. Up to a 10x spread. Accumulating a hysteresis
+        /// DURATION out of a nominal interval therefore made the collider-LOD dwell time a function of
+        /// how hot the machine is and what the graphics settings are - and collider LOD is physics, so
+        /// that is gameplay truth changing with quality state, which SYSTEMS_CONTRACTS.md:141 forbids.
+        /// The 0.5f fallback was wrong twice over: it was not even the nominal 0.1 s.
+        ///
+        /// Same defect and same fix as FirstHourDirector's pacing clock (commit 4b307afde), which is now
+        /// the idiom in this codebase: sample the monotonic clock, take the delta, and cap it so a pause,
+        /// a scene load or a hitch is not billed as dwell time.
+        /// </summary>
+        private float ResolveSlowTickDeltaSeconds()
         {
-            GameTickManager tickManager = _tickManager;
-            return tickManager != null
-                ? Mathf.Max(0.01f, tickManager.SlowTickIntervalSeconds)
-                : 0.5f;
-        }
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
 
-        private void CacheTickManagerCold()
-        {
-            _tickManager = GlobalRegistry.TickManager;
+            // Unsampled: this tick establishes the baseline and buys no dwell time.
+            if (_slowTickClockSampleSeconds < 0d)
+            {
+                _slowTickClockSampleSeconds = now;
+                return 0f;
+            }
+
+            double delta = now - _slowTickClockSampleSeconds;
+            _slowTickClockSampleSeconds = now;
+
+            // Negated comparison so a NaN clock reading falls through as zero instead of poisoning the
+            // accumulator. Catch-up substeps inside one frame read the same time snapshot, so their
+            // delta is zero and dwell advances once per frame by the real frame delta.
+            if (!(delta > 0d))
+                return 0f;
+
+            return delta > MaxSlowTickDwellAdvanceSeconds
+                ? MaxSlowTickDwellAdvanceSeconds
+                : (float)delta;
         }
 
 #if UNITY_EDITOR
