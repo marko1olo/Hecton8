@@ -365,9 +365,24 @@ namespace Hecton8.Construction
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            bool hadRuntimeLoops = _slowTickRegistered || _postFixedRegistered;
+            // The precondition mirrors OnEnable, which wants both loops unconditionally while this owner is
+            // a registered service: there is no state in which an active extractor owner deliberately runs
+            // without SlowTick. The previous gate was `_slowTickRegistered || _postFixedRegistered` - a
+            // "did I already have them" test - so it could restore loops across a dispatcher SWAP but could
+            // never establish them for an owner whose OnEnable ran while the dispatcher slot was null,
+            // because TryRegisterRuntimeLoops returns early on a null dispatcher and leaves both flags
+            // false. In that ordering the gate is permanently false and the owner sits in GlobalRegistry
+            // holding six persistent NativeArrays, accepts module registrations, and advances no extraction
+            // cycle for the rest of the session. Silently: the missing-owner report cannot fire, because
+            // the owner is present.
+            //
+            // Ticking an owner with unready native state is not the hazard the gate was guarding. SlowTick
+            // already returns unless `_nativeState.IsReady(MaxModuleCapacity)`, and PostFixedTick returns
+            // unless `_scheduledJobActive`, which only SlowTick can set - both are self-guarding no-ops.
+            // TryRegisterRuntimeLoops is idempotent and already requires Application.isPlaying and a
+            // non-null dispatcher, so the only thing removed here is the permanent lockout.
             TryUnregisterRuntimeLoops();
-            if (hadRuntimeLoops && currentService != null && isActiveAndEnabled)
+            if (_serviceRegistered && currentService != null && isActiveAndEnabled)
                 TryRegisterRuntimeLoops();
         }
 
