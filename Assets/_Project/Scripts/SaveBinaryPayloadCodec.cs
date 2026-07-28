@@ -1612,8 +1612,13 @@ namespace Hecton8.SaveSystem
 
             if (storageMode == VoxelDeltaSerializedStorageUniformSdfRle)
             {
+                // VoxelDeltaChunkDTO.EnsureCapacity(0) resets the storage identity fields, uniformSdfValueBits
+                // included, so the value decoded above has to survive the reset - it is the whole payload of a
+                // uniform chunk.
+                ushort decodedUniformSdfValueBits = value.uniformSdfValueBits;
                 value.EnsureCapacity(0);
                 value.storageFlags = VoxelDeltaChunkDTO.StorageUniformSdfRle;
+                value.uniformSdfValueBits = decodedUniformSdfValueBits;
                 value.cellCount = VoxelDeltaChunkDTO.CellCount;
                 return true;
             }
