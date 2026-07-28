@@ -47,6 +47,13 @@ namespace Hecton8.EditorTools.Diagnostics
     {
         private const string Marker = "[H8_PLAYPROBE]";
         private const string DefaultScene = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
+
+        /// <summary>
+        /// Where a New Game run has to start. The normative flow is 00_BOOTSTRAP -> 01_MAIN_MENU ->
+        /// 02_HECTON_WORLD (AGENTS.md:162); entering play anywhere else is the recovery scenario, not
+        /// the product route.
+        /// </summary>
+        private const string BootstrapSceneAssetPath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
         private const int DefaultWarmupFrames = 240;
         private static double _hardTimeoutSeconds = 240.0;
 
@@ -251,7 +258,24 @@ namespace Hecton8.EditorTools.Diagnostics
         {
             ResetRunState();
 
-            string scenePath = ReadStringArg("-h8Scene", DefaultScene);
+            // When the probe is going to press New Game it MUST start where the product starts.
+            // AGENTS.md:162 fixes the normative flow as 00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD,
+            // and opening the world scene directly is not that route - it is the RECOVERY scenario, which
+            // the product handles by design: HandleSceneLoadedGuard (GameBootstrapper.cs:7114) sees a
+            // non-bootstrap scene while _isBootstrapComplete is false and calls TryRecoverEntryVector,
+            // which loads 00_BOOTSTRAP as LoadSceneMode.Single (:7164-7166) and so DESTROYS the scene the
+            // probe just opened, along with everything in it.
+            // Measured consequence of getting this wrong: a run that opened 02_HECTON_WORLD logged the
+            // world spawner's Awake TWICE against a single "Step 0: Loading 02_HECTON_WORLD", the first
+            // player died with the first world scene, and the probe reported that as a product defect.
+            // The recovery was working correctly; the instrument was standing in the wrong place.
+            // An explicit -h8Scene still wins - starting mid-route is a legitimate thing to measure, as
+            // long as it is asked for rather than defaulted into.
+            // -h8StartGame is parsed into _startNewGame further down, AFTER this point, so the argument
+            // is read directly here rather than depending on a field that is still false.
+            bool willPressNewGame = ReadStringArg("-h8StartGame", null) != null;
+            string startScenePath = willPressNewGame ? BootstrapSceneAssetPath : DefaultScene;
+            string scenePath = ReadStringArg("-h8Scene", startScenePath);
             _scenePath = scenePath;
             _warmupFrames = Math.Max(1, ReadIntArg("-h8WarmupFrames", DefaultWarmupFrames));
 
