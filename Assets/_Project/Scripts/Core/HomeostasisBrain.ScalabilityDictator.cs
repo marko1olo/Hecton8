@@ -183,9 +183,12 @@ namespace Hecton8.Core
         private const float CriticalFrameDumpThresholdMs = 33.0f;
         private const float VramSpikeThreshold = 0.8f;
         private const float VramOomThreshold = 0.85f;
-        private const float VramShedArmPressure01 = VramOomThreshold;
-        private const float VramShedReleasePressure01 = VramSpikeThreshold;
-        private const float VramShedMinimumHoldSeconds = 2.5f;
+        /// <summary>VRAM pressure at which load shedding arms. Strictly above, never at.</summary>
+        public const float VramShedArmPressure01 = VramOomThreshold;
+        /// <summary>VRAM pressure shedding must fall back to before it may release.</summary>
+        public const float VramShedReleasePressure01 = VramSpikeThreshold;
+        /// <summary>Minimum real unscaled seconds shedding holds once armed (AGENTS.md:239 band).</summary>
+        public const float VramShedMinimumHoldSeconds = 2.5f;
         private const float VramShedMaxBilledDeltaSeconds = 0.5f;
         private const float ScalabilityHardFailFrameMs = 20f;
         private const float SurvivalHardwareShiFloor = 0.4f;
@@ -815,7 +818,7 @@ namespace Hecton8.Core
         /// Release pressure is clamped to the arm pressure so a CSV/tuner override can never invert the
         /// band into a latch that arms below the level at which it releases.
         /// </summary>
-        internal static bool ResolveVramSheddingLatch(
+        public static bool ResolveVramSheddingLatch(
             bool latched,
             float vramPressure01,
             float deltaSeconds,

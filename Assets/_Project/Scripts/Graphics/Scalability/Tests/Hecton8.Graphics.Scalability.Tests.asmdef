@@ -4,7 +4,8 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Hecton8.Graphics.Scalability"
+        "Hecton8.Graphics.Scalability",
+        "Hecton8.Core"
     ],
     "includePlatforms": [
         "Editor"
