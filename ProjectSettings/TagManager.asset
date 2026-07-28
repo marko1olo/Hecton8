@@ -46,9 +46,9 @@ TagManager:
   - Fauna_Hitbox
   - Flora_NonColliding
   - Hazard_Trigger
-  -
-  -
-  -
+  - 
+  - 
+  - 
   m_SortingLayers:
   - name: Default
     uniqueID: 0
