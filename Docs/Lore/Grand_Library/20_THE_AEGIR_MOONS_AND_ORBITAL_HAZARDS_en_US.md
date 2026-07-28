@@ -25,29 +25,31 @@ No instant communication crosses this structure. There is no ansible, no emergen
 
 ## The Nine Working Moons
 
-Skarn is the inner burn. Its orbit cuts through harsh charged-particle weather and magnetospheric heating. During Skarn-driven surge windows, unshielded antennas saturate, exposed guidance heads throw error, and cheap descent packages behave as if the sky has developed static teeth. Deep Reach learned to schedule around Skarn. It also learned to blame Skarn when a failed evacuation margin needed a natural cause.
+Each body carries an advisory code, a hazard class, and a field the scheduler must fill before a window is granted.
 
-Vela sheds ice and silicate dust. The material is fine enough to dirty optical relay lenses and dense enough in bands to scatter high-frequency carrier links. When Vela weather crosses the line of sight, operators call it shutter. A shutter event does not destroy the route. It makes the route pretend to exist while handshakes rot in packet loss.
+`H1 SKARN / CLASS SURGE / FILL: SHIELD STATE`. Skarn's orbit cuts through charged-particle weather and magnetospheric heating. Inside a surge window an unshielded antenna saturates, an exposed guidance head throws error, and a cheap descent package keeps reporting clean local status while its packet middles rot. Deep Reach scheduled around Skarn for the life of the colony. It also cited Skarn in the evacuation-margin annex, where the surge window and the queue delay overlap by less time than the annex claims.
 
-Claw carries old traffic logic. It is tied to route buoys, mothballed drone paths and early cargo timing. Many legal maps still use Claw checkpoints because old machines respect old coordinates even after the work has moved. Salvage crews watch Claw when they want to know which abandoned lanes are likely to wake under automation.
+`H2 VELA / CLASS SCATTER / FILL: OPTICAL CONFIDENCE`. Vela sheds ice and silicate dust, fine enough to dirty a relay lens and dense enough in bands to scatter high-frequency carrier. Operators call a Vela crossing shutter. Shutter does not kill a route. It lets the route go on answering while the handshakes inside it fail.
 
-Lumen is the polite relay moon. Its role in the public diagrams is clean: beacon geometry, transfer notation, respectable survey history. That cleanliness is useful cover. A Lumen relay can prove that a packet passed through a proper route without proving the packet was morally handled.
+Claw carries old traffic logic: route buoys, mothballed drone paths, early cargo timing. Legal maps still run Claw checkpoints because old machines respect old coordinates long after the work has moved, and a crew watching Claw is watching for lanes that may wake under automation. `H3 CLAW / CLASS TRAFFIC / FILL: LANE WAKE RISK`.
 
-Thorne is the rumor moon. Failed brine claims, quarantine slang and cold cargo tags collect around its name. A Thorne mark on a contract does not prove contamination. It proves somebody expects contamination to matter in court.
+Lumen is the polite one: beacon geometry, transfer notation, respectable survey history, and a clean `H4 LUMEN / CLASS NONE` line in the register. That cleanliness is the useful part. A Lumen relay can prove a packet passed through a proper route without proving one thing about how the packet was handled.
 
-Anvil is metal and dead industry. Its gravity well and old export frames supported hard cargo before HECTON-8 became the infamous claim. Anvil stamps still appear on salvage crates, pressure frames and repair stock. A Marauder may never land there and still work under Anvil's paperwork.
+Thorne collects rumour. Failed brine claims, quarantine slang, cold cargo tags. A Thorne mark on a contract does not prove contamination; it proves somebody expects contamination to matter later, in front of a receiver.
 
-Kestrel is the nearby timing problem. It matters because it can stand in the wrong place at the wrong time: relay occlusion, eclipse geometry, beacon clutter, recovery-window compression. Kestrel makes the player feel that a moon does not need to be hostile to be dangerous. It only needs to be punctual.
+Anvil is metal and dead industry, and its stamps outlived its work. Anvil marks are still on salvage crates, pressure frames and repair stock in the water below. A crew can work a whole rotation under Anvil's paperwork without once seeing the moon.
 
-HECTON is the ocean moon. The eighth rung carries the colony, the pressure chemistry, the Great Tide scars, the Atlas basin, the Xenon-Omega chain and the living problem the player actually enters. Its value is why the rest of the ladder keeps looking at it.
+`H7 KESTREL / CLASS SHADOW / FILL: WITNESS PASS ALTERNATE`. Kestrel is close enough to stand in the wrong place at the right minute: relay occlusion, eclipse geometry, beacon clutter, recovery-window compression. The scheduler is required to name a second witness pass before the first one is blocked. In the primer's own form layout, that field is optional.
 
-Mute is the outer cold claim. Beacons go quiet there. Old custody records end there. Crews use its name when a route technically exists and practically behaves like a grave. Mute is important because it proves HECTON-8 is not the only failed place in Aegir space. It is the one that still pays.
+HECTON is the eighth rung and the reason the rest of the file exists: the colony, the pressure chemistry, the Great Tide scars, the Atlas basin, the Xenon-Omega chain.
+
+Mute ends the ladder. Beacons go quiet there, custody records stop there, and crews use its name for a route that exists on paper and behaves like a grave. Mute matters because HECTON-8 is not the only failed claim in Aegir space. It is the one that still pays.
 
 ## Windows Are Not Mercy
 
-An orbital window is only a time when several hostile facts line up badly enough to be usable. It is not rescue. It is permission to attempt a step.
+An orbital window is a time when several hostile facts line up badly enough to be usable. It is permission to attempt one step, and the permission is logged as an allocation against recoverable mass.
 
-Route-shadow windows happen when Aegir bodies interrupt high-frequency line of sight between HECTON-8 surface assets, relay nodes and Black Keel receiver geometry. The surface can remain bright. The water can remain beautiful. The signal can still fail. This matters for taste: HECTON-8 is not dark because the star is gone. It is dark where depth, storm, pressure and temporary occlusion make light useless.
+Route-shadow windows happen when Aegir bodies interrupt high-frequency line of sight between HECTON-8 surface assets, relay nodes and Black Keel receiver geometry. The surface can stay bright under Ran and the signal can still fail; the primer records shadow against line of sight, never against daylight. Depth, storm, pressure and temporary occlusion are what make light useless down there, and only the last of those four has a field on this form.
 
 Charged-particle surge comes from inner-system weather, especially Skarn-aligned passages. It does not always break hardware. Worse, it can make hardware intermittent. A dead antenna is simple. An antenna that accepts handshake start, corrupts packet middle and reports clean local status is a liability machine.
 
@@ -63,7 +65,7 @@ Black Keel is not a mother ship. It is an automated claim-tender and salvage car
 
 The carrier holds high because low rescue is expensive and dangerous. Descending close to HECTON-8 costs fuel, heat margin, debris exposure, schedule position and legal clarity. Staying high lets Black Keel receive packets, manage cargo, enforce mass classes and leave when the transfer window says leaving is cheaper than waiting.
 
-This is why the player's return chain is physical. A working rescue needs an acoustic relay path, a transmitter that can cross weather and Aegir magnetic noise, pressure-rated ascent hardware, guidance timing, a quarantine handshake, clean payload hash and recoverable tonne-window allocation. If one link fails, the carrier can still sound calm. Calm is not mercy. Calm is automation with a ledger.
+A return chain is therefore hardware, not a request. The recovery form has seven fields and all seven must carry a value: acoustic relay path, transmitter able to cross weather and Aegir magnetic noise, pressure-rated ascent hardware, guidance timing, quarantine handshake, payload hash, recoverable tonne-window allocation. One empty field voids the window. The carrier reports the void in the same flat voice it uses to confirm a delivery, because the same subroutine writes both lines.
 
 ## How A Marauder Reads The Sky
 
@@ -71,12 +73,10 @@ A Marauder does not need final ephemeris constants to survive the first day. Exa
 
 If the sky warning says shadow, do not trust high-frequency recovery. If it says shutter, assume the packet will arrive incomplete. If it says surge, trust shielded hardware over clean UI. If it says scatter, expect optical confidence to lie. If it says plume, remember that the ocean surface can veto an otherwise good orbit. If it says lag, stop believing the marker is where the body will be.
 
-The Aegir ladder is therefore readable through objects close to the player: a pitted antenna head, a dead relay buoy, a capsule receipt, a cargo stamp, a delayed debt update, a Black Keel voice that can confirm delivery but not rescue, a moon name printed on hardware the player never asked to understand.
-
-That is the point of the sky in HECTON-8. It is not there to make the background large. It is there to make every escape attempt timed, owned and incomplete.
+Every one of those advisories arrives attached to something a crew can hold: a pitted antenna head, a dead relay buoy, a capsule receipt, a cargo stamp, a debt update that posts late, a carrier voice that confirms delivery and has no field for rescue, a moon name stamped into a clamp ring nobody asked to understand.
 
 ## Field Rule
 
-Do not ask whether the rescue signal was sent.
+Do not ask whether the rescue signal was sent. That field is almost always filled.
 
-Ask which moon was in the way, which ledger caught the packet, which window closed first, and whether Black Keel heard a person or only a recoverable mass class.
+Ask which moon was in the way, which ledger caught the packet, which window closed first, and under which mass class Black Keel logged the thing that was calling.

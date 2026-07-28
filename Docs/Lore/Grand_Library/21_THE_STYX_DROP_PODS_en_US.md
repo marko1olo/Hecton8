@@ -2,7 +2,7 @@
 # STYX DROP PODS: THE ONE-WAY ARGUMENT
 
 > **Source:** *Black Keel* Descent Operations Manual, Annex D-44, "Contractor Bathy-Drop Delivery."
-> **Speaker:** Descent Controller Marek Ibarra, recovered training transcript.
+> **Speaker:** Marek Ibarra, Keelmark Mutual adjuster, delivery-loss annex language.
 > **Reviewer note:** Public-safe cutaway. This copy describes the pod, not the private claim-window keys, ascent charge signatures, or insurer kill thresholds.
 
 ---
@@ -15,7 +15,7 @@ The old manuals call it an "atmosphere-ocean contractor delivery unit." Marauder
 
 Deep Reach did not design the Styx for comfort. The original pattern was a drill-drop bus used to punch autonomous mining heads through Aegir storm bands. When the colony failed and claim recovery became cheaper than rescue, the drill bus was re-certified for living cargo. The certification did not say "safe." It said "survivable under contracted parameters."
 
-Keelmark's actuarial sheet lists an 88.4 percent survivable delivery rate when weather, pod age, suit seal, and operator biometrics all remain inside green margins. The same sheet classifies a failed drop as a delivery loss, not a passenger death. That is the first thing the Styx teaches: on HECTON-8, the language kills you before pressure does.
+Keelmark's actuarial sheet lists an 88.4 percent survivable delivery rate with weather, pod age, suit seal and operator biometrics all inside green margins. The sheet has no row for a drop where two of those four are amber, which is most of them. It classifies a failed drop as a delivery loss and files it against the shell's pattern number, not against a name.
 
 ## 2. The Descent Profile
 
@@ -45,15 +45,15 @@ The survival bus is the cruel part. It can power a lamp, warm a suit cradle, tri
 
 The recovery interface is the misunderstood part. Contractor copies sometimes call it an ascent package. That is generous. It is a keyed sleeve for winch hardware, buoy links, emergency charge adapters, and carrier-side authentication. If it is intact and the orbit agrees, it can help something leave the ocean. It is not a ship engine. It is permission, geometry, and a metal throat that might accept the right hook.
 
-## 4. Why The Shell Becomes A Room
+## 4. The Shell After Impact
 
-The first playable room on HECTON-8 should feel like a machine that nearly kept its promise. The pod got the operator down. It held pressure. It left enough air to think. Then the expensive part failed.
+Annex D-44 clause 9 covers use of the shell as shelter. It is the only clause in the annex written as though the contractor will still be alive to read it.
 
-That failure matters because it makes survival physical. The player is not stranded by amnesia, destiny, or a locked door. They are stranded because a specific chain broke: heat tile reserve spent, relay mast sheared, ascent sleeve damaged, compressor flooded, guidance bus fractured, claim handshake below recovery threshold. Each break can become a readable object. Each object can become a task, a doubt, or a future lie.
+The pod gets the operator down, holds pressure, and leaves enough air to think. Then the expensive part fails, and the failure is always specific: heat tile reserve spent, relay mast sheared, ascent sleeve damaged, compressor flooded, guidance bus fractured, claim handshake below recovery threshold. Clause 9 requires each of those to be entered on the damage sheet by name before anything is cut out of the shell.
 
-The capsule should not be stripped into abstract loot. It is more valuable as a damaged witness. The scorch pattern tells what the atmosphere did. The ballast grit tells which shelf caught the fall. The crushed foam tells how hard the impact was. The terminal says what the carrier still wants. The broken ascent hardware says what the ocean already took.
+That requirement is not care. It is evidence handling. A stripped pod is an unproven loss; a documented pod is a priced one. Scorch pattern records what the atmosphere did. Ballast grit records which shelf caught the fall. Crushed foam records the impact load. The terminal records what the carrier asked for first, and in what order it asked.
 
-Good HECTON-8 lore does not explain the trap from above. It lets the player touch the trap and make the conclusion themselves.
+Contractors who cut the shell for parts before filling the sheet have been billed for the entire delivery. Contractors who filled the sheet first have sometimes been able to show that the corridor they were thrown into was outside the insured shelf before they entered it.
 
 ## 5. Failure Modes
 
@@ -61,7 +61,7 @@ Styx failures are rarely dramatic in the manual language. The manuals prefer sma
 
 **Gimbal lock** means the impact vector went bad and the pod hit water at a punishing angle. The operator may live. The mast probably does not.
 
-**Relay mast shear** means the pod can still receive some acoustic noise but cannot push a clean uplink through storm water and magnetic interference. This is how a player gets a voice without getting help.
+**Relay mast shear** means the pod can still take in acoustic noise and cannot push a clean uplink back through storm water and magnetic interference. The carrier keeps talking. Nothing the contractor says arrives whole.
 
 **Compressor flood** means the pressure equalization system swallowed ocean before the seals stabilized. It can leave the shelter alive and the ascent chain dead.
 
@@ -75,16 +75,14 @@ The Styx exists because every better method costs too much.
 
 A crewed rescue shuttle needs fuel, trained pilots, redundant pressure systems, maintenance hours, hazard pay, and a legal order to risk living crew in a dead claim. A deep-rated drone costs more than the person it would retrieve, and HECTON-8's mineral water ruins sophisticated circuitry fast enough to make drone recovery a wager. A full ascent vehicle requires launch mass, stable weather, clear orbital geometry, and hardware Deep Reach would rather keep under corporate control.
 
-A Styx pod needs one disposable shell, one desperate contractor, one contract signature, and one carrier that can say it delivered the operator to the worksite.
+A Styx pod needs one disposable shell, one contractor with a lien, one signature, and one carrier that can enter the operator as delivered to the worksite.
 
-That is why Marauders keep riding them. Not because they believe the pod is safe. Because the pod is the cheapest path from debt to a chance at debt cancellation. The same machine that strands them is the machine that gets them close enough to change their ledger.
+Contractors keep riding them because the shell is the cheapest object in the chain that moves lien mass in the right direction. Nobody in the cage queue argues that the pod is safe. They argue about ablator lots, and they argue about which cradle position throws cleanest in a plume window.
 
-## 7. Player Use
+## 7. Release Form
 
-For a website, the Styx article sells HECTON-8's premise without spoiling the bottom truth: the player is alone because distance, water, contracts, and cheap machinery all agree.
+The last document signed before a cradle throw is Form BK-D/44. One page, eleven fields.
 
-For an in-game wiki, the Styx entry should become accessible in layers. The first version says: descent pod damaged, shelter useful, ascent impossible. Later entries should add: recovery interface, claim hash, mast shear, ascent sleeve, insurer threshold. The final meaning should arrive only after the player has repaired enough systems to understand that rescue and ownership are different operations.
+Nine fields describe the shell: pattern number, ablator lot, cradle position, mast condition, sleeve condition, ballast valve certification, pinger code, claim hash, window reference. One field describes the contractor, and it reads OPERATOR MASS, WITH SUIT. The eleventh is the signature line, under a sentence that reads THE UNDERSIGNED ACCEPTS DELIVERY UNDER CONTRACTED PARAMETERS.
 
-For environmental writing, the pod is a text machine. It can carry serial plates, warning labels, ablator scars, ballast grit, bloodless terminal lines, and old maintenance stamps. None of those need to sound like exposition. They should sound like objects that survived.
-
-The Styx is not the start of an adventure. It is the receipt for a bad transaction, still warm from re-entry, sinking into an ocean that has already decided what it wants to keep.
+There is no field on the form for the return.

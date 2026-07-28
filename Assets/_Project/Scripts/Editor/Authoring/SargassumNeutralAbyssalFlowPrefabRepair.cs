@@ -185,8 +185,16 @@ namespace Hecton8.Editor.Authoring
                     // objectReferenceValue == null with a non-zero instance id is Unity's signature for a
                     // missing reference rather than an empty field. Both are repaired; the distinction is
                     // logged because only one of them means an asset was deleted underneath the prefab.
+                    // objectReferenceInstanceIDValue is obsolete WITH error:true on Unity 6000.5, so it
+                    // is a hard CS0619 that fails the ENTIRE Hecton8.Editor assembly - and with it every
+                    // editor tool and content generator in the project, not just this repair. Two things
+                    // do NOT work as replacements, both measured while fixing the identical call in
+                    // H8_ScenePPtrIntegrityAudit.cs: casting the new value to int trips CS0619 again
+                    // because EntityId's implicit int operator is ALSO obsolete, and a bare `default`
+                    // leaves the call ambiguous between Equals(EntityId) and Equals(int) for CS0121.
+                    // Comparing the struct against an explicitly-typed default is what compiles.
                     bool wasDangling = property.objectReferenceValue == null &&
-                                       property.objectReferenceInstanceIDValue != 0;
+                                       !property.objectReferenceEntityIdValue.Equals(default(EntityId));
                     string previous = property.objectReferenceValue != null
                         ? property.objectReferenceValue.name
                         : (wasDangling ? "MISSING-REFERENCE" : "NULL");

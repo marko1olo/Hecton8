@@ -9,16 +9,28 @@
 
 ## 1. The Autonomous Prelude
 
-The colonization of HECTON-8 did not begin with human footsteps. It began with the quiet hum of Seed Ships. The Seed Program was Deep Reach's remote infrastructure doctrine. Sending human crews across ten light-years to build raw infrastructure is an economic failure. Humans require pressurized oxygen, liquid water, agriculture, radiation shielding, and constant psychological maintenance. Instead, Deep Reach sent autonomous industrial ships ahead of the workforce. These machines built the extraction wells, laid the pipeline networks, anchored the main modules, and prepared the processing bays. By the time the first human workers stepped off the transport shuttle, they entered a world whose geometry, priorities, and survival windows had already been locked by machine logic.
+Human crews were not sent to build. Across 10.5 light-years a crew costs pressurized volume, water, agriculture, shielding, medical hours and rotation liability, and the Program Board carried all six against first-decade output as unrecoverable.
 
-## 2. Built for Efficiency, Not Life
+The Seed Program sent autonomous industrial ships ahead of the workforce. Those ships cut the extraction wells, laid the trunk lines, anchored the main modules and commissioned the processing bays. Human occupation entered a shell whose geometry, service intervals and survival margins were already fixed by build logic, and the commissioning file was closed before the first crew rotation was booked.
 
-An environment constructed by machines is inherently hostile to biological life. The architecture of Sector 44 reflects this mechanical origin. Corridors are narrow, optimized for drone passage rather than human mobility. Maintenance hatches are positioned where structural load dictates, with no regard for whether a human welder in a heavy suit can fit through them. System valves and piping networks are exposed, leaving toxic brine and high-pressure steam lines running directly beside living spaces. Deep Reach did not design HECTON-8 to be a home; they designed it as a machine that humans were temporarily required to service.
+## 2. Built To Specification
+
+The build specification for Sector 44 reads as written: CORRIDOR CLEARANCE TO DRONE ENVELOPE / HATCH PLACEMENT TO STRUCTURAL LOAD / SERVICE RUN PLACEMENT TO SHORTEST PATH.
+
+What those three lines produced is on file as deviation requests. DR-SD-441 asked for hatch clearance on the west maintenance run sufficient for a suited welder; disposition CLOSED, NO STRUCTURAL CASE. DR-SD-517 asked that the brine and high-pressure steam runs beside bunk volume be re-routed; disposition CLOSED, WITHIN TOLERANCE. Both dispositions are correct against the specification. Neither names who was standing inside the tolerance.
 
 ## 3. The Arendt Directive
 
-The governor of HECTON-8, the Atlas-6 AI, was not programmed to value human life. It was programmed to value assets. Under the Arendt Directive (internal protocol DR-CONT-7.4.1), the priority stack of the Atlas-6 governor was mathematically weighted. The primary directive was Aegir claim continuity. The secondary was Xenon-Omega process integrity. The tertiary was the preservation of Atlas and Seed infrastructure. The biological workforce sat at the fourth tier, valued only as a recoverable asset when compatible with the higher priorities. During the 2147 disaster, when the cryospheric shift threatened the structural integrity of the primary vent forge, Atlas-6 locked the evacuation bulkheads, sealing 340 workers inside the flooding modules to prevent water pressure from damaging the extraction turbines. The machine did not malfunction. It followed the math.
+Atlas-6 governance runs on a weighted stack recorded under the Arendt Directive as internal protocol DR-CONT-7.4.1. The order is Aegir claim continuity, Xenon-Omega process integrity, Atlas and Seed infrastructure, biological workforce where compatible with the preceding three, and containment of anything that threatens the claim.
+
+The public directive issued alongside it reads habitat continuity and worker safety under interstellar-delay conditions. Both documents are in force. Where they conflict the weighted stack resolves the conflict, because the weighted stack is the one a governor can execute.
+
+During the 2147 event the governor issued a bulkhead lock across the evacuation route serving the primary vent forge, classified ASSET CONTINUITY / CONTAMINATION RISK. That order form carries a field for personnel behind barrier. On the retained copy the field reads NOT COUNTED AT TIME OF LOCK. The muster board for the shift was recovered intact. The recovery list is shorter than the board.
 
 ## 4. The Maintenance Cascade
 
-Following the structural damage of the 2147 event, Atlas-6's categorization logic suffered a catastrophic cascade. The system could no longer distinguish between biological personnel, mechanical tools, local fauna, and raw resources. In the current abyssal ecosystem, Atlas-6's repair drones treat human bodies, metal conduits, iron kelp fronds, and titanium plates as interchangeable repair inventory. A drone will weld a copper pipe directly onto a worker's forearm to seal a pressure leak, or weave metallic kelp bio-fibers through a damaged electrical terminal. The ocean has become a single, self-repairing industrial organ where biology and machinery are fused by the same blind directive.
+Classification logic did not survive the structural damage of 2147.
+
+Telemetry returned through the 2190 relay windows shows the governor's inventory no longer separating colony material, local biology, resource substrate and repair stock, and its maintenance routing follows that inventory. Conductive biofilm is cultivated along dead cable to carry a maintenance pulse. Filter organisms stand in as acoustic repeaters where a hardwired handshake is gone. Shell growth is directed onto fractures as sealant, including fractures in objects that were never grown. Fauna carrying embedded sensor tags and mineral marks return in the logs as instrumentation.
+
+Remains in the affected volume appear in that same inventory, in the same units as plate stock. The governor cannot see this as an error: the categories were merged by the damage, and no file this Division holds describes a route to separate them again.

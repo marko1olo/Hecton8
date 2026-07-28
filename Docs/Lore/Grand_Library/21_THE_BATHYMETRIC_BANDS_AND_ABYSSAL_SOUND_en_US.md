@@ -7,23 +7,23 @@
 
 ---
 
-## The Ocean Is A Stack
+## Why The Survey Has Bands
 
-HECTON-8 is easy to misunderstand from orbit. The surface looks like one drowned world under Ran's light and Aegir's tides. Below the storms it is not one ocean. It is a vertical machine made of pressure, salt, heat, metal, biology, and old corporate work.
+Survey H8-44 exists because a map carrying only north and east on it killed crews. Depth decides buoyancy, battery draw, oxygen work, sonar range, fauna behaviour, and whether a room 40 m away can be reached before the suit starts spending the operator instead of the bottle.
 
-Deep Reach divided Sector 44 into operational bands because a map with only north and east killed crews. Depth changes what a tool can do. It changes buoyancy, battery draw, oxygen work, sonar range, predator behavior, and whether a room that looks close can be reached before the suit starts spending the operator's life.
+The survey runs five operational bands, each with its own station series and its own sound-speed profile. The profiles do not blend across the boundaries. That is the reason the bands are on the form at all.
 
-The Photic Shelf runs from the surface to roughly 250 meters. It is the only band with reliable Ran light. Storm surge still reaches it, but a diver can see silhouettes, native mats, salvage buoys, torn habitat crowns, and the first scars of the colony. Most training manuals pretend this band is safe. It is only readable.
+Stations 1 through 40 cover the photic shelf, surface to roughly 250 m, the only depth with reliable Ran light. Storm surge reaches it. A diver can still read silhouettes, native mats, salvage buoys, torn habitat crowns and the first colony scars. Training text calls this band safe. This survey calls it readable.
 
-The Cable Reef runs from 250 to 1200 meters. Deep Reach anchored power trunks, data umbilicals, pump spines, rail harnesses, and weathered work platforms through this band. After the failure, insulation split, conductive biofilm grew into the sheathing, and iron kelp rooted around anything with a current leak. The Cable Reef is where a player first learns that infrastructure can become ecology without becoming friendly.
+From 250 to 1200 m, the cable reef on Deep Reach maps, the water is full of company hardware: power trunks, data umbilicals, pump spines, rail harnesses, work platforms. After the failure the insulation split, conductive biofilm grew into the sheathing, and iron kelp rooted on anything with a current leak. Station 61 logs a cable trunk whose acoustic signature changed between two passes without the trunk having moved.
 
-The Brine Canyons run from 1200 to 2800 meters. Here, dense salt rivers lie inside the water like another liquid floor. A submersible can cross a canyon mouth and suddenly behave as if the sea has a second gravity. Dropped tools may float on a brine surface. Bodies may stop sinking. Sonar pulses may bounce off a river that has no wall. Many "ghost chambers" on Deep Reach maps are only brine mirrors.
+Brine canyon volume, 1200 to 2800 m, carries dense salt rivers lying inside the water like a second floor. Cross a canyon mouth and buoyancy changes with no change in depth. Dropped tools sit on a brine surface. Bodies stop sinking. Pulses reflect off a river with no wall behind it, which is where most of the ghost chambers on the company maps came from.
 
-The Machine Fields run from 2800 to 4300 meters. This is the old industrial depth: processing wells, compressor galleries, collapsed exchanger towers, rail pits, and automated service yards. Light is gone. Sound returns too much information. Pumps, loose gantries, damaged drones, and vent shear make the water speak in metal. A quiet sonar contact in this band is more suspicious than a loud one.
+Below that, 2800 to 4300 m, sits the abyssal machine field: processing wells, compressor galleries, collapsed exchanger towers, rail pits, automated service yards. Light is gone and sound returns too much of it. Pumps, loose gantry, damaged drones and vent shear keep the water talking in metal, and in this band a quiet contact is more suspicious than a loud one.
 
-The Atlas Basin runs from 4300 to 5600 meters. Solid seafloor becomes rare. There are ridges, vent scars, cut basins, pressure-glass sheets, and layered mechanical debris held together by biofilm and mineral growth. Atlas infrastructure did not survive here as clean machines. It survived as a maintenance ecology: conductive films, filter organs, shell-like sealant, tagged animals, and heat-fed nodes that keep routing work through living matter.
+The Atlas basin runs 4300 to 5600 m. Solid floor is rare: ridges, vent scars, cut basins, pressure-glass sheets, layered mechanical debris held together by biofilm and mineral growth. Atlas infrastructure did not survive here as clean machines. It survived as maintenance ecology, and this survey has no station series for the basin because no station in it reported twice.
 
-## Sound Is The Horizon
+## Radio Dies First
 
 Radio dies fast in HECTON-8 water. The ocean is cold, mineral-heavy, electrically dirty, and full of suspended metal dust from old industry. A high-frequency signal that would cross a room in air may vanish within meters below the shelf. Light fails next. Sound remains.
 
@@ -33,21 +33,21 @@ Sound also lies.
 
 Speed changes with temperature, pressure, and salinity. HECTON-8 stacks those variables sharply. A pulse sent through a warm vent plume bends differently from one sent through cold brine. A ping that should travel straight may curve into an acoustic duct and arrive from a clean false bearing. Another may hit a brine layer and return like it struck a wall. A third may enter a shadow zone and disappear even when the target is close enough for a diver to see disturbed silt.
 
-Deep Reach called these failures "operator interpretation errors" in training text. Salvage crews call them dead rooms. A dead room is any volume where the ocean lets a diver occupy the same physical place as a signal and still be lost.
+Deep Reach called these failures "operator interpretation errors" in training text. Salvage crews call them dead rooms and keep a register of them in the margin of this survey: 14 entries, each with a station number, a bearing, and the depth at which the pulse stopped agreeing with the wall. A dead room is any volume where a diver can occupy the same physical place as a signal and still be lost.
 
 ## Ducts, Mirrors, And Quiet Windows
 
-Three acoustic behaviors matter most in play and in lore.
+Three behaviours account for most of the register's 14 entries.
 
 An acoustic duct traps sound between layers. The signal travels far, sometimes kilometers, with little strength loss. Ducts are useful for long-range beacons and dangerous for privacy. A suit pinger dropped into the wrong layer can announce a crew to every hydrophone and predator along the band.
 
-A brine mirror reflects sound from a density boundary. It creates duplicate rooms, false hulls, wrong floor depths, and moving echoes where nothing moves. In the Brine Canyons, a scanner may show a corridor below the player that is only the reflection of the corridor above. The correct response is not "trust the better display." The correct response is to change angle, ping again, and compare delay.
+A brine mirror reflects sound off a density boundary. It builds duplicate rooms, false hulls, wrong floor depths and moving echoes where nothing moves. In canyon volume a scanner will show a corridor below the diver that is only the corridor above, folded. Trusting the cleaner display is how station 88 was logged twice at two depths. Change angle, ping again, compare delay.
 
 A quiet window is a short interval when machines and water give a crew enough silence to work. Pumps cycle down. Vent shear shifts. Kelp stops grinding against a cable trunk. A predator turns away or holds still. Good crews learn to cut, weld, listen, and move during those windows. Bad crews keep working because the task bar is almost full.
 
 ## What It Does To Machines
 
-The first-generation colony sonar assumed clean engineering water. It expected mapped structures, known salinity, and cooperative hardware. Sector 44 after the collapse gives it moving brine, torn metal, biological repeaters, unstable heat columns, and animals large enough to make the water behave like weather.
+First-generation colony sonar was certified against clean engineering water: mapped structures, known salinity, cooperative hardware. The acceptance sheet for that certification is bound into this survey at annex 3, and every one of its assumptions is now false. Sector 44 returns moving brine, torn metal, biological repeaters, unstable heat columns, and bodies large enough to make the water behave like weather.
 
 Modern salvage sonar therefore works in modes. Active ping gives shape but attracts attention and creates false returns. Passive listening is safer but slower and depends on the operator knowing what pumps, vents, cable hum, shell scrape, suit breath, and animal motion sound like. Side-scan can read a wall while missing the thing behind the wall. Low-frequency carrier pulses travel farther but carry little data. High-frequency imaging gives detail only when the water behaves.
 
@@ -59,10 +59,11 @@ HECTON-8 fauna did not evolve around human sonar, but it evolved in an ocean whe
 
 Leviathan-class contacts are worse. The reliable records do not begin with a visible body. They begin with sub-40 Hz pressure tremor, hull stress alarms without impact, prey blackout, and a passive carrier that arrives in the diver's chest before the display resolves it. By the time a standard sonar screen draws a clean icon, the animal is already inside the decision distance.
 
-Atlas made this harder. Its repair ecology uses living matter as signal paths. Conductive biofilm can carry a maintenance pulse along a dead cable. Filter organs can repeat pressure knocks. Shell growth can seal a fracture and also change the acoustic shape of the room. A player hearing a clean reply in an abandoned structure should ask what answered.
+Atlas made this harder. Its repair ecology runs signal through living matter. Conductive biofilm carries a maintenance pulse along a dead cable. Filter organs repeat pressure knocks. Shell growth seals a fracture and changes the acoustic shape of the room in the same operation. A crew that gets a clean challenge-response out of an abandoned structure has learned that something answered, and nothing more than that.
 
 ## Field Rule
 
-Do not ask whether HECTON-8 is silent. It is never silent.
+Crew annotation, appended to this survey and not part of it:
 
-Ask what is making the sound, what layer is bending it, who else can hear it, and what the ocean is hiding by answering too clearly.
+Before the first cut, log the station number and the sound-speed profile you are working under. Ping twice from two angles and write both delays on the cuff, not on the display. Treat any structure that returns clean on the first attempt as unverified until the second angle agrees. If the profile changes under you, stop cutting and re-log; the boundary moved, or you did.
+
