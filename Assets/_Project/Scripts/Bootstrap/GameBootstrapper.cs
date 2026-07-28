@@ -7958,13 +7958,56 @@ namespace Hecton8.Bootstrap
                 playerController = null;
             }
 
-            Hecton8.Meta.MetaRuntimeInstaller.EnsureRuntimeSystems();
-            Hecton8.Economy.EconomyRuntimeInstaller.EnsureRuntimeSystems();
-            Hecton8.Ecosystem.EcosystemRuntimeInstaller.EnsureRuntimeSystems();
-            Hecton8.PDA.PDARuntimeInstaller.EnsurePlayerSystems(playerObject);
-            Hecton8.Progression.ProgressionRuntimeInstaller.EnsurePlayerSystems(playerObject);
-            Hecton8.Narrative.NarrativeRuntimeInstaller.EnsurePlayerSystems(playerObject);
-            Hecton8.Audio.AtmosphericAudioRuntimeInstaller.EnsurePlayerSystems(playerObject);
+            // The installers below AddComponent the scene-owned service layer, so they are the calls
+            // that actually publish into the registry - and they run more than once per activation.
+            //
+            // Without this gate the second pass is rejected wholesale. A headless run of
+            // 02_HECTON_WORLD reported "REGISTRYLOCK 10 services were REJECTED by the ready-locked
+            // registry. This world is a shell": IProfileService, DynamicDifficultyDirector,
+            // RunModifierController, IMetaCampaignService, ScrapManager, ResourceScarcityDirector,
+            // EnvironmentalStrainManager, FaunaGeneticsManager, EcosystemHealthDirector and
+            // MigrationDirector - the entire meta, economy and ecosystem layer.
+            //
+            // The sequence that produces it: the menu->world load is additive, so pass 1 runs inside
+            // SceneRuntimeService.LoadSceneAsync's gate while the active scene is still 01_MAIN_MENU;
+            // its runtime roots land in the menu scene and are destroyed when that scene is unloaded.
+            // Pass 2 runs at readiness Step 4, seconds later, long after that gate's finally closed -
+            // so it re-creates every component and every registration throws CriticalBootException.
+            //
+            // The throw is not merely a failed registration. It escapes the owner's OnEnable, so every
+            // statement after the registration call is skipped: FaunaGeneticsManager never reaches
+            // TryRegisterHotSwapListener, TryRegisterSaveParticipant or TryRegisterWorldSeedProvider,
+            // and it is the only live IWorldSeedProvider - which is why the same run reported
+            // "WORLDSEED provider=NULL - every procedural generator is running on seed 0". Nothing
+            // re-invites a rejected service; the slot stays dead for the session.
+            //
+            // Gating the construction block rather than a later call makes this independent of which
+            // pass builds the components, of frame timing, and of whether the transition is additive.
+            // ActivatePlayer already holds a gate when it calls this method; the depth is Interlocked
+            // counted, so nesting is safe. The block contains no await, so the window is synchronous
+            // and only the installers' own Awake/OnEnable can publish inside it. The ready-lock still
+            // denies every core BIOS slot - IsSceneRuntimeHotSwapSlot hard-denies Input, Physics,
+            // Audio, Save, Dispatcher, DataVault and the rest, gate depth or not.
+            bool installerPublicationGateOpen = false;
+            try
+            {
+                GlobalRegistry.BeginSceneRuntimePublicationGate();
+                installerPublicationGateOpen = true;
+
+                Hecton8.Meta.MetaRuntimeInstaller.EnsureRuntimeSystems();
+                Hecton8.Economy.EconomyRuntimeInstaller.EnsureRuntimeSystems();
+                Hecton8.Ecosystem.EcosystemRuntimeInstaller.EnsureRuntimeSystems();
+                Hecton8.PDA.PDARuntimeInstaller.EnsurePlayerSystems(playerObject);
+                Hecton8.Progression.ProgressionRuntimeInstaller.EnsurePlayerSystems(playerObject);
+                Hecton8.Narrative.NarrativeRuntimeInstaller.EnsurePlayerSystems(playerObject);
+                Hecton8.Audio.AtmosphericAudioRuntimeInstaller.EnsurePlayerSystems(playerObject);
+            }
+            finally
+            {
+                if (installerPublicationGateOpen)
+                    GlobalRegistry.EndSceneRuntimePublicationGate();
+            }
+
             BootstrapState.PublishCurrentPlayerObject(playerObject);
         }
 
