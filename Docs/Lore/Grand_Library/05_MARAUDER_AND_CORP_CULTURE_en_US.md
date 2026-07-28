@@ -2,7 +2,7 @@
 # MARAUDERS AND CORPORATE CULTURE
 
 > **Source:** Recovery Compliance Office, Subcontractor Intake Form 88-C, annotated copy recovered from descent pod *Lazarus*.  
-> **Scope:** Who Deep Reach says the player is, who Marauders say they are, and how debt, salvage law, air, and the dead shape work on HECTON-8.  
+> **Scope:** Contractor status as the form defines it, contractor status as crews define it, and how debt, salvage law, air and the dead divide the work on HECTON-8.  
 > **Reader note:** The margin notes are not official. They are also the part most crews memorize.
 
 ---
@@ -11,7 +11,19 @@
 
 The first human voice a new contractor hears in the Aegir system is usually not human.
 
-It comes through the pod wall in a flat onboarding cadence while the cabin is still sweating frost: welcome, identity confirmed, lien registered, contractor silence protocol acknowledged, no rescue entitlement implied. The message is designed to sound calm. Calm is cheaper than honesty, and it records better in later proceedings.
+It arrives through the pod wall in a flat recorded cadence while the cabin is still sweating frost. The script is printed on the reverse of Form 88-C and numbered, so that a hearing can later establish which clauses were played:
+
+```text
+FORM 88-C, REVERSE -- DESCENT ACKNOWLEDGEMENT SCRIPT
+  1  welcome
+  2  identity confirmed
+  3  lien registered, 4.8 t recovery window
+  4  contractor silence protocol acknowledged
+  5  no rescue entitlement implied
+PLAYBACK CONSTITUTES ACKNOWLEDGEMENT WHERE CABIN AUDIO IS FUNCTIONAL.
+```
+
+Clause 5 is five words long and comes after the welcome. The last line is why the recording exists at all. The tone is calm because calm is cheaper than honesty, and calm plays better in a proceeding.
 
 Deep Reach calls the listener an independent salvage contractor. Keelmark calls them a recoverable risk unit. The Black Keel logs them as a claim-linked work body until their debt clears, their suit fails, or their file becomes inconvenient to maintain.
 
@@ -47,7 +59,7 @@ The crews kept it because it was partly true.
 
 Marauders steal. They cut corporate locks. They lie to dispatch when dispatch is using them as a disposable probe. They trade filters, heat bricks, battery cells, pressure glass scraps, old passwords, suit patches, and names. They enter places the contract calls closed because the contract never has to breathe in them.
 
-But a Marauder is not just a thief. A thief leaves with property. A Marauder leaves with property, evidence, route knowledge, and sometimes a dead stranger's name written on the inside of a glove before the sea can take it.
+A thief leaves with property. These crews leave with property, evidence, route knowledge, and sometimes a dead stranger's name written on the inside of a glove before the water gets to it.
 
 The subculture formed out of bankrupt pilots from the frontier belts, repair welders blacklisted after Deep Reach accidents, former company divers who survived one procedure too many, and shipyard debtors from Barnard Yards who reached Aegir with more skill than legal protection. They did not arrive as a tribe. The ocean made them one, slowly, by killing people who trusted the official vocabulary.
 

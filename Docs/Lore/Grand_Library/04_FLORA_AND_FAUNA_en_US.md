@@ -2,8 +2,8 @@
 # LOCAL BIOTA: FLORA, FAUNA, AND ECOLOGICAL COLLAPSE
 
 > **Source:** Deep Reach benthic ecology primer, Atlas maintenance-ecology fragments, Black Keel hazard annotations and recovered Marauder dive notes.  
-> **Speaker:** Field ecologist assigned to salvage risk, with worker comments preserved where they add useful fear.  
-> **Reviewer Note:** HECTON-8 life should feel dangerous because it is legible, hungry and adapted, not because every organism is a monster. The player should learn to read ecology as pressure, route, resource, warning and evidence.
+> **Speaker:** Field ecologist assigned to salvage risk, with worker comments preserved where they carry useful fear.  
+> **Precedence:** Species names follow the Deep Reach benthic primer, written for a working ocean and never revised after 2147. Where the primer disagrees with a Black Keel hazard annotation, the annotation is more recent and the primer is better documented. Both are quoted here with their card numbers.
 
 ---
 
@@ -13,7 +13,7 @@ HECTON-8 does not have one ecosystem.
 
 It has stacked worlds. The bright shelf is thin, storm-filtered and mineral rich. The twilight slopes are full of suspended food, broken shell, drifting larvae and old colony waste. The abyssal basins run on vents, brine seams, pressure bacteria, falling carrion and heat leaking from stone. Ruined infrastructure adds a second geography: warm walls, dead pumps, leaking batteries, nutrient traps, light scars and corridors where animals learned that human machines make predictable food.
 
-This is why the old Deep Reach categories are only partly useful. "Flora" does not mean a garden. It means attached producers, filter mats, mineral-using growths, engineered cultures that escaped containment and native structures that function like plants without being Earth plants. "Fauna" does not mean animals waiting in the dark to attack. It means grazers, scavengers, cleaners, ambush predators, acoustic hunters, parasite swarms and large movers that may never care about the player until the player smells like opportunity.
+This is why the old Deep Reach categories are only partly useful. "Flora" does not mean a garden. It means attached producers, filter mats, mineral-using growths, engineered cultures that escaped containment and native structures that function like plants without being Earth plants. "Fauna" does not mean animals waiting in the dark to attack. It means grazers, scavengers, cleaners, ambush predators, acoustic hunters, parasite swarms and large movers that will ignore a working crew for a whole shift and then investigate the moment one of them starts leaking something interesting.
 
 The ocean is not evil. It is busy. It notices gradients: heat, blood, oxygen, vibration, light, current, exposed metal, opened food paste, fresh plastic, disturbed silt. Most attacks begin as investigation. The mistake is thinking investigation is harmless.
 
@@ -23,7 +23,17 @@ There is sunlight near the surface, but not enough to explain Sector 44.
 
 Below the photic band, life borrows energy from other accounts. Vent chemistry feeds pale mats around black smokers. Brine margins host slick films that metabolize methane and sulfur. Iron kelp fixes mineral load into fibrous blades that cut weak seals. Halo sargassum forms drifting net-mats around slow currents, catching dust, larvae, scrap fibers and careless propellers. Cathedral kelp is not sacred and not intelligent. It is a tall conductive growth that likes heat, minerals and stable vibration; Atlas routines used it the way a desperate maintenance system uses any surviving path.
 
-That distinction matters. The kelp is not taking orders. It is not praying to a machine. But if a living stalk carries a maintenance pulse better than a drowned cable, Atlas may route through it. If a mat damps vibration around a cracked pump, an automated system may preserve the mat. If growth keeps a door wet enough to conduct a weak signal, the door may answer after every copper line has failed. Biology becomes infrastructure by accident, then by habit.
+That distinction matters. The kelp is not taking orders. It is not praying to a machine. But if a living stalk carries a maintenance pulse better than a drowned cable, Atlas-6 may route through it. If a mat damps vibration around a cracked pump, an automated system may preserve the mat. If growth keeps a door wet enough to conduct a weak signal, the door may answer after every copper line has failed. Biology becomes infrastructure by accident, then by habit.
+
+Accession AT-ME-12 is three lines off a maintenance-ecology index, and its bookkeeping is more alarming than anything in the primer:
+
+```text
+PATH 219  conductor: growth, cathedral stalk, 44-west   substitutes: cable run 219       state: in service
+PATH 220  damper: filter mat, pump 6 housing            substitutes: mount isolator 8    state: in service
+PATH 221  repeater: filter-organism cluster, relay wall substitutes: acoustic repeater 4 state: degraded
+```
+
+Three living things entered in a spares column. The index does not distinguish a copper conductor from a stalk, because the field it fills is `substitutes`, and the stalk filled it. Path 221 is marked degraded, which in that column means the organisms are dying and the relay wall has no other voice.
 
 Marauders do not need the taxonomy to survive. They need the rule: do not cut green-black growth just because it blocks a cleaner view. Ask what it feeds, what it holds, what hears through it and what will wake when it stops holding.
 
@@ -67,4 +77,15 @@ It is a salvage label for events where the normal food web changes shape around 
 
 Deep Reach hid some Alpha-tagged records because they were embarrassing, not because they proved a sea god. Several incidents show the same pattern: extraction noise, concentrated prey, structural vibration, then a large animal or animal group moving through the area on a route humans had made profitable. Sometimes the label may refer to a single apex body. Sometimes to a feeding convergence. Sometimes to a machine reading biological silence as a safe interval and sending workers into the worst possible moment.
 
-For the player, Alpha means one thing: the dive route has changed before the map admits it. Leave the prize, go quiet, stop making regular noise, and do not assume the tether is still a promise.
+Hazard annotation card 44-BIO-A3 is the only page most crews are ever shown, and it contains no biology at all:
+
+```text
+CARD 44-BIO-A3   ALPHA CONDITION -- FIELD INDICATORS
+hull-plate vibration below 40 Hz, sustained     ]  two or more present:
+lantern-sifter swarm dark, no scatter           ]    route state = changed
+brine siphoners retracted along the margin      ]    prize abandoned
+smaller predators off easy food                 ]    noise cadence stopped
+current noise flattened across 200 m or more    ]    tether treated as unproven
+```
+
+The bracket on the right is the whole instruction. No animal is named on the card, because the label was never about an animal. It is about the interval in which a route stops being a route. One field copy carries a scratched addition under the last line: "and the board upstairs will not admit it for two more shifts."

@@ -42,60 +42,108 @@ Delivery is provable at 11 kHz. Recoverability is a separate legal state and nee
 
 ## Pressure Hulls And Wet Machines
 
-The old colony did use vehicles, but not the way surface people imagine them. Anything with a full dry cabin is a luxury of mass, maintenance and route rights. Most surviving machines are smaller, wetter and meaner: flooded crawlers with protected motors, survey sleds dragged by cable, inspection bells, cargo beetles, tool skiffs, pump frames and maintenance coffins that can be entered only after a long pressure ritual.
+The colony ran vehicles, but a full dry cabin is a luxury of mass, maintenance and route rights. What survives in Sector 44 is smaller, wetter and cheaper to abandon. The salvage registry sorts the frames by plate:
 
-Deep-rated machines prefer to be simple. A dry pressure hull wants perfect seals. A wet machine lets the ocean inside selected spaces and protects only the parts that truly care. It is less comfortable and harder to sell in brochures, but it survives neglect better. A flooded motor compartment can be rinsed, drained, cursed at and restarted. A compromised passenger cabin becomes a tomb.
+```text
+44-VEH REGISTRY, SURVIVING FRAMES BY CLASS
+CRW-2   flooded crawler, protected motors   plate 1,800 m   ballast scars readable
+SLD-4   survey sled, cable-drawn            plate 2,400 m   route memory volatile
+BEL-1   inspection bell, dry interior       plate 900 m     seal-critical, seven gaskets
+CGB-3   cargo beetle, wet frame             plate 2,200 m   latch lips define custody
+PMP-6   pump frame, no crew space           plate 3,000 m   entry after pressure ritual only
+```
 
-That is why HECTON-8 ruins are full of machines that look unfinished to anyone raised on spacecraft. Open frames. Exposed ribs. Tool rails. External bottles. Clamp points everywhere. The design language is not poverty by itself. It is an admission that pressure will get in somewhere, so the machine must decide in advance which spaces are allowed to lose.
+The ratings column carries the whole design argument. The one dry interior on the list is rated shallowest, and it is the only frame that needs all seven of its gaskets at once. The flooded crawler needs its motors dry and is indifferent to the rest. Let the water into the spaces that do not care and the machine survives neglect, which on a forty-three-year-old claim is the only kind of survival available. A flooded motor compartment can be rinsed, drained, cursed at and restarted. A compromised crew cabin is a tomb with a rating plate bolted to it.
 
-Marauders learn to read those decisions. A crawler with clean ballast scars may still move. A sled with smooth cable wear may still have a live route memory. A cargo shell with intact latch lips may be worth more than its engine because it can keep a sample legally separated from the rest of the bag. The question is rarely "does it work?" The question is "which part of its failure is still useful?"
+Hence the ruins full of machines that look unfinished to anyone raised on spacecraft: open frames, exposed ribs, tool rails, external bottles, clamp points on every face. Every one of those is a space the designer agreed in advance to lose.
 
-## The Suit As A Room
+Marauders read the registry backwards. Clean ballast scars on a CRW-2 mean ballast cycled recently enough to leave marks. Smooth cable wear on an SLD-4 means the sled was drawn under load, so whatever route memory it holds was written under load and may be honest. Intact latch lips on a CGB-3 are worth more than the motor, because latch lips are what keep a custody-grade canister legally separate from the rest of the bag. Nobody useful asks whether a frame still works. They ask which part of its failure is still worth something.
 
-The Class-IV suit is the machine most players know first because it is wrapped around them. It is better understood as a rented room that moves.
+## The Suit Is A Rented Room
 
-Inside that room are air, heat, voice, sweat, debt and evidence. Outside it are pressure, salt, silt, dark water and everything that wants to turn the room into a leak. The suit's plates and joint guards matter, but they are not the point. The point is boundary discipline. Every gasket, viewport edge, glove bearing, scrubber wafer, condensate trap and tether clamp is part of the same argument: this volume remains human for a little longer.
+The Class-IV is best read as a rented room that moves. Air, heat, voice, sweat, debt and evidence are inside it; pressure, salt, silt and everything that turns a room into a leak are outside it. The plates and joint guards matter less than the boundary, and the boundary is a parts list with intervals on it.
 
-Good suit work is slow because speed has costs the ledger does not show early enough. A fast turn pulls heat out of the hips. A strong hand assist can save a tool or tear a shoulder. A bright lamp gives vision and announces you to eyes that do not use light. A clean diagnostic can be less trustworthy than a faint change in fan pitch. The suit teaches attention through small betrayals.
+```text
+CS-4 BOUNDARY ITEMS, SERVICE INTERVALS AT ISSUE
+GR-12   neck seal ring       replace 400 cycles   cold-set, weeps at the bead
+GB-7    glove bearing        replace 250 cycles   grit seizure under load
+VP-2    viewport, laminated  inspect 100 cycles   edge fog, then edge crack
+SW-40   scrubber wafer       replace 6 h wet      channelling; CO2 rises before flow drops
+CT-3    condensate trap      purge every shift    freeze, back-pressure into the loop
+TC-9    tether clamp         proof-load annually  pin elongation, no visible sign
+```
 
-The dedicated Class-IV manuals list parts and upgrades. Marauders remember the lived rules. Never trust a seal that came back too clean. Never kneel in old silt without checking whether the floor is still floor. Never mute an alarm you cannot name. Never spend heater reserve to make fear feel less cold unless you have already priced the breath.
+Two of those six fail without announcing it. A GR-12 that has cold-set weeps at the bead and reads on the panel as an ordinary humidity rise. A TC-9 with an elongated pin is indistinguishable from a good TC-9 until the load arrives. The other four make noise, which is why their noise gets trusted further than it deserves.
+
+Every workaround has a printed price. Run an SW-40 past six hours wet and it costs about a third of the remaining flow margin, with the CO2 rise arriving first, so the fan still sounds correct while the number climbs. Bypass a frozen CT-3 by cracking the loop at its low point and it costs one shift of heater reserve to reheat the volume. Pad a seizing GB-7 with sealant tape and you recover grip, lose proof-load certification, and drop the whole suit to GRADE X -- a repair that keeps a hand working and makes a body uninsurable for the rest of the run.
+
+The most expensive misreading in the trade is the tank. The fitment note has been in circulation since before the Tide:
+
+```text
+FITMENT NOTE  CS-4 / TANK, HIGH CAPACITY, P/N HC-T4
+EFFECT ON RESERVE:       +4 units MaxO2
+EFFECT ON DEPTH RATING:  none
+DEPTH RATING SET BY:     fitted hull module and its plate, only
+```
+
+The second line is the reason the note exists. A high-capacity tank buys minutes, not metres. Crush depth comes from the hull module and nothing else; no quantity of breathing gas has ever moved a crush rating by one metre in either direction. Crews argue about it at the rail anyway, and the argument gets settled every few years by a suit that comes up empty from a depth its plate never claimed.
+
+The manual lists the parts. Crews keep the rest. Never trust a seal that came back too clean -- a spotless GR-12 bead means somebody wiped it, and wiping is what you do to a bead that was weeping. Never kneel in old silt without probing whether the floor is still floor. Never mute an alarm you cannot name.
 
 ## Sound, Tethers And The Lie Of Contact
 
-Radio dies early in HECTON-8 water. That does not mean silence. It means every message becomes a physical event.
+Radio dies in the first few metres. Everything after that is acoustics, and acoustics is physics with a delay attached.
 
-Pods ping. Receivers listen. Tethers carry tension before they carry trust. Acoustic packets arrive clipped, delayed, repeated, flattened by terrain, dirtied by storm water and sometimes cleaned by systems that should not have known what to remove. A Marauder learns to distrust a perfect message in bad water. Perfection can mean a good channel. It can also mean someone rebuilt the sentence after the ocean ate the parts that mattered.
+The contractor bands are narrow and slow: 11 kHz for pod masts, 7 kHz for suit receivers. A packet crossing two kilometres of layered brine arrives about 1.4 seconds late, clipped at the edges, sometimes repeated, sometimes flattened where a density boundary bent it into terrain. Storm water dirties it further. What alarms an experienced ear is a clean packet in bad water: perfection means either an unusually good channel or a receiver that rebuilt the sentence after the middle of it was lost, and one of those two possibilities is a lie with a timestamp on it.
 
-The Black Keel is not a friendly voice hovering above the player. It is a carrier with windows, queues, insurers, claim thresholds and limited appetite for ambiguity. It may hear a status burst and still refuse recovery. It may receive a biological sign and classify it below a payload handshake. It may ask for coordinates before comfort because comfort is not a billable operation.
+At the other end of the channel sits a claim tender with windows, queues, insurers and thresholds. The Black Keel can log a status burst and refuse recovery inside the same window. It can receive a biological indication and rank it below a payload handshake, because the handshake has a form number and the indication does not. It can ask for coordinates before anything else, because comfort is not a billable operation.
 
-Tethers are not always long heroic lifelines. Sometimes they are short work leads, receiver cords, suit-cage handling lines, sample-chain tags, rescue hooks or damaged cables that only remember direction. Their value is not that they connect you to safety. Their value is that they make direction, ownership and last motion harder to lie about.
+Tethers are shorter and meaner than the stories suggest: work leads, receiver cords, suit-cage handling lines, sample-chain tags, rescue hooks, damaged cables that remember only direction. Their value is not connection to safety. Their value is that a TC-9 clamp, a tag number and a measured length make direction, ownership and last motion difficult to argue about afterwards.
 
 ## Tools Under Pressure
 
-Weapons are just tools with worse circumstances.
+Weapons are tools with worse circumstances and the same service grades.
 
-A cutter is for hull lips, jammed pressure doors, pipe cages, dead bolts and salvage cuts. Pointing it at living biology usually means the worker lost distance earlier. A harpoon driver buys space. A charge lance makes an opening and a problem. A drill can take a sample, wake a sensor path, or ruin the only surface that would have proved custody. A clamp can save a life more quietly than any blade.
+A CT-11 cutter is rated for hull lips, jammed pressure doors, pipe cages, dead bolts and salvage cuts, at 6 mm of service metal per pass. Pointing one at living biology means distance was lost several minutes earlier. Harpoon drivers buy space and do nothing else. The charge lance opens a route and creates a second problem in the same second. Drills take a sample, wake a sensor path, or ruin the exact surface that would have proved custody, the same 12 mm bit doing all three depending on where it lands.
 
-The ocean changes every tool by making reaction expensive. Gas pockets behave badly. Heat becomes steam, stress and noise. Fast projectiles lose arrogance. Sharp edges become less important than anchoring, timing and the surface behind the target. Most good Marauder equipment is not built to win fights. It is built to create a few seconds in which a frightened person can choose work instead of panic.
+Pressure changes every tool by making reaction expensive. Gas pockets behave badly. Heat becomes steam, stress and noise. Fast projectiles lose their arrogance inside two metres. Edge sharpness matters less than anchoring, timing and whatever is standing behind the target. Most good equipment down here is not built to win a fight. It is built to buy four or five seconds in which work is still an option for a frightened person.
 
-This is why the most valuable kit often looks unimpressive: seal picks, marked repair tape, cable splints, scrubber keys, sample sleeves, bolt splitters, sludge brushes, pressure chalk, quiet clamps, tether hooks. These objects carry story because they carry verbs. Patch. Mark. Hold. Bleed. Prove. Let go.
+Which is why the valuable kit looks unimpressive on a bench: seal picks, marked repair tape, cable splints, scrubber keys, sample sleeves, bolt splitters, sludge brushes, pressure chalk, quiet clamps, tether hooks. None of it carries a plate rating worth quoting. All of it carries a replacement interval that nobody has honoured since 2147.
 
 ## Maintenance Is Memory
 
-Every HECTON-8 machine keeps a version of memory.
+Every machine down here keeps two records, and they disagree.
 
-Some memory is formal: service stamps, cage registry, heat cycles, pressure bands, firmware warnings, tool shocks, custody locks. Some memory is physical: salt under a hinge, green-black film inside a receiver mouth, glass fogging at one edge, a cable that bends where a hand used it too often, a scratched mark where an operator did not want the camera to see.
+The formal record is stamps: service dates, cage registry, heat cycles, pressure bands, firmware warnings, tool shocks, custody locks. The physical record is salt under a hinge, green-black film inside a receiver mouth, fog at one edge of a VP-2, a cable bent where a hand used it too often, a scratch where somebody preferred the camera not to see the work.
 
-The public manuals pretend those memories are separate. Engineers know better. A maintenance log can lie by omission. Metal lies less gracefully. A suit note saying "seal replaced" means little if the latch lip still carries old salt. A crawler listed as nonfunctional may be the only machine on a route with honest ballast history. A pod that failed return may still be the cleanest witness to what the carrier asked for first.
+Accession 44-SV-63 is a suit service card recovered from a locker in Shallow Annex P-63. Four lines:
 
-For the player, this makes inspection part of lore. The world should not only tell stories in paragraphs. It should tell them in repaired handles, mismatched bolts, reused hazard paint, patched fiber, missing tags and the strange care workers give to objects they resent. HECTON-8 technology becomes interesting when it stops being encyclopedia equipment and starts being a chain of decisions left in metal.
+```text
+CS-4 SERVICE CARD   UNIT 44-118
+2147-03-02   GR-12 replaced        tech: M.V.   GRADE A
+2147-03-02   GB-7 padded, tape     tech: M.V.   GRADE C
+2147-03-11   proof load deferred   tech: --     GRADE X
+2147-03-14   issued to route 6, exterior
+```
 
-## What The Player Understands
+Three days between the last grade and the issue. Nothing on the card is falsified. It says GRADE X in the technician's own hand and then records the unit going outside anyway, because the route board and the service bench answered to different offices and only one of them had a storm window closing. The tape on line two is the workaround that made line three necessary.
 
-The player eventually understands that survival technology on HECTON-8 is not a ladder from weak to strong. It is a map of compromises.
+Metal lies less gracefully than paper. A service card reading "seal replaced" means little when the latch lip still holds old salt in the groove. The frame listed as nonfunctional in the registry may be the only one on the route with honest ballast history. A pod that failed its return can still be the cleanest surviving witness to what the carrier asked for first.
 
-A better suit seal may let you cross a pressure band and carry worker evidence out intact. A stronger tool mount may bring more salvage and make every failed return more expensive. A cleaner acoustic receiver may reveal that the last "rescue" message was a custody request. A repaired crawler may shorten the route and erase the slow observations that would have warned you about the floor. A working ascent interface may save your body while selling your payload before you know what it means.
+## What A Workaround Costs
 
-Nothing is only equipment. The pod is a receipt. The suit is a witness. The crawler is an old labor argument. The tether is a line of ownership pretending to be a line of help. The tool is a verb with a price.
+Survival hardware here is not a ladder from weak to strong. It is a set of trades, and each trade has a printed side and an unprinted side.
 
-That is the technological soul of HECTON-8: humans did not conquer the abyss with machines. They negotiated with it through machines, wrote the cost into contracts, and left the next diver to discover which promises still hold.
+```text
+FIT / REPAIR                 PRINTED GAIN          UNPRINTED COST
+HC-T4 tank                   +4 units MaxO2        zero metres; still misread every season
+hull module, next plate up    depth rating raised   mass against the 4.8 t lien window
+GB-7 tape pad                grip restored         GRADE X, recovery obligation void
+AM-6 mast rewind             claim hash transmits   the hash is the carrier's proof, not yours
+CRW-2 returned to service     route time halved     the slow observations that read the floor
+AS-2 sleeve reseated          ascent possible       payload leaves custody first
+```
+
+The right column is the one that costs money, and it never appears on a plate. A better seal will cross a pressure band and carry worker evidence out intact. Mount a heavier tool and more mass comes back, which makes every failed return more expensive. Rewind a receiver properly and it will eventually resolve the message nobody wanted resolved: the last transmission before a crew went quiet, cleaned up and decoded, turns out to be a custody request.
+
+Handling note. Every rating quoted on this shelf was true on the day it was stamped, and the newest of those days was 2147. Read the plate to learn what a part was certified for. Read the groove, the pin and the bead to learn what it will do tomorrow. When the two disagree, the groove is the one that will be holding pressure.

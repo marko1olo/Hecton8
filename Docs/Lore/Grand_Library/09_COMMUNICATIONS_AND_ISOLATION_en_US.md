@@ -90,40 +90,59 @@ R-31 has accepted 4,700 packets since 2147 and forwarded none. Its spool filled 
 
 A relay proves a path. Something that answers proves only that a battery and a key survived. The difference is one column on the roster and roughly six hours of a crew's air.
 
-## 5. The Black Keel Listening Regime
+## 5. The Queue, And What Comes Back Out Of It
 
-The Black Keel does listen. That is not the same as answering.
+The Keel listens through the whole orbit. It answers inside the window, by receipt, from one queue.
 
-As a claim tender, the Keel prioritizes custody events: manifest upload, material proof, contractor identity, route state, suit solvency, recoverable evidence, and signals that affect liability. It acknowledges what the system can price. It escalates what might damage the claim structure. It records more than it comforts.
+```text
+RETURN ACTION QUEUE / WINDOW 2190-07-14 / 11:40 USABLE
+ADMITTED THIS WINDOW......: 214 packets
+QUEUE DEPTH...............: 1,140 items
+MEDIAN AGE AT DISPOSITION.: 31 h
+PRIORITISED...............: manifest upload, material proof, contractor
+                            identity, route state, suit solvency
+UNSTRUCTURED TEXT.........: logged, not queued
+```
 
-There are human watch officers aboard, but they do not sit in a drama channel waiting to save one diver. They handle windows, queues, corrupted packet review, arbitration holds, security flags, and the constant work of proving that the Keel responded according to policy. A watch officer may care. The queue does not. Policy is where caring goes to become admissible or useless.
+`Logged, not queued` is four words doing the work of an entire policy. What a crew gets back looks like this:
 
-Deep Reach called this discipline "orbital silence" during active claim periods. The term sounded like operational security. In practice it meant the tender would avoid initiating unnecessary contact, would prefer receipts over conversation, and would treat unstructured speech as a liability source.
+```text
+BLACK KEEL RECEIPT 2190-07-14 / RAQ-0881
+YOUR PACKET..........: 44-9-0774 received, notary valid
+CLAIM STATUS.........: active
+UPLOAD...............: pending
+OXYGEN ADVISORY......: received
+RECOVERY ENTITLEMENT.: none implied by this acknowledgement
+NEXT WINDOW..........: 14:54
+```
 
-That is why a Marauder can scream into a channel and receive only a clean acknowledgement number.
+Every line on that receipt is true. There are watch officers aboard and some of them are decent; an officer who wants to help a crew at 3,340 m can move one item up a queue of 1,140 and cannot make the moon four hours smaller. Deep Reach called the discipline `orbital silence` during active claim periods and sold it as operational security. What it meant in the watch order was that the tender does not initiate, prefers receipts to speech, and treats free text as a source of liability rather than a source of information.
 
 *[Margin Note: The Keel heard you. That was never the question.]*
 
-## 6. Failure Paths
+## 6. Stale Handles
 
-Communication failures on HECTON-8 rarely arrive as a single red light.
+Failures here rarely arrive as one red light. They arrive as confidence.
 
-A packet queue can fill while a crew thinks the relay is transmitting. A suit can resend the same pressure warning until the receiver suppresses it as duplicate noise. A relay can be physically present but keyed to an old custody owner. A route beacon can wake after a power surge and overwrite a newer map with a pre-Tide path. A watch system can quarantine a message because an evidence flag, debt flag, and distress flag arrived in the wrong order.
+A queue fills while the crew watches a transmit lamp that only reports that the suit spoke. The same pressure warning goes out four times and the fourth is suppressed as a duplicate, correctly, under the same rule 6 that suppressed 0662. R-58 sits on its mount with a legible serial plate, a working carrier, and a key that stopped meaning anything in 2147. A beacon wakes after a surge and writes a 2147 route table over a survey taken last season, because the older table carries the higher authority stamp and nothing on the beacon compares dates. And a message can be held at the desk because an evidence flag, a debt flag and a distress flag arrived in an order the schema treats as inconsistent.
 
-Bad data is not always silence. Sometimes bad data is confidence.
+Old handles are what actually kill: old contact IDs, old relay trust, old route names, old authorisation stamps. A diver believes they are talking to the Keel while the packet turns around inside a local cache that has not seen orbit in forty-three years. A manifest reaches custody intact and the plea attached to it drops out at the first relay, because the plea is not a field.
 
-The most dangerous failures are stale handles: old contact IDs, old relay trust, old route names, old authorization stamps. A diver thinks they are speaking to the Black Keel. The packet is really bouncing through a local cache that has not seen orbit in twenty years. A crew follows a reply that was valid before a fault lip moved. A salvage manifest reaches custody, but the attached plea for help drops because it is not part of the accepted schema.
+This is why crews mark their own routes and keep physical proof. Paint on a hatch outlives a relay account. A tied line outranks a clean coordinate from an unowned key. A body tag can carry a fact that no schema has a column for.
 
-This is why crews mark their own routes and keep physical proofs. Paint on a hatch can outlive a relay account. A tied line can outrank a clean coordinate. A body tag can carry a truth that telemetry refused to classify.
+## 7. What A Stale Reply Costs
 
-## 7. Isolation As Player Pressure
+Ran is 10.5 light years from Sol, and the card rounds the consequence to twenty-one years.
 
-Isolation should not feel like a lore excuse. It should feel like a pressure system.
+```text
+QUERY  DR-Q-441   SENT 2147-05-22, Sector 44 evacuation authority
+       "Confirm release authority for queue 3 absent quarantine class."
+ANSWER DR-A-441   ARRIVED 2168-04-09, addressed to Sector 44 Operations
+       "Authority confirmed. Advise current occupancy status."
+```
 
-The player can receive pings, fragments, receipts, delayed warnings, corrupted messages, old route ghosts, Black Keel acknowledgements, Atlas-local replies, and crew-made marks. None of them should feel like a perfect narrator. Every signal asks for judgment. Who sent it? When? Through what relay? What does it omit? Who benefits if the player trusts it?
+The answer is correct, courteous, and twenty-one years late, and Sector 44 had been under water for twenty-one of them. It was filed. It sits in the mirror under the same accession run as the queue sheet it answers, and the Recovery Compliance Office still cites pending external queries as grounds to hold an action, because a query in flight is a defensible reason to do nothing for a decade.
 
-This gives the setting a specific loneliness. The player is not alone because the universe forgot them. The player is alone because the available systems can see parts of them and still fail to become help.
+The near-side version costs less time and the same amount of blood. Incident 44-IR-3104: route state returned `passable` at 02:10, confirmed against R-44, acted on at 06:31. The fault lip had closed to 180 mm somewhere in the four hours and twenty-one minutes between the reply and the body. One worker was recovered. The other went onto Ibarra's ledger under `asset reassignment`, which is the entry the loss desk uses when there is no recovery and no coordinate.
 
-A working comm link can be more frightening than a dead one. A dead link tells the truth clearly. A working link can tell you your oxygen warning was received, your claim remains active, your upload is pending, and no rescue entitlement is implied.
-
-That is HECTON-8's silence. Not the absence of sound. The presence of systems that heard enough to bill the moment, but not enough to save it.
+Revision 9 of the watch card added the 900-second line and the Sol round trip. It did not add a field for the gap between a true answer and a compartment that has already changed. Crews write that one on the plate themselves, in grease pencil, under the last printed line.
