@@ -120,9 +120,20 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// from. Two owners of one runtime truth is a MASTER_PLAN.md:19 violation on its own terms.
     ///
     /// Deliberately does NOT abort, disable or destroy the duplicate, unlike
-    /// GameBootstrapper.AbortDuplicateRuntimeOwner. Which of the two spawners is legitimate - a
-    /// scene-authored one or a runtime-created one - is not established, and silently picking a winner
-    /// would trade a loud defect for a quiet one. Naming it is the fix that is provable today.
+    /// GameBootstrapper.AbortDuplicateRuntimeOwner. Silently picking a winner would trade a loud defect
+    /// for a quiet one. Naming it is the fix that is provable today.
+    ///
+    /// DO NOT go looking for a second spawner in the scene - there isn't one, and I checked before
+    /// writing this. A format-agnostic object-model census with a PASSING instrument self-test reports
+    /// exactly ONE authored instance: HectonPlayerSpawner 00_BOOTSTRAP=absent 01_MAIN_MENU=absent
+    /// 02_HECTON_WORLD=1(enabled 1, active 1) at GameObject 'PlayerSpawner'. No code path creates one
+    /// either - there is no AddComponent&lt;HectonPlayerSpawner&gt; and no Instantiate of a spawner prefab
+    /// anywhere under Assets/.
+    /// One authored spawner plus two live Awakes in a single run therefore means the WORLD SCENE IS
+    /// BEING LOADED TWICE - a second load builds a second instance generation, the second spawner
+    /// cold-instantiates a second Player, and the FIRST player dies with the first scene. That is where
+    /// "the object Awake accepted was DESTROYED before SpawnPlayerAsync ran" comes from, and the real
+    /// defect is the duplicate scene load, not duplicate authoring.
     /// </summary>
     private void ReportIfDuplicateSpawner()
     {
