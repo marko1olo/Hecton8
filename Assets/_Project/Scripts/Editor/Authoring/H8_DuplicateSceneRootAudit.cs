@@ -108,13 +108,16 @@ namespace Hecton8.EditorTools.Authoring
 
         private sealed class RootRecord
         {
-            public GameObject GameObject;
+            // Deliberately NOT named `GameObject` / `HideFlags`. A field with the same identifier as
+            // its own type compiles, but it shadows that type for every later reader of this class,
+            // and `HideFlags.None` inside it would then resolve to the field.
+            public GameObject Root;
             public int SiblingIndex;
             public bool ActiveSelf;
             public int ChildCount;
             public int SubtreeObjects;
             public int MissingScripts;
-            public HideFlags HideFlags;
+            public HideFlags RootHideFlags;
             public string ComponentList;
             public int ComponentCount;
             public bool CarriesAllowlistedType;
@@ -389,12 +392,12 @@ namespace Hecton8.EditorTools.Authoring
         {
             var entry = new RootRecord
             {
-                GameObject = root,
+                Root = root,
                 SiblingIndex = siblingIndex,
                 ActiveSelf = root.activeSelf,
                 ChildCount = root.transform.childCount,
                 SubtreeObjects = root.GetComponentsInChildren<Transform>(true).Length,
-                HideFlags = root.hideFlags,
+                RootHideFlags = root.hideFlags,
             };
 
             // GetComponents<Component> returns a null entry for every component whose script cannot
@@ -488,13 +491,13 @@ namespace Hecton8.EditorTools.Authoring
                     return;
                 }
 
-                if (entry.HideFlags != HideFlags.None)
+                if (entry.RootHideFlags != HideFlags.None)
                 {
                     // A hidden object is not part of the scene asset, so destroying it would not
                     // change what is on disk while the success line would say it did.
                     group.Disposition = GroupDisposition.RefusedShapeMismatch;
                     group.RefusalReason =
-                        at + " has hideFlags=" + entry.HideFlags + "; it is a transient object, not " +
+                        at + " has hideFlags=" + entry.RootHideFlags + "; it is a transient object, not " +
                         "authored scene content, and removing it would not change the scene on disk";
                     return;
                 }
@@ -537,10 +540,10 @@ namespace Hecton8.EditorTools.Authoring
                     $"activeSelf={(entry.ActiveSelf ? "1" : "0")} " +
                     $"children={entry.ChildCount.ToString(CultureInfo.InvariantCulture)} " +
                     $"subtreeObjects={entry.SubtreeObjects.ToString(CultureInfo.InvariantCulture)} " +
-                    $"hideFlags={entry.HideFlags} " +
+                    $"hideFlags={entry.RootHideFlags} " +
                     $"missingScripts={entry.MissingScripts.ToString(CultureInfo.InvariantCulture)} " +
                     $"components={entry.ComponentList}",
-                    entry.GameObject);
+                    entry.Root);
             }
         }
 
@@ -577,7 +580,7 @@ namespace Hecton8.EditorTools.Authoring
 
                     // UnityEngine.Object's overloaded == is what makes this check correct: it reports
                     // true for an object that was already destroyed, which ReferenceEquals would not.
-                    if (entry.GameObject == null)
+                    if (entry.Root == null)
                         continue;
 
                     Debug.Log(
@@ -585,7 +588,7 @@ namespace Hecton8.EditorTools.Authoring
                         entry.SiblingIndex.ToString(CultureInfo.InvariantCulture) +
                         " components=" + entry.ComponentList);
 
-                    Undo.DestroyObjectImmediate(entry.GameObject);
+                    Undo.DestroyObjectImmediate(entry.Root);
                     destroyed++;
                 }
             }
