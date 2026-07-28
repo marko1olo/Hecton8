@@ -183,6 +183,10 @@ namespace Hecton8.Core
         private const float CriticalFrameDumpThresholdMs = 33.0f;
         private const float VramSpikeThreshold = 0.8f;
         private const float VramOomThreshold = 0.85f;
+        private const float VramShedArmPressure01 = VramOomThreshold;
+        private const float VramShedReleasePressure01 = VramSpikeThreshold;
+        private const float VramShedMinimumHoldSeconds = 2.5f;
+        private const float VramShedMaxBilledDeltaSeconds = 0.5f;
         private const float ScalabilityHardFailFrameMs = 20f;
         private const float SurvivalHardwareShiFloor = 0.4f;
         private const float SurvivalHardwareMaxQualityWeight = 0.6f;
@@ -241,6 +245,10 @@ namespace Hecton8.Core
         private static bool _mathLodLowScalarWritten;
         private static float _lastMathLodLowScalar;
         private static bool _mockHeavyLoadActive;
+        private static bool _vramSheddingLatched;
+        private static float _vramShedHoldSeconds;
+        private static double _vramShedLastUnscaledTimeSeconds;
+        private static bool _vramShedClockSeeded;
         private static float _cullingMultiplier = 1f;
         private static float _lowCullingMultiplier = DefaultLowCullingMultiplier;
         private static float _targetFrameMsOverride = ScalabilityContract.TargetFrameMilliseconds;
@@ -329,6 +337,10 @@ namespace Hecton8.Core
             _mathLodLowScalarWritten = false;
             _lastMathLodLowScalar = ForcedQualityWeightDisabled;
             _mockHeavyLoadActive = false;
+            _vramSheddingLatched = false;
+            _vramShedHoldSeconds = 0f;
+            _vramShedLastUnscaledTimeSeconds = 0.0;
+            _vramShedClockSeeded = false;
             _cullingMultiplier = 1f;
             _lowCullingMultiplier = DefaultLowCullingMultiplier;
             _targetFrameMsOverride = ScalabilityContract.TargetFrameMilliseconds;
@@ -493,6 +505,10 @@ namespace Hecton8.Core
             _hardwareShiFloor = 0f;
             _hardwareMaxQualityWeight = 1f;
             _lastRuntimeKillBits = 0u;
+            _vramSheddingLatched = false;
+            _vramShedHoldSeconds = 0f;
+            _vramShedLastUnscaledTimeSeconds = 0.0;
+            _vramShedClockSeeded = false;
         }
 
         private static void ResetScalabilityDictatorVaultHandles()
@@ -740,6 +756,100 @@ namespace Hecton8.Core
             return hardwareFloor > 0f ? math.max(clamped, hardwareFloor) : clamped;
         }
 
+        /// <summary>
+        /// Real elapsed unscaled seconds since the previous dictator tick. Sampled from the dispatcher
+        /// clock and delta'd rather than counted in ticks, so the band below is measured in wall seconds
+        /// and cannot become a function of the player's hardware tier. Capped so a pause, a scene load or
+        /// an editor breakpoint is not billed against a hysteresis band.
+        /// </summary>
+        private static float ResolveDictatorUnscaledDeltaSeconds()
+        {
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (!(now > 0.0) || double.IsInfinity(now))
+                return 0f;
+
+            if (!_vramShedClockSeeded)
+            {
+                _vramShedClockSeeded = true;
+                _vramShedLastUnscaledTimeSeconds = now;
+                return 0f;
+            }
+
+            double delta = now - _vramShedLastUnscaledTimeSeconds;
+            _vramShedLastUnscaledTimeSeconds = now;
+            if (!(delta > 0.0) || double.IsInfinity(delta))
+                return 0f;
+
+            return (float)math.min(delta, VramShedMaxBilledDeltaSeconds);
+        }
+
+        /// <summary>
+        /// Advances the owner-local VRAM shed latch from the freshly sampled pressure sample.
+        /// The dispatcher clock is delta'd on every tick regardless of latch state so a later arm can
+        /// never bill a stale interval against the release band.
+        /// </summary>
+        private static bool AdvanceVramSheddingLatch(float vramPressure01)
+        {
+            _vramSheddingLatched = ResolveVramSheddingLatch(
+                _vramSheddingLatched,
+                vramPressure01,
+                ResolveDictatorUnscaledDeltaSeconds(),
+                VramShedArmPressure01,
+                VramShedReleasePressure01,
+                VramShedMinimumHoldSeconds,
+                ref _vramShedHoldSeconds);
+            return _vramSheddingLatched;
+        }
+
+        /// <summary>
+        /// Pure VRAM shed latch. Arms strictly above <paramref name="armPressure01"/>, holds for at least
+        /// <paramref name="minimumHoldSeconds"/> of real unscaled time, and only releases once pressure has
+        /// fallen back to or below <paramref name="releasePressure01"/>.
+        /// <para>
+        /// A single threshold shared by entry and exit cannot work here: shedding lowers the very VRAM
+        /// pressure that triggered it, so the comparison closes on itself and limit-cycles on any machine
+        /// sitting near its graphics budget. AGENTS.md:239 requires a minimum 2-3 s band on a scalability
+        /// switch, and performance.md:122 requires load shedding to be an authored state machine rather
+        /// than a panic button.
+        /// </para>
+        /// Release pressure is clamped to the arm pressure so a CSV/tuner override can never invert the
+        /// band into a latch that arms below the level at which it releases.
+        /// </summary>
+        internal static bool ResolveVramSheddingLatch(
+            bool latched,
+            float vramPressure01,
+            float deltaSeconds,
+            float armPressure01,
+            float releasePressure01,
+            float minimumHoldSeconds,
+            ref float holdSeconds)
+        {
+            float pressure01 = SanitizePressure01(vramPressure01, 1f);
+            float safeDeltaSeconds = math.isfinite(deltaSeconds) && deltaSeconds > 0f ? deltaSeconds : 0f;
+            float safeHoldSeconds = math.isfinite(holdSeconds) && holdSeconds > 0f ? holdSeconds : 0f;
+            float safeArm01 = SanitizePressure01(armPressure01, VramShedArmPressure01);
+            float safeRelease01 = math.min(safeArm01, SanitizePressure01(releasePressure01, VramShedReleasePressure01));
+            float safeBandSeconds = math.isfinite(minimumHoldSeconds) && minimumHoldSeconds > 0f
+                ? minimumHoldSeconds
+                : VramShedMinimumHoldSeconds;
+
+            if (!latched)
+            {
+                holdSeconds = 0f;
+                return pressure01 > safeArm01;
+            }
+
+            safeHoldSeconds += safeDeltaSeconds;
+            if (pressure01 > safeRelease01 || safeHoldSeconds < safeBandSeconds)
+            {
+                holdSeconds = safeHoldSeconds;
+                return true;
+            }
+
+            holdSeconds = 0f;
+            return false;
+        }
+
         private static ulong ApplyDictatorPressurePolicy(
             int frame,
             float frameMs,
@@ -827,7 +937,7 @@ namespace Hecton8.Core
                 targetMask &= ~(ulong)SystemBit.MathLodLow;
             }
 
-            if (vramPressure01 > VramOomThreshold)
+            if (AdvanceVramSheddingLatch(vramPressure01))
             {
                 targetMask |= (ulong)(SystemBit.VramShedding | SystemBit.NonCriticalVfx);
                 if (targetLevel < 2)
