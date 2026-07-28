@@ -29,6 +29,13 @@ namespace Hecton8.Core
         private bool _runtimeOwnerAborted;
         private bool _syncInProgress;
         private bool _coldContextSyncRequested;
+
+        /// <summary>
+        /// Set only when the published player root actually changes identity, so a new root takes the cold
+        /// sync once and gets its component install. Kept separate from <see cref="_coldContextSyncRequested"/>
+        /// because that flag is also raised by permanent steady states such as a missing HUD notification.
+        /// </summary>
+        private bool _coldInstallRootDirty;
         private bool _dynamicContextReferencesEnabled;
         private IPlayerInventoryService _playerInventoryService;
         private IPlayerSensoryService _playerSensoryService;
@@ -521,6 +528,17 @@ namespace Hecton8.Core
             if (!_isInitialized)
                 return;
 
+            // A newly published player root takes the cold path exactly once, so it gets its component
+            // install and its eleven service handles. Everything else keeps the cheap path - see the
+            // rationale on _coldInstallRootDirty in SyncPlayerContextHot.
+            if (_coldInstallRootDirty)
+            {
+                _coldInstallRootDirty = false;
+                _coldContextSyncRequested = false;
+                SyncPlayerContext();
+                return;
+            }
+
             if (_coldContextSyncRequested)
             {
                 _coldContextSyncRequested = false;
@@ -832,11 +850,31 @@ namespace Hecton8.Core
                 return;
 
             GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject != null ? BootstrapState.CurrentPlayerObject : _playerRootOverride;
-            if (!ReferenceEquals(_playerObject, currentPlayerObject) ||
+            bool playerRootChanged = !ReferenceEquals(_playerObject, currentPlayerObject);
+            if (playerRootChanged ||
                 _playerTransform == null ||
                 _hudNotification == null && Application.isPlaying)
             {
                 _coldContextSyncRequested = true;
+
+                // A CHANGED ROOT is the only one of the three conditions above that needs the cold path, and
+                // the distinction is load-bearing. The other two are steady states: in a headless run
+                // _hudNotification is permanently null, so a single flag would be re-raised on every hot tick
+                // forever, and routing that to the cold sync would run eleven TryGetComponent calls plus
+                // CachePlayerHierarchyReferencesCold every slow tick. That is precisely why SlowTick used the
+                // no-cold-lookups variant, and it must keep using it for those two.
+                //
+                // But the no-cold-lookups path performs neither EnsureOnPlayerRoot nor TryGetComponent - it
+                // only re-points _playerObject and republishes. So the one owner that WATCHES for a new player
+                // root was the one owner that skipped installing the player's components onto it, and the
+                // hot path could never repair that. Installation depended entirely on a consumer happening to
+                // call TryBindPlayerRoot from its own Awake (HectonSurvivalSystem.cs:709,
+                // PlayerToolManager.cs:1307 and :1429). If HectonSurvivalSystem.Awake bails early on a null
+                // stats asset, or the root is republished later with no consumer re-binding, the player ends
+                // up with no health, trauma or transport owner and nothing ever notices.
+                if (playerRootChanged)
+                    _coldInstallRootDirty = true;
+
                 if (_runtimeContext.IsBound && _playerTransform != null)
                     PublishMovementSnapshot();
                 return;

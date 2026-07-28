@@ -1666,6 +1666,27 @@ namespace Hecton8.EditorTools.Diagnostics
                 "HectonWorldGenerator",
                 "GameBootstrapper",
                 "FaunaGeneticsManager",
+
+                // The three player components that no prefab carries and no shipped code created until
+                // PlayerRuntimeContextService started installing them. Named here because the aggregate
+                // "N live MonoBehaviours" line cannot answer whether they exist: subtracting one run's total
+                // from another's is invalid across a boot-quality boundary, since a run where the registry
+                // ready-lock rejected scene services aborts each owner's OnEnable partway and therefore
+                // builds a different component population, not merely a smaller one.
+                "HectonPlayerHealth",
+                "TraumaDispatcher",
+                "PlayerTransportCoordinator",
+
+                // Two controls, and they are the point of the addition rather than padding.
+                // PlayerKinematicsRuntime is installed by the SAME method on the same line group and predates
+                // that change, so it proves the cold sync path ran at all - if it is NONE, the three above
+                // being NONE says nothing about their install and everything about the path never executing.
+                // HectonSurvivalSystem is authored on Player.prefab, so it proves the player root still exists
+                // at census time. Read the enabled= column on all five: the bootstrap disables the player root
+                // during the Kinematic Arrest Gate, so instances=1 enabled=0 is a materially different
+                // outcome from instances=0 and the two must not be conflated.
+                "PlayerKinematicsRuntime",
+                "HectonSurvivalSystem",
             };
 
             MonoBehaviour[] all = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(
