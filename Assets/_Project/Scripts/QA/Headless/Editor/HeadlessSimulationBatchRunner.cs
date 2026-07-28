@@ -21,7 +21,19 @@ namespace Hecton8.QA.Headless.Editor
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessSimulationBatchRunner_HEADLESS_SIMULATION_RUNNER.txt";
-        private const double TimeoutSeconds = 7200.0;
+        // Two hours was long enough that a hung run looked like a working one. This poll loop is the ONLY
+        // watchdog that can survive the runtime runner failing to start: the runner's own ColdTick check
+        // cannot fire until RegisterRuntimeLanes has succeeded, and in batchmode
+        // AwaitableDebtMonitor.NextFrameAsync resolves through Task.Yield() rather than a frame boundary, so
+        // the runner's startup wait can park without ever re-evaluating its deadline. When that happened,
+        // Application.Quit was a no-op in the Editor and play mode simply carried on running the main menu
+        // for 45 minutes with no result file, no CSV rows and no log line.
+        //
+        // HasTimedOut -> WriteFallbackResult(2, "BATCH_TIMEOUT") -> RequestStop(2, "timeout") was already
+        // written and is independent of the runtime runner. It just never got to run. Ten minutes covers a
+        // cold Bee compile plus a full 100-day run at the harness's own ~36 real seconds per simulated day,
+        // and guarantees an artifact from any future hang. Override per-run if a longer target is needed.
+        private const double TimeoutSeconds = 600.0;
         private const double PollIntervalSeconds = 0.25;
         private const int ResultReadBufferSize = 4096;
         // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessSimulationBatchRunner

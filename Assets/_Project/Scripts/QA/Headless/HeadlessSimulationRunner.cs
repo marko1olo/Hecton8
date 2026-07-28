@@ -146,6 +146,7 @@ namespace Hecton8.QA.Headless
 
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            LogRunnerLifecycle("runner installed and started");
             _ = RunStartupAsync(destroyCancellationToken);
         }
 
@@ -306,6 +307,14 @@ namespace Hecton8.QA.Headless
 
         private async Awaitable WaitForDispatcherAndStart(CancellationToken cancellationToken)
         {
+            // Logged before the wait, not after, because the wait itself is the suspect. In batchmode
+            // AwaitableDebtMonitor.NextFrameAsync resolves through Task.Yield() rather than a real frame
+            // boundary, so a loop that awaits "next frame" is not guaranteed a frame at all - which means
+            // the deadline below is only re-evaluated if something else pumps the player loop. If this
+            // marker appears with no matching quit marker, the loop never resumed, and no watchdog inside
+            // this component can help: ColdTick only runs once RegisterRuntimeLanes has succeeded, which
+            // happens after this method returns. That watchdog has to live in the batch runner.
+            LogRunnerLifecycle("waiting for dispatcher");
             _startupTime = Time.realtimeSinceStartupAsDouble;
             while (GlobalRegistry.Dispatcher == null && Time.realtimeSinceStartupAsDouble - _startupTime <= _startupTimeoutSeconds)
             {
@@ -863,29 +872,65 @@ namespace Hecton8.QA.Headless
             RecordBlackbox(AupShiftHash);
         }
 
+        /// <summary>
+        /// Writes the run report FIRST, then the optional telemetry, then quits.
+        /// </summary>
+        /// <remarks>
+        /// The ordering is the whole point and it is not stylistic. This method used to write the result
+        /// file LAST, after RecordBlackbox, PublishCrashSignal and TryDumpBlackbox - three calls into the
+        /// DataVault, SignalBus and dispatcher, i.e. the exact subsystems whose absence a failing run is
+        /// usually trying to report. PublishCrashSignal has no try/catch at all. And because _finished is
+        /// set before any of them, every catch in the startup path is disarmed by its own `if (!_finished)`
+        /// guard, so a single throw in that stretch produced ZERO artifacts and no log line, permanently.
+        ///
+        /// That is exactly what a 45-minute run produced: no result JSON, no CSV rows, and total log
+        /// silence, while the editor kept burning about 1.4 cores. Application.Quit is a no-op in the
+        /// Editor, so play mode simply carried on running the main menu forever.
+        ///
+        /// A harness that cannot say "I failed" is worse than no harness, so the report is now the first
+        /// side effect after the latch. Telemetry is best-effort after it.
+        /// </remarks>
         private void CompleteAndQuit()
         {
             if (_finished)
                 return;
 
             _finished = true;
+            TryWriteResult(0, "SUCCESS");
+            LogRunnerLifecycle("complete exitCode=0 status=SUCCESS");
             PublishCrashSignal(0, SuccessHash, 0);
             TryDumpBlackbox();
-            TryWriteResult(0, "SUCCESS");
             Application.Quit(0);
         }
 
+        /// <inheritdoc cref="CompleteAndQuit"/>
         private void FailAndQuit(int exitCode, uint reasonHash, string status)
         {
             if (_finished)
                 return;
 
             _finished = true;
+            TryWriteResult(exitCode, status);
+            LogRunnerLifecycle("fail exitCode=" + exitCode.ToString(CultureInfo.InvariantCulture) + " status=" + status);
             RecordBlackbox(reasonHash);
             PublishCrashSignal(exitCode, reasonHash, 2);
             TryDumpBlackbox();
-            TryWriteResult(exitCode, status);
             Application.Quit(exitCode);
+        }
+
+        /// <summary>
+        /// The only log surface this runner has. Deliberately unconditional and deliberately prefixed.
+        /// </summary>
+        /// <remarks>
+        /// This file previously contained no Debug.Log of any kind, so a run that started and then died
+        /// silently was indistinguishable from a run that never installed. Diagnosing one such run cost a
+        /// 45-minute Unity session plus filesystem forensics on a zero-byte CSV, when a single grep for
+        /// "[HEADLESS]" should have answered it. Called from three places only - install, the pre-wait
+        /// gate, and the two quit paths - so it is cold, not cadence.
+        /// </remarks>
+        private static void LogRunnerLifecycle(string message)
+        {
+            Debug.Log("[HEADLESS] " + message);
         }
 
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
@@ -1661,6 +1706,13 @@ namespace Hecton8.QA.Headless
                     return true;
 
                 _stream.Write(_buffer, 0, _cursor);
+
+                // Reaching the FileStream is not the same as reaching the disk. Without this the CSV header
+                // and every day row sit in the stream's internal buffer until the writer is disposed, so a
+                // run that is killed - or that dies in a quit path - loses all of its evidence. One 45-minute
+                // run left this file existing at zero bytes for exactly that reason, and the allocation
+                // counts live ONLY in this CSV, not in the result JSON.
+                _stream.Flush();
                 _cursor = 0;
                 return true;
             }
