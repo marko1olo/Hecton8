@@ -1261,6 +1261,1415 @@ namespace Hecton8.EditorTools.Diagnostics
                 mesh = null;
             }
         }
+
+        // ====================================================================================
+        // Render. Per-run GPU resources, allocated once.
+        // ====================================================================================
+
+        private static RenderTexture _renderTexture;
+        private static Texture2D _readback;
+        private static Color32[] _tilePixels;
+        private static byte[] _statsRgb;
+        private static Color32[] _sheetPixels;
+        private static int _sheetWidth;
+        private static int _sheetHeight;
+
+        private static void AllocateRunResources(int tileResolution, int rows, int columns)
+        {
+            int hiRes = tileResolution * Supersample;
+
+            _renderTexture = new RenderTexture(hiRes, hiRes, 32,
+                RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB)
+            {
+                name = "H8MP_TileRT",
+                filterMode = FilterMode.Bilinear,
+                antiAliasing = 1,
+                useMipMap = false,
+            };
+            _renderTexture.Create();
+
+            _readback = new Texture2D(hiRes, hiRes, TextureFormat.RGB24, false, false)
+            {
+                name = "H8MP_Readback",
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+
+            _tilePixels = new Color32[tileResolution * tileResolution];
+
+            // Statistics run on every 2nd pixel per axis: a quarter of the data, same verdict.
+            int statsSamples = ((tileResolution + 1) / 2) * ((tileResolution + 1) / 2);
+            _statsRgb = new byte[statsSamples * 3];
+
+            _sheetWidth = columns * tileResolution + (columns + 1) * SheetGutter;
+            _sheetHeight = rows * tileResolution + (rows + 1) * SheetGutter;
+
+            // COLD ALLOC: Color32[~5.4M] - ~21 MB for a 4x5 sheet of 512 px tiles - owner: GeneratedMeshPreviewRenderer
+            // Not streamed: a contact sheet has to be encoded as one image, which is the entire point
+            // (`preview.py:514-521` - the lead pays one image-read instead of one per view). Reused
+            // across every mesh in the run rather than reallocated per asset.
+            _sheetPixels = new Color32[_sheetWidth * _sheetHeight];
+        }
+
+        private static void ReleaseRunResources()
+        {
+            RenderTexture.active = null;
+
+            if (_renderTexture != null)
+            {
+                _renderTexture.Release();
+                UnityEngine.Object.DestroyImmediate(_renderTexture);
+                _renderTexture = null;
+            }
+
+            if (_readback != null)
+            {
+                UnityEngine.Object.DestroyImmediate(_readback);
+                _readback = null;
+            }
+
+            _tilePixels = null;
+            _statsRgb = null;
+            _sheetPixels = null;
+        }
+
+        /// <summary>
+        /// The render call, and the one place where this project's existing capture routes disagree.
+        ///
+        /// `H8_ScreenshotTaker.cs:2-3` asserts "cam.Render() alone does NOT invoke URP in batchmode -
+        /// SubmitRenderRequest is required", and `H8_RouteCaptureStation.cs:598-603` repeats it. But
+        /// `H8_TerrainGPUVisualTester.cs:287` - the one diagnostic route in this project with
+        /// demonstrably non-black output - uses a naked `s_camera.Render()` and nothing else. Both
+        /// claims cannot be fully right, and neither can be settled without running the editor.
+        ///
+        /// So this tries `SubmitRenderRequest` first, falls back to `Camera.Render()`, and RECORDS WHICH
+        /// ONE RAN into every report. If a sheet comes back black, the report already says which call
+        /// produced it instead of leaving the next agent to guess.
+        ///
+        /// What this deliberately does NOT copy: both existing URP routes do
+        /// `request.destination = RTHandles.Alloc(rt)` and then `request.destination.Release()` BEFORE
+        /// reading pixels (`H8_ScreenshotTaker.cs:68,73` then `:93-94`;
+        /// `H8_RouteCaptureStation.cs:610,614` then `:545-546`). In URP 0c18adc4ff89
+        /// `SingleCameraRequest.destination` is a plain `RenderTexture`
+        /// (`.../Runtime/UniversalRenderPipeline.cs:2701-2706`), reached through `RTHandle`'s implicit
+        /// conversion - so that call is `RenderTexture.Release()`, which frees the hardware surface of
+        /// the very texture the next line reads. Unity recreates a released RenderTexture on next use,
+        /// with undefined contents. That is a plausible mechanical cause of a black capture, and it is
+        /// STATIC ANALYSIS ONLY - the editor was never run to confirm it. This method assigns the target
+        /// directly and lets the caller's `finally` own the lifetime.
+        /// </summary>
+        private static void RenderThroughPipeline(Camera camera, RenderTexture target, ref string renderPath)
+        {
+            var urpAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (urpAsset != null)
+            {
+                var request = new UniversalRenderPipeline.SingleCameraRequest { destination = target };
+                if (RenderPipeline.SupportsRenderRequest(camera, request))
+                {
+                    RenderPipeline.SubmitRenderRequest(camera, request);
+                    renderPath = "URP_SubmitRenderRequest";
+                    return;
+                }
+            }
+
+            camera.targetTexture = target;
+            camera.Render();
+            camera.targetTexture = null;
+            renderPath = urpAsset != null
+                ? "CameraRender_after_URP_declined_request"
+                : "CameraRender_no_URP_asset_active";
+        }
+
+        /// <summary>
+        /// Discards three renders before any tile is kept.
+        ///
+        /// Copied from `H8_TerrainGPUVisualTester.cs:350-361`, whose comment at `:115-117` names the
+        /// exact hazard: "the first Render() after scene build often returns an empty frame
+        /// (shaders/render graph not yet resident). Discard it."
+        ///
+        /// This is NOT the `EditorApplication.update` frame settling that `AGENTS.md`
+        /// `[RULE] MapMagic &amp; Batchmode Graphics Protocol` requires - see the remarks on
+        /// <see cref="RenderGeneratedMeshPreviews"/> for why that machinery is wrong for this tool and
+        /// would in fact break it. This is one-time shader-variant and RenderGraph residency warm-up: a
+        /// different problem with a different fix.
+        /// </summary>
+        private static void WarmUp(PreviewRig rig, UnityEngine.Bounds bounds)
+        {
+            AimCamera(rig, H8MeshPreviewMode.Flat, 0, bounds);
+            rig.ApplyModeMaterial(rig.FlatMaterial);
+            rig.EnforceIsolation(false);
+
+            string discarded = "WARMUP";
+            for (int i = 0; i < 3; i++)
+                RenderThroughPipeline(rig.Camera, _renderTexture, ref discarded);
+        }
+
+        /// <summary>
+        /// Points the camera for one mode and view. The scale row clamps elevation above the floor
+        /// plane; see <see cref="ScaleRowMinElevation"/> for why only that row.
+        /// </summary>
+        private static void AimCamera(PreviewRig rig, H8MeshPreviewMode mode, int viewIndex,
+                                      UnityEngine.Bounds bounds)
+        {
+            bool scaleRow = mode == H8MeshPreviewMode.Scale;
+
+            Vector3 direction = ViewDirections[viewIndex];
+            if (scaleRow && direction.y < ScaleRowMinElevation)
+                direction.y = ScaleRowMinElevation;
+            direction = direction.normalized;
+
+            float radius = scaleRow
+                ? PreviewRig.ScaleRowRadius(bounds)
+                : Mathf.Max(1e-4f, bounds.extents.magnitude);
+
+            Vector3 target = scaleRow
+                ? new Vector3(0f, Mathf.Max(HumanMarkerHeight * 0.5f, bounds.size.y * 0.5f), 0f)
+                : new Vector3(0f, bounds.extents.y, 0f);
+
+            float distance = FrameDistance(radius, CameraFovDegrees, FrameMargin);
+
+            rig.Camera.transform.position = target + direction * distance;
+            rig.Camera.transform.rotation = Quaternion.LookRotation(-direction, Vector3.up);
+            rig.Camera.nearClipPlane = Mathf.Max(0.001f, radius * 0.01f);
+            rig.Camera.farClipPlane = distance + radius * 8f + 20f;
+            rig.Camera.backgroundColor = PreviewRig.BackdropFor(mode);
+        }
+
+        /// <summary>
+        /// Renders one tile, downsamples it, and MEASURES it. Leaves the downsampled pixels in
+        /// <see cref="_tilePixels"/> (top-down row order) and returns the measurement.
+        ///
+        /// The measurement is the point, not decoration. `AGENTS.md` `[RULE] Never Trust Automated
+        /// Assertions Alone` is the rule and this project has the receipts: eleven byte-identical
+        /// all-black PNGs (md5 prefix `7bf59bc3a4d28b66`) accumulated under `Logs/` because nothing on
+        /// the write path asked whether the frame contained anything. A harness that cannot tell a
+        /// working render from an empty one manufactures proof, which is worse than no harness.
+        /// </summary>
+        private static void RenderAndMeasureTile(PreviewRig rig, H8MeshPreviewMode mode, int viewIndex,
+                                                 UnityEngine.Bounds bounds, int tileResolution,
+                                                 out H8MeshPreviewTileStats stats)
+        {
+            bool witnessVisible = mode == H8MeshPreviewMode.Scale;
+
+            AimCamera(rig, mode, viewIndex, bounds);
+            rig.ApplyModeMaterial(rig.MaterialFor(mode));
+            rig.EnforceIsolation(witnessVisible);
+
+            string renderPath = rig.RenderPath;
+            RenderThroughPipeline(rig.Camera, _renderTexture, ref renderPath);
+            rig.RenderPath = renderPath;
+
+            int hiRes = tileResolution * Supersample;
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                // ReadPixels from the active target is a hard GPU sync point: it cannot return before
+                // the GPU has finished writing that surface. That is what makes an explicit
+                // wait-for-settled-frames loop unnecessary here.
+                RenderTexture.active = _renderTexture;
+                _readback.ReadPixels(new Rect(0, 0, hiRes, hiRes), 0, 0);
+                _readback.Apply(false, false);
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
+
+            // The parameterless `GetPixels32()` allocates a fresh Color32[] per tile (4 MB at 1024 px).
+            // Deliberate: `GetPixelData<Color32>` would avoid the copy but only by reinterpreting the raw
+            // mip buffer, which silently depends on the texture format matching Color32 byte-for-byte.
+            // This is an offline editor sweep, not one of the cadences `AGENTS.md`
+            // `Runtime Hot-Path Law` governs, so the certain API is worth more than the saved allocation.
+            DownsampleLinear(_readback.GetPixels32(), hiRes, _tilePixels, tileResolution);
+
+            // ReadPixels yields bottom-up rows. Everything downstream works top-down so that "row 0 is
+            // the top row of the sheet" is literally true and the compositor needs no flip arithmetic.
+            FlipVerticalInPlace(_tilePixels, tileResolution, tileResolution);
+
+            stats = MeasureTile(mode, ViewNames[viewIndex], tileResolution,
+                PreviewRig.BackdropFor(mode));
+        }
+
+        /// <summary>
+        /// Box-filters a supersampled tile down in LINEAR light, then re-encodes to sRGB.
+        ///
+        /// Averaging 8-bit sRGB values directly is the obvious version and it is wrong in a way that
+        /// matters here: gamma-space averaging darkens every antialiased edge by a few percent, and a
+        /// dark fringe along a hard edge is indistinguishable from the missing-chamfer artefact this
+        /// tool exists to detect. A 256-entry decode table makes the correct version cost nothing.
+        /// </summary>
+        private static void DownsampleLinear(Color32[] source, int sourceSize, Color32[] destination, int destSize)
+        {
+            if (_srgbToLinear == null)
+            {
+                _srgbToLinear = new float[256];
+                for (int i = 0; i < 256; i++)
+                {
+                    float channel = i / 255f;
+                    _srgbToLinear[i] = channel <= 0.04045f
+                        ? channel / 12.92f
+                        : Mathf.Pow((channel + 0.055f) / 1.055f, 2.4f);
+                }
+            }
+
+            int block = sourceSize / destSize;
+            float inverseSamples = 1f / (block * block);
+
+            for (int y = 0; y < destSize; y++)
+            {
+                int sourceY = y * block;
+                for (int x = 0; x < destSize; x++)
+                {
+                    int sourceX = x * block;
+                    float r = 0f;
+                    float g = 0f;
+                    float b = 0f;
+
+                    for (int by = 0; by < block; by++)
+                    {
+                        int row = (sourceY + by) * sourceSize + sourceX;
+                        for (int bx = 0; bx < block; bx++)
+                        {
+                            Color32 sample = source[row + bx];
+                            r += _srgbToLinear[sample.r];
+                            g += _srgbToLinear[sample.g];
+                            b += _srgbToLinear[sample.b];
+                        }
+                    }
+
+                    destination[y * destSize + x] = new Color32(
+                        LinearToSrgbByte(r * inverseSamples),
+                        LinearToSrgbByte(g * inverseSamples),
+                        LinearToSrgbByte(b * inverseSamples),
+                        255);
+                }
+            }
+        }
+
+        private static byte LinearToSrgbByte(float linear)
+        {
+            float encoded = linear <= 0.0031308f
+                ? linear * 12.92f
+                : 1.055f * Mathf.Pow(linear, 1f / 2.4f) - 0.055f;
+
+            return (byte)Mathf.RoundToInt(Mathf.Clamp01(encoded) * 255f);
+        }
+
+        private static void FlipVerticalInPlace(Color32[] pixels, int width, int height)
+        {
+            int halfHeight = height / 2;
+            for (int y = 0; y < halfHeight; y++)
+            {
+                int top = y * width;
+                int bottom = (height - 1 - y) * width;
+                for (int x = 0; x < width; x++)
+                {
+                    Color32 swap = pixels[top + x];
+                    pixels[top + x] = pixels[bottom + x];
+                    pixels[bottom + x] = swap;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Runs the SHARED blank-frame policy over one tile.
+        ///
+        /// `H8_RouteCaptureStation.TryComputeFrameStatistics` (`:284`) and
+        /// `H8_RouteCaptureStation.EvaluateCapture` (`:339`) are called rather than reimplemented, so the
+        /// two capture routes in this project cannot drift apart on what counts as a blank frame. Its
+        /// thresholds are private consts there, and copying them here would guarantee that drift.
+        ///
+        /// The arguments are literally true, not padding to satisfy a signature: the graphics device is
+        /// present (checked before the run starts), the camera is resolved, exactly one subject renderer
+        /// is in frustum, and `H8ShotCue.Machinery`/`H8ShotCue.Scale` are the two cues from
+        /// `TASTE.md:403-412` that a hard-surface equipment sheet actually carries.
+        /// </summary>
+        private static H8MeshPreviewTileStats MeasureTile(H8MeshPreviewMode mode, string view,
+                                                          int tileResolution, Color backdrop)
+        {
+            int written = 0;
+            for (int y = 0; y < tileResolution; y += 2)
+            {
+                int row = y * tileResolution;
+                for (int x = 0; x < tileResolution; x += 2)
+                {
+                    Color32 pixel = _tilePixels[row + x];
+                    _statsRgb[written * 3] = pixel.r;
+                    _statsRgb[written * 3 + 1] = pixel.g;
+                    _statsRgb[written * 3 + 2] = pixel.b;
+                    written++;
+                }
+            }
+
+            int occupiedBuckets;
+            float meanLuma;
+            float lumaStdDev;
+            H8_RouteCaptureStation.TryComputeFrameStatistics(
+                _statsRgb, written, LumaHistogram, out occupiedBuckets, out meanLuma, out lumaStdDev);
+
+            H8ShotCue cues = mode == H8MeshPreviewMode.Scale
+                ? H8ShotCue.Machinery | H8ShotCue.Scale
+                : H8ShotCue.Machinery;
+
+            return new H8MeshPreviewTileStats
+            {
+                Mode = mode,
+                View = view,
+                OccupiedLumaBuckets = occupiedBuckets,
+                MeanLuma = meanLuma,
+                LumaStdDev = lumaStdDev,
+                CornersAreBackdrop = CornersMatchBackdrop(tileResolution, backdrop),
+                Verdict = H8_RouteCaptureStation.EvaluateCapture(
+                    true, true, cues, occupiedBuckets, lumaStdDev, 1),
+            };
+        }
+
+        /// <summary>
+        /// Checks the four tile corners against the expected clear colour.
+        ///
+        /// The Unity translation of `preview.py:565-591`: on the Blender side, foreign geometry standing
+        /// at the subject's origin produced statistics that looked entirely plausible while describing
+        /// the wrong mesh. A corner that is not backdrop means something is in frame that should not be.
+        /// Reported as measurement, never as an automatic reject - the scale row's grid legitimately
+        /// reaches a corner at some angles.
+        /// </summary>
+        private static bool CornersMatchBackdrop(int tileResolution, Color backdrop)
+        {
+            var expected = (Color32)backdrop;
+            const int Tolerance = 26;   // ~10 percent of 8-bit range; covers dithering and rim spill
+            int last = tileResolution - 1;
+
+            return CornerMatches(0, 0, tileResolution, expected, Tolerance) &&
+                   CornerMatches(last, 0, tileResolution, expected, Tolerance) &&
+                   CornerMatches(0, last, tileResolution, expected, Tolerance) &&
+                   CornerMatches(last, last, tileResolution, expected, Tolerance);
+        }
+
+        private static bool CornerMatches(int x, int y, int tileResolution, Color32 expected, int tolerance)
+        {
+            Color32 actual = _tilePixels[y * tileResolution + x];
+            return Mathf.Abs(actual.r - expected.r) <= tolerance &&
+                   Mathf.Abs(actual.g - expected.g) <= tolerance &&
+                   Mathf.Abs(actual.b - expected.b) <= tolerance;
+        }
+
+        // ====================================================================================
+        // Composite. One PNG per asset.
+        // ====================================================================================
+
+        /// <summary>
+        /// Clears the sheet buffer to a near-black surround so gutters read as frame, not as content.
+        /// </summary>
+        private static void ClearSheet()
+        {
+            var surround = new Color32(6, 6, 8, 255);
+            for (int i = 0; i < _sheetPixels.Length; i++)
+                _sheetPixels[i] = surround;
+        }
+
+        /// <summary>
+        /// Blits the current <see cref="_tilePixels"/> into grid cell (row, column), both top-down.
+        /// </summary>
+        private static void BlitTileToSheet(int row, int column, int tileResolution)
+        {
+            int originX = SheetGutter + column * (tileResolution + SheetGutter);
+            int originY = SheetGutter + row * (tileResolution + SheetGutter);
+
+            for (int y = 0; y < tileResolution; y++)
+            {
+                int sourceRow = y * tileResolution;
+                int destinationRow = (originY + y) * _sheetWidth + originX;
+                Array.Copy(_tilePixels, sourceRow, _sheetPixels, destinationRow, tileResolution);
+            }
+        }
+
+        /// <summary>
+        /// Burns a dot code into the tile's top-left corner: N cyan dots for the row (mode) and M amber
+        /// dots for the column (view), both one-based, over a dark backing bar.
+        ///
+        /// No glyph font. A hand-encoded bitmap font cannot be proofread without running it, and a
+        /// garbled label is worse than none. Dots are unambiguous, impossible to typo into nonsense, and
+        /// legible at a glance. Grid position is already the primary label - the report states the row
+        /// and column order - so this is redundancy that survives a cropped or reordered sheet.
+        /// `preview.py:515` declares a `label_band` parameter and never fills it; this is the gap.
+        /// </summary>
+        private static void BurnDotCode(int row, int column, int tileResolution)
+        {
+            int originX = SheetGutter + column * (tileResolution + SheetGutter);
+            int originY = SheetGutter + row * (tileResolution + SheetGutter);
+
+            int dot = Mathf.Max(6, tileResolution / 64);
+            int pad = Mathf.Max(3, dot / 2);
+            int barHeight = pad * 3 + dot * 2;
+            int barWidth = pad * 2 + (dot + pad) * Mathf.Max(row + 1, column + 1);
+
+            FillSheetRect(originX, originY, barWidth, barHeight, new Color32(10, 10, 12, 255));
+
+            var rowColor = new Color32(90, 220, 235, 255);
+            for (int i = 0; i <= row; i++)
+                FillSheetRect(originX + pad + i * (dot + pad), originY + pad, dot, dot, rowColor);
+
+            var columnColor = new Color32(235, 160, 45, 255);
+            for (int i = 0; i <= column; i++)
+                FillSheetRect(originX + pad + i * (dot + pad), originY + pad * 2 + dot, dot, dot, columnColor);
+        }
+
+        private static void FillSheetRect(int x, int y, int width, int height, Color32 color)
+        {
+            int endX = Mathf.Min(x + width, _sheetWidth);
+            int endY = Mathf.Min(y + height, _sheetHeight);
+
+            for (int py = Mathf.Max(0, y); py < endY; py++)
+            {
+                int row = py * _sheetWidth;
+                for (int px = Mathf.Max(0, x); px < endX; px++)
+                    _sheetPixels[row + px] = color;
+            }
+        }
+
+        /// <summary>
+        /// Encodes the top-down sheet buffer as a PNG. `Texture2D` pixel arrays are bottom-up, so the
+        /// buffer is flipped once here rather than at every blit.
+        /// </summary>
+        private static void WriteSheetPng(string path)
+        {
+            FlipVerticalInPlace(_sheetPixels, _sheetWidth, _sheetHeight);
+
+            var texture = new Texture2D(_sheetWidth, _sheetHeight, TextureFormat.RGB24, false, false)
+            {
+                name = "H8MP_Sheet",
+                hideFlags = HideFlags.HideAndDontSave,
+            };
+
+            try
+            {
+                texture.SetPixels32(_sheetPixels);
+                texture.Apply(false, false);
+                File.WriteAllBytes(path, texture.EncodeToPNG());
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(texture);
+            }
+        }
+
+        // ====================================================================================
+        // Measurement. This is what turns the render into evidence instead of an impression.
+        // ====================================================================================
+
+        /// <summary>
+        /// Everything measurable about one mesh without opening Unity, checked against the contracts in
+        /// `3dmodel.md` section 3 (vertex layout), section 7 (LOD triangle budgets), section 10
+        /// (validation gates) and section 4 (hard-surface vertex-colour semantics).
+        /// </summary>
+        private struct MeshMeasurement
+        {
+            public bool Readable;
+            public int VertexCount;
+            public int TriangleCount;
+            public int SubMeshCount;
+            public string Topologies;
+            public UnityEngine.Bounds Bounds;
+
+            public bool HasNormals;
+            public bool HasTangents;
+            public bool HasUv0;
+            public bool HasUv1;
+            public bool HasColors;
+
+            public int NonFinitePositions;
+            public int DegenerateTriangles;
+            public int NormalsOutOfTolerance;
+            public int TangentHandednessInvalid;
+            public float MinNormalLength;
+            public float MaxNormalLength;
+
+            public Vector2 Uv0Min;
+            public Vector2 Uv0Max;
+            public int Uv0OutsideUnitRange;
+
+            public float[] ChannelMin;
+            public float[] ChannelMax;
+            public float[] ChannelMean;
+
+            public bool BudgetClassified;
+            public string AssetClass;
+            public int LodLevel;
+            public int MaxTriangles;
+        }
+
+        private static MeshMeasurement MeasureMesh(Mesh mesh, string assetPath)
+        {
+            var measurement = new MeshMeasurement
+            {
+                Readable = mesh.isReadable,
+                VertexCount = mesh.vertexCount,
+                SubMeshCount = mesh.subMeshCount,
+                Bounds = mesh.bounds,
+
+                // `HasVertexAttribute` reads the vertex-layout description, so it answers "does this
+                // stream exist" without touching vertex data or requiring a readable mesh. That is the
+                // question `3dmodel.md:76-87` asks, and it distinguishes an absent stream from a present
+                // stream full of zeros - which a data read alone conflates.
+                HasNormals = mesh.HasVertexAttribute(VertexAttribute.Normal),
+                HasTangents = mesh.HasVertexAttribute(VertexAttribute.Tangent),
+                HasUv0 = mesh.HasVertexAttribute(VertexAttribute.TexCoord0),
+                HasUv1 = mesh.HasVertexAttribute(VertexAttribute.TexCoord1),
+                HasColors = mesh.HasVertexAttribute(VertexAttribute.Color),
+
+                MinNormalLength = float.MaxValue,
+                MaxNormalLength = 0f,
+                Uv0Min = new Vector2(float.MaxValue, float.MaxValue),
+                Uv0Max = new Vector2(float.MinValue, float.MinValue),
+                ChannelMin = new[] { float.MaxValue, float.MaxValue, float.MaxValue, float.MaxValue },
+                ChannelMax = new[] { float.MinValue, float.MinValue, float.MinValue, float.MinValue },
+                ChannelMean = new float[4],
+            };
+
+            var topologies = new StringBuilder(32);
+            int triangles = 0;
+            for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+            {
+                MeshTopology topology = mesh.GetTopology(submesh);
+                if (topologies.Length > 0)
+                    topologies.Append('/');
+                topologies.Append(topology.ToString());
+
+                uint indexCount = mesh.GetIndexCount(submesh);
+                if (topology == MeshTopology.Triangles)
+                    triangles += (int)(indexCount / 3u);
+            }
+
+            measurement.Topologies = topologies.Length == 0 ? "none" : topologies.ToString();
+            measurement.TriangleCount = triangles;
+
+            string assetClass;
+            int lodLevel;
+            int maxTriangles;
+            measurement.BudgetClassified = TryResolveTriangleBudget(
+                assetPath, mesh.name, out assetClass, out lodLevel, out maxTriangles);
+            measurement.AssetClass = assetClass;
+            measurement.LodLevel = lodLevel;
+            measurement.MaxTriangles = maxTriangles;
+
+            if (!measurement.Readable)
+            {
+                measurement.MinNormalLength = 0f;
+                return measurement;
+            }
+
+            // `Mesh.GetVertices(List<T>)` and friends, not `mesh.vertices`. `AGENTS.md`
+            // `Runtime API Defaults` names that overload as the required shape for mesh CPU reads, and
+            // the lists are static and reused so a 40-mesh run does not churn the heap.
+            mesh.GetVertices(ScratchVertices);
+            for (int i = 0; i < ScratchVertices.Count; i++)
+            {
+                Vector3 position = ScratchVertices[i];
+                if (float.IsNaN(position.x) || float.IsNaN(position.y) || float.IsNaN(position.z) ||
+                    float.IsInfinity(position.x) || float.IsInfinity(position.y) || float.IsInfinity(position.z))
+                {
+                    measurement.NonFinitePositions++;
+                }
+            }
+
+            if (measurement.HasNormals)
+            {
+                mesh.GetNormals(ScratchNormals);
+                for (int i = 0; i < ScratchNormals.Count; i++)
+                {
+                    float length = ScratchNormals[i].magnitude;
+                    if (length < measurement.MinNormalLength)
+                        measurement.MinNormalLength = length;
+                    if (length > measurement.MaxNormalLength)
+                        measurement.MaxNormalLength = length;
+
+                    // `3dmodel.md:270`: "Normals normalized within 0.995 to 1.005 length."
+                    if (Mathf.Abs(length - 1f) > 0.005f)
+                        measurement.NormalsOutOfTolerance++;
+                }
+            }
+
+            if (measurement.MinNormalLength > float.MaxValue * 0.5f)
+                measurement.MinNormalLength = 0f;
+
+            if (measurement.HasTangents)
+            {
+                mesh.GetTangents(ScratchTangents);
+                for (int i = 0; i < ScratchTangents.Count; i++)
+                {
+                    // `3dmodel.md:271`: "Tangents normalized and finite; handedness is -1 or 1."
+                    float handedness = ScratchTangents[i].w;
+                    if (Mathf.Abs(Mathf.Abs(handedness) - 1f) > 0.001f)
+                        measurement.TangentHandednessInvalid++;
+                }
+            }
+
+            if (measurement.HasUv0)
+            {
+                // `3dmodel.md:90` forbids "unbounded UV island" and `:157` forbids "UV shells touching
+                // atlas border without padding". The UV0 bounding box answers both cheaply: a shell that
+                // runs past 0..1 is either intentionally tiling or an unwrapper that never packed, and
+                // those two cases look identical in every rendered view.
+                mesh.GetUVs(0, ScratchUv);
+                for (int i = 0; i < ScratchUv.Count; i++)
+                {
+                    Vector2 uv = ScratchUv[i];
+                    if (uv.x < measurement.Uv0Min.x)
+                        measurement.Uv0Min.x = uv.x;
+                    if (uv.y < measurement.Uv0Min.y)
+                        measurement.Uv0Min.y = uv.y;
+                    if (uv.x > measurement.Uv0Max.x)
+                        measurement.Uv0Max.x = uv.x;
+                    if (uv.y > measurement.Uv0Max.y)
+                        measurement.Uv0Max.y = uv.y;
+
+                    if (uv.x < -0.001f || uv.x > 1.001f || uv.y < -0.001f || uv.y > 1.001f)
+                        measurement.Uv0OutsideUnitRange++;
+                }
+            }
+
+            if (measurement.Uv0Min.x > float.MaxValue * 0.5f)
+            {
+                measurement.Uv0Min = Vector2.zero;
+                measurement.Uv0Max = Vector2.zero;
+            }
+
+            for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+            {
+                if (mesh.GetTopology(submesh) != MeshTopology.Triangles)
+                    continue;
+
+                mesh.GetTriangles(ScratchIndices, submesh);
+                for (int i = 0; i + 2 < ScratchIndices.Count; i += 3)
+                {
+                    int a = ScratchIndices[i];
+                    int b = ScratchIndices[i + 1];
+                    int c = ScratchIndices[i + 2];
+                    if (a < 0 || b < 0 || c < 0 ||
+                        a >= ScratchVertices.Count || b >= ScratchVertices.Count || c >= ScratchVertices.Count)
+                    {
+                        measurement.DegenerateTriangles++;
+                        continue;
+                    }
+
+                    // `3dmodel.md:268`: "No degenerate triangle: length(cross(b - a, c - a)) > epsilon."
+                    Vector3 edge0 = ScratchVertices[b] - ScratchVertices[a];
+                    Vector3 edge1 = ScratchVertices[c] - ScratchVertices[a];
+                    if (Vector3.Cross(edge0, edge1).magnitude <= 1e-7f)
+                        measurement.DegenerateTriangles++;
+                }
+            }
+
+            if (measurement.HasColors)
+                MeasureVertexColorChannels(mesh, ref measurement);
+
+            return measurement;
+        }
+
+        /// <summary>
+        /// Per-channel range of the vertex colours.
+        ///
+        /// This is the hard-surface translation of the highest-value diagnostic in the Blender harness.
+        /// `preview.py:23-26` records that a sway gradient which collapsed to a constant "is invisible in
+        /// every ordinary render, passes a presence check", and only the raw channel range exposes it.
+        /// The same trap applies to `3dmodel.md:122-126`: R is edge wear, G is rust/oxidation, B is baked
+        /// AO/cavity, A is emission/warning-paint. A B channel that is constant means NO ambient occlusion
+        /// was baked at all - the stream exists, the mesh is valid, and the asset is missing the single
+        /// piece of data that makes a chamfer read as manufactured rather than as flat shading.
+        /// </summary>
+        private static void MeasureVertexColorChannels(Mesh mesh, ref MeshMeasurement measurement)
+        {
+            mesh.GetColors(ScratchColors);
+            if (ScratchColors.Count == 0)
+            {
+                for (int channel = 0; channel < 4; channel++)
+                {
+                    measurement.ChannelMin[channel] = 0f;
+                    measurement.ChannelMax[channel] = 0f;
+                }
+
+                return;
+            }
+
+            var sums = new double[4];
+            for (int i = 0; i < ScratchColors.Count; i++)
+            {
+                Color color = ScratchColors[i];
+                AccumulateChannel(ref measurement, sums, 0, color.r);
+                AccumulateChannel(ref measurement, sums, 1, color.g);
+                AccumulateChannel(ref measurement, sums, 2, color.b);
+                AccumulateChannel(ref measurement, sums, 3, color.a);
+            }
+
+            for (int channel = 0; channel < 4; channel++)
+                measurement.ChannelMean[channel] = (float)(sums[channel] / ScratchColors.Count);
+        }
+
+        private static void AccumulateChannel(ref MeshMeasurement measurement, double[] sums,
+                                              int channel, float value)
+        {
+            if (value < measurement.ChannelMin[channel])
+                measurement.ChannelMin[channel] = value;
+            if (value > measurement.ChannelMax[channel])
+                measurement.ChannelMax[channel] = value;
+
+            sums[channel] += value;
+        }
+
+        /// <summary>
+        /// Judges a channel constant RELATIVE to the range it actually occupies.
+        ///
+        /// An absolute threshold repeats a bug already fixed on the Blender side
+        /// (`preview.py:730-745`): a legitimately narrow band read as flat, because the compliant range
+        /// for some assets is narrower than the absolute threshold. Asking "does this channel VARY across
+        /// the surface" is the right question; "is its span wide" is not.
+        /// </summary>
+        private static bool ChannelIsConstant(float min, float max)
+        {
+            float span = max - min;
+            float reference = Mathf.Max(Mathf.Abs(max), 1e-6f);
+            return (span / reference) <= 0.02f;
+        }
+
+        // ====================================================================================
+        // Report.
+        // ====================================================================================
+
+        private static string Fixed(float value, string format)
+        {
+            return value.ToString(format, CultureInfo.InvariantCulture);
+        }
+
+        private static void WriteReport(string path, string assetPath, Mesh mesh, string sheetFileName,
+                                        MeshMeasurement measurement, List<H8MeshPreviewTileStats> tiles,
+                                        PreviewRig rig, int tileResolution, int isolatedRenderers,
+                                        int blankTiles, bool sheetWritten)
+        {
+            var builder = new StringBuilder(6144);
+
+            builder.Append("H8 GENERATED MESH PREVIEW REPORT\n");
+            builder.Append("route=Hecton8.EditorTools.Diagnostics.GeneratedMeshPreviewRenderer\n");
+            builder.Append("assetPath=").Append(assetPath).Append('\n');
+            builder.Append("meshName=").Append(mesh.name).Append('\n');
+            builder.Append("sheetPng=").Append(sheetWritten ? sheetFileName : "<NOT WRITTEN>").Append('\n');
+            builder.Append("generatedUtc=")
+                .Append(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture))
+                .Append("Z\n");
+            builder.Append("unityVersion=").Append(Application.unityVersion).Append('\n');
+            builder.Append("graphicsDevice=").Append(SystemInfo.graphicsDeviceType).Append('\n');
+            builder.Append("batchmode=").Append(Application.isBatchMode ? "true" : "false").Append('\n');
+            builder.Append("renderPath=").Append(rig.RenderPath).Append('\n');
+            builder.Append("renderPipeline=")
+                .Append(GraphicsSettings.currentRenderPipeline != null
+                    ? GraphicsSettings.currentRenderPipeline.GetType().Name
+                    : "<none - built-in>")
+                .Append('\n');
+
+            builder.Append("\n-- SHEET LAYOUT (position is the label) --\n");
+            builder.Append("rows(top->bottom)=");
+            for (int i = 0; i < tiles.Count; i += ViewNames.Length)
+            {
+                if (i > 0)
+                    builder.Append(',');
+                builder.Append(tiles[i].Mode.ToString().ToUpperInvariant());
+            }
+
+            builder.Append('\n');
+            builder.Append("columns(left->right)=").Append(string.Join(",", ViewNames)).Append('\n');
+            builder.Append("tilePx=").Append(tileResolution.ToString(CultureInfo.InvariantCulture))
+                .Append(" (rendered at ")
+                .Append((tileResolution * Supersample).ToString(CultureInfo.InvariantCulture))
+                .Append(" and box-downsampled in linear light)\n");
+            builder.Append("dotCode=top-left of each tile: cyan dots = row index+1, amber dots = column index+1\n");
+            builder.Append("cameraFovDeg=").Append(Fixed(CameraFovDegrees, "F1"))
+                .Append("  frameMargin=").Append(Fixed(FrameMargin, "F2"))
+                .Append("  (both CONSTANT, so two assets are directly comparable)\n");
+            builder.Append("studioSmoothness=").Append(Fixed(StudioSmoothness, "F2"))
+                .Append(" (roughness ").Append(Fixed(1f - StudioSmoothness, "F2"))
+                .Append(") - chosen so a chamfer reads as a third tonal band; a fully rough surface cannot\n");
+            builder.Append("  distinguish a beveled edge from a raw 90-degree one, which is the gate 3dmodel.md:94 exists for\n");
+            if (rig.NormalsMaterial == null)
+                builder.Append("normalsRow=OMITTED: ").Append(rig.NormalsUnavailableReason).Append('\n');
+
+            builder.Append("\n-- MESH MEASUREMENT (3dmodel.md section 3) --\n");
+            builder.Append("readable=").Append(measurement.Readable ? "true" : "FALSE - per-vertex checks unavailable").Append('\n');
+            builder.Append("vertices=").Append(measurement.VertexCount.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            builder.Append("triangles=").Append(measurement.TriangleCount.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            builder.Append("submeshes=").Append(measurement.SubMeshCount.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            builder.Append("topology=").Append(measurement.Topologies).Append('\n');
+            builder.Append("boundsCentreM=").Append(FormatVector(measurement.Bounds.center)).Append('\n');
+            builder.Append("boundsExtentsM=").Append(FormatVector(measurement.Bounds.extents)).Append(" (half-extents)\n");
+            builder.Append("boundsSizeM=").Append(FormatVector(measurement.Bounds.size)).Append(" (full size)\n");
+            builder.Append("hasNormals=").Append(measurement.HasNormals ? "true" : "FALSE").Append('\n');
+            builder.Append("hasTangents=").Append(measurement.HasTangents ? "true" : "FALSE - normal maps will be wrong (3dmodel.md:82)").Append('\n');
+            builder.Append("hasUV0=").Append(measurement.HasUv0 ? "true" : "FALSE").Append('\n');
+            builder.Append("hasUV1=").Append(measurement.HasUv1 ? "true" : "false").Append('\n');
+            builder.Append("hasVertexColours=").Append(measurement.HasColors ? "true" : "FALSE").Append('\n');
+
+            builder.Append("\n-- 3dmodel.md SECTION 7 TRIANGLE BUDGET --\n");
+            if (measurement.BudgetClassified)
+            {
+                builder.Append("assetClass=").Append(measurement.AssetClass).Append('\n');
+                builder.Append("lodLevel=LOD").Append(measurement.LodLevel.ToString(CultureInfo.InvariantCulture)).Append('\n');
+                builder.Append("budgetMax=").Append(measurement.MaxTriangles.ToString(CultureInfo.InvariantCulture)).Append('\n');
+                builder.Append("verdict=")
+                    .Append(measurement.TriangleCount <= measurement.MaxTriangles
+                        ? "PASS (" + measurement.TriangleCount.ToString(CultureInfo.InvariantCulture) + " <= " +
+                          measurement.MaxTriangles.ToString(CultureInfo.InvariantCulture) + ")"
+                        : "OVER BUDGET (" + measurement.TriangleCount.ToString(CultureInfo.InvariantCulture) + " > " +
+                          measurement.MaxTriangles.ToString(CultureInfo.InvariantCulture) + ")")
+                    .Append('\n');
+                builder.Append("note=the budget is a hard MAXIMUM, not a target (3dmodel.md:213). Being far under\n");
+                builder.Append("  it is not a pass on its own: 3dmodel.md:213 spends the saved budget on material\n");
+                builder.Append("  detail, and TASTE.md:514 rejects \"boxes, tubes, blobs ... sold as final assets\".\n");
+                builder.Append("  Whether this mesh has silhouette intelligence is the SHEET's question, not this number's.\n");
+            }
+            else
+            {
+                builder.Append("verdict=UNCLASSIFIED - path matches no row of the 3dmodel.md:203-211 table.\n");
+                builder.Append("  No budget is asserted rather than inventing one the bible does not grant.\n");
+            }
+
+            builder.Append("\n-- 3dmodel.md SECTION 10 GEOMETRY VALIDATION --\n");
+            if (measurement.Readable)
+            {
+                builder.Append("nonFinitePositions=").Append(measurement.NonFinitePositions.ToString(CultureInfo.InvariantCulture)).Append('\n');
+                builder.Append("degenerateTriangles=").Append(measurement.DegenerateTriangles.ToString(CultureInfo.InvariantCulture)).Append(" (cross-product area <= 1e-7)\n");
+                builder.Append("normalsOutOfUnitTolerance=").Append(measurement.NormalsOutOfTolerance.ToString(CultureInfo.InvariantCulture)).Append(" (|len-1| > 0.005)\n");
+                builder.Append("normalLengthRange=").Append(Fixed(measurement.MinNormalLength, "F6"))
+                    .Append("..").Append(Fixed(measurement.MaxNormalLength, "F6")).Append('\n');
+                builder.Append("tangentHandednessInvalid=").Append(measurement.TangentHandednessInvalid.ToString(CultureInfo.InvariantCulture)).Append(" (w not +-1)\n");
+                builder.Append("uv0BoundingBox=(").Append(Fixed(measurement.Uv0Min.x, "F4")).Append(", ")
+                    .Append(Fixed(measurement.Uv0Min.y, "F4")).Append(") .. (")
+                    .Append(Fixed(measurement.Uv0Max.x, "F4")).Append(", ")
+                    .Append(Fixed(measurement.Uv0Max.y, "F4")).Append(")\n");
+                builder.Append("uv0VerticesOutside0to1=").Append(measurement.Uv0OutsideUnitRange.ToString(CultureInfo.InvariantCulture))
+                    .Append(" (tiling by design, or an unwrap that never packed - 3dmodel.md:90,157)\n");
+            }
+            else
+            {
+                builder.Append("SKIPPED - mesh.isReadable is false.\n");
+            }
+
+            builder.Append("\n-- VERTEX COLOUR CHANNELS (3dmodel.md:122-126 hard-surface contract) --\n");
+            if (measurement.HasColors && measurement.Readable)
+            {
+                AppendChannel(builder, "R edge/rim wear     ", measurement, 0);
+                AppendChannel(builder, "G rust/oxid/biofilm ", measurement, 1);
+                AppendChannel(builder, "B baked AO/cavity   ", measurement, 2);
+                AppendChannel(builder, "A emission/paint    ", measurement, 3);
+                builder.Append("A CONSTANT channel means that data was never baked. The stream exists and the mesh\n");
+                builder.Append("  is valid, so no presence check catches it - only this range does.\n");
+            }
+            else
+            {
+                builder.Append(measurement.HasColors
+                    ? "SKIPPED - mesh.isReadable is false.\n"
+                    : "ABSENT - no Color stream. 3dmodel.md:122-126 requires wear/oxidation/AO/paint masks\n  for hard-surface generated modules.\n");
+            }
+
+            builder.Append("\n-- CAPTURE ENVIRONMENT (read only; nothing was mutated) --\n");
+            builder.Append("previewScene=H8MeshPreview (EditorSceneManager.NewPreviewScene; no project scene opened)\n");
+            builder.Append("renderersEnabledInPreviewScene=").Append(isolatedRenderers.ToString(CultureInfo.InvariantCulture))
+                .Append(" (expected 1 for form rows, 3 for the scale row)\n");
+            builder.Append("meshFiltersInRun=1 (subject bound by reassignment, so two LODs cannot coexist)\n");
+            builder.Append("postProcessing=false  antialiasing=None  volumeLayerMask=0  hdr=false\n");
+            builder.Append("sceneFogEnabled=").Append(RenderSettings.fog ? "TRUE" : "false").Append('\n');
+            if (RenderSettings.fog)
+            {
+                builder.Append("  WARNING: the active scene has fog on and RenderSettings is a per-scene global.\n");
+                builder.Append("  It is NOT overridden here, because writing it would dirty the open scene and\n");
+                builder.Append("  AGENTS.md [RULE] Sandbox Firewall Rule forbids that. Fog can wash the silhouette\n");
+                builder.Append("  and flatten the studio highlight. Re-run with an empty scene loaded for a clean read.\n");
+            }
+
+            builder.Append("ambientMode=").Append(RenderSettings.ambientMode)
+                .Append("  ambientIntensity=").Append(Fixed(RenderSettings.ambientIntensity, "F2")).Append('\n');
+            builder.Append("note=exposure comes from three directional lights, not from ambient, and environment\n");
+            builder.Append("  reflections are keyword-disabled on the flat and studio materials. A zero ambient\n");
+            builder.Append("  probe therefore lowers contrast here rather than producing the black frame recorded\n");
+            builder.Append("  at H8_TerrainGPUVisualTester.cs:393-395.\n");
+
+            builder.Append("\n-- PER-TILE FRAME STATISTICS (AGENTS.md Never Trust Automated Assertions Alone) --\n");
+            builder.Append("ROW           VIEW           BUCKETS/64  MEANLUMA  STDDEV   CORNERS   VERDICT\n");
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                H8MeshPreviewTileStats tile = tiles[i];
+                builder.Append(tile.Mode.ToString().ToUpperInvariant().PadRight(14));
+                builder.Append(tile.View.PadRight(15));
+                builder.Append(tile.OccupiedLumaBuckets.ToString(CultureInfo.InvariantCulture).PadRight(12));
+                builder.Append(Fixed(tile.MeanLuma, "F2").PadRight(10));
+                builder.Append(Fixed(tile.LumaStdDev, "F2").PadRight(9));
+                builder.Append((tile.CornersAreBackdrop ? "clean" : "FOREIGN").PadRight(10));
+                builder.Append(tile.Verdict.ToString());
+                builder.Append('\n');
+            }
+
+            builder.Append("blankTiles=").Append(blankTiles.ToString(CultureInfo.InvariantCulture))
+                .Append('/').Append(tiles.Count.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            builder.Append("CORNERS=FOREIGN means a tile corner is not the clear colour: geometry in frame that\n");
+            builder.Append("  should not be there. Expected on the scale row, where the grid reaches a corner.\n");
+
+            builder.Append("\n-- ACCEPTANCE --\n");
+            builder.Append("NONE. Docs/QUALITY_GATES.md:176 - \"Raw diagnostic MCP screenshots, static reports, and\n");
+            builder.Append("near-identical capture galleries can reject bad visuals only. They cannot accept visual\n");
+            builder.Append("quality.\" A non-blank sheet means the frame is fit to enter the Visual Reference Parity\n");
+            builder.Append("Gate. The lead's own eyes on the PNG decide; these numbers never do.\n");
+
+            File.WriteAllText(path, builder.ToString(), Encoding.UTF8);
+        }
+
+        private static void AppendChannel(StringBuilder builder, string label,
+                                          MeshMeasurement measurement, int channel)
+        {
+            builder.Append(label);
+            builder.Append("min=").Append(Fixed(measurement.ChannelMin[channel], "F5"));
+            builder.Append("  max=").Append(Fixed(measurement.ChannelMax[channel], "F5"));
+            builder.Append("  mean=").Append(Fixed(measurement.ChannelMean[channel], "F5"));
+            builder.Append("  ").Append(ChannelIsConstant(
+                measurement.ChannelMin[channel], measurement.ChannelMax[channel])
+                ? "CONSTANT - not baked"
+                : "varies");
+            builder.Append('\n');
+        }
+
+        private static string FormatVector(Vector3 value)
+        {
+            return Fixed(value.x, "F4") + ", " + Fixed(value.y, "F4") + ", " + Fixed(value.z, "F4");
+        }
+
+        // ====================================================================================
+        // Public entry points.
+        // ====================================================================================
+
+        /// <summary>
+        /// Renders every `Mesh` at one asset path. Returns false if any mesh there failed to produce a
+        /// sheet. <paramref name="sheetPath"/> and <paramref name="reportPath"/> describe the first mesh.
+        ///
+        /// Callable on its own - it builds and tears down its own rig - so a single suspect asset can be
+        /// re-rendered without a full sweep. Idempotent: it overwrites its own outputs by name.
+        /// </summary>
+        public static bool RenderMeshPreview(string assetPath, string outputDir, int tileResolution,
+                                             out string sheetPath, out string reportPath)
+        {
+            sheetPath = null;
+            reportPath = null;
+
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                Debug.LogError($"{Marker} RenderMeshPreview called with an empty asset path.");
+                return false;
+            }
+
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    $"{Marker} NO GRAPHICS DEVICE (graphicsDeviceType=Null). This editor was launched " +
+                    "with -nographics, which AGENTS.md [RULE] MapMagic & Batchmode Graphics Protocol " +
+                    "bans. No render can produce pixels and no PNG will be written.");
+                return false;
+            }
+
+            var meshes = new List<Mesh>(4);
+            UnityEngine.Object[] all = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (int i = 0; i < all.Length; i++)
+            {
+                Mesh mesh = all[i] as Mesh;
+                if (mesh != null)
+                    meshes.Add(mesh);
+            }
+
+            if (meshes.Count == 0)
+            {
+                Debug.LogError($"{Marker} no Mesh object at '{assetPath}'.");
+                return false;
+            }
+
+            Directory.CreateDirectory(outputDir);
+            AllocateRunResources(tileResolution, AllModes.Length, ViewNames.Length);
+
+            PreviewRig rig = null;
+            bool allSucceeded = true;
+            try
+            {
+                rig = PreviewRig.Create();
+                for (int i = 0; i < meshes.Count; i++)
+                {
+                    string producedSheet;
+                    string producedReport;
+                    bool ok = RenderOneMesh(rig, assetPath, meshes[i], outputDir, tileResolution,
+                        out producedSheet, out producedReport);
+
+                    if (i == 0)
+                    {
+                        sheetPath = producedSheet;
+                        reportPath = producedReport;
+                    }
+
+                    allSucceeded &= ok;
+                }
+            }
+            finally
+            {
+                if (rig != null)
+                    rig.Dispose();
+
+                ReleaseRunResources();
+            }
+
+            return allSucceeded;
+        }
+
+        /// <summary>
+        /// Renders one mesh into one sheet plus one report.
+        ///
+        /// GATING. If every tile of the SILHOUETTE and FLAT rows is blank, the failure is the render, not
+        /// the mesh, and NO PNG is written - only a `RENDER_FAILED` report naming the cause. Writing an
+        /// image there is how the eleven black PNGs in `Logs/` came to exist and be graded twice. If only
+        /// some tiles are blank the sheet IS written, with `BLANKTILES` in its filename so the defect is
+        /// visible in a directory listing rather than only inside the report.
+        /// </summary>
+        private static bool RenderOneMesh(PreviewRig rig, string assetPath, Mesh mesh, string outputDir,
+                                          int tileResolution, out string sheetPath, out string reportPath)
+        {
+            string stem = SanitizeFileStem(mesh.name);
+            sheetPath = null;
+            reportPath = Path.Combine(outputDir, stem + "_REPORT.txt");
+
+            UnityEngine.Bounds bounds = rig.SetSubject(mesh);
+            MeshMeasurement measurement = MeasureMesh(mesh, assetPath);
+
+            if (bounds.size.sqrMagnitude <= 1e-12f)
+            {
+                File.WriteAllText(reportPath,
+                    "H8 GENERATED MESH PREVIEW REPORT\nassetPath=" + assetPath + "\nmeshName=" + mesh.name +
+                    "\nstatus=RENDER_REFUSED\nreason=mesh bounds are degenerate (size " +
+                    FormatVector(bounds.size) + "); there is nothing to frame. 3dmodel.md:295 requires " +
+                    "bounds finite with extents above 0.001 m.\n", Encoding.UTF8);
+
+                Debug.LogError($"{Marker} REFUSED '{mesh.name}': degenerate bounds, nothing to frame.");
+                return false;
+            }
+
+            rig.BuildWitness(bounds);
+            WarmUp(rig, bounds);
+
+            ClearSheet();
+
+            var tiles = new List<H8MeshPreviewTileStats>(AllModes.Length * ViewNames.Length);
+            int blankTiles = 0;
+            int isolatedRenderers = 0;
+            int row = 0;
+
+            for (int modeIndex = 0; modeIndex < AllModes.Length; modeIndex++)
+            {
+                H8MeshPreviewMode mode = AllModes[modeIndex];
+                if (mode == H8MeshPreviewMode.Normals && rig.NormalsMaterial == null)
+                    continue;   // row omitted with a named reason in the report, never rendered black
+
+                for (int viewIndex = 0; viewIndex < ViewNames.Length; viewIndex++)
+                {
+                    H8MeshPreviewTileStats stats;
+                    RenderAndMeasureTile(rig, mode, viewIndex, bounds, tileResolution, out stats);
+
+                    BlitTileToSheet(row, viewIndex, tileResolution);
+                    BurnDotCode(row, viewIndex, tileResolution);
+
+                    tiles.Add(stats);
+                    if (stats.IsBlank)
+                        blankTiles++;
+                }
+
+                isolatedRenderers = rig.EnforceIsolation(mode == H8MeshPreviewMode.Scale);
+                row++;
+            }
+
+            int formTiles = 0;
+            int blankFormTiles = 0;
+            for (int i = 0; i < tiles.Count; i++)
+            {
+                if (tiles[i].Mode != H8MeshPreviewMode.Silhouette && tiles[i].Mode != H8MeshPreviewMode.Flat)
+                    continue;
+
+                formTiles++;
+                if (tiles[i].IsBlank)
+                    blankFormTiles++;
+            }
+
+            bool renderIsBroken = formTiles > 0 && blankFormTiles == formTiles;
+            bool sheetWritten = false;
+
+            if (!renderIsBroken)
+            {
+                string suffix = blankTiles > 0 ? "_SHEET.BLANKTILES.png" : "_SHEET.png";
+                sheetPath = Path.Combine(outputDir, stem + suffix);
+                WriteSheetPng(sheetPath);
+                sheetWritten = true;
+            }
+            else
+            {
+                reportPath = Path.Combine(outputDir, stem + "_RENDER_FAILED.txt");
+            }
+
+            WriteReport(reportPath, assetPath, mesh, sheetPath == null ? string.Empty : Path.GetFileName(sheetPath),
+                measurement, tiles, rig, tileResolution, isolatedRenderers, blankTiles, sheetWritten);
+
+            if (renderIsBroken)
+            {
+                Debug.LogError(
+                    $"{Marker} RENDER FAILED for '{mesh.name}': every silhouette and flat tile is blank, " +
+                    $"so the render produced nothing - this is not a verdict on the mesh. renderPath=" +
+                    $"{rig.RenderPath}. NO PNG written. Report: {reportPath}");
+                return false;
+            }
+
+            if (blankTiles > 0)
+            {
+                Debug.LogWarning(
+                    $"{Marker} {blankTiles} blank tile(s) for '{mesh.name}'. Sheet written with BLANKTILES " +
+                    $"in the filename. renderPath={rig.RenderPath}. Report: {reportPath}");
+                return false;
+            }
+
+            Debug.Log(
+                $"{Marker} OK {mesh.name} tris={measurement.TriangleCount} " +
+                $"verts={measurement.VertexCount} sheet={Path.GetFileName(sheetPath)}");
+            return true;
+        }
+
+        /// <summary>
+        /// Batch entry point. Sweeps <see cref="DefaultTargetFolders"/>, or the semicolon-separated list
+        /// in `-h8MeshPreviewFolders`, and writes one sheet plus one report per mesh into
+        /// `Docs/AgentLogs/UnityMeshPreviews/`.
+        ///
+        /// RE-RUNNABLE AND IDEMPOTENT. Output filenames derive from the mesh name, the stale-artefact
+        /// wipe runs first, and nothing is appended to. Running it twice leaves the directory in the same
+        /// state as running it once.
+        ///
+        /// ON FRAME SETTLING - the decision, and the reasoning, because getting it wrong produces a
+        /// black PNG that reads as a broken asset. `AGENTS.md`
+        /// `[RULE] MapMagic &amp; Batchmode Graphics Protocol` requires "state-machine polling via
+        /// EditorApplication.update to wait for stable frames ... and at least 200+ frames of complete
+        /// silence before capturing". That machinery is NOT used here, and using it would break this tool.
+        ///
+        /// What that rule waits for is an ASYNC PRODUCER finishing: MapMagic generates terrain across
+        /// frames, so `Terrain length == 9`, alphamaps loaded and active `TerrainCollider`s are
+        /// conditions that become true LATER. `COMMON_SENSE.md:29-32` ("Batchmode Wait Blindness") is the
+        /// same point - a headless editor does not advance itself, so you must pump it.
+        ///
+        /// This tool has no async producer anywhere in its chain:
+        ///  - `AssetDatabase.LoadAllAssetsAtPath` is synchronous; the mesh is fully resident on return.
+        ///  - the preview scene, camera, lights and witness geometry are built synchronously on the main
+        ///    thread, in this call, with no import and no scene load.
+        ///  - `RenderPipeline.SubmitRenderRequest` / `Camera.Render()` are blocking submits, not requests
+        ///    queued for a later frame.
+        ///  - `Texture2D.ReadPixels` from the active target is a hard GPU sync point: it cannot return
+        ///    before the GPU has finished writing that surface.
+        /// So the "settled frame" condition holds by construction, and there is nothing for a polling
+        /// loop to wait for.
+        ///
+        /// Deferring onto `EditorApplication.update` would actively break it. `-executeMethod` returns as
+        /// soon as this method returns; work parked on a later editor frame would never run before the
+        /// editor exits. That is exactly why `H8_RouteCaptureStation.cs:103` documents its own usage as
+        /// "no -quit (the station exits on its own)". A synchronous method plus a self-issued exit code is
+        /// the correct shape for a capture with no async dependency.
+        ///
+        /// Two REAL readiness hazards remain, and neither is fixed by waiting frames:
+        ///  1. cold shader variants and RenderGraph residency - handled by <see cref="WarmUp"/>, three
+        ///     discarded renders, copied from `H8_TerrainGPUVisualTester.cs:350-361`;
+        ///  2. a zero ambient SH probe - handled by `DynamicGI.UpdateEnvironment()` in
+        ///     <see cref="PreviewRig.Create"/>, plus not depending on ambient for exposure at all.
+        /// And because being wrong about any of this is possible, every tile is MEASURED and a run whose
+        /// form rows are blank writes no PNG. The reasoning above is an argument; the gate is the check.
+        /// </summary>
+        [MenuItem("Tools/Hecton/Diagnostics/Render Generated Mesh Previews", priority = 250)]
+        public static void RenderGeneratedMeshPreviews()
+        {
+            // A capture taken now would render the last successfully compiled state and be attributed to
+            // current source. Same guard as `H8_RouteCaptureStation.cs:398-405`.
+            if (EditorUtility.scriptCompilationFailed)
+            {
+                Debug.LogError(
+                    $"{Marker} ABORT scripts failed to compile. A render now would show the last " +
+                    "successfully compiled state and be credited to the current source.");
+                Finish(5);
+                return;
+            }
+
+            string outputDir = ResolvePreviewOutputDirectory();
+
+            int deleted;
+            List<string> undeletable;
+            ClearStaleArtifacts(outputDir, out deleted, out undeletable);
+            Debug.Log($"{Marker} pre-run wipe: deleted {deleted} stale .png/.log/.txt from {outputDir}");
+
+            if (undeletable.Count > 0)
+            {
+                Debug.LogError(
+                    $"{Marker} {undeletable.Count} stale artefact(s) COULD NOT BE DELETED and may be " +
+                    $"graded as this run's output: {string.Join(", ", undeletable.ToArray())}. " +
+                    "Close any image viewer holding them and re-run.");
+            }
+
+            // -nographics check before anything else, because it explains every downstream failure and no
+            // later reject may mask it. Mirrors `H8_RouteCaptureStation.cs:494,505-518`: manifest, no PNG.
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+            {
+                Directory.CreateDirectory(outputDir);
+                File.WriteAllText(Path.Combine(outputDir, "_RUN_REFUSED_NO_GRAPHICS.txt"),
+                    "H8 GENERATED MESH PREVIEW RUN REFUSED\n" +
+                    "reason=SystemInfo.graphicsDeviceType is Null, so this editor was launched with " +
+                    "-nographics.\nAGENTS.md [RULE] MapMagic & Batchmode Graphics Protocol bans -nographics " +
+                    "for exactly this reason: no camera render and no compute dispatch produces pixels.\n" +
+                    "action=re-launch batchmode WITHOUT -nographics.\n" +
+                    "pngWritten=false - a blank image here would be indistinguishable from a real capture " +
+                    "of a broken asset, and somebody would grade it.\n", Encoding.UTF8);
+
+                Debug.LogError(
+                    $"{Marker} REFUSED: no graphics device (-nographics). No PNG written. See " +
+                    "_RUN_REFUSED_NO_GRAPHICS.txt");
+                Finish(3);
+                return;
+            }
+
+            string[] folders = ReadFoldersArg();
+            int tileResolution = Mathf.Clamp(
+                ReadIntArg("-h8MeshPreviewTile", DefaultTileResolution), 128, 2048);
+
+            List<KeyValuePair<string, Mesh>> targets = DiscoverMeshTargets(folders);
+            if (targets.Count == 0)
+            {
+                Debug.LogError(
+                    $"{Marker} ABORT no Mesh assets found under: {string.Join("; ", folders)}. " +
+                    "Nothing to render, so nothing is claimed.");
+                Finish(5);
+                return;
+            }
+
+            Debug.Log($"{Marker} {targets.Count} mesh target(s), tile {tileResolution} px, output {outputDir}");
+
+            AllocateRunResources(tileResolution, AllModes.Length, ViewNames.Length);
+
+            PreviewRig rig = null;
+            int succeeded = 0;
+            int failed = 0;
+
+            try
+            {
+                rig = PreviewRig.Create();
+                if (rig.NormalsMaterial == null)
+                    Debug.LogWarning($"{Marker} normals row omitted: {rig.NormalsUnavailableReason}");
+
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    string sheet;
+                    string report;
+                    if (RenderOneMesh(rig, targets[i].Key, targets[i].Value, outputDir, tileResolution,
+                            out sheet, out report))
+                    {
+                        succeeded++;
+                    }
+                    else
+                    {
+                        failed++;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"{Marker} ABORT {exception.GetType().Name}: {exception.Message}\n{exception.StackTrace}");
+                failed++;
+            }
+            finally
+            {
+                if (rig != null)
+                    rig.Dispose();
+
+                ReleaseRunResources();
+            }
+
+            WriteRunSummary(outputDir, folders, tileResolution, targets.Count, succeeded, failed,
+                deleted, undeletable);
+
+            Debug.Log($"{Marker} DONE clean={succeeded} flagged={failed} of {targets.Count}; dir={outputDir}");
+            Finish(failed == 0 ? 0 : 4);
+        }
+
+        private static void WriteRunSummary(string outputDir, string[] folders, int tileResolution,
+                                            int targetCount, int succeeded, int failed, int deleted,
+                                            List<string> undeletable)
+        {
+            var builder = new StringBuilder(2048);
+            builder.Append("H8 GENERATED MESH PREVIEW RUN SUMMARY\n");
+            builder.Append("route=Hecton8.EditorTools.Diagnostics.GeneratedMeshPreviewRenderer.RenderGeneratedMeshPreviews\n");
+            builder.Append("utc=").Append(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)).Append("Z\n");
+            builder.Append("unityVersion=").Append(Application.unityVersion).Append('\n');
+            builder.Append("graphicsDevice=").Append(SystemInfo.graphicsDeviceType).Append('\n');
+            builder.Append("batchmode=").Append(Application.isBatchMode ? "true" : "false").Append('\n');
+            builder.Append("tilePx=").Append(tileResolution.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            builder.Append("targetFolders=").Append(string.Join("; ", folders)).Append('\n');
+            builder.Append("meshTargets=").Append(targetCount.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            builder.Append("cleanSheets=").Append(succeeded.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            builder.Append("flagged=").Append(failed.ToString(CultureInfo.InvariantCulture))
+                .Append(" (blank tiles, degenerate bounds, or render failure - see the per-mesh report)\n");
+            builder.Append("staleArtefactsDeletedBeforeRun=").Append(deleted.ToString(CultureInfo.InvariantCulture)).Append('\n');
+            builder.Append("staleArtefactsUndeletable=").Append(undeletable.Count.ToString(CultureInfo.InvariantCulture));
+            if (undeletable.Count > 0)
+                builder.Append(" -> ").Append(string.Join(", ", undeletable.ToArray()));
+            builder.Append('\n');
+            builder.Append("acceptance=NONE. QUALITY_GATES.md:176 - a raw diagnostic capture can reject visual\n");
+            builder.Append("  quality, never accept it. A clean sheet is fit to ENTER the Visual Reference Parity\n");
+            builder.Append("  Gate; the lead's own eyes on the PNG decide.\n");
+
+            File.WriteAllText(Path.Combine(outputDir, "_RUN_SUMMARY.txt"), builder.ToString(), Encoding.UTF8);
+        }
+
+        private static void Finish(int exitCode)
+        {
+            if (Application.isBatchMode)
+                EditorApplication.Exit(exitCode);
+        }
+
+        private static string[] ReadFoldersArg()
+        {
+            string raw = ReadStringArg("-h8MeshPreviewFolders", null);
+            if (string.IsNullOrEmpty(raw))
+                return DefaultTargetFolders;
+
+            string[] split = raw.Split(';');
+            var cleaned = new List<string>(split.Length);
+            for (int i = 0; i < split.Length; i++)
+            {
+                string folder = split[i].Trim();
+                if (folder.Length > 0)
+                    cleaned.Add(folder);
+            }
+
+            return cleaned.Count == 0 ? DefaultTargetFolders : cleaned.ToArray();
+        }
+
+        // Fully qualified: `Hecton8.Environment` shadows `System.Environment` inside the `Hecton8.*`
+        // namespace root and a bare `Environment` fails CS0234. Same note as
+        // `H8_RouteCaptureStation.cs:863-864`.
+        private static string ReadStringArg(string flag, string fallback)
+        {
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], flag, StringComparison.Ordinal))
+                    return args[i + 1];
+            }
+
+            return fallback;
+        }
+
+        private static int ReadIntArg(string flag, int fallback)
+        {
+            string raw = ReadStringArg(flag, null);
+            int value;
+            return raw != null && int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out value)
+                ? value
+                : fallback;
+        }
     }
 }
 #endif

@@ -76,6 +76,7 @@ namespace Hecton8.World
         private Bounds _registeredDrawBounds;
         private bool _registeredDrawBoundsValid;
         private bool _hotSwapListenerRegistered;
+        private bool _missingDrawAssetsAnnounced;
 
         private void Awake()
         {
@@ -266,10 +267,27 @@ namespace Hecton8.World
             _hotSwapListenerRegistered = false;
         }
 
+        /// <summary>
+        /// Creates the BRG batch once and reports unassigned draw assets without throwing.
+        /// </summary>
+        /// <remarks>
+        /// <c>UnityEngine.Assertions.Assert</c> THROWS in this project - nothing under Assets sets
+        /// <c>Assert.raiseExceptions = false</c> - so the two asserts that used to open this method made every
+        /// statement below them unreachable whenever a serialized slot was empty. That cost the whole BRG
+        /// object graph: <c>new BatchRendererGroup</c>, <c>CreateBatchHandleBuffer</c>, <c>AddBatch</c> and the
+        /// first <c>SetBatchGlobalBoundsIfChanged</c> never ran, so <see cref="AreResourcesReady"/> returned
+        /// false for the rest of the session and <see cref="LateFrameTick"/> could never recover even after a
+        /// mesh or material was assigned in the inspector during play-mode.
+        ///
+        /// Both fields are optional by construction, which is why the asserts were indefensible: LateFrameTick
+        /// null-checks <c>_mesh</c> and <c>_material</c> and returns, <see cref="SyncBatchRegistration"/>
+        /// resolves null to a <c>default</c> batch id, and <see cref="OnPerformCulling"/> writes an empty draw
+        /// output for a default mesh/material id. A BRG with no registered mesh is already the normal state
+        /// between Awake and the first <see cref="BindNativeInstances"/> call, so building it unconditionally
+        /// adds no new state. The throw, by contrast, escaped Awake.
+        /// </remarks>
         private void EnsureResources()
         {
-            UnityEngine.Assertions.Assert.IsNotNull(_mesh, "Fatal: HectonHLODRenderer requires an authored HLOD mesh.");
-            UnityEngine.Assertions.Assert.IsNotNull(_material, "Fatal: HectonHLODRenderer requires an authored HLOD material.");
             if (_batchRendererGroup == null)
             {
                 _batchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
@@ -302,6 +320,32 @@ namespace Hecton8.World
                 _registeredDrawBoundsValid = false;
                 SetBatchGlobalBoundsIfChanged(ResolveDrawBounds());
             }
+
+            // Report LAST. Everything this component owns is already built above, so a future re-introduced
+            // throw here can no longer delete the BRG batch.
+            if ((_mesh != null && _material != null) || _missingDrawAssetsAnnounced)
+                return;
+
+            _missingDrawAssetsAnnounced = true;
+            LogMissingHlodDrawAssets(_mesh != null, _material != null);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingHlodDrawAssets(bool meshAuthored, bool materialAuthored)
+        {
+            if (!meshAuthored && !materialAuthored)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonHLODRenderer: serialized fields '_mesh' and '_material' are both unassigned. LateFrameTick null-guards both and skips the draw, so far-field cartographer HLODs render nothing. The BRG batch, floating-origin listener and LateFrame tick registration all stay live. Runtime mesh/material generation is forbidden - assign the authored HLOD pair in the inspector.");
+                return;
+            }
+
+            if (!meshAuthored)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonHLODRenderer: serialized field '_mesh' is unassigned. LateFrameTick null-guards it and skips the draw, so far-field cartographer HLODs render nothing. Every registration stays live. Assign the authored HLOD mesh in the inspector.");
+                return;
+            }
+
+            Hecton8.Core.H8Debug.LogError("HectonHLODRenderer: serialized field '_material' is unassigned. LateFrameTick null-guards it and skips the draw, so far-field cartographer HLODs render nothing. Every registration stays live. Runtime material generation is forbidden - assign the authored HLOD material in the inspector.");
         }
 
         private bool AreResourcesReady()

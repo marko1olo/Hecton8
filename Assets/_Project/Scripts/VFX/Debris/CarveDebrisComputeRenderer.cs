@@ -211,6 +211,7 @@ namespace Hecton8.VFX.Debris
         private float _configuredDebrisBounce = DefaultCarveDebrisBounce;
         private int _configuredMaxActiveDebris = MaxCarveDebrisCount;
         private bool _gpuReady;
+        private bool _gpuSetupPermanentlyFailed;
         private bool _blackBoxDumped;
         private bool _lastFlowActive;
         private bool _lastSdfActive;
@@ -419,7 +420,10 @@ namespace Hecton8.VFX.Debris
 
         private void TryRegisterLateFrameTick()
         {
-            if (_lateFrameRegistered)
+            // The latch refusal is load-bearing, not belt-and-braces. QueueVisualSync, QueueDebrisUploadRange,
+            // OnEnable, Start and SlowTick all call this; without the refusal, unregistering after an
+            // unrecoverable setup failure would be undone on the next call and the lane would churn.
+            if (_lateFrameRegistered || _gpuSetupPermanentlyFailed)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -436,7 +440,7 @@ namespace Hecton8.VFX.Debris
 
         private void TryRegisterSlowTick()
         {
-            if (_slowTickRegistered || !Application.isPlaying)
+            if (_slowTickRegistered || _gpuSetupPermanentlyFailed || !Application.isPlaying)
                 return;
 
             _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
@@ -632,8 +636,43 @@ namespace Hecton8.VFX.Debris
                 _abyssalFlowGpuReadModel = currentService as IAbyssalFlowGpuReadModel;
         }
 
+        /// <summary>
+        /// Brings the compute/vault/GraphicsBuffer lane up, or latches it off permanently.
+        /// </summary>
+        /// <remarks>
+        /// This method is reached from a PER-TICK caller - <see cref="SlowTick"/> at the dispatcher's 10 Hz
+        /// cadence (SystemDispatcher.cs:72 <c>SlowTickIntervalSeconds = 0.1</c>) - as well as from OnEnable
+        /// and Start. The missing-Texture3D branch used to be a bare
+        /// <c>UnityEngine.Assertions.Assert.IsNotNull</c>, which THROWS in this project because nothing under
+        /// Assets sets <c>Assert.raiseExceptions = false</c>. With no latch anywhere on that branch it fired
+        /// on EVERY slow tick, forever: ~10 throws per second of gameplay, an order of magnitude louder than
+        /// the 1 Hz ColdTick version of the same defect in HectonMarineSnowRenderer, which alone logged 48-69
+        /// assertions per headless run.
+        ///
+        /// The blast radius was never limited to this component. SystemDispatcher.RunSlowTick has no
+        /// try/catch around <c>tickable.SlowTick()</c> (SystemDispatcher.cs:6332) and no caller up to
+        /// RunDispatcherUpdate (:5181) adds one, so each throw unwound the whole slow-tick substep: the
+        /// remaining ISlowTickables at lower indices in PriorityLayer.Environment (the lane loop descends,
+        /// :6326), every later lane - Player and UI - then WorldSpatialHashGrid.SlowTickMaintenance (:6340)
+        /// and CombatDamageRuntime.SlowTick (:6341), and finally RunColdTick, RunFrostTick,
+        /// ScheduleDispatcherSurfaceProbes and RunMasterPostSimulationPhase for that frame (:5182-5186).
+        /// Ten times a second, one unassigned inspector field silently amputated the 10 Hz simulation lane
+        /// for the entire project.
+        ///
+        /// The assert is also REPLACED rather than merely reordered. It guarded nothing that the surrounding
+        /// code did not already handle: the <c>return false</c> underneath it (which the throw made
+        /// unreachable) is the complete degradation path - <see cref="IsGpuStateValid"/> already null-checks
+        /// <c>_emptyTexture3D</c> (:899), AdvanceDebrisVisualState routes to QueueVisualSync when the state is
+        /// invalid, and LateFrameTick unregisters itself. So the throw bought no recovery and no diagnosis the
+        /// one-shot log below does not give. Runtime Texture3D synthesis is forbidden and the field is
+        /// serialized, so the gap cannot heal at runtime: latching and leaving both tick lanes is correct
+        /// rather than merely quieter.
+        /// </remarks>
         private bool TryEnsureGpuState()
         {
+            if (_gpuSetupPermanentlyFailed)
+                return false;
+
             if (_gpuReady && IsGpuStateValid())
                 return true;
 
@@ -643,7 +682,9 @@ namespace Hecton8.VFX.Debris
 
             if (emptySdfFlowTexture3D == null)
             {
-                UnityEngine.Assertions.Assert.IsNotNull(emptySdfFlowTexture3D, "Fatal: Missing authored neutral CarveDebris SDF/flow Texture3D.");
+                // LEAVE THE TICK LANES AND LATCH FIRST. Nothing below may assume it runs.
+                DisableGpuLanesAfterUnrecoverableSetupFailure();
+                LogMissingEmptySdfFlowTexture();
                 return false;
             }
 
@@ -710,6 +751,50 @@ namespace Hecton8.VFX.Debris
             ClearMirrorsAndUpload(debrisPositions, debrisVelocities, carveRequests, jobState, blackBox);
             _gpuReady = IsGpuStateValid();
             return _gpuReady;
+        }
+
+        /// <summary>
+        /// Gives up on the GPU debris lane permanently and leaves both dispatcher tick lanes.
+        /// </summary>
+        /// <remarks>
+        /// Latch FIRST. Unregistering without latching is worse than doing nothing here: TryRegisterSlowTick
+        /// and TryRegisterLateFrameTick early-return on their own registered flags, so clearing those flags
+        /// re-arms five live callers - OnEnable, Start, SlowTick, QueueVisualSync and QueueDebrisUploadRange -
+        /// which would push the component straight back into the lane it just left and re-enter this branch.
+        /// That register/fail/unregister churn is what made the HectonMarineSnowRenderer assertion count RISE
+        /// from 48 to 69 per headless run on its first repair attempt.
+        ///
+        /// Unregistering ISlowTickable from inside SlowTick is safe with this dispatcher, verified rather than
+        /// assumed: RegistryBucket.TryUnregister is swap-with-last (RegistryBucket.cs:152-171) and
+        /// RunSlowTick iterates DESCENDING from a stale count (SystemDispatcher.cs:6326), so after our own
+        /// removal every remaining index is still below the live count and GetAt cannot return the null that
+        /// would NRE at :6332. The entry swapped down into our slot is skipped for this substep only.
+        ///
+        /// Scope is deliberately narrow. <c>enabled = false</c> is NOT set and the IDebrisComputeService
+        /// registration is left intact: OnDisable would tear the service out of GlobalRegistry, and
+        /// IsInitialized already reports false honestly (<c>_gpuReady &amp;&amp; IsGpuStateValid()</c>), so
+        /// consumers see an idle service instead of a missing one.
+        /// </remarks>
+        private void DisableGpuLanesAfterUnrecoverableSetupFailure()
+        {
+            _gpuSetupPermanentlyFailed = true;
+            _gpuReady = false;
+            _pendingVisualSync = false;
+            _pendingDebrisUpload = false;
+            _activeMirrorCount = 0;
+
+            TryUnregisterLateFrameTick();
+            TryUnregisterSlowTick();
+        }
+
+        /// <summary>
+        /// One-shot report of the unassigned neutral SDF/flow Texture3D. The latch above guarantees single
+        /// emission, so no per-tick string work reaches the 10 Hz cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingEmptySdfFlowTexture()
+        {
+            Hecton8.Core.H8Debug.LogError("CarveDebrisComputeRenderer: serialized field 'emptySdfFlowTexture3D' is unassigned, so the GPU carve-debris lane is latched off for this session - no rock chips, no laser sparks, no DebrisSpawnSignal shards. Runtime Texture3D synthesis is forbidden: author a 1x1x1 clear Texture3D and assign it in the inspector. This branch used to throw a UnityEngine.Assertions.Assert on every 10 Hz SlowTick, which unwound SystemDispatcher.RunSlowTick and killed the Player and UI slow lanes, WorldSpatialHashGrid.SlowTickMaintenance, CombatDamageRuntime.SlowTick, RunColdTick and RunFrostTick for that frame.");
         }
 
         private int ResolveKernel(ComputeShader compute, string kernelName)

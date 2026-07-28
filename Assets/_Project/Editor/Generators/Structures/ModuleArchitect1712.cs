@@ -1155,43 +1155,6 @@ namespace Hecton8.Editor.Structures
             return material;
         }
 
-        /// <summary>
-        /// UV-aware overload, added ADDITIVELY to unblock the assembly without guessing at an in-flight
-        /// refactor.
-        ///
-        /// A call site passes (vertices, normals, uvs, indices) while the declaration below took three
-        /// parameters, so Hecton8.Editor failed with CS1501 and Unity refused to enter play mode - which
-        /// blocked every route measurement in the project, not just this generator. The CS7036 the compiler
-        /// also reported against BuildVertexColors on the next line is a CASCADE, not a real defect: `seed`
-        /// is a genuine parameter of the enclosing BuildHardSurfaceMesh and the call is well-formed.
-        ///
-        /// Written as an overload rather than by editing the existing signature or deleting the argument,
-        /// because the call site is the newer code and the intent is clearly to START validating UVs. An
-        /// overload cannot revert that intent: whoever owns this refactor can fold it into the three-arg
-        /// version and delete this, and nothing they wrote had to be guessed at.
-        ///
-        /// The UV invariant checked is the only one that is universally true - one UV per vertex, all finite -
-        /// mirroring exactly what the three-arg version already asserts for normals.
-        /// </summary>
-        private static void ValidateTopology(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices)
-        {
-            ValidateTopology(vertices, normals, indices);
-
-            if (uvs == null || uvs.Count != vertices.Count)
-                throw new InvalidOperationException("Architect topology validation rejected malformed UV buffer.");
-
-            for (int i = 0; i < uvs.Count; i++)
-            {
-                Vector2 uv = uvs[i];
-                if (!float.IsFinite(uv.x) || !float.IsFinite(uv.y))
-                    throw new InvalidOperationException("Architect topology validation rejected non-finite UV data.");
-            }
-        }
-
         private static void ValidateMesh(Mesh mesh, int vertexCount, int triangleCount)
         {
             if (mesh == null || vertexCount <= 0 || triangleCount <= 0)

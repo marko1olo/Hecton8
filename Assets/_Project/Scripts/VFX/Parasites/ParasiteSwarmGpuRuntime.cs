@@ -50,6 +50,7 @@ namespace Hecton8.VFX.Parasites
         private bool _registered;
         private bool _hotSwapRegistered;
         private bool _initialized;
+        private bool _missingFlowVolumeAnnounced;
         private bool _blackBoxDumped;
         private int _bufferParity;
         private int _targetBufferParity;
@@ -147,11 +148,15 @@ namespace Hecton8.VFX.Parasites
             _targetBufferParity = 0;
             _drawParamsBufferParity = 0;
             _frameParamsBufferParity = 0;
-            if (emptyFlowTexture == null)
+
+            // A missing flow volume is SURVIVABLE and must not abort setup. The condition tests BOTH fields
+            // because the neutral 1x1x1 asset is only ever the fallback arm of the ternary in
+            // DispatchAndRender; with abyssalFlowField authored it is never read at all. See
+            // LogMissingFlowVolumeFallback for the two separate defects the old throwing guard carried.
+            if (abyssalFlowField == null && emptyFlowTexture == null && !_missingFlowVolumeAnnounced)
             {
-                UnityEngine.Assertions.Assert.IsNotNull(emptyFlowTexture, "Fatal: Missing authored neutral ParasiteSwarm flow Texture3D.");
-                enabled = false;
-                return;
+                _missingFlowVolumeAnnounced = true;
+                LogMissingFlowVolumeFallback();
             }
 
             CreateGpuResources();
@@ -161,6 +166,39 @@ namespace Hecton8.VFX.Parasites
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
             _initialized = true;
+        }
+
+        /// <summary>
+        /// Reports a total absence of abyssal-flow volume once per instance. Never latches the swarm off.
+        /// </summary>
+        /// <remarks>
+        /// This replaces a THROWING guard that was wrong in two independent ways.
+        ///
+        /// SHAPE. It tested the FALLBACK rather than the dependency. DispatchAndRender resolves
+        /// <c>abyssalFlowField != null ? abyssalFlowField : _emptyFlowTexture</c>, so with the real flow
+        /// volume authored the neutral 1x1x1 asset is never read at all - yet an unassigned neutral asset
+        /// aborted OnEnable ahead of CreateGpuResources, ResolveComputeKernels, InitializeGpuParticles,
+        /// <c>_visualFrameCounter = 0u</c>, TryRegisterLateFrameTickable, TryRegisterHotSwapListener and
+        /// <c>_initialized = true</c>. Seven statements, and the last three are why the component exists:
+        /// unregistered it is never late-frame ticked, never rebinds after a GlobalRegistry hot swap, and
+        /// LateFrameTick would refuse on <c>_initialized</c> even if something did call it.
+        ///
+        /// THROW. <c>UnityEngine.Assertions.Assert.IsNotNull</c> THROWS in this project - nothing under
+        /// Assets sets <c>Assert.raiseExceptions = false</c> - so the <c>enabled = false;</c> written
+        /// directly beneath it was unreachable. The component therefore stayed enabled with
+        /// <c>_initialized</c> false and re-threw on every later enable instead of latching off after one.
+        ///
+        /// A gap is survivable by construction, which is why no permanent-failure latch belongs here.
+        /// Hecton_ParasiteSwarm.compute:236-237 reads the volume exactly once and additively -
+        /// <c>acceleration += curl + (flow * flowWeight)</c> - so a zero read costs the abyssal-flow
+        /// advection term and nothing else: no NaN, no divide, no dead lane. Zero is exactly what the
+        /// authored "empty" volume encodes. Runtime Texture3D synthesis stays forbidden, so the fix is
+        /// authoring, not code, and the asset already exists on disk.
+        /// </remarks>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogMissingFlowVolumeFallback()
+        {
+            Hecton8.Core.H8Debug.LogWarning("[ParasiteSwarmGpuRuntime] Neither 'abyssalFlowField' nor its neutral fallback 'emptyFlowTexture' is assigned. The swarm still boots, registers, ticks and renders; only the abyssal-flow advection term is lost, because the compute shader adds the sampled flow once and an unbound Texture3D reads zero. Runtime Texture3D synthesis is forbidden - assign Assets/_Project/Art/Textures/VFX/ParticulateFlipbooks1728/TX_MarineSnow_EmptyAbyssalFlow_1x1x1.asset to 'emptyFlowTexture', the same authored neutral volume HectonMarineSnowRenderer and SargassumMicroFaunaBoids already bind.", this);
         }
 
         private void OnDisable()
@@ -1169,7 +1207,15 @@ namespace Hecton8.VFX.Parasites
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _advectKernel, ParasiteWriteId, write);
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _advectKernel, ParasiteTargetsId, ResolveCurrentTargetBuffer());
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _advectKernel, ParasiteFrameParamsId, frameParamsBuffer);
-                _commandBuffer.SetComputeTextureParam(parasiteCompute, _advectKernel, AbyssalFlowFieldId, flowTexture);
+                // Bind only a real texture. Setup no longer aborts when both the authored flow volume and its
+                // neutral fallback are unassigned, so this is now reachable with flowTexture null - and a
+                // null Texture converts to a RenderTargetIdentifier of BuiltinRenderTextureType.None, which
+                // would be a per-frame bad bind in a LateFrameTick-cadence method. Leaving _H8AbyssalFlowField
+                // unbound reads zero instead, which is what the authored "empty" volume encodes anyway.
+                // One Unity-object null compare per frame, no allocation.
+                if (flowTexture != null)
+                    _commandBuffer.SetComputeTextureParam(parasiteCompute, _advectKernel, AbyssalFlowFieldId, flowTexture);
+
                 _commandBuffer.DispatchCompute(parasiteCompute, _advectKernel, advectGroups, 1, 1);
 
                 _commandBuffer.SetComputeBufferParam(parasiteCompute, _cullKernel, ParasiteReadId, write);

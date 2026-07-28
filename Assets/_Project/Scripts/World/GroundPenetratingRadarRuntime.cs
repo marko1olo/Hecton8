@@ -125,6 +125,7 @@ namespace Hecton8.World
         private bool _gprReadSnapshotsValid;
         private bool _pendingDataVaultRebind;
         private bool _pendingIndirectArgsClear;
+        private bool _missingRadarPingMaterialAnnounced;
         private float _scanTimer;
         private float _pulsePhaseSeconds;
         private float _highestSignalStrength;
@@ -1902,14 +1903,44 @@ namespace Hecton8.World
             WriteFloatLittleEndian(payload, ref cursor, value.z);
         }
 
+        /// <summary>
+        /// Allocates the cold GPR draw payload and reports an unassigned ping material without throwing.
+        /// </summary>
+        /// <remarks>
+        /// <c>UnityEngine.Assertions.Assert</c> THROWS in this project - nothing under Assets sets
+        /// <c>Assert.raiseExceptions = false</c> - and <see cref="OnEnable"/> calls this method at line 175,
+        /// BEFORE every registration the component owns. The old bare assert on
+        /// <c>_radarPingAuthoredMaterial</c> therefore unwound OnEnable and deleted its entire tail:
+        /// <c>EnsureBlackBoxDumpPathCold</c>, <c>GlobalRegistry.RegisterGroundRadarService</c>,
+        /// <c>CacheConfiguredOreReadModel</c>, <c>CacheOreReadModelFromOwnerRoute</c> and all three lane
+        /// registrations - <c>TryRegisterLateFrameTickable</c>, <c>TryRegisterSlowTickable</c> and
+        /// <c>Renderables.TryRegister</c>. One unassigned inspector slot on a COSMETIC ring material silently
+        /// removed subsurface ore scanning entirely, left <c>GlobalRegistry.GroundRadar</c> null for the
+        /// cockpit read at UI/VehicleSubOsCockpitRuntime.cs:722, and left the fault-dump path empty so
+        /// <c>WriteBlackBoxDumpWorker</c> bailed at its <c>string.IsNullOrEmpty</c> guard.
+        ///
+        /// The material is optional by construction: <see cref="Render"/> is its only consumer and already
+        /// returns early when <c>ResolveRenderMaterial</c> is null, exactly like the cosmetic voxel bake ghost
+        /// material fixed in 585401145. So this must NOT latch anything off - a missing material costs the
+        /// ping rings and nothing else. The MaterialPropertyBlock is still allocated first so an inspector
+        /// assignment during play-mode starts drawing on the next Render instead of being locked out.
+        /// </remarks>
         private void EnsureRuntimeDrawResourcesCold()
         {
-            UnityEngine.Assertions.Assert.IsNotNull(
-                _radarPingAuthoredMaterial,
-                "Fatal: Missing Authored Radar Material.");
-
             if (_radarDrawProperties == null)
                 _radarDrawProperties = new MaterialPropertyBlock(); // COLD ALLOC: per-instance GPR draw payload - owner: TERRAIN_GPR_SYSTEM
+
+            if (_radarPingAuthoredMaterial != null || _missingRadarPingMaterialAnnounced)
+                return;
+
+            _missingRadarPingMaterialAnnounced = true;
+            LogMissingRadarPingMaterial();
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingRadarPingMaterial()
+        {
+            Hecton8.Core.H8Debug.LogError("GroundPenetratingRadarRuntime: serialized field '_radarPingAuthoredMaterial' is unassigned. Render() null-guards it and skips the cosmetic ping rings; subsurface scanning, the GlobalRegistry ground-radar service, telemetry and the black-box dump all stay live. Runtime material generation is forbidden - assign an authored procedural-indirect ping material in the inspector.");
         }
 
         private Material ResolveRenderMaterial()

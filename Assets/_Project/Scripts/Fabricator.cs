@@ -266,6 +266,7 @@ namespace Hecton8.Crafting
         private bool _assemblyPreviewActive;
         private bool _assemblyMaterialSwapped;
         private bool _assemblyOriginShiftListenerRegistered;
+        private bool _assemblyFallbackMeshMissingAnnounced;
         private RecipeData _pendingAssemblyBeginRecipe;
         private byte _pendingAssemblyVisualCommand;
         private bool _pendingFabricationSparksDirty;
@@ -3253,15 +3254,56 @@ namespace Hecton8.Crafting
             return false;
         }
 
+        /// <summary>
+        /// Returns the authored assembly preview fallback mesh, or null when none is assigned.
+        /// </summary>
+        /// <remarks>
+        /// Returning null is this method's CONTRACT, and both callers already honour it: TryResolveAssemblySource
+        /// does <c>sourceMesh = ResolveAssemblyFallbackMesh(); return sourceMesh != null;</c> (:3134-3135) and
+        /// AppendAssemblySourceCacheCold does <c>if (sourceMesh == null) return;</c> (:3208-3209). The
+        /// <c>Assert.IsNotNull</c> that used to sit here was therefore pure damage: it fired only on the branch
+        /// where <c>assemblyFallbackMesh</c> is already known null, so it ALWAYS threw when reached and made the
+        /// contractual <c>return null</c> unreachable. UnityEngine.Assertions.Assert THROWS in this project -
+        /// nothing under Assets sets <c>Assert.raiseExceptions = false</c>.
+        ///
+        /// The throw contradicted an explicit architectural decision rather than merely being noisy. This is
+        /// reached per-tick from LateFrameTick (:961) through FlushBeginAssemblyVisual (:969, :3042), whose
+        /// missing-mesh branch is documented against construction.md 8A: "the hologram preview is presentation.
+        /// It must not own recipe completion... keep the fabrication job running headless so an active craft
+        /// still advances and CompleteCraft() still fires." The throw unwound out of that branch before
+        /// FlushEndAssemblyPresentation and BeginFabricationVaultJob could run, so a missing preview mesh
+        /// stalled the craft - exactly the outcome 8A forbids - and also killed LateFrameTick's own tail: the
+        /// spark-active flush, the error-feedback flush, FlushPendingAudio, FlushPendingProceduralAudioPings,
+        /// FlushPendingProgressHaptics and FlushSparkProxyLightRegistration. On the cold side it threw from
+        /// inside the AppendAssemblySourceCacheCold loop (:3151, :3161), abandoning the rest of the recipe
+        /// cache rebuild and the OnEnable tail.
+        ///
+        /// No dispatcher lane is left here and no setup is latched off, deliberately: nothing about this
+        /// component is unrecoverable, the headless-craft path is a supported first-class mode, and the field
+        /// is serialized so the one-shot flag alone bounds the reporting.
+        /// </remarks>
         private Mesh ResolveAssemblyFallbackMesh()
         {
             if (assemblyFallbackMesh != null)
                 return assemblyFallbackMesh;
 
-            UnityEngine.Assertions.Assert.IsNotNull(
-                assemblyFallbackMesh,
-                "Fatal: Fabricator cannot resolve an assembly preview mesh and no authored fallback mesh is assigned.");
+            if (!_assemblyFallbackMeshMissingAnnounced)
+            {
+                _assemblyFallbackMeshMissingAnnounced = true;
+                LogMissingAssemblyFallbackMesh();
+            }
+
             return null;
+        }
+
+        /// <summary>
+        /// One-shot report of the unassigned assembly preview fallback mesh. Guarded by
+        /// <c>_assemblyFallbackMeshMissingAnnounced</c>, so no string work reaches the LateFrameTick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingAssemblyFallbackMesh()
+        {
+            Hecton8.Core.H8Debug.LogError("Fabricator: serialized field 'assemblyFallbackMesh' is unassigned and no recipe prefab supplied an assembly preview mesh, so crafts run in the headless presentation mode described by construction.md 8A - no hologram preview, but the fabrication job, progress and CompleteCraft still fire. Runtime mesh generation is forbidden: author a low-poly assembly placeholder and assign it in the inspector. This branch used to throw a UnityEngine.Assertions.Assert, which unwound FlushBeginAssemblyVisual before BeginFabricationVaultJob and stalled the craft it was supposed to protect.");
         }
 
         private void CalculateAssemblyFabricatorLocalHeightBounds(

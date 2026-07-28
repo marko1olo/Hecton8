@@ -201,6 +201,7 @@ namespace Hecton8.UI
         private bool _fontUvTableDirty;
         private bool _spriteUvTableDirty;
         private bool _resourceObjectsReady;
+        private bool _quadMeshSetupPermanentlyFailed;
         private bool _materialResolveAttempted;
         private bool _materialResolveFailed;
         private bool _materialsReady;
@@ -887,23 +888,73 @@ namespace Hecton8.UI
                 EnsureMaterials();
         }
 
+        /// <summary>
+        /// Resolves the authored glyph quad plus the tooltip GraphicsBuffer set, or latches the lane off.
+        /// </summary>
+        /// <remarks>
+        /// This ran on a PER-TICK path with no latch of any kind, which is why it was unbounded.
+        /// <c>UnityEngine.Assertions.Assert</c> THROWS in this project - nothing under Assets sets
+        /// <c>Assert.raiseExceptions = false</c> - and the throw made <c>_resolvedQuadMesh = glyphQuadMesh</c>
+        /// unreachable, so the <c>_resolvedQuadMesh == null</c> guard could never close and every later call
+        /// re-entered and re-threw. RepairTool.UsePrimary (RepairTool.cs:752) calls TryHandleModuleRepair
+        /// (:804), which calls PublishIntegrityDiagnostic at :861 and :875, which calls
+        /// <see cref="ShowDiagnostic"/> (RepairTool.cs:2409) - so it threw on every input tick for as long as
+        /// the player held the repair tool on a module. RepairTool.LateFrameTick (:1024) reaches the same
+        /// method through ApplyDiagnosticLaserPreview (:1051, :1322).
+        ///
+        /// The killed statement tails were the real cost, and they were large. Inside this method the throw
+        /// killed the mesh assignment, the indexed-submesh validation, the second assert (which therefore
+        /// could never report), and the creation of all SEVEN tooltip GraphicsBuffers plus the
+        /// <c>_resourceObjectsReady</c> assignment. In <see cref="EnsureResources"/> it killed the
+        /// EnsureMaterials call, so the glyph/icon materials and property blocks never resolved either. In
+        /// OnEnable it killed EnsureBlackBox, TryRegisterRuntime, TryRegisterHotSwapListener,
+        /// CacheRegistryServicesCold, RefreshScalabilityPolicy, RefreshInputDeterminismService and the scheme
+        /// hash - Start re-runs all but EnsureBlackBox, so the first boot was partly self-healing, but any
+        /// later OnDisable/OnEnable cycle lost the IRenderable/ISlowTickable/ILateFrameTickable registration
+        /// permanently because Start never runs again. In ShowDiagnostic it killed the entire diagnostic:
+        /// RefreshActiveSchemeHash, the anchor, the colour, <c>_diagnosticActive</c>, StagePrompt and
+        /// BuildGlyphLayout.
+        ///
+        /// The asserts are REPLACED, not reordered. An unassigned or non-indexed quad mesh already degrades
+        /// completely and silently by construction: <see cref="Render"/> returns at :238 on
+        /// <c>!_resourceObjectsReady || _resolvedQuadMesh == null</c>, RebuildActiveTooltipLayout returns at
+        /// :615, RefreshIndirectArgs returns at :1109 and UploadUvTablesIfDirty null-checks its buffers. So
+        /// the throw bought no recovery over the one-shot log below - only the amputated tails above.
+        ///
+        /// The early return also skips the seven GraphicsBuffer allocations, deliberately: with a mesh that
+        /// can never resolve, <c>_resourceObjectsReady</c> can never become true, so those buffers would be
+        /// allocated and never bound. Every consumer sits behind that gate (:238, :615) and ReleaseResources
+        /// null-checks each handle, so skipping them is safe as well as cheaper.
+        ///
+        /// Scope stays narrow on purpose: the dispatcher lanes are NOT unregistered. Unlike
+        /// HectonMarineSnowRenderer, this component's own ticks were never the re-entry source - an external
+        /// per-tick caller was - and SlowTick owns the black-box telemetry dump flush, which must keep
+        /// running.
+        /// </remarks>
         private void EnsureResourceObjects()
         {
+            if (_quadMeshSetupPermanentlyFailed)
+                return;
+
             bool argsDirty = false;
             if (_resolvedQuadMesh == null)
             {
-                UnityEngine.Assertions.Assert.IsNotNull(
-                    glyphQuadMesh,
-                    "Fatal: DiegeticTooltipSystem requires an authored quad mesh. Runtime mesh generation is forbidden.");
-                _resolvedQuadMesh = glyphQuadMesh;
-                bool authoredQuadValid = _resolvedQuadMesh != null &&
-                    _resolvedQuadMesh.subMeshCount > 0 &&
-                    _resolvedQuadMesh.GetIndexCount(0) > 0u;
-                UnityEngine.Assertions.Assert.IsTrue(
-                    authoredQuadValid,
-                    "Fatal: DiegeticTooltipSystem authored quad mesh must provide indexed submesh 0.");
+                Mesh authoredQuad = glyphQuadMesh;
+                bool authoredQuadValid = authoredQuad != null &&
+                    authoredQuad.subMeshCount > 0 &&
+                    authoredQuad.GetIndexCount(0) > 0u;
                 if (!authoredQuadValid)
+                {
+                    // LATCH FIRST. glyphQuadMesh is serialized and runtime mesh generation is forbidden, so
+                    // this gap cannot heal at runtime; refusing to retry is correct, not merely quieter.
+                    _quadMeshSetupPermanentlyFailed = true;
                     _resolvedQuadMesh = null;
+                    _resourceObjectsReady = false;
+                    LogUnusableGlyphQuadMesh(authoredQuad != null);
+                    return;
+                }
+
+                _resolvedQuadMesh = authoredQuad;
                 argsDirty = true;
             }
 
@@ -978,6 +1029,23 @@ namespace Hecton8.UI
                 && _iconArgsBuffer != null
                 && _fontUvBuffer != null
                 && _spriteUvBuffer != null;
+        }
+
+        /// <summary>
+        /// One-shot report of an unusable authored glyph quad. The latch guarantees single emission, so no
+        /// per-tick string work reaches the RepairTool input cadence.
+        /// </summary>
+        /// <param name="meshAssigned">True when glyphQuadMesh is assigned but lacks an indexed submesh 0.</param>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogUnusableGlyphQuadMesh(bool meshAssigned)
+        {
+            if (!meshAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("DiegeticTooltipSystem: serialized field 'glyphQuadMesh' is unassigned. Diegetic interact prompts and repair-tool integrity diagnostics are latched off for this session; Render already gates on this so nothing else degrades. Runtime mesh generation is forbidden - author a unit quad with indexed submesh 0 and assign it in the inspector. This branch used to throw a UnityEngine.Assertions.Assert on every RepairTool input tick, which killed the tooltip GraphicsBuffer allocation, EnsureMaterials, and the whole ShowDiagnostic and OnEnable statement tails.");
+                return;
+            }
+
+            Hecton8.Core.H8Debug.LogError("DiegeticTooltipSystem: serialized field 'glyphQuadMesh' is assigned but provides no indexed submesh 0, so DrawMeshInstancedIndirect cannot use it. Diegetic interact prompts and repair-tool integrity diagnostics are latched off for this session. Re-author the quad with a real index buffer; runtime mesh generation is forbidden. This assert previously could never even report, because the unassigned-mesh assert above it threw first.");
         }
 
         private void EnsureMaterials()
