@@ -106,6 +106,42 @@ def weld_and_clean(
     loose_verts = [v for v in bm.verts if not v.link_faces]
     if loose_verts:
         bmesh.ops.delete(bm, geom=loose_verts, context="VERTS")
+    # NON-MANIFOLD EDGES PIN DECIMATION, and nothing above this line touches them.
+    #
+    # Measured on a branching coral: components=4, irreducible_floor=12, yet LOD2 sat at 584
+    # triangles - 48x above its own floor - and `nonmanifold_edges` read exactly 144 at LOD0,
+    # LOD1 AND LOD2. Identical through every decimation pass, because Quadric Edge Collapse
+    # will not collapse across a non-manifold edge. 144 of them pinned the whole mesh.
+    #
+    # This also corrects a diagnosis I stated twice as fact: I claimed the floor came from ~76
+    # disconnected tip-cluster shells. The component count is 4. Disconnected shells were never
+    # the cause; interior faces at skin-modifier branch junctions were.
+    #
+    # The repair deletes faces that no manifold surface needs: an edge shared by three or more
+    # faces means one of them is interior, buried where two branches merge, contributing nothing
+    # visible while blocking every collapse through it. Deleting the face with the smallest area
+    # at each such edge removes the interior sheet and leaves the outer hull.
+    nonmanifold_before = sum(1 for e in bm.edges if len(e.link_faces) > 2)
+    interior_deleted = 0
+    if nonmanifold_before:
+        doomed = set()
+        for edge in bm.edges:
+            linked = edge.link_faces
+            if len(linked) <= 2:
+                continue
+            # Keep the two largest faces at this edge; the rest are interior sheets.
+            ordered = sorted(linked, key=lambda f: f.calc_area(), reverse=True)
+            for face in ordered[2:]:
+                doomed.add(face)
+        if doomed:
+            bmesh.ops.delete(bm, geom=list(doomed), context="FACES")
+            interior_deleted = len(doomed)
+            # Deleting an interior sheet can strand vertices that only it used.
+            orphans = [v for v in bm.verts if not v.link_faces]
+            if orphans:
+                bmesh.ops.delete(bm, geom=orphans, context="VERTS")
+    nonmanifold_after = sum(1 for e in bm.edges if len(e.link_faces) > 2)
+
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 
     stats = {
@@ -113,6 +149,9 @@ def weld_and_clean(
         "faces_removed": before_f - len(bm.faces),
         "degenerate_faces_deleted": len(dead),
         "loose_verts_deleted": len(loose_verts),
+        "nonmanifold_edges_before": nonmanifold_before,
+        "nonmanifold_edges_after": nonmanifold_after,
+        "interior_faces_deleted": interior_deleted,
     }
     if blackbox is not None:
         blackbox.record(
