@@ -1456,40 +1456,103 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// distinguished "no terrain provider is registered at all" - the actual cause, a predicate bound to a
     /// component that exists in zero scenes - from "the world is still streaming". Both look like patience.
     /// </summary>
-    private static string DescribeTerrainReadinessBlocker(float worldX, float worldZ)
+    private enum TerrainReadinessBlocker : byte
+    {
+        None = 0,
+        TerrainProviderNotRegistered,
+        TerrainProviderUnavailable,
+        NoFiniteHeightAtSearchOrigin,
+        PhysicsBakeGatePendingViaProvider,
+        PhysicsBakeGatePendingWithBridge,
+    }
+
+    /// <summary>
+    /// Classifies WHICH phase-1 condition is false, as a value so the caller can notice it CHANGING.
+    ///
+    /// Split out of the string-returning version rather than sitting beside it: two copies of this condition
+    /// ladder would drift, and a diagnostic that disagrees with the predicate it describes is worse than none.
+    /// The order below mirrors the real gate exactly - provider registered, provider available, finite height
+    /// at the point, then the Kinematic Arrest Gate - so the first false condition is the one reported.
+    /// </summary>
+    private static TerrainReadinessBlocker ResolveTerrainReadinessBlocker(float worldX, float worldZ)
     {
         ITerrainProvider terrainProvider = GlobalRegistry.Terrain;
         if (terrainProvider == null)
-        {
-            return "GlobalRegistry.Terrain is NOT REGISTERED - no ITerrainProvider exists this session, so " +
-                   "no height can ever resolve and this wait cannot succeed. Check that the terrain bridge " +
-                   "is present and enabled in the active scene.";
-        }
+            return TerrainReadinessBlocker.TerrainProviderNotRegistered;
 
         if (!terrainProvider.IsAvailable)
-        {
-            return "ITerrainProvider is registered but reports IsAvailable=false - the terrain backend has " +
-                   "no MapMagicObject to sample.";
-        }
+            return TerrainReadinessBlocker.TerrainProviderUnavailable;
 
         if (!terrainProvider.TryGetHeight(worldX, worldZ, out float providerHeight) ||
             !float.IsFinite(providerHeight))
         {
-            return "ITerrainProvider is available but has no finite height at the search origin - no " +
-                   "generated tile covers that XZ yet. If the terrain was moved away from the search " +
-                   "origin, this never resolves.";
+            return TerrainReadinessBlocker.NoFiniteHeightAtSearchOrigin;
         }
 
         HectonMapMagicVegetationBridge vegetationBridge = null;
         if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge))
-        {
-            return "height RESOLVED through ITerrainProvider (the vegetation-bridge tier is unavailable, " +
-                   "which is expected - that component is authored in no scene). Remaining gate is the " +
-                   "Kinematic Arrest Gate: no WorldChunkPhysicsBakedSignal has covered this chunk yet.";
-        }
+            return TerrainReadinessBlocker.PhysicsBakeGatePendingViaProvider;
 
-        return "height resolved and a vegetation bridge is live, so the remaining gate is the Kinematic " +
-               "Arrest Gate: no WorldChunkPhysicsBakedSignal has covered this chunk yet.";
+        return TerrainReadinessBlocker.PhysicsBakeGatePendingWithBridge;
+    }
+
+    /// <summary>
+    /// Every return is a compile-time literal, so this allocates nothing. It runs at most once per distinct
+    /// blocker on the 0.5s retry cadence, never in a tick or physics path.
+    /// </summary>
+    private static string DescribeTerrainReadinessBlocker(TerrainReadinessBlocker blocker)
+    {
+        switch (blocker)
+        {
+            case TerrainReadinessBlocker.TerrainProviderNotRegistered:
+                return "GlobalRegistry.Terrain is NOT REGISTERED - no ITerrainProvider exists this session, " +
+                       "so no height can ever resolve and this wait cannot succeed. Check that the terrain " +
+                       "bridge is present and enabled in the active scene.";
+
+            case TerrainReadinessBlocker.TerrainProviderUnavailable:
+                return "ITerrainProvider is registered but reports IsAvailable=false - the terrain backend " +
+                       "has no MapMagicObject to sample.";
+
+            case TerrainReadinessBlocker.NoFiniteHeightAtSearchOrigin:
+                return "ITerrainProvider is available but has no finite height at the search origin - no " +
+                       "generated tile covers that XZ yet. If the terrain was moved away from the search " +
+                       "origin, this never resolves.";
+
+            case TerrainReadinessBlocker.PhysicsBakeGatePendingViaProvider:
+                return "height RESOLVED through ITerrainProvider (the vegetation-bridge tier is " +
+                       "unavailable, which is expected - that component is authored in no scene). Remaining " +
+                       "gate is the Kinematic Arrest Gate: no WorldChunkPhysicsBakedSignal has covered this " +
+                       "chunk yet.";
+
+            case TerrainReadinessBlocker.PhysicsBakeGatePendingWithBridge:
+                return "height resolved and a vegetation bridge is live, so the remaining gate is the " +
+                       "Kinematic Arrest Gate: no WorldChunkPhysicsBakedSignal has covered this chunk yet.";
+
+            default:
+                return "no blocker classified - phase 1 should not be waiting.";
+        }
+    }
+
+    /// <summary>
+    /// Says what the run died on, at the moment it died.
+    ///
+    /// The cancellation surfaces from inside the retry await rather than from the loop-top
+    /// ThrowIfCancellationRequested, so nothing in phase 1 used to observe it and the log's last word on the
+    /// subject was one more "Terrain not ready" line. The caller's per-step no-progress budget
+    /// (GameBootstrapper.cs:614 bootstrapTimeout = 30f, re-armed through :7266) is smaller than both budgets
+    /// this class owns, so on the production route the outer token always wins and neither ForceFallbackSpawn
+    /// can run - which is exactly the fact this line exists to make visible in the log rather than in a
+    /// report nobody reads.
+    /// </summary>
+    private static void ReportPhase1Cancelled(float worldX, float worldZ)
+    {
+        TerrainReadinessBlocker blocker = ResolveTerrainReadinessBlocker(worldX, worldZ);
+        LogSpawnerError(
+            "[HectonPlayerSpawner] Phase 1 CANCELLED by the caller's token while still blocked at " +
+            "searchOrigin (" + worldX.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + ", " +
+            worldZ.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "). Blocker at cancellation: " +
+            DescribeTerrainReadinessBlocker(blocker) + " Neither ForceFallbackSpawn path ran, because the " +
+            "caller's no-progress budget is shorter than this class's own timeouts.");
     }
 #endif
 
