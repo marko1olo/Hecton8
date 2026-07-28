@@ -973,6 +973,7 @@ def export_pages(
     overwrite: bool,
     packet_glob: str = "",
     gate_stats: dict[str, object] | None = None,
+    purge_denied: bool = False,
 ) -> tuple[int, int, int, int]:
     packets = collect_packets(root, packet_glob)
     base = root / "Docs" / "Lore" / "AppliedContent"
@@ -982,6 +983,7 @@ def export_pages(
     indexes_written = 0
     denied_pages = 0
     denied_pages_present = 0
+    purged_pages = 0
     cluster_spoiler_tiers = cluster_spoiler_tier_map(base)
     expected_paths: set[Path] = set()
     undeclared_labels: list[str] = []
@@ -1018,7 +1020,15 @@ def export_pages(
                     denied_pages += 1
                     if path.exists():
                         denied_pages_present += 1
-                    expected_paths.add(path.resolve())
+                        if purge_denied:
+                            # Explicit opt-in cleanup. Removing a denied page must go through the
+                            # exporter rather than a shell delete, because the page is generated output
+                            # and expected_paths is what keeps --check honest about what should exist.
+                            path.unlink()
+                            purged_pages += 1
+                            continue
+                    if not purge_denied:
+                        expected_paths.add(path.resolve())
                     continue
 
                 rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
@@ -1054,6 +1064,7 @@ def export_pages(
     if gate_stats is not None:
         gate_stats["denied_pages"] = denied_pages
         gate_stats["denied_pages_present"] = denied_pages_present
+        gate_stats["purged_pages"] = purged_pages
         gate_stats["undeclared_content_class_packets"] = tuple(undeclared_labels)
     return written, skipped, removed_disabled, indexes_written
 
@@ -1064,6 +1075,15 @@ def main() -> int:
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing localized markdown pages.")
     parser.add_argument("--packet-glob", default="", help="Glob to filter packets to export")
     parser.add_argument("--check", action="store_true", help="Fail if generated publication files are stale or missing.")
+    parser.add_argument(
+        "--purge-denied",
+        action="store_true",
+        help=(
+            "Delete already-published pages belonging to production_metadata packets. Opt-in cleanup for "
+            "content that the gate denies but that predates the gate. Removal goes through the exporter so "
+            "expected_paths stays consistent and --check does not then report the pages as missing."
+        ),
+    )
     parser.add_argument(
         "--report-classification",
         action="store_true",
@@ -1107,6 +1127,7 @@ def main() -> int:
         args.overwrite,
         args.packet_glob,
         gate_stats,
+        purge_denied=args.purge_denied,
     )
     print_undeclared_content_class_warnings(gate_stats.get("undeclared_content_class_packets", ()))
     print(

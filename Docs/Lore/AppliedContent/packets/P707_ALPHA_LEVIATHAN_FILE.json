@@ -59,8 +59,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Alpha-Leviathan: Sammelakte",
+     "scanner": "Kontakt nicht aufgelöst. Material unbekannt. Konfidenz 94 auf 12 Prozent in neun Sekunden. Gefahr: Rumpfspannung steigt, kein Kontakt protokolliert. Grenze: Peilung ohne Entfernung zurückgegeben.",
+     "in_game_wiki": "Neun Sichtungen wurden unter einer Bezeichnung zusammengeführt, weil das Schadenformular eine Zeile für die Ursache hat.\n\nABS. 2 MORPHOLOGIE, ABS. 4 MASSE UND SPANNWEITE - NICHT HERAUSGEGEBEN (RCO/hv)\nABS. 6 AKUSTIK - TRÄGER UNTER 40 Hz, 1340 m; OBERE GRENZE NICHT HERAUSGEGEBEN\nABS. 7 ROUTENFOLGEN - NUR KURS, LINIE 214\nABS. 9 KONTAKTEREIGNISSE - SIEHE ANHANG K\nABS. 11 AUSSAGEN ÜBERLEBENDER - AUFBEWAHRT, NICHT GEZÄHLT (HYPOXIE, NARKOSE)\nABS. 12 ARTZUORDNUNG - OHNE ERGEBNIS, 9 VON 9\n\nWas bleibt, ist das Verhalten der Instrumente. Rumpfspannungsalarme lösen aus, während das Sonar leer bleibt, und die Peilung, die zurückkommt, trägt keine Entfernung. Die Strömung dreht quer durch einen Korridor, in dem nichts steht, das sie drehen könnte.\n\nVor allem davon wird das Wasser still. Kleintiere hören gleichzeitig auf zu fressen und fangen nicht wieder an, und die Stille erreicht ein Korridorende zuerst.\n\nAnhang K liegt nicht bei und hat keinen Entnahmestempel. Bewertung: das Korridorende, das zuerst still wird, ist das Ende, aus dem es kam. Auf jeder anderen Peilung abgehen.",
+     "terminal": "DOKUMENT 7734-C. BEZEICHNUNG: ALPHA LEVIATHAN, KONVERGENZ. KLASSE: TRANSITWARNUNG, WIEDERKEHREND. ABSCHNITTE 2, 4, 6, 7 GESPERRT DURCH ASSET SILENCE BOARD, REV 11. ABSCHNITT 11 BEHALTEN: KEIN PASSENDER ENTNAHMECODE. VERLUSTE ERFASST ALS: DRUCKABWEICHUNG.",
+     "field_note": "Masse und Spannweite haben sie gestrichen und jede Aussage der Überlebenden stehen gelassen, weil es keine Formularzeile gibt, um Angst zu streichen. Abschnitt 9 traue ich nicht - eine Peilung ohne Entfernung ist eine verschreckte Schicht, die einen Rumpfalarm liest -, aber die Stille ist echt, also lerne, wie ein belebter Korridor klingt.",
+     "external_site_article": "Bergungsmannschaften an den Wracks bei Aegir geben ein unvollständiges Deep-Reach-Dokument weiter, das unter der Bezeichnung ALPHA LEVIATHAN abgelegt ist. Die umlaufenden Kopien stimmen vor allem darin überein, was in ihnen fehlt: Morphologie, Masse und Spannweite sowie die obere Grenze des akustischen Trägers sind in jeder Kopie gesperrt, und der genannte Anhang liegt keiner bei.\n\nWas die Sperrung übersteht, ist Instrumentenverhalten und keine Beobachtung. Rumpfspannungsalarme ohne Sonarkontakt, Peilungen ohne Entfernung, Strömungsstörung vor jeder sichtbaren Quelle und ein anhaltender Rückgang der Geräusche kleiner Tiere vor beidem. Die Aussagen der Überlebenden sind vollständig aufbewahrt und durch Hypoxie und Stickstoffnarkose verunreinigt, was als Grund angegeben ist, sie nicht als Beweis aufzunehmen. Deep Reach führt die Bezeichnung als Transitwarnung und erfasst die zugehörigen Verluste als Druckabweichung.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Bergungsmannschaften an den Wracks bei Aegir geben ein unvollständiges Deep-Reach-Dokument weiter, das unter der Bezeichnung ALPHA LEVIATHAN abgelegt ist."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -79,8 +85,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "アルファ・リヴァイアサン：集約ファイル",
+     "scanner": "接触未特定。材質不明。確度、九秒で94パーセントから12パーセント。危険：船体応力上昇、接触記録なし。制限：方位のみ返送、距離なし。",
+     "in_game_wiki": "損失報告書の原因欄が一行しかないため、九件の目撃が一つの呼称にまとめられた。\n\n第2項 形態、第4項 質量および全幅 — 不開示（RCO/hv）\n第6項 音響 — 搬送波40 Hz未満、1340 m。上限は不開示\n第7項 航路影響 — 方位のみ、ライン214\n第9項 接触事象 — 付属書Kを参照\n第11項 生存者供述 — 保管、計上せず（低酸素、窒素酔い）\n第12項 種の照合 — 判定不能、9件中9件\n\n残るのは計器の挙動だ。ソナーに何も映らないまま船体応力の警報が鳴り、返ってきた方位に距離が付かない。流れを曲げるものが何もない通路で、流れが横に曲がる。\n\nその前に、水が静かになる。小型の採餌者がそろって止まり、そのまま止まり続ける。静けさは通路の片端に先に届く。\n\n付属書Kは同封されておらず、抜き取りの押印もない。判断：先に静かになった側が、それが来た側だ。それ以外の方位へ抜けろ。",
+     "terminal": "文書 7734-C／呼称：ALPHA LEVIATHAN、集約／区分：通航注意、反復／第2・4・6・7項 ASSET SILENCE BOARD により不開示、改訂11／第11項 保管：該当する抜取コードなし／損失計上：圧力変動",
+     "field_note": "質量と全幅は削って、生存者の供述は一つ残らず残してある。恐怖を削る欄が書式にないからだ。第9項は信用しない。距離のない方位は、船体の警報を読んだ怯えた班の話だ。ただ静けさは本物だから、にぎやかな通路の音を覚えておけ。",
+     "external_site_article": "Aegirの残骸で作業する回収班の間では、ALPHA LEVIATHANという呼称で綴じられたDeep Reachの不完全な文書が回っている。回っている写しが一致しているのは、主に欠けている箇所だ。形態、質量と全幅、音響搬送波の上限はどの写しでも不開示で、参照されている付属書はどれにも同封されていない。\n\n不開示を抜けて残るのは観察ではなく、計器の挙動だ。ソナー接触のない船体応力警報、距離のない方位記録、見える発生源より先に出る流れの乱れ、そしてその両方より先に続く小動物の音の低下。生存者供述は全文が保管され、低酸素と窒素酔いで汚染されている。これが証拠として採用しなかった理由として記載されている。Deep Reachはこの呼称を通航注意として扱い、関連する損失は圧力変動として計上している。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegirの残骸で作業する回収班の間では、ALPHA LEVIATHANという呼称で綴じられたDeep Reachの不完全な文書が回っている。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -99,16 +111,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Альфа-левиафан: сводное дело",
+     "scanner": "Контакт не опознан. Материал не определён. Достоверность с 94 до 12 процентов за девять секунд. Опасность: напряжение корпуса растёт, контакт не зарегистрирован. Ограничение: пеленг получен без дистанции.",
+     "in_game_wiki": "Девять наблюдений свели под одно обозначение, потому что в форме убытка на причину отведена одна строка.\n\nРАЗД. 2 МОРФОЛОГИЯ, РАЗД. 4 МАССА И РАЗМАХ — СВЕДЕНИЯ НЕ ПРЕДОСТАВЛЕНЫ (RCO/hv)\nРАЗД. 6 АКУСТИКА — НОСИТЕЛЬ НИЖЕ 40 Гц, 1340 м; ВЕРХНЯЯ ГРАНИЦА НЕ ПРЕДОСТАВЛЕНА\nРАЗД. 7 ВЛИЯНИЕ НА МАРШРУТ — ТОЛЬКО КУРС, ЛИНИЯ 214\nРАЗД. 9 СОБЫТИЯ КОНТАКТА — СМ. ПРИЛОЖЕНИЕ K\nРАЗД. 11 ПОКАЗАНИЯ ВЫЖИВШИХ — ПРИНЯТЫ НА ХРАНЕНИЕ, В ЗАЧЁТ НЕ ИДУТ (ГИПОКСИЯ, НАРКОЗ)\nРАЗД. 12 СОВПАДЕНИЕ ПО ВИДУ — НЕ УСТАНОВЛЕНО, 9 ИЗ 9\n\nУцелело поведение приборов. Сигнализация по напряжению корпуса срабатывает, когда на сонаре пусто, а вернувшийся пеленг идёт без дистанции. Поток разворачивается через коридор, в котором нет ничего, что разворачивало бы поток.\n\nРаньше всего этого вода замолкает. Мелкие кормящиеся замирают разом и остаются замершими, и тишина доходит до одного конца коридора первой.\n\nПриложение K не подшито и штампа об изъятии не имеет. Оценка: тот конец коридора, который замолкает первым, — это конец, откуда оно пришло. Уходить любым другим пеленгом.",
+     "terminal": "ДОКУМЕНТ 7734-C. ОБОЗНАЧЕНИЕ: АЛЬФА-ЛЕВИАФАН, СХОЖДЕНИЕ. КЛАСС: ТРАНЗИТНОЕ ПРЕДУПРЕЖДЕНИЕ, ПОВТОРНОЕ. РАЗДЕЛЫ 2, 4, 6, 7 ЗАКРЫТЫ СОВЕТОМ ПО МОЛЧАНИЮ АКТИВОВ, РЕД. 11. РАЗДЕЛ 11 ОСТАВЛЕН: ПОДХОДЯЩЕГО КОДА ИЗЪЯТИЯ НЕТ. УБЫТКИ ПРОВЕДЕНЫ КАК: ОТКЛОНЕНИЕ ДАВЛЕНИЯ.",
+     "field_note": "Массу и размах вырезали, а показания выживших оставили целиком: в форме нет строки, чтобы изъять страх. Разделу 9 я не верю — пеленг без дистанции это испуганная смена, читающая сигнал корпуса, — но тишина настоящая, поэтому выучи, как звучит рабочий коридор.",
+     "external_site_article": "Спасательные команды, работающие на обломках у Aegir, передают по рукам неполный документ Deep Reach, подшитый под обозначением ALPHA LEVIATHAN. Копии, которые ходят по рукам, совпадают в основном тем, чего в них нет: морфология, масса и размах, верхняя граница акустического носителя закрыты в каждой копии, а упомянутое приложение не подшито ни к одной.\n\nПосле изъятий остаётся не наблюдение, а поведение приборов. Сигнализация по напряжению корпуса без контакта на сонаре, пеленги, записанные без дистанции, возмущение потока раньше любого видимого источника и устойчивое падение шума мелких животных раньше и того, и другого. Показания выживших сохранены полностью и испорчены гипоксией и азотным наркозом — это и указано как причина, по которой их не внесли в доказательства. Deep Reach ведёт обозначение как транзитное предупреждение, а связанные с ним убытки проводит как отклонение давления.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Спасательные команды на обломках у Aegir передают по рукам неполный документ Deep Reach, подшитый под обозначением ALPHA LEVIATHAN."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "阿尔法利维坦：并案卷宗",
+     "scanner": "接触未判定。材质不明。置信度九秒内由94%降至12%。危险：船体应力上升，未记录接触。限制：只返回方位，无距离。",
+     "in_game_wiki": "九次目击被并入同一代号，因为损失表上的原因只有一栏。\n\n第2节 形态、第4节 质量与展幅 — 不予提供（RCO/hv）\n第6节 声学 — 载波低于40 Hz，1340 m；上限不予提供\n第7节 航路影响 — 仅方位，214线\n第9节 接触事件 — 见附件K\n第11节 生存者陈述 — 存档，不计入（缺氧、氮麻醉）\n第12节 物种比对 — 无法判定，9份中9份\n\n留下来的只有仪器的反应。声呐上什么都没有，船体应力警报却响了；返回的方位不带距离。通道里没有任何能改变水流的东西，水流却横着转向。\n\n在这些之前，水会静下来。小型摄食者一起停口，并且一直停着；安静先到通道的一端。\n\n附件K未随卷，也没有抽取印章。判断：先安静下来的那一端，就是它来的那一端。从任何其他方位撤离。",
+     "terminal": "文件 7734-C。代号：ALPHA LEVIATHAN，并案。类别：通航警示，重复发生。第2、4、6、7节由 ASSET SILENCE BOARD 封存，第11版。第11节保留：无适用抽取代码。损失归类：压力偏差。",
+     "field_note": "质量和展幅被划掉，生存者陈述一条都没删——表上没有删除恐惧的那一栏。第9节我不信：没有距离的方位，是一班被吓住的人在读船体警报。但安静是真的，所以先记住有活物的通道是什么声音。",
+     "external_site_article": "在Aegir沉船区作业的打捞队之间，流传着一份以ALPHA LEVIATHAN代号归档的Deep Reach残卷。流传的各份抄本主要在缺失处一致：形态、质量与展幅、声学载波上限在每一份里都不予提供，被引用的附件没有一份随卷。\n\n经过封存后留下的不是观察，而是仪器行为。没有声呐接触的船体应力警报、只记方位不记距离的记录、早于任何可见来源的水流扰动，以及比这两者更早出现的小型动物噪声持续下降。生存者陈述全文存档，并因缺氧与氮麻醉而受污染，这也是文件中写明的不予采信理由。Deep Reach把该代号当作通航警示保留，并把相关损失归类为压力偏差。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "在Aegir沉船区作业的打捞队之间，流传着一份以ALPHA LEVIATHAN代号归档的Deep Reach残卷。"
     }
    }
   }
