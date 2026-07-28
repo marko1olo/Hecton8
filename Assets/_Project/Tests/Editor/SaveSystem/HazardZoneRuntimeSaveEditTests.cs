@@ -5885,10 +5885,12 @@ namespace Hecton8.Tests.Editor
                 Assert.Greater(currentBytesWritten, 0);
             }
 
-            byte[] withoutVoxelPayload = RemoveCurrentDefaultVoxelDeltaPayload(
+            byte[] legacyLayoutPayload = BuildLegacyLayoutPayload(
                 currentPayload,
                 currentBytesWritten,
-                out int withoutVoxelBytesWritten);
+                SaveData.Atlas6LiabilityPersistenceVersion - 1,
+                SaveData.PlayerHealthDefault,
+                out int legacyLayoutBytesWritten);
             byte[] atlas6Marker = BuildAtlas6LiabilityMarker(
                 321.5f,
                 true,
@@ -5901,25 +5903,19 @@ namespace Hecton8.Tests.Editor
                 0.25f,
                 true);
             int atlas6Offset = FindLittleEndianByteSequenceOffset(
-                withoutVoxelPayload,
-                withoutVoxelBytesWritten,
+                legacyLayoutPayload,
+                legacyLayoutBytesWritten,
                 atlas6Marker);
             Assert.GreaterOrEqual(atlas6Offset, 0);
 
-            int legacyBytesWritten = withoutVoxelBytesWritten - atlas6Marker.Length;
+            int legacyBytesWritten = legacyLayoutBytesWritten - atlas6Marker.Length;
             byte[] legacyPayload = new byte[legacyBytesWritten];
             RemovePayloadRange(
-                withoutVoxelPayload,
+                legacyLayoutPayload,
                 atlas6Offset,
                 atlas6Marker.Length,
-                withoutVoxelBytesWritten,
+                legacyLayoutBytesWritten,
                 legacyPayload);
-            Buffer.BlockCopy(
-                BitConverter.GetBytes(SaveData.Atlas6LiabilityPersistenceVersion - 1),
-                0,
-                legacyPayload,
-                0,
-                sizeof(int));
 
             fixed (byte* legacyPayloadPtr = legacyPayload)
             {
@@ -5982,29 +5978,31 @@ namespace Hecton8.Tests.Editor
                 Assert.Greater(currentBytesWritten, 0);
             }
 
-            byte[] withoutVoxelPayload = RemoveCurrentDefaultVoxelDeltaPayload(
+            byte[] legacyLayoutPayload = BuildLegacyLayoutPayload(
                 currentPayload,
                 currentBytesWritten,
-                out int withoutVoxelBytesWritten);
+                SaveData.HazardZoneRuntimePersistenceVersion - 1,
+                SaveData.PlayerHealthDefault,
+                out int legacyLayoutBytesWritten);
             int hazardBytes = sizeof(float) * 2;
             int hazardOffset = FindLittleEndianFloatPairOffset(
-                withoutVoxelPayload,
-                withoutVoxelBytesWritten,
+                legacyLayoutPayload,
+                legacyLayoutBytesWritten,
                 hazardDoseMarker,
                 hazardPulseMarker);
             Assert.GreaterOrEqual(hazardOffset, sizeof(int));
             Assert.AreEqual(1, CountLittleEndianFloatPair(
-                withoutVoxelPayload,
-                withoutVoxelBytesWritten,
+                legacyLayoutPayload,
+                legacyLayoutBytesWritten,
                 hazardDoseMarker,
                 hazardPulseMarker));
 
-            byte[] withoutHazardPayload = new byte[withoutVoxelBytesWritten - hazardBytes];
+            byte[] withoutHazardPayload = new byte[legacyLayoutBytesWritten - hazardBytes];
             int withoutHazardBytesWritten = RemovePayloadRange(
-                withoutVoxelPayload,
+                legacyLayoutPayload,
                 hazardOffset,
                 hazardBytes,
-                withoutVoxelBytesWritten,
+                legacyLayoutBytesWritten,
                 withoutHazardPayload);
 
             byte[] atlas6Marker = BuildAtlas6LiabilityMarker(
@@ -6032,12 +6030,6 @@ namespace Hecton8.Tests.Editor
                 atlas6Marker.Length,
                 withoutHazardBytesWritten,
                 legacyPayload);
-            Buffer.BlockCopy(
-                BitConverter.GetBytes(SaveData.HazardZoneRuntimePersistenceVersion - 1),
-                0,
-                legacyPayload,
-                0,
-                sizeof(int));
 
             fixed (byte* legacyPayloadPtr = legacyPayload)
             {
@@ -7818,17 +7810,22 @@ namespace Hecton8.Tests.Editor
             Assert.GreaterOrEqual(completedEndingOffset, 0);
             currentPayload[completedEndingOffset + completedEndingMarker.Length - 1] = 0;
 
-            byte[] withoutVoxelPayload = RemoveCurrentDefaultVoxelDeltaPayload(
+            byte[] legacyLayoutPayload = BuildLegacyLayoutPayload(
                 currentPayload,
                 currentBytesWritten,
-                out int withoutVoxelBytesWritten);
+                legacyVersion,
+                SaveData.PlayerHealthDefault,
+                out int legacyLayoutBytesWritten);
+            // The contract version hashes are the one legacy gap BuildLegacyLayoutPayload cannot take
+            // out for it: they sit ahead of the timestamp the health offset is measured from, so they
+            // have to go after that arithmetic has run (SaveBinaryPayloadCodec.cs:675).
             int contractHashBytes = sizeof(ulong) * 2;
-            byte[] withoutContractPayload = new byte[withoutVoxelBytesWritten - contractHashBytes];
+            byte[] withoutContractPayload = new byte[legacyLayoutBytesWritten - contractHashBytes];
             int withoutContractBytesWritten = RemovePayloadRange(
-                withoutVoxelPayload,
+                legacyLayoutPayload,
                 sizeof(int),
                 contractHashBytes,
-                withoutVoxelBytesWritten,
+                legacyLayoutBytesWritten,
                 withoutContractPayload);
             PatchPayloadInt(withoutContractPayload, 0, legacyVersion);
 
@@ -17605,25 +17602,143 @@ namespace Hecton8.Tests.Editor
             return bytes;
         }
 
-        private static byte[] RemoveCurrentDefaultVoxelDeltaPayload(
+        // Byte sizes of the two sections WriteSaveDataWorld emits AFTER the voxel delta block
+        // (SaveBinaryPayloadCodec.cs:650-659): the celestial light phase added at v84, then the
+        // procedural terrain identity added at v83 and extended at v85. The voxel delta block stopped
+        // being the payload tail when v83 landed, so anything reaching for it has to count back over
+        // both of these instead of trimming the end of the buffer.
+        private const int CelestialLightPhasePayloadBytes = sizeof(byte) + sizeof(float);
+        private const int ProceduralTerrainIdentityPayloadBytes =
+            (sizeof(uint) * 11) + (sizeof(int) * 7) + (sizeof(float) * 3);
+        private const int DefaultVoxelDeltaPayloadBytes = sizeof(int) * 3;
+
+        /// <summary>
+        /// Rewrites a payload produced by the CURRENT writer so its bytes sit where the reader expects
+        /// them at <paramref name="legacyVersion"/>, and patches the leading version int to match.
+        /// Patching the version alone does not produce a legacy payload: TryWrite emits every field
+        /// unconditionally, while the reader skips each field its declared version predates - player
+        /// health (SaveBinaryPayloadCodec.cs:2840), the voxel delta block (:1163), the celestial light
+        /// phase (:1261) and the procedural terrain identity (:1297). Every field left in place leaves
+        /// the reader that many bytes behind for the entire remainder of the payload, so the first
+        /// bounded collection it decodes past the gap reports a nonsense length.
+        /// </summary>
+        private static byte[] BuildLegacyLayoutPayload(
             byte[] source,
             int sourceLength,
+            int legacyVersion,
+            float writtenPlayerHealth,
             out int bytesWritten)
         {
-            const int defaultVoxelDeltaPayloadBytes = sizeof(int) * 3;
+            Assert.IsTrue(BitConverter.IsLittleEndian);
             Assert.IsNotNull(source);
-            Assert.GreaterOrEqual(sourceLength, defaultVoxelDeltaPayloadBytes);
-            for (int i = sourceLength - defaultVoxelDeltaPayloadBytes; i < sourceLength; i++)
-                Assert.AreEqual(0, source[i]);
+            Assert.GreaterOrEqual(sourceLength, 0);
+            Assert.LessOrEqual(sourceLength, source.Length);
+            // Modelled range only. Below v72 the first-hour locked DTOs also disappear
+            // (SaveBinaryPayloadCodec.cs:1055), and from v78 up the per-module fields v79-v82 added
+            // would have to be located inside each construction module record. Neither is handled
+            // here, so refuse those versions loudly rather than emit a payload that is still current.
+            Assert.GreaterOrEqual(legacyVersion, SaveData.FirstHourDtoLockPersistenceVersion);
+            Assert.Less(legacyVersion, SaveData.PlayerHealthPersistenceVersion);
 
-            byte[] destination = new byte[sourceLength - defaultVoxelDeltaPayloadBytes];
-            bytesWritten = RemovePayloadRange(
-                source,
-                sourceLength - defaultVoxelDeltaPayloadBytes,
-                defaultVoxelDeltaPayloadBytes,
-                sourceLength,
-                destination);
+            byte[] payload = new byte[sourceLength];
+            Buffer.BlockCopy(source, 0, payload, 0, sourceLength);
+            int length = sourceLength;
+
+            // Trailing sections are removed back to front, because each offset below is measured from
+            // the current end of the payload.
+            if (legacyVersion < SaveData.ProceduralTerrainIdentityPersistenceVersion)
+            {
+                length = RemovePayloadRangeInPlace(
+                    payload,
+                    length - ProceduralTerrainIdentityPayloadBytes,
+                    ProceduralTerrainIdentityPayloadBytes,
+                    length);
+            }
+
+            if (legacyVersion < SaveData.CelestialLightPhasePersistenceVersion)
+            {
+                length = RemovePayloadRangeInPlace(
+                    payload,
+                    length - CelestialLightPhasePayloadBytes,
+                    CelestialLightPhasePayloadBytes,
+                    length);
+            }
+
+            if (legacyVersion < SaveData.VoxelDeltaPersistenceVersion)
+            {
+                // A default VoxelDeltaPersistenceDTO serializes as chunk count, total cell count and
+                // carving operation count, all zero (SaveBinaryPayloadCodec.cs:1118-1153). Checking
+                // that is what proves the block being cut really is the voxel delta block and not
+                // whatever section a later version appended behind it.
+                for (int i = length - DefaultVoxelDeltaPayloadBytes; i < length; i++)
+                    Assert.AreEqual(0, payload[i]);
+
+                length = RemovePayloadRangeInPlace(
+                    payload,
+                    length - DefaultVoxelDeltaPayloadBytes,
+                    DefaultVoxelDeltaPayloadBytes,
+                    length);
+            }
+
+            if (legacyVersion < SaveData.PlayerHealthPersistenceVersion)
+            {
+                int healthOffset = ResolvePlayerHealthPayloadOffset(payload, length);
+                Assert.AreEqual(writtenPlayerHealth, BitConverter.ToSingle(payload, healthOffset));
+                length = RemovePayloadRangeInPlace(payload, healthOffset, sizeof(float), length);
+            }
+
+            PatchPayloadInt(payload, 0, legacyVersion);
+            bytesWritten = length;
+            byte[] destination = new byte[length];
+            Buffer.BlockCopy(payload, 0, destination, 0, length);
             return destination;
+        }
+
+        /// <summary>
+        /// Offset of the player health float inside a payload written by the current writer. The
+        /// prefix ahead of it is fixed width apart from the timestamp, whose char count the payload
+        /// carries itself: version, contract version hash lo/hi and timestamp string
+        /// (SaveBinaryPayloadCodec.cs:534-538), then WriteSaveDataState's totalPlayTime followed by
+        /// WritePlayerStats' oxygen, energy, integrity and health (:548-549, :2728-2731).
+        /// </summary>
+        private static int ResolvePlayerHealthPayloadOffset(byte[] payload, int length)
+        {
+            Assert.IsTrue(BitConverter.IsLittleEndian);
+            Assert.IsNotNull(payload);
+            Assert.LessOrEqual(length, payload.Length);
+            int timestampCharCountOffset = sizeof(int) + (sizeof(ulong) * 2);
+            Assert.LessOrEqual(timestampCharCountOffset + sizeof(int), length);
+            int timestampCharCount = BitConverter.ToInt32(payload, timestampCharCountOffset);
+            // BufferWriter.WriteString stores a null string as a negative sentinel and emits no
+            // characters, which this arithmetic would misread as a shorter prefix.
+            Assert.GreaterOrEqual(timestampCharCount, 0);
+            int healthOffset = timestampCharCountOffset
+                + sizeof(int)
+                + (timestampCharCount * sizeof(char))
+                + sizeof(double)
+                + (sizeof(float) * 3);
+            Assert.LessOrEqual(healthOffset + sizeof(float), length);
+            return healthOffset;
+        }
+
+        /// <summary>
+        /// Cuts <paramref name="byteCount"/> bytes out of <paramref name="payload"/> in place and
+        /// returns the remaining length. Array.Copy is specified to behave as if overlapping source
+        /// bytes were copied to a temporary first, which this left shift over one array depends on.
+        /// </summary>
+        private static int RemovePayloadRangeInPlace(
+            byte[] payload,
+            int offset,
+            int byteCount,
+            int length)
+        {
+            Assert.IsNotNull(payload);
+            Assert.GreaterOrEqual(offset, 0);
+            Assert.GreaterOrEqual(byteCount, 0);
+            Assert.LessOrEqual(length, payload.Length);
+            Assert.LessOrEqual(offset + byteCount, length);
+            Array.Copy(payload, offset + byteCount, payload, offset, length - offset - byteCount);
+            return length - byteCount;
         }
 
         private static int RemovePayloadRange(
