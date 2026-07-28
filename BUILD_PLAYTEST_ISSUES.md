@@ -89,8 +89,53 @@ IStreamingBackpressureService, IGlobalRegistryHotSwapListener, IDisposable`.
   a token for a denied slot, `OnEnable` registration at `:2491` would throw `CriticalBootException`, and
   installers run in sequence with no `try`/`catch` — so adding it there would abort every installer after
   it. That comment names the fix itself: "It needs a pre-Ready bootstrap lane, not this one."
-- Live consumers therefore hold a field that can only ever be null:
-  `PrologueSequenceRegistryBridge.cs:56`, `:324`, `:608` and `PDAMapTab.cs:187`.
+- Consumers hold a field that can only ever be null — `PrologueSequenceRegistryBridge.cs:56`, `:324`, `:608`
+  and `PDAMapTab.cs:187`. **Corrected 2026-07-29: neither consumer is reachable either, so both null reads
+  are LATENT, not live.** I first wrote "live consumers" and that was an overstatement.
+  `PrologueSequenceRegistryBridge` has no construction site anywhere and guid
+  `45870ac22097485c8af3756f9b82f96f` returns 0 hits across all 999 scenes and prefabs, so `_service` is null,
+  `OnEnable` bails at `:136-140` publishing `MissingServiceHash`, and `CacheRuntimeServices()` is never
+  reached. `PDAMapTab` is created only at `PDASpectrumTab.cs:390`, and `PDASpectrumTab` itself has no
+  construction site and is in no scene — so the chain stops one link earlier than I claimed. The defect is
+  real and still worth fixing; it is queued behind whoever instantiates those two lanes.
+
+**Third instance of the same shape, found 2026-07-29.** `IOrbitalDirector` is also permanently null in
+`PrologueSequenceRegistryBridge` (`:55`, cached at `:607`). Its sole implementation
+`Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs:23` is a MonoBehaviour with no
+construction site and guid `a157e4fc116ddcb47959dc414b43d02c` returns 0 hits across all 999 files. Unlike the
+streaming case the registry is NOT the obstacle: the component self-registers at `:354` and
+`OrbitalDirectorRuntime` is absent from the deny list at `GlobalRegistry.cs:7160-7186`, so registration would
+succeed the moment the component exists. Cost inside the bridge: `TryGetOrbitalSnapshot` (`:194-212`) always
+returns false so the prologue never receives universe velocity, planet distance, reentry heat or cloud
+whiteout; `ZeroUniverseVelocity` (`:499-503`) is a silent no-op through `orbital?.`; and
+`TryConsumeOrbitalWhiteoutFallback` (`:825-861`) bails at `:830`, removing one of three prologue-complete
+fallback paths. Also absent from every scene in that lane:
+`Prologue/Space/PrologueWorldHandoffSceneLoader.cs` and `Prologue/VFX/OrbitalDropReentryVfxController.cs`;
+only `Prologue/Space/PrologueOrbitSceneBootstrap.cs` is wired.
+
+**Two services in that same file are FINE, checked so nobody re-audits them.** `ITickDispatcher` (`:609`):
+`SystemDispatcher` is `AddComponent`ed at `GameBootstrapper.cs:5874` and `GameBootstrapper` drives itself
+from `[RuntimeInitializeOnLoadMethod]`, so it needs no scene presence; the bridge also degrades to
+`SystemDispatcher.CurrentFrameDeltaTime` when it is null (`:722-724`, `:1080-1082`). `IInputService`
+(`:657`) structurally cannot be null — the property returns a `NoOpInputService` null object at
+`GlobalRegistry.cs:936`.
+
+**The PDA is NOT a dead feature, and recording that is the point.** All 21 `PDA*` MonoBehaviours are absent
+from every one of the 999 scenes and prefabs, which reads as a whole handheld device written and never
+wired. It is not: the PDA is built programmatically. `PDARuntimeInstaller.EnsurePlayerSystems(playerObject)`
+is invoked from `GameBootstrapper.cs:8031`, `ProgressionRuntimeInstaller.cs:49` adds `PDADeathMemoryDump`,
+and tabs build their own sub-panels — `PDAInventoryTab.cs:883` and `:1531`, `PDAAtlasSignalTab.cs:496`.
+Scene absence proves nothing for a code-constructed UI, exactly as it proves nothing for a
+non-MonoBehaviour service. The one genuine gap in that lane is `PDASpectrumTab`: no construction site, no
+scene, and it is the only creator of `PDAMapTab`, so both are unreachable.
+
+**Method, improved on the earlier pass.** Header-test all 999 scene and prefab files for `%YAML` first:
+exactly 4 are binary (`02_HECTON_WORLD.unity`, `010_TEST.unity`, `020_RENDER_SANDBOX.unity`,
+`020_RENDER_SANDBOX_V2.unity`). For the 995 text files a plain guid grep is exact; only the 4 binary ones
+need the nibble-swapped byte order. Control `547a39a8034a57a47b65413eb12885d2` (WorldStreamingDirector)
+returns 6 hits, including two independent binary scenes in swapped form and 0 in raw form — that is what
+makes every negative above meaningful. And always pair a scene negative with a construction-site search: an
+absent MonoBehaviour that something `AddComponent`s is not a finding.
 - Player consequence: no chunk residency, no load/unload radius, no streaming backpressure, no far-field
   HLOD impostors, and the `BufferID.WorldChunkResidencyManager_ActiveImpostor*` DataVault entries are never
   populated. `AGENTS.md` `Memory Management & Chunk Dispose` has no owner on this route.
