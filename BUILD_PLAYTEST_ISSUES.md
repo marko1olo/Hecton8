@@ -232,12 +232,51 @@ authoring button — and that is precisely where the content is stranded. `Const
 `Assets/_Project/Data/Biomes/MatrixProfiles/` holds **108** `.asset` files — I counted them — plus 13 family
 and 13 atmosphere profiles. `BiomeMatrixDirector`'s script guid `5edcfefa47837a147a16a78401507398` appears in
 **zero** `.unity` and `.prefab` files, and it is not on the bootstrapper's list, so nothing instantiates it.
-Five runtime systems declare it as `[SerializeField]` and therefore hold null:
-`Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:147`, `FaunaDirector.cs:247`,
-`AcousticZoneController.cs:421`, plus `HectonAtmosphereManager.cs:806` and `HectonUnderwaterVisuals.cs:308`
-as reported. Music, acoustics, fauna, atmosphere and underwater visuals are all reading a biome layer that is
-fully authored and never built. `[MenuItem]` at
-`Assets/_Project/Scripts/Editor/BiomeMatrixBootstrapAuthoring.cs:36` builds it.
+Five runtime systems declare it as `[SerializeField]`: `Assets/_Project/Scripts/Audio/HectonMusicDirector.cs:147`,
+`FaunaDirector.cs:247`, `AcousticZoneController.cs:421`, plus `HectonAtmosphereManager.cs:806` and
+`HectonUnderwaterVisuals.cs:308`. Music, acoustics, fauna, atmosphere and underwater visuals all read a biome
+layer that is fully authored and never built.
+
+**Corrected: those null fields are not the defect, and saying they were made the problem sound bigger and
+more diffuse than it is.** The nulls are optional by design and the consumers are already right. The tooltip
+at `AcousticZoneController.cs:420` says so in as many words — *"Optional BiomeMatrixDirector reference. If
+unassigned, the controller lazily resolves the runtime owner."* — and the lazy resolution is real:
+`WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref ...)` is called from
+`AcousticZoneController.cs:1894`, `HectonMusicDirector.cs:1462`, `AtlasSignalSystem.cs:583` and
+`BeaconDeployerTool.cs:680`, resolving through `BiomeMatrixDirector.ActiveRuntimeInstance`, which the director
+sets in its own `Awake` (`BiomeMatrixDirector.cs:892`, with `GlobalRegistry.RegisterBiomeMatrixRuntime` at
+`:894`). One enabled director in a loaded scene binds all five with no per-consumer wiring.
+
+So the defect is exactly one thing and it is smaller than I first wrote: **nothing instantiates the director,
+so the lazy resolver has nothing to find.** The fix is scene placement alone.
+
+**What pressing `[MenuItem]` at `Assets/_Project/Scripts/Editor/BiomeMatrixBootstrapAuthoring.cs:36` actually
+does — read before pressing, because three of these are not what you would assume.**
+1. It writes into **whatever scene is currently active** — `SceneManager.GetActiveScene()` at `:107`, guarded
+   only by `IsValid() && isLoaded`. No name check, it never opens a scene, and an untitled empty scene passes
+   that guard. The hazard is not "silently skipped", it is "director written into the wrong scene, silently".
+2. **The two halves have opposite durability.** `AssetDatabase.SaveAssets()` at `:125` commits the asset half
+   to disk immediately, while the scene half is only `EditorSceneManager.MarkSceneDirty` at `:122` with no
+   `SaveScene` anywhere in the method. Close without saving and you keep 108 rewritten profiles and lose the
+   director. This is the inverse of the "irreversible in a dirty scene" risk I assumed.
+3. **Idempotent for asset identity, not for asset content.** It reuses existing files by path
+   (`LoadAssetAtPath` … `if (profile == null) CreateAsset`, `:70-75`), so GUIDs and inbound references survive
+   — but `:77-92` then overwrite every generated field unconditionally from a hard-coded seed table, and the
+   catalog array is forced to exactly 108 with every slot reassigned (`:101`). Both writes use
+   `ApplyModifiedPropertiesWithoutUndo` (`:104`, `:120`) and the new GameObject gets no
+   `Undo.RegisterCreatedObjectUndo`, so **Ctrl+Z reverts neither half**. Any hand tuning applied to those 108
+   profiles since they were last generated is destroyed. Whether such tuning exists is unknown and is the one
+   thing to check first — recovery is version control, not the tool.
+4. **Placement matters more than the button.** `[MANAGERS]`, the root it attaches to, appears in **zero** of
+   the 7 scenes under `Assets/_Project/Scenes`, so it is always created fresh, it is scene-owned rather than
+   `DontDestroyOnLoad`, and `GameObject.Find` only sees active objects. The director must therefore end up in
+   the scene that is loaded during play, not in `00_BOOTSTRAP`, or it dies at scene handoff and
+   `ActiveRuntimeInstance` goes null again (`BiomeMatrixDirector.cs:946-947`).
+5. Every input loader fails silently — `LoadItemData` (`:1991`), `LoadWorldFamilyProfile` (`:1981`),
+   `LoadZonePlanProfile` (`:1986`), `LoadToolLoadoutPreset` (`:2083`) all return null without logging, while
+   `:127` prints *"108-biome matrix rebuilt."* unconditionally. A renamed input yields profiles with null
+   resources and a success message. The detector for exactly this already exists and is itself unpressed:
+   `Hecton8/Validation/Validate 108 Biome Matrix` at `:130`.
 
 **No creature in the game has a brain.** `FaunaBrain`'s script guid `f97102d76d9d9d04f95ccebcd55b7079` occurs
 in exactly **one** file in the entire `Assets` tree — its own `.cs.meta`. I ran that search myself and there is
