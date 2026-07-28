@@ -7293,6 +7293,36 @@ namespace Hecton8.Bootstrap
 
                 SetSceneActivationStep("Step 4: Save/Load");
                 await LoadOrNewGameAsync();
+
+                // Re-read the active scene instead of reusing the one captured before this sequence began.
+                // The captured handle is wrong twice over, and it is why the player gate never opens.
+                //
+                // Activation is kicked off from HandleSceneLoadedGuard during the ADDITIVE world load's
+                // sceneLoaded callback, so the capture happens before SceneRuntimeService reaches
+                // SetActiveScene (SceneRuntimeService.cs:838). A run logged
+                // "RequiresGameplaySceneActivation: 01_MAIN_MENU -> isValid=True" from that path - the
+                // outgoing menu scene. By the time this line is reached the same struct has gone stale
+                // entirely: the identical call logged "-> isValid=False, isLoaded=False" a few hundred lines
+                // later, because the menu scene it named had been unloaded.
+                //
+                // ResolveSceneActivationReferences searches that handle for the things Step 7 needs:
+                // TryResolveSceneComponent(scene, ... out HectonPlayerSpawner) and
+                // TryResolveSceneTaggedObject(scene, "Player", ...). Pointed at the menu scene and then at an
+                // invalid handle, neither can ever see anything in 02_HECTON_WORLD. So playerSpawner stays
+                // null, SpawnPlayerAsync cannot take its spawner route and cannot re-instantiate the player
+                // that was destroyed during the transition, MarkPlayerInstantiated stores PLAYER_NULL, the
+                // SceneInstantiationGate never opens, and ActivatePlayer never runs - which is also why
+                // DisablePlayer's SetActive(false) is never undone.
+                //
+                // Observed severity: on the menu route this produced "Bootstrap timed out during scene
+                // activation" while the probe still scored Boot=PASS; on the bootstrap-handoff route it
+                // failed the whole phase - "Bootstrap phase failed. phase=SceneActivate" - so
+                // _isBootstrapComplete never became true and the main menu could never load at all.
+                //
+                // activeScene is also handed to ApplyShippingSceneCleanup and TryValidateSceneRootBudget
+                // further down, both of which were operating on the menu or invalid scene for the same
+                // reason. One re-read fixes all three consumers.
+                activeScene = SceneManager.GetActiveScene();
                 ResolveSceneActivationReferences(activeScene);
                 ct.ThrowIfCancellationRequested();
 

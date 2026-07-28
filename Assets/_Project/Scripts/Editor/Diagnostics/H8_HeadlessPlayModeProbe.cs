@@ -1611,10 +1611,23 @@ namespace Hecton8.EditorTools.Diagnostics
             // Verdict only; _failures is deliberately untouched here so the exit code keeps its
             // existing meaning. A headless boot that stops at 01_MAIN_MENU is a legitimate outcome
             // of the harness, and it is still a Boot-row failure against the Required Route.
+            // allSystemsReady ALONE scored Boot=PASS on runs that logged
+            // "[GameBootstrapper] Bootstrap timed out during scene activation." That predicate is the BIOS
+            // phase from 00_BOOTSTRAP - _isBootstrapComplete plus Dispatcher, TickManager, Save and
+            // ObjectPool - and it asserts nothing about scene activation: not that the SceneInstantiationGate
+            // opened, not that a player exists, not that ActivatePlayer ran. The activeScene name below was
+            // reported, never checked. So three consecutive runs printed RESULT failures=0 while the player
+            // had been destroyed mid-transition and never respawned, and every conclusion drawn from those
+            // runs was read off a probe that passed a failed boot.
+            //
+            // BootstrapState.IsGameReady is the missing bit and nothing else in the project is: it is
+            // published true only after ActivatePlayer() completes, and forced false on each activation
+            // failure path. Requiring both means the row cannot go green on a boot that did not finish.
+            bool gameReady = BootstrapState.IsGameReady;
             RecordMoment(
                 MomentBoot,
-                ready ? MomentVerdict.Pass : MomentVerdict.Fail,
-                $"allSystemsReady={ready} Dispatcher={IsAlive(GlobalRegistry.Dispatcher)} " +
+                ready && gameReady ? MomentVerdict.Pass : MomentVerdict.Fail,
+                $"allSystemsReady={ready} gameReady={gameReady} Dispatcher={IsAlive(GlobalRegistry.Dispatcher)} " +
                 $"TickManager={IsAlive(GlobalRegistry.TickManager)} Save={IsAlive(GlobalRegistry.Save)} " +
                 $"ObjectPool={IsAlive(GlobalRegistry.ObjectPool)} activeScene='{active.name}'");
         }
