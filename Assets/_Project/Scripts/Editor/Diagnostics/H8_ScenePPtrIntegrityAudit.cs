@@ -752,8 +752,11 @@ namespace Hecton8.EditorTools.Diagnostics
                             // future"), so casting to int just trades one CS0619 for another - measured,
                             // that was this fix's first attempt. Compare the struct to its own default
                             // via ValueType.Equals, which needs no operator this file has not verified.
+                            // The type argument is explicit on purpose: bare `default` leaves the call
+                            // ambiguous between Equals(EntityId) and Equals(int) and fails CS0121 -
+                            // measured, that was this fix's second attempt.
                             var referenceEntityId = property.objectReferenceEntityIdValue;
-                            if (referenceEntityId.Equals(default))
+                            if (referenceEntityId.Equals(default(EntityId)))
                                 continue;
 
                             missingReferences++;
