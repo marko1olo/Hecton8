@@ -131,6 +131,13 @@ namespace Hecton8.EditorTools.Diagnostics
         }
 
         private const string MenuSceneName = "01_MAIN_MENU";
+
+        /// <summary>
+        /// Scene NAME of the boot scene, as <see cref="UnityEngine.SceneManagement.Scene.name"/>
+        /// reports it. <see cref="BootstrapSceneAssetPath"/> is the asset path and does not compare
+        /// equal to a live scene's name.
+        /// </summary>
+        private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const int MenuWarmupFrames = 120;
 
         /// <summary>
@@ -262,6 +269,22 @@ namespace Hecton8.EditorTools.Diagnostics
         public static void Run()
         {
             ResetRunState();
+
+            // Claim the play-mode session before anything enters it.
+            //
+            // H8_PlayModeScreenshotter is live in this project and captures at roughly its
+            // PlayerWaitSeconds + SettleSeconds (~200s of wall time), then calls
+            // EditorApplication.Exit(0) - it terminates the editor process with a SUCCESS code. This
+            // probe's route needs its settle window plus the gameplay window on top, well over 370s,
+            // so the screenshotter won that race in every run. Logs/omega_route19.log is the clean
+            // example: the last probe line is "WORLDDRIVER begin ... budget 63s of the 67s gameplay
+            // window", the next event is the screenshotter's capture, and the log contains no verdict
+            // row at all - while the launcher read exit code 0 and reported a pass.
+            //
+            // So every "the probe emitted no verdict rows" reading taken before this line existed was
+            // measuring a session that had been shut down underneath it. The screenshotter still takes
+            // its capture, which is real evidence; only the teardown is withheld while an owner is named.
+            Hecton8.Tools.H8_PlayModeScreenshotter.ExternalSessionOwner = nameof(H8_HeadlessPlayModeProbe);
 
             // When the probe is going to press New Game it MUST start where the product starts.
             // AGENTS.md:162 fixes the normative flow as 00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD,
@@ -667,6 +690,45 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             double waited = EditorApplication.timeSinceStartup - _phaseStartedAt;
+
+            // Scene.isLoaded is false BOTH while a scene streams in and while it is being unloaded,
+            // and Unity exposes no isUnloading to tell them apart. So the loop above cannot see the
+            // difference between "the world is still arriving" and "the menu we already left is on its
+            // way out" - and the transition this probe measures produces exactly the second one.
+            //
+            // Measured in Logs/omega_route19.log: the world load genuinely completed - the active
+            // scene changed to 02_HECTON_WORLD at frame 878, the player was instantiated into it, and
+            // GameBootstrapper logged "RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True,
+            // isLoaded=True". The probe still burned the whole 300s budget and recorded WorldLoad as
+            // FAIL, because the departing 01_MAIN_MENU sat in the scene list with isLoaded=false the
+            // entire time.
+            //
+            // The load this phase waits for lands on the ACTIVE scene. Once that scene is loaded and is
+            // not the boot or menu scene, the transition has arrived. Any remaining isLoaded=false entry
+            // is on its way out, and it is named in the verdict rather than hidden - a settle that
+            // silently ignored scenes would be the same instrument-blindness in the other direction.
+            UnityEngine.SceneManagement.Scene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            bool gameplaySceneArrived =
+                activeScene.IsValid() &&
+                activeScene.isLoaded &&
+                !string.Equals(activeScene.name, MenuSceneName, StringComparison.Ordinal) &&
+                !string.Equals(activeScene.name, BootstrapSceneName, StringComparison.Ordinal);
+
+            if (pending.Length > 0 && gameplaySceneArrived)
+            {
+                Debug.Log(
+                    $"{Marker} SETTLED after {waited:F0}s - active scene '{activeScene.name}' is loaded; " +
+                    $"still-unloading: {pending}");
+                RecordMoment(
+                    MomentWorldLoad,
+                    MomentVerdict.Pass,
+                    $"active gameplay scene '{activeScene.name}' finished loading after {waited:F0}s; " +
+                    $"loaded scenes={UnityEngine.SceneManagement.SceneManager.sceneCount}; " +
+                    $"unloading in background={pending}");
+                _phaseStartedAt = EditorApplication.timeSinceStartup;
+                SetPhase(Phase.GameplayWarmup);
+                return;
+            }
 
             if (pending.Length == 0)
             {

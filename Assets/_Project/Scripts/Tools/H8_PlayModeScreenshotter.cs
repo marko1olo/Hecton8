@@ -174,6 +174,27 @@ namespace Hecton8.Tools
         /// </summary>
         public const float SettleSeconds = 20f;
 
+        /// <summary>
+        /// Name of an external editor harness that owns this play-mode session, or null when this
+        /// screenshotter owns it.
+        ///
+        /// Both this tool and H8_HeadlessPlayModeProbe are live in the same batchmode run, and they
+        /// have incompatible budgets: this one captures at roughly PlayerWaitSeconds + SettleSeconds
+        /// (~200s of wall time), while the probe's route needs its 300s settle window plus the
+        /// gameplay window on top - over 370s. So this tool won the race every single time, and
+        /// CaptureAndExit ends with EditorApplication.Exit(0) at the bottom of this file: it
+        /// terminated the whole editor process, with a SUCCESS code, while the probe was still
+        /// running. In the run that produced Logs/omega_route19.log the last probe line is
+        /// "WORLDDRIVER begin ... budget 63s" and the next event is this tool's capture - the probe
+        /// never reached a single verdict row, and the launcher read exit code 0 as a pass.
+        ///
+        /// When an owner is named the capture still happens, because a real play-mode frame is real
+        /// evidence and cheap to take. Only the session teardown is withheld.
+        /// </summary>
+        public static string ExternalSessionOwner;
+
+        private static bool SessionTeardownIsOurs => string.IsNullOrEmpty(ExternalSessionOwner);
+
         private float _playerWaitStartedAt = -1f;
         private float _settleStartedAt = -1f;
         private float _nextPlayerSearchAt = -1f;
@@ -230,6 +251,26 @@ namespace Hecton8.Tools
             CaptureAndExit(_cachedPlayer);
         }
 
+        /// <summary>
+        /// Ends the editor session, unless an external harness declared ownership via
+        /// <see cref="ExternalSessionOwner"/>. Suppression is logged loudly with the exit code that
+        /// was withheld, so a suppressed teardown can never be mistaken for one that never happened.
+        /// </summary>
+        private static void EndSessionUnlessExternallyOwned(int exitCode, string reason)
+        {
+            if (!SessionTeardownIsOurs)
+            {
+                Debug.Log(
+                    "[H8PlayModeScreenshotter] TEARDOWN SUPPRESSED - '" + ExternalSessionOwner +
+                    "' owns this play-mode session. Withheld EditorApplication.Exit(" +
+                    exitCode.ToString(CultureInfo.InvariantCulture) + ") raised because: " + reason);
+                return;
+            }
+
+            UnityEditor.EditorApplication.isPlaying = false;
+            UnityEditor.EditorApplication.Exit(exitCode);
+        }
+
         private void CaptureAndExit(GameObject player)
         {
             Debug.Log($"[H8PlayModeScreenshotter] Capture started. Player spawned: {player != null}");
@@ -244,8 +285,7 @@ namespace Hecton8.Tools
                     "[H8PlayModeScreenshotter] NO GRAPHICS DEVICE (graphicsDeviceType=Null). This run " +
                     "was launched with -nographics; ScreenCapture and camera rendering produce no " +
                     "pixels. No PNG written. Re-run batchmode WITHOUT -nographics.");
-                UnityEditor.EditorApplication.isPlaying = false;
-                UnityEditor.EditorApplication.Exit(3);
+                EndSessionUnlessExternallyOwned(3, "no graphics device, capture is impossible");
                 return;
             }
 
@@ -333,8 +373,7 @@ namespace Hecton8.Tools
                     H8CaptureRunDirectory.ResolveCaptureRoot() +
                     ". Refusing to overwrite an existing capture. No PNG written.");
                 DestroyImmediate(tex);
-                UnityEditor.EditorApplication.isPlaying = false;
-                UnityEditor.EditorApplication.Exit(5);
+                EndSessionUnlessExternallyOwned(5, "no unused capture directory could be reserved");
                 return;
             }
 
@@ -358,8 +397,7 @@ namespace Hecton8.Tools
 
             Debug.Log($"[H8PlayModeScreenshotter] Saved -> {outPath}");
 
-            UnityEditor.EditorApplication.isPlaying = false;
-            UnityEditor.EditorApplication.Exit(0);
+            EndSessionUnlessExternallyOwned(0, "capture completed successfully");
         }
     }
 }
