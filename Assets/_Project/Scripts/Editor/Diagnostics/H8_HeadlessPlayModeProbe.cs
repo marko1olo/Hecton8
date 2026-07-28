@@ -1518,10 +1518,40 @@ namespace Hecton8.EditorTools.Diagnostics
         /// </summary>
         private static void RecordDriverRow(int driverRow, string momentName)
         {
-            RecordMoment(
-                momentName,
-                (MomentVerdict)(byte)H8_HeadlessWorldDriver.GetVerdict(driverRow),
-                H8_HeadlessWorldDriver.GetDetail(driverRow));
+            string detail = H8_HeadlessWorldDriver.GetDetail(driverRow);
+
+            // An upstream gate that never opened is not four independent product failures.
+            //
+            // When scene activation does not finish, GameBootstrapper.cs:7365 ActivatePlayer() never runs
+            // and the player stays held by the Kinematic Arrest Gate - IsSuspended, velocity zero, input
+            // locked - which is correct designed behaviour, not a bug. The driver still runs and still
+            // publishes: in Logs/omega_route20.log it published 47,344 input overrides and the Swim row
+            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+            // broken. It is not; the input route delivered every one of those overrides to a player that
+            // was not permitted to move.
+            //
+            // So the verdict becomes Blocked and names the upstream cause, while the driver's measured
+            // numbers are kept verbatim - a row that hides its own measurements to look tidier would be
+            // worse than one that mislabels them. Blocked is the right word by this file's own definition
+            // at RecordContentBlockedMoments: the route WAS attempted and WAS obstructed at runtime, which
+            // is exactly what happened, unlike the content-absent rows that were never attempted at all.
+            //
+            // Only downgrades. A row that already passed with gameReady false would be a contradiction
+            // worth seeing, so a Pass is never rewritten into a Blocked.
+            MomentVerdict verdict = (MomentVerdict)(byte)H8_HeadlessWorldDriver.GetVerdict(driverRow);
+            if (!BootstrapState.IsGameReady && verdict != MomentVerdict.Pass)
+            {
+                RecordMoment(
+                    momentName,
+                    MomentVerdict.Blocked,
+                    "UPSTREAM-BLOCKED: scene activation never completed, so ActivatePlayer() never ran and " +
+                    "the player stayed held by the Kinematic Arrest Gate. Input reached it and moved " +
+                    "nothing because movement was not permitted yet, so this row measures the boot, not " +
+                    $"the mechanic. Driver detail kept for reference: {detail}");
+                return;
+            }
+
+            RecordMoment(momentName, verdict, detail);
         }
 
         /// <summary>
