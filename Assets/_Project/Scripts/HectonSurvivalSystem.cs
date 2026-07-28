@@ -1214,7 +1214,11 @@ namespace Hecton8.Gameplay
             status |= math.select(0u, SurvivalStatusMasks.Narcosis, _nitrogenNarcosis01 > 0.0001f);
             status |= math.select(0u, SurvivalStatusMasks.Toxicity, _toxicity01 > 0.0001f);
             status |= math.select(0u, SurvivalStatusMasks.CrushWarning, PressureExposureSeverity01 > 0.0001f);
-            status |= math.select(0u, SurvivalStatusMasks.RadiationPenalty, _runtimeContext.RadiationMaxHealthPenalty01 > 0.0001f);
+            PlayerRuntimeContext statusRuntimeContext = _runtimeContext;
+            status |= math.select(
+                0u,
+                SurvivalStatusMasks.RadiationPenalty,
+                statusRuntimeContext != null && statusRuntimeContext.RadiationMaxHealthPenalty01 > 0.0001f);
             _statusMask = status;
         }
 
@@ -2582,7 +2586,10 @@ namespace Hecton8.Gameplay
 
             // Radiation publishing: atmospheric baseline plus RadiationHazardGrid-owned local dose.
             float baseRad = atmosphere != null ? SafeNonNegative(atmosphere.CurrentRadiation) : 0f;
-            float gridRad = SafeSaturate(_runtimeContext.RadiationIntensity01);
+            PlayerRuntimeContext radiationRuntimeContext = _runtimeContext;
+            float gridRad = radiationRuntimeContext != null
+                ? SafeSaturate(radiationRuntimeContext.RadiationIntensity01)
+                : 0f;
             float totalRad = math.max(baseRad, gridRad);
             if (math.abs(totalRad - lastPubRad) > Epsilon)
                 lastPubRad = totalRad;
