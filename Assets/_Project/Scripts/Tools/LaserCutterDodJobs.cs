@@ -356,7 +356,6 @@ namespace Hecton8.Tools
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
         [ReadOnly, NoAlias] public NativeArray<VoxelSonarSdfRaycastHit> ProbeHits;
         [WriteOnly, NoAlias] public NativeArray<LaserCutHitDTO> HitResults;
-        [WriteOnly, NoAlias] public NativeArray<LaserCutDeformationStateDTO> DeformationStates;
         [WriteOnly, NoAlias] public NativeArray<LaserCutBatteryDrainRequest> BatteryDrainRequests;
         [WriteOnly, NoAlias] public NativeArray<LaserCutGlowDecalRequestDTO> GlowDecalRequests;
         [WriteOnly, NoAlias] public NativeArray<LaserCutImpactVfxDTO> ImpactVfxRequests;
@@ -417,6 +416,10 @@ namespace Hecton8.Tools
             int burstWorkEstimate = 8 + (int)(sparkCount >> 4) + (int)math.round(qualityCurve * 10f);
             uint burstWorkEstimateMicros = hasHit ? (uint)math.clamp(burstWorkEstimate, 0, 65535) : 2u;
 
+            // One hash per row: the three consumers below key on the same (request, hitAup) pair, so
+            // recomputing it per consumer was three FNV folds over the same six doubles every hit.
+            uint materialHash = HashMaterial(in request, hitAup);
+
             HitResults[index] = new LaserCutHitDTO
             {
                 HitAUP = hitAup,
@@ -424,7 +427,7 @@ namespace Hecton8.Tools
                 Normal = normal,
                 DistanceMeters = distance,
                 ColliderInstanceID = 0u,
-                MaterialHash = HashMaterial(in request, hitAup),
+                MaterialHash = materialHash,
                 ToolHashID = request.ToolHashID,
                 ParentEntityID = request.ParentEntityID,
                 CuttingPower = power,
@@ -433,18 +436,22 @@ namespace Hecton8.Tools
                 Flags = flags
             };
 
-            DeformationStates[index] = new LaserCutDeformationStateDTO
-            {
-                CenterAUP = hitAup,
-                Normal = normal,
-                RadiusMeters = hasHit ? math.lerp(radiusMin, radiusMax, math.saturate(power * qualityCurve)) : 0f,
-                DentDepthMeters = hasHit ? math.lerp(0.002f, 0.028f, carve01) : 0f,
-                Heat01 = heat,
-                Progress01 = carve01,
-                TargetHash = HashMaterial(in request, hitAup),
-                Frame = meta.Frame,
-                Flags = flags
-            };
+            // NO DEFORMATION ROW IS PRODUCED HERE, DELIBERATELY. This job used to fill a
+            // LaserCutDeformationStateDTO[64] with a real RadiusMeters/DentDepthMeters/Progress01 per hit,
+            // and the runtime then bound that buffer as `out _` and dropped it: no consumer existed
+            // anywhere in the project. Neither deformation owner can legally take it from here.
+            // (1) HullIntegrityRuntime owns hull dents (its own HullDentDTO ring plus the GPU upload) and
+            //     ingests through SignalBus<CombatDamageSignal>, which the cutter already publishes - but
+            //     this cutter marches the voxel SDF only (LaserCutterDodRuntime CutterProbeLayerMask =
+            //     VoxelCaveLayerMask | VoxelProxyLayerMask), so reporting its cut as a hull dent would
+            //     tell VehicleSubOsCockpitRuntime - which gates HullDeformedSignal on finiteness alone -
+            //     that the submarine took damage when the player cut a rock.
+            // (2) VoxelDeltaProcessor owns voxel carves and publishes VoxelCarveEvent, but its only
+            //     enqueue entry point takes a HectonVoxelVolume MonoBehaviour, which every existing carve
+            //     producer holds as a serialized field. A static DOD runtime cannot obtain that without a
+            //     scene search or Awake wiring, and no carve write contract exists in Hecton8.*.Contracts.
+            // Until that contract exists, computing the row is pure waste, so it is not computed. Restore
+            // the write only together with the consumer that reads it.
 
             BatteryDrainRequests[index] = new LaserCutBatteryDrainRequest
             {
@@ -466,7 +473,7 @@ namespace Hecton8.Tools
                 Glow01 = hasHit ? math.saturate(heat + power * 0.5f) : 0f,
                 LifetimeSeconds = hasHit ? glowLifetime * math.lerp(0.45f, 1.85f, qualityCurve) : 0f,
                 ToolHashID = request.ToolHashID,
-                MaterialHash = HashMaterial(in request, hitAup),
+                MaterialHash = materialHash,
                 Frame = meta.Frame,
                 Flags = flags
             };

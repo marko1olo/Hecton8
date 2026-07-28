@@ -31,7 +31,6 @@ namespace Hecton8.Tools
         private static VaultGenerationHandle<int> _requestCountHandle;
         private static VaultGenerationHandle<VoxelSonarSdfRaycastHit> _sdfProbeHitsHandle;
         private static VaultGenerationHandle<LaserCutHitDTO> _hitResultsHandle;
-        private static VaultGenerationHandle<LaserCutDeformationStateDTO> _deformationHandle;
         private static VaultGenerationHandle<LaserCutBatteryDrainRequest> _batteryDrainHandle;
         private static VaultGenerationHandle<LaserCutGlowDecalRequestDTO> _glowDecalHandle;
         private static VaultGenerationHandle<LaserCutImpactVfxDTO> _impactVfxHandle;
@@ -102,7 +101,7 @@ namespace Hecton8.Tools
             }
 
             bool ready =
-                BindSchedulerBuffers(out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _) &&
+                BindSchedulerBuffers(out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _) &&
                 BindOrAcquireBuffer(
                     LaserCutterDodConstants.SdfSnapshotBuffer,
                     LaserCutterDodConstants.SdfSnapshotByteCapacity,
@@ -444,7 +443,6 @@ namespace Hecton8.Tools
                         out _,
                         out _,
                         out _,
-                        out _,
                         allowAcquire: false))
                 {
                     return false;
@@ -549,7 +547,6 @@ namespace Hecton8.Tools
                         out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
                         out _,
                         out NativeArray<LaserCutHitDTO> hitResults,
-                        out NativeArray<LaserCutDeformationStateDTO> deformations,
                         out NativeArray<LaserCutBatteryDrainRequest> batteryDrains,
                         out NativeArray<LaserCutGlowDecalRequestDTO> decals,
                         out NativeArray<LaserCutImpactVfxDTO> impactVfx,
@@ -581,7 +578,6 @@ namespace Hecton8.Tools
                     RequestMetas = requestMetas,
                     ProbeHits = sdfHits,
                     HitResults = hitResults,
-                    DeformationStates = deformations,
                     BatteryDrainRequests = batteryDrains,
                     GlowDecalRequests = decals,
                     ImpactVfxRequests = impactVfx,
@@ -656,7 +652,6 @@ namespace Hecton8.Tools
                         out NativeArray<LaserCutRequestMetaDTO> _,
                         out NativeArray<int> requestCount,
                         out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
-                        out _,
                         out _,
                         out _,
                         out NativeArray<LaserCutBatteryDrainRequest> batteryDrains,
@@ -946,7 +941,6 @@ namespace Hecton8.Tools
             out NativeArray<VoxelSonarSdfRaycastHit> sdfHits,
             out NativeArray<LaserCutCooldownDTO> cooldowns,
             out NativeArray<LaserCutHitDTO> hitResults,
-            out NativeArray<LaserCutDeformationStateDTO> deformations,
             out NativeArray<LaserCutBatteryDrainRequest> batteryDrains,
             out NativeArray<LaserCutGlowDecalRequestDTO> decals,
             out NativeArray<LaserCutImpactVfxDTO> impactVfx,
@@ -957,7 +951,6 @@ namespace Hecton8.Tools
             sdfHits = default;
             cooldowns = default;
             hitResults = default;
-            deformations = default;
             batteryDrains = default;
             decals = default;
             impactVfx = default;
@@ -966,7 +959,6 @@ namespace Hecton8.Tools
                    BindOrAcquireBuffer(LaserCutterDodConstants.SdfProbeHitsBuffer, LaserCutterDodConstants.MaxRequests, ref _sdfProbeHitsHandle, out sdfHits, allowAcquire) &&
                    BindOrAcquireBuffer(LaserCutterDodConstants.CooldownBuffer, LaserCutterDodConstants.MaxRequests, ref _cooldownHandle, out cooldowns, allowAcquire) &&
                    BindOrAcquireBuffer(LaserCutterDodConstants.HitResultsBuffer, LaserCutterDodConstants.MaxHitResults, ref _hitResultsHandle, out hitResults, allowAcquire) &&
-                   BindOrAcquireBuffer(LaserCutterDodConstants.DeformationBuffer, LaserCutterDodConstants.MaxHitResults, ref _deformationHandle, out deformations, allowAcquire) &&
                    BindOrAcquireBuffer(LaserCutterDodConstants.BatteryDrainBuffer, LaserCutterDodConstants.MaxHitResults, ref _batteryDrainHandle, out batteryDrains, allowAcquire) &&
                    BindOrAcquireBuffer(LaserCutterDodConstants.GlowDecalBuffer, LaserCutterDodConstants.MaxHitResults, ref _glowDecalHandle, out decals, allowAcquire) &&
                    BindOrAcquireBuffer(LaserCutterDodConstants.ImpactVfxBuffer, LaserCutterDodConstants.MaxHitResults, ref _impactVfxHandle, out impactVfx, allowAcquire) &&
@@ -1074,7 +1066,6 @@ namespace Hecton8.Tools
                    ResolveLaserCutterMutationGuardMask(LaserCutterDodConstants.SdfProbeHitsBuffer) |
                    ResolveLaserCutterMutationGuardMask(LaserCutterDodConstants.CooldownBuffer) |
                    ResolveLaserCutterMutationGuardMask(LaserCutterDodConstants.HitResultsBuffer) |
-                   ResolveLaserCutterMutationGuardMask(LaserCutterDodConstants.DeformationBuffer) |
                    ResolveLaserCutterMutationGuardMask(LaserCutterDodConstants.BatteryDrainBuffer) |
                    ResolveLaserCutterMutationGuardMask(LaserCutterDodConstants.GlowDecalBuffer) |
                    ResolveLaserCutterMutationGuardMask(LaserCutterDodConstants.ImpactVfxBuffer) |
@@ -1826,7 +1817,6 @@ namespace Hecton8.Tools
             _requestCountHandle = default;
             _sdfProbeHitsHandle = default;
             _hitResultsHandle = default;
-            _deformationHandle = default;
             _batteryDrainHandle = default;
             _glowDecalHandle = default;
             _impactVfxHandle = default;
@@ -1874,7 +1864,6 @@ namespace Hecton8.Tools
             ReleaseVaultHandle(vault, LaserCutterDodConstants.RequestCountBuffer, ref _requestCountHandle);
             ReleaseVaultHandle(vault, LaserCutterDodConstants.SdfProbeHitsBuffer, ref _sdfProbeHitsHandle);
             ReleaseVaultHandle(vault, LaserCutterDodConstants.HitResultsBuffer, ref _hitResultsHandle);
-            ReleaseVaultHandle(vault, LaserCutterDodConstants.DeformationBuffer, ref _deformationHandle);
             ReleaseVaultHandle(vault, LaserCutterDodConstants.BatteryDrainBuffer, ref _batteryDrainHandle);
             ReleaseVaultHandle(vault, LaserCutterDodConstants.GlowDecalBuffer, ref _glowDecalHandle);
             ReleaseVaultHandle(vault, LaserCutterDodConstants.ImpactVfxBuffer, ref _impactVfxHandle);
