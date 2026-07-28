@@ -37,14 +37,25 @@ namespace Hecton8.Tools.ToolKinematics
         private static readonly uint ToolKinematicsContextHash =
             unchecked((uint)LocHash.Compute("ToolKinematicsRuntime"));
 
-        // ToolCarveRequestSignal, ToolHeatSignal, VfxSparkRequestSignal and ToolPowerDepletedSignal
-        // are configured and pushed here and read by no consumer anywhere under Assets/ - verified by
-        // rg over every SignalBus<T> read entry point (GetFrameSnapshot / GetFrameSnapshotArray /
-        // GetSignals / TryConsumeFrame / TryGetLatest / FilterSnapshot / TransformSnapshot).
+        // Lanes this runtime fills that no consumer drains, re-verified by rg over every SignalBus<T> read
+        // entry point (GetFrameSnapshot / GetFrameSnapshotArray / GetSignals / TryConsumeFrame /
+        // TryGetLatest / FilterSnapshot / TransformSnapshot): ToolTriggerPullSignal,
+        // ToolCarveRequestSignal, ToolHeatSignal and ToolPowerDepletedSignal have zero readers under
+        // Assets/. VfxSparkRequestSignal was previously counted here and does NOT belong: it is drained by
+        // CarveDebrisComputeRenderer.AppendSparkRequests (VFX/Debris/CarveDebrisComputeRenderer.cs:2098,
+        // SignalBus<VfxSparkRequestSignal>.GetFrameSnapshot) and has two further producers
+        // (Tools/LaserCutterDodRuntime.cs:753, Construction/DroneFleetManager.cs:6271), so counting it made
+        // a fully wired lane raise a release-audible "lane has no consumer" warning on the very first
+        // spark. ToolTriggerPullSignal is the mirror error - genuinely undrained and not counted at all.
+        // The trigger and heat payloads still reach consumers through the bridges below, which ARE drained:
+        // ToolTriggerSignal (Core/Signals/GlobalSignals.LegacyFacade.cs:1141), ToolStateChangedSignal
+        // (Visor/VisorHUDController.cs:1459) and ToolAcousticSignal
+        // (Core/HectonInputRuntime_HapticSynth.cs:209). So this counter measures a redundant native lane,
+        // not lost gameplay data - which is the difference between "stop publishing" and "needs a consumer".
         private const uint ConsumerlessLaneContextHash =
+            ToolTriggerPullSignal.LaneHash ^
             ToolCarveRequestSignal.LaneHash ^
             ToolHeatSignal.LaneHash ^
-            VfxSparkRequestSignal.LaneHash ^
             ToolPowerDepletedSignal.LaneHash;
 
         private static int _consumerlessLanePublishTotal;
@@ -570,6 +581,7 @@ namespace Hecton8.Tools.ToolKinematics
                 if (trigger.Frame != 0u && trigger.Trigger01 > 0f)
                 {
                     SignalBus<ToolTriggerPullSignal>.TryPushTracked(in trigger, ref _signalPushDropCount);
+                    CountConsumerlessLanePublish();
                     PublishGlobalTriggerBridge(in trigger);
                 }
 
@@ -588,7 +600,6 @@ namespace Hecton8.Tools.ToolKinematics
                 if (spark.Frame != 0u && spark.Intensity01 > 0f)
                 {
                     SignalBus<VfxSparkRequestSignal>.TryPushTracked(in spark, ref _signalPushDropCount);
-                    CountConsumerlessLanePublish();
                 }
 
                 ToolCarveRequestSignal carve = buffers.CarveRequests[i];
