@@ -169,6 +169,11 @@ namespace Hecton8.EditorTools.Diagnostics
         private static double _gameplaySeconds = 60.0;
         private static double _phaseStartedAt;
 
+        // Whether H8_HeadlessWorldDriver produces on the input lanes during the gameplay window. See
+        // that file's header for why it is a producer and not a state writer.
+        private static bool _worldDriverEnabled = true;
+        private static bool _worldDriverStarted;
+
         private static Phase _phase = Phase.Idle;
         private static double _startedAt;
         private static int _frames;
@@ -293,6 +298,23 @@ namespace Hecton8.EditorTools.Diagnostics
             _saveSlotIndex = (byte)Math.Clamp(
                 ReadIntArg("-h8SaveSlot", 0), 0, Hecton8.SaveSystem.SaveEvents.ManualSlotCount - 1);
             _saveLegEnabled = ReadStringArg("-h8SkipSaveLeg", null) == null;
+
+            // The world driver is the only producer for the Swim/Resource/Tool/Craft rows in a headless
+            // run. It is on by default because without it those four rows can only ever say
+            // NOT_EXERCISED; -h8SkipWorldDriver exists so a run can measure an UNDRIVEN world on purpose,
+            // and such a run keeps reporting NOT_EXERCISED rather than inheriting a driven verdict.
+            _worldDriverEnabled = ReadStringArg("-h8SkipWorldDriver", null) == null;
+
+            // The driver needs its full schedule inside the gameplay window. Extending the window is
+            // safe; silently truncating the driver is not, because a truncated schedule produces
+            // NOT_EXERCISED rows that look like a product gap instead of a harness budget.
+            if (_worldDriverEnabled)
+            {
+                double required = H8_HeadlessWorldDriver.TotalBudgetSeconds + 4.0;
+                if (_gameplaySeconds < required)
+                    _gameplaySeconds = required;
+            }
+
             _artifactPath = ReadStringArg("-h8RouteArtifact", ResolveDefaultArtifactPath());
 
             Debug.Log(
@@ -406,8 +428,36 @@ namespace Hecton8.EditorTools.Diagnostics
                     }
 
                     _gameplayFrames++;
+
+                    // The world driver rides THIS tick. It gets no Update, no coroutine and no timer of
+                    // its own, so the schedule advances only while the probe is genuinely pumping the
+                    // engine - the same discipline that stops "yield return null" hanging a batchmode run.
+                    if (_worldDriverEnabled)
+                    {
+                        if (!_worldDriverStarted)
+                        {
+                            _worldDriverStarted = true;
+                            H8_HeadlessWorldDriver.Begin();
+                            Debug.Log(
+                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+                                $"{_gameplaySeconds:F0}s gameplay window");
+                        }
+
+                        H8_HeadlessWorldDriver.Tick();
+                    }
+
                     if (EditorApplication.timeSinceStartup - _phaseStartedAt >= _gameplaySeconds)
+                    {
+                        // Release the locomotion lane before the save leg, or the save would capture a
+                        // player under synthetic input and the save/load row would measure the driver.
+                        if (_worldDriverStarted)
+                            H8_HeadlessWorldDriver.Stop();
+
                         SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+                    }
+
                     break;
 
                 case Phase.SaveRoundTrip:
@@ -1305,9 +1355,92 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             RecordProofMoment();
+            RecordWorldDriverMoments();
+            RecordContentBlockedMoments();
             ReportRouteMoments();
 
             Debug.Log($"{Marker} RESULT failures={_failures}");
+        }
+
+        /// <summary>
+        /// Transcribes <see cref="H8_HeadlessWorldDriver"/>'s four verdicts into the route table.
+        ///
+        /// Transcribes: it does not decide. The driver latches a verdict only from an observable it
+        /// actually read, and this method adds no interpretation on top - so a row can only be green here
+        /// if the shipping code path produced the observable. When the driver never ran, the rows keep
+        /// the NOT_EXERCISED they were seeded with and say the driver was off, which is a different and
+        /// honest claim.
+        /// </summary>
+        private static void RecordWorldDriverMoments()
+        {
+            if (!_worldDriverStarted)
+            {
+                string reason = _worldDriverEnabled
+                    ? "gameplay never started, so the world driver never ran"
+                    : "world driver disabled by -h8SkipWorldDriver";
+
+                RecordMoment(MomentSwim, MomentVerdict.NotExercised, reason);
+                RecordMoment(MomentResource, MomentVerdict.NotExercised, reason);
+                RecordMoment(MomentTool, MomentVerdict.NotExercised, reason);
+                RecordMoment(MomentCraft, MomentVerdict.NotExercised, reason);
+                return;
+            }
+
+            // Anything still unlatched when reporting starts is closed out as NOT_EXERCISED with the
+            // phase it stalled in, so a budget shortfall is never silently reported as a product gap.
+            H8_HeadlessWorldDriver.Stop();
+
+            Debug.Log(
+                $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+
+            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+        }
+
+        /// <summary>
+        /// The driver's RowVerdict is declared value-identical to <see cref="MomentVerdict"/> precisely so
+        /// this stays a cast instead of a lookup table that could drift into mapping Fail onto Pass.
+        /// </summary>
+        private static void RecordDriverRow(int driverRow, string momentName)
+        {
+            RecordMoment(
+                momentName,
+                (MomentVerdict)(byte)H8_HeadlessWorldDriver.GetVerdict(driverRow),
+                H8_HeadlessWorldDriver.GetDetail(driverRow));
+        }
+
+        /// <summary>
+        /// Two rows have no producer and will not get one from a driver, because the content they need
+        /// does not exist anywhere in the project. Naming the missing content turns two silent
+        /// NOT_EXERCISED lines into an actionable content gap, and keeps the next reader from building a
+        /// driver for a row that cannot be driven.
+        ///
+        /// Verdict stays NOT_EXERCISED on purpose. Calling it Blocked would imply the route was attempted
+        /// and obstructed at runtime; it was never attempted, because there is nothing to attempt.
+        /// </summary>
+        private static void RecordContentBlockedMoments()
+        {
+            RecordMoment(
+                MomentFirstExit,
+                MomentVerdict.NotExercised,
+                "CONTENT-BLOCKED: no life-pod or drop-pod prefab exists in the project. " +
+                "LifePodSeatStrapLatch, DropPodSeatController and LifePodTactilePrologueController are " +
+                "referenced by zero scenes and zero prefabs, so there is no exit to drive. A driver " +
+                "cannot open this row - the pod has to be authored first.");
+
+            RecordMoment(
+                MomentHazard,
+                MomentVerdict.NotExercised,
+                "CONTENT-BLOCKED: no hazard is ever instantiated. RadiationHazardGrid, " +
+                "EnvironmentalHazard, ThermalVentRuntime, HectonHazardSource and HostileFlora have zero " +
+                "AddComponent call sites anywhere, so no hazard exists to create a decision. A driver " +
+                "cannot open this row - a hazard has to be placed first.");
         }
 
         /// <summary>
@@ -1892,6 +2025,9 @@ namespace Hecton8.EditorTools.Diagnostics
             _saveDiff = default;
 
             _artifactWritten = false;
+
+            _worldDriverStarted = false;
+            H8_HeadlessWorldDriver.Reset();
         }
 
         private static string ResolveArtifactPath()
