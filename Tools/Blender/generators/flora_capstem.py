@@ -1112,3 +1112,606 @@ def build_materials() -> List[bpy.types.Material]:
         links.new(bsdf.outputs["BSDF"], output.inputs["Surface"])
         materials.append(material)
     return materials
+
+
+# ---------------------------------------------------------------------------
+# LOD re-unwrap
+# ---------------------------------------------------------------------------
+
+def _make_reunwrap(atlas_size: int, notes: List[str]):
+    """Re-solve UVs after decimation, then rescale into the atlas border reserve.
+
+    Decimate/COLLAPSE has no UV term in its collapse cost, so a radial cap layout is
+    destroyed by reduction while the triangle budget still reads as met (measured on
+    kelp: LOD0 p95 0.98, LOD1 worst 7610). The analytic parametrisation cannot be
+    reapplied once the topology has changed, so LOD1/LOD2 get an angle-based solve.
+
+    The rescale afterwards matters: ``smart_project`` packs to the full 0..1 square and
+    touches the border, which is exactly ``GATE_UV_ATLAS_PADDING_VIOLATION``. Squeezing
+    into the reserve keeps that gate ENFORCED at every level instead of being skipped
+    for the coarse ones.
+    """
+    padding = law.atlas_padding_for(atlas_size) / float(atlas_size)
+
+    def reunwrap(obj: bpy.types.Object, lod_index: int) -> None:
+        mesh_ops._make_sole_active(obj)
+        bpy.ops.object.mode_set(mode="EDIT")
+        try:
+            bpy.ops.mesh.select_all(action="SELECT")
+            result = bpy.ops.uv.smart_project(
+                angle_limit=math.radians(66.0),
+                island_margin=padding,
+                area_weight=0.0,
+                correct_aspect=True,
+                scale_to_bounds=False)
+        finally:
+            bpy.ops.object.mode_set(mode="OBJECT")
+        if "FINISHED" not in result:
+            notes.append("LOD{0} smart_project returned {1}; UVs are whatever the "
+                         "collapse left".format(lod_index, sorted(result)))
+            return
+
+        layer = obj.data.uv_layers.active
+        if layer is None:
+            notes.append("LOD{0} has no active UV layer after re-unwrap".format(
+                lod_index))
+            return
+        count = len(layer.data)
+        buffer = [0.0] * (count * 2)
+        layer.data.foreach_get("uv", buffer)
+        span = 1.0 - 2.0 * padding
+        lo_u = min(buffer[0::2]) if count else 0.0
+        hi_u = max(buffer[0::2]) if count else 1.0
+        lo_v = min(buffer[1::2]) if count else 0.0
+        hi_v = max(buffer[1::2]) if count else 1.0
+        range_u = max(1e-6, hi_u - lo_u)
+        range_v = max(1e-6, hi_v - lo_v)
+        # One uniform factor for both axes so the re-unwrap cannot introduce aspect
+        # distortion of its own while fixing the border overlap.
+        factor = min(span / range_u, span / range_v)
+        for i in range(count):
+            buffer[i * 2] = padding + (buffer[i * 2] - lo_u) * factor
+            buffer[i * 2 + 1] = padding + (buffer[i * 2 + 1] - lo_v) * factor
+        layer.data.foreach_set("uv", buffer)
+        obj.data.update()
+        notes.append("LOD{0} re-unwrapped (smart_project, angle 66 deg) and rescaled "
+                     "into the {1} px border reserve by x{2:.4f}".format(
+                         lod_index, law.atlas_padding_for(atlas_size), factor))
+
+    return reunwrap
+
+
+def _read_vcol_direct(mesh: bpy.types.Mesh) -> dict:
+    """Read the packed colour attribute straight off the datablock.
+
+    Two agents independently saw channel tiles and material renders come back WHITE for
+    geometry reading ``Col`` while the stored data was verified correct. So the stored
+    values are proven here, at the source, before any render is trusted: if the tiles
+    and this readback disagree, the instrument is wrong, not the generator.
+    """
+    attribute = mesh.color_attributes.get(law.VCOL_ATTRIBUTE_NAME)
+    if attribute is None:
+        return {"present": False}
+    count = len(attribute.data)
+    buffer = [0.0] * (count * 4)
+    attribute.data.foreach_get("color", buffer)
+    values = np.asarray(buffer, dtype=np.float64).reshape(count, 4)
+    out = {"present": True, "domain": attribute.domain,
+           "dataType": attribute.data_type, "elements": count}
+    for index, label in enumerate(law.ORGANIC_VCOL):
+        column = values[:, index]
+        out[label] = {
+            "min": round(float(column.min()), 5),
+            "max": round(float(column.max()), 5),
+            "mean": round(float(column.mean()), 5),
+        }
+    return out
+
+
+def _purge_scene() -> None:
+    """Empty the factory-startup scene so only generated geometry is present."""
+    for obj in list(bpy.data.objects):
+        bpy.data.objects.remove(obj, do_unlink=True)
+    for mesh in list(bpy.data.meshes):
+        if mesh.users == 0:
+            bpy.data.meshes.remove(mesh)
+
+
+# ---------------------------------------------------------------------------
+# One variant, in the mandated stage order
+# ---------------------------------------------------------------------------
+
+@dataclass
+class VariantResult:
+    name: str
+    lods: list
+    reports: list
+    chain_failures: list
+    collider: object
+    vcol_report: dict
+    vcol_direct: dict
+    ao: object
+    sway: object
+    uv_summary: dict
+    topology: dict
+    shading: object
+    stems: list
+    notes: List[str]
+    interaction: dict
+
+
+def generate_variant(*, seed: int, quality: float, cap_radius: float, height: float,
+                     variant_index: int, ao_samples: int, atlas_size: int,
+                     blackbox: BlackBox) -> VariantResult:
+    """Run PROCEDURAL_ASSET_PIPELINE.md "Generation Order" 1..11 for one asset."""
+    notes: List[str] = []
+    rng = np.random.default_rng(seed + variant_index * 7919)
+    name = "CapStem_{seed}_{index:02d}".format(seed=seed, index=variant_index)
+
+    # --- 1/2. deterministic manifest inputs, then the shape grammar --------
+    clump = plan_clump(rng, quality=quality, cap_radius=cap_radius, height=height)
+    blackbox.record("shape_grammar", seed=seed, family=FAMILY.value,
+                    warning="stems={0} segments={1} ribs={2} rings={3}/{4}/{5}".format(
+                        len(clump.stems), clump.segments, clump.stems[0].rib_count,
+                        clump.stem_rings, clump.cap_bottom_rings,
+                        clump.cap_top_rings))
+
+    # --- 3/4. high-detail geometry + family topology rules ----------------
+    accum = _Accum()
+    stem_reports = []
+    for index, stem in enumerate(clump.stems):
+        stem_reports.append(_build_stem(accum, stem, clump, rng, island_base=index * 5))
+    blackbox.record("geometry", vertex_count=len(accum.positions),
+                    triangle_count=-1,
+                    warning="faces={0}".format(len(accum.faces)))
+
+    # --- 5. UVs and material IDs ------------------------------------------
+    uv_summary = pack_islands(accum, atlas_size=atlas_size,
+                              texel_density=law.TEXEL_DENSITY_HERO_FLORA)
+    if uv_summary["densityScaleApplied"] < 1.0:
+        notes.append(
+            "texel density reduced from {0} to {1} px/m so the islands fit inside the "
+            "{2} px atlas border reserve".format(
+                uv_summary["requestedTexelDensityPxPerM"],
+                uv_summary["achievedTexelDensityPxPerM"], uv_summary["paddingPx"]))
+
+    obj = _to_object(accum, uv_summary.pop("uvs"),
+                     law.NAME_MESH.format(family=FAMILY.value, name=name, lod=0),
+                     blackbox)
+
+    # Materials are created HERE, before the bake, not at stage 7. The Cycles AO bake
+    # refuses to run on an object with no material slot, so the shared-material stage
+    # is forced ahead of the bake stage. Recorded rather than silently reordered.
+    materials = build_materials()
+    for material in materials:
+        obj.data.materials.append(material)
+    notes.append(
+        "stage order deviation: shared MAT_* materials are built at stage 5 instead of "
+        "stage 7 because bpy.ops.object.bake refuses an object with no material slot, "
+        "and stage 6 needs the bake. No other stage moved.")
+
+    # --- topology probe before anything can hide a construction fault -----
+    before_verts = len(obj.data.vertices)
+    before_faces = len(obj.data.polygons)
+    bm = mesh_ops.bmesh_from_object(obj)
+    clean = mesh_ops.weld_and_clean(bm, merge_distance=1e-5, blackbox=blackbox)
+    mesh_ops.bmesh_to_object(bm, obj)
+    if (clean["verts_removed"] or clean["faces_removed"]
+            or clean["degenerate_faces_deleted"]):
+        # The parametrisation is supposed to emit a clean welded manifold. If the clean
+        # pass had work to do, that is a construction defect worth seeing, not a
+        # convenience: the per-vertex authored scalars are indexed by build order and a
+        # merge would desynchronise them from the geometry.
+        raise GenerationAborted(
+            "weld_and_clean modified a mesh that should already be clean: {0} "
+            "(verts {1}->{2}, faces {3}->{4}). The authored per-vertex sway/harvest "
+            "arrays are index-aligned and would now be wrong.".format(
+                clean, before_verts, len(obj.data.vertices), before_faces,
+                len(obj.data.polygons)))
+
+    topology = mesh_ops.topology_report(obj)
+    blackbox.record("topology_report", vertex_count=len(obj.data.vertices),
+                    triangle_count=topology.triangles,
+                    warning="components={0} boundary={1} nonmanifold={2} floor~{3}"
+                    .format(topology.components, topology.boundary_edges,
+                            topology.nonmanifold_edges, topology.irreducible_floor))
+    if topology.boundary_edges:
+        notes.append(
+            "{0} boundary edges: the clump should be {1} closed shells, one per stem, "
+            "so a boundary means a ring failed to weld".format(
+                topology.boundary_edges, len(clump.stems)))
+    if topology.nonmanifold_edges:
+        notes.append("{0} non-manifold edges present".format(
+            topology.nonmanifold_edges))
+
+    # --- shading basis: organic angle, never the hard-surface default -----
+    shading = mesh_ops.apply_shading_basis(
+        obj, smooth_angle_deg=law.smooth_angle_for(SURFACE), weighted=True,
+        keep_sharp=True, blackbox=blackbox)
+    if shading.smooth_polygons <= 0:
+        raise GenerationAborted(
+            "apply_shading_basis smoothed 0 polygons; the asset would ship flat-shaded")
+
+    # --- 6. bakes and vertex colours --------------------------------------
+    # AO ray length is matched to the cavity the bible actually names -- "under plates,
+    # root clusters" -- which here is the gap between the cap underside and the ground
+    # and the pockets between the holdfast fingers. That is on the order of the cap
+    # radius, NOT of the whole clump: unbounded rays turn local occlusion into a global
+    # sky term and the underside stops darkening.
+    ao_distance = min(0.55, max(0.06, cap_radius * 1.15))
+    ao = vertexcolor.bake_ambient_occlusion(obj, samples=ao_samples,
+                                            distance=ao_distance, blackbox=blackbox)
+    ao_values = vertexcolor.consume_baked_ao(obj)
+    notes.append("AO bake distance {0:.3f} m (cap radius {1:.3f} m), {2} samples"
+                 .format(ao_distance, cap_radius, ao_samples))
+
+    # GEODESIC distance along the growth path: stem arc length, then surface arc length
+    # out across the cap. A cap tilted back over its own base is far along the stem but
+    # near it in straight lines, and Euclidean measurement would call that rim rigid.
+    max_geodesic = max(accum.geodesic) if accum.geodesic else 0.0
+    sway = vertexcolor.build_sway_field(
+        obj.data,
+        anchor_position=Vector((0.0, 0.0, 0.0)),
+        max_flexible_length=max_geodesic,
+        stiffness_exponent=law.STIFFNESS_EXPONENT_FLEXIBLE_BLADE,
+        rigid_cap=None,          # soft tissue; a rigid cap belongs to mineralised coral
+        distances=accum.geodesic)
+
+    # Channel G: 0 everywhere. Nothing in nice_biome.webp, beauty.webp or shallows.webp
+    # shows an emissive cap or stem -- these are sunlit photic-zone plants, and
+    # 3DMODEL_FLORA_CORAL.md section 2 fixes non-emissive tissue at exactly 0. Painting
+    # a decorative rim glow here would be inventing a reference detail.
+    biolum = [0.0] * len(obj.data.vertices)
+
+    vcol_report = vertexcolor.write_organic_channels(
+        obj, sway=sway, biolum=biolum,
+        ao=ao_values if ao_values else None,
+        alpha=accum.harvest, alpha_meaning=ALPHA_MEANING, blackbox=blackbox)
+    vertexcolor.remove_scratch_attributes(obj.data)
+    vcol_direct = _read_vcol_direct(obj.data)
+
+    # --- 7/8. LOD chain (materials already built at stage 5) --------------
+    lod_notes: List[str] = []
+    lods = mesh_ops.build_lod_chain(
+        obj, family=FAMILY, name=name, quality_weight=quality, levels=3,
+        preserve_seams=True, reunwrap=_make_reunwrap(atlas_size, lod_notes),
+        blackbox=blackbox)
+    notes.extend(lod_notes)
+    for level in lods:
+        if not level.within_budget:
+            report = mesh_ops.topology_report(level.obj)
+            notes.append("LOD{0} over budget: {1}".format(
+                level.index, report.explain(level.budget)))
+
+    # --- 9. collision proxy ----------------------------------------------
+    collider = mesh_ops.make_convex_collider(lods[0].obj, family=FAMILY, name=name,
+                                             blackbox=blackbox)
+    # 3DMODEL_FLORA_CORAL.md section 7: flora collision is none; interaction is "Root
+    # harvest point: sphere or capsule". That proxy is a transform plus a radius, not
+    # geometry, so it belongs in the manifest for the Unity assembler to instantiate.
+    lo, hi = mesh_ops.local_bounds(lods[0].obj)
+    foot_radius = 0.5 * max(hi.x - lo.x, hi.y - lo.y)
+    interaction = {
+        "collision": "none",
+        "collisionJustification": collider.reason,
+        "harvestProxy": {
+            "type": "sphere",
+            "centerLocal": [0.0, 0.0, round(min(0.06, height * 0.16), 5)],
+            "radiusM": round(max(0.05, foot_radius * 0.62), 5),
+            "anchor": "ANCHOR_Loot",
+            "layer": "Flora_NonColliding",
+            "isTrigger": True,
+        },
+        "anchors": {
+            "ANCHOR_Loot": [0.0, 0.0, round(min(0.06, height * 0.16), 5)],
+            "ANCHOR_Scan": [0.0, 0.0, round(height * 0.92, 5)],
+        },
+    }
+
+    # --- 10. validation ---------------------------------------------------
+    reports = []
+    for level in lods:
+        reports.append(validate.validate_mesh(
+            level.obj.data, family=FAMILY, lod_index=level.index,
+            surface_class=SURFACE, blackbox=blackbox, hero=(level.index == 0),
+            triplanar=False, double_sided=False, planar=False,
+            atlas_size=atlas_size))
+    chain_failures = validate.validate_lod_chain(reports, family=FAMILY,
+                                                 blackbox=blackbox)
+
+    return VariantResult(
+        name=name, lods=lods, reports=reports, chain_failures=chain_failures,
+        collider=collider, vcol_report=vcol_report, vcol_direct=vcol_direct, ao=ao,
+        sway=sway, uv_summary=uv_summary,
+        topology={
+            "triangles": topology.triangles,
+            "components": topology.components,
+            "boundaryEdges": topology.boundary_edges,
+            "nonManifoldEdges": topology.nonmanifold_edges,
+            "irreducibleFloor": topology.irreducible_floor,
+        },
+        shading=shading, stems=stem_reports, notes=notes, interaction=interaction)
+
+
+# ---------------------------------------------------------------------------
+# Proof artefacts
+# ---------------------------------------------------------------------------
+
+def render_proof(variant: VariantResult, *, out_dir: str, resolution: int) -> dict:
+    """Flat, studio, material and channel sheets, then MEASURE every channel tile.
+
+    ``3DMODEL_FLORA_CORAL.md`` section 10 requires BOTH a "flat-material screenshot
+    proving the silhouette is biological before texture detail" AND a "final-material
+    screenshot proving wetness, translucency, pigment ... support the organism", so
+    both are rendered; neither substitutes for the other.
+    """
+    subject = variant.lods[0].obj
+    sheets = {}
+    for mode in ("flat", "studio", "material"):
+        spec = preview.PreviewSpec(
+            name=variant.name, output_dir=out_dir, resolution=resolution,
+            views=("front", "three_quarter", "side", "low"), mode=mode,
+            surface_class=SURFACE)
+        sheets[mode] = preview.render_contact_sheet(subject, spec).sheet_path
+
+    channel_spec = preview.PreviewSpec(
+        name=variant.name, output_dir=out_dir, resolution=resolution,
+        mode="studio", surface_class=SURFACE)
+    channels = preview.render_channel_sheet(subject, channel_spec,
+                                            view="three_quarter")
+
+    measurements = []
+    for index, tile in enumerate(channels.tile_paths):
+        stats = preview.measure_channel_png(tile)
+        measurements.append({
+            "channel": law.ORGANIC_VCOL[index],
+            "tile": os.path.basename(tile),
+            "min": round(stats.min_value, 5),
+            "max": round(stats.max_value, 5),
+            "mean": round(stats.mean_value, 5),
+            "coverage": round(stats.coverage_fraction, 5),
+            "hasGradient": stats.has_gradient,
+            "subjectVisible": stats.subject_visible,
+        })
+
+    return {
+        "sheets": sheets,
+        "channelSheet": channels.sheet_path,
+        "channelTiles": list(channels.tile_paths),
+        "measurements": measurements,
+    }
+
+
+def _print_report(variant: VariantResult, proof: Optional[dict],
+                  export_result, manifest_path: str) -> None:
+    print("")
+    print("=" * 78)
+    print("ASSET {0}   family={1}   surface={2}".format(
+        variant.name, FAMILY.value, SURFACE.value))
+    print("=" * 78)
+    budgets = law.LOD_BUDGETS[FAMILY]
+    for level, report in zip(variant.lods, variant.reports):
+        print("  LOD{0}  {1:>6} tris / {2:>5} budget   verts={3:<6} submeshes={4}  "
+              "{5}".format(level.index, level.triangles, budgets.limit(level.index),
+                           report.vertex_count, report.submesh_count,
+                           "PASS" if report.passed else "FAIL"))
+        for failure in report.failures:
+            print("         ! " + str(failure))
+    print("  lod chain: {0}".format(
+        "PASS" if not variant.chain_failures else
+        "; ".join(str(f) for f in variant.chain_failures)))
+    print("  collider : {0} ({1})".format(variant.collider.kind,
+                                          variant.collider.reason))
+    print("  topology : {0}".format(variant.topology))
+    print("  shading  : smooth_polygons={0} sharp_edges={1} weighted={2}".format(
+        variant.shading.smooth_polygons, variant.shading.sharp_edges,
+        variant.shading.weighted_applied))
+    print("  AO bake  : baked={0} min={1:.4f} max={2:.4f} mean={3:.4f} "
+          "has_contrast={4}".format(variant.ao.baked, variant.ao.min_value,
+                                    variant.ao.max_value, variant.ao.mean_value,
+                                    variant.ao.has_contrast))
+    print("  sway     : min={0:.4f} max={1:.4f} exponent={2} relative_spread={3:.3f} "
+          "uniform={4}".format(variant.sway.min_value, variant.sway.max_value,
+                               variant.sway.stiffness_exponent,
+                               variant.sway.relative_spread, variant.sway.is_uniform))
+    print("  vcol direct readback (attribute '{0}'):".format(law.VCOL_ATTRIBUTE_NAME))
+    for label in law.ORGANIC_VCOL:
+        entry = variant.vcol_direct.get(label)
+        if entry:
+            print("         {0:<16} min={1:<8} max={2:<8} mean={3}".format(
+                label, entry["min"], entry["max"], entry["mean"]))
+    print("  uv       : {0}".format(
+        {k: v for k, v in variant.uv_summary.items() if k != "route"}))
+    if proof is not None:
+        for measurement in proof["measurements"]:
+            print("  chan {0:<16} min={1:<8} max={2:<8} mean={3:<8} coverage={4} "
+                  "gradient={5} visible={6}".format(
+                      measurement["channel"], measurement["min"], measurement["max"],
+                      measurement["mean"], measurement["coverage"],
+                      measurement["hasGradient"], measurement["subjectVisible"]))
+        for mode, path in proof["sheets"].items():
+            print("  sheet {0:<9} {1}".format(mode, path))
+        print("  sheet channels  {0}".format(proof["channelSheet"]))
+    if export_result is not None:
+        print("  fbx      : {0}".format(export_result.fbx_path))
+        print("  roundtrip: verified={0} unit_scale={1}".format(
+            export_result.roundtrip_verified, export_result.unit_scale))
+    if manifest_path:
+        print("  manifest : {0}".format(manifest_path))
+    for note in variant.notes:
+        print("  note     : " + note)
+    for stem in variant.stems:
+        print("  stem     : " + str(stem))
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def parse_args(argv: Sequence[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="flora_capstem.py",
+        description="Generate HECTON-8 cap-and-stem flora (amber fan) packages.")
+    parser.add_argument("--seed", type=int, default=3301,
+                        help="deterministic seed; variation is a named seed, never "
+                             "hidden chance")
+    parser.add_argument("--quality", type=float, default=1.0,
+                        help="GlobalQualityWeight, continuous 0..1")
+    parser.add_argument("--variants", type=int, default=1)
+    parser.add_argument("--cap-radius", type=float, default=0.15,
+                        help="metres; the reference caps read at 0.10-0.25 m")
+    parser.add_argument("--height", type=float, default=0.42,
+                        help="metres, tallest stem in the clump")
+    parser.add_argument("--out", default="",
+                        help="output directory; defaults to "
+                             "Docs/AgentLogs/ForgePreviews under the project root")
+    parser.add_argument("--ao-samples", type=int, default=64)
+    parser.add_argument("--atlas", type=int, default=ATLAS_SIZE)
+    parser.add_argument("--preview-resolution", type=int, default=640)
+    parser.add_argument("--preview", dest="preview", action="store_true", default=True)
+    parser.add_argument("--no-preview", dest="preview", action="store_false")
+    parser.add_argument("--no-export", dest="export", action="store_false",
+                        default=True,
+                        help="skip FBX + manifest, keep validation and previews")
+
+    if "--" in argv:
+        argv = argv[argv.index("--") + 1:]
+    else:
+        argv = []
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str]) -> int:
+    args = parse_args(argv)
+    quality = law.saturate(args.quality)
+    out_dir = args.out or os.path.join(law.project_root(), "Docs", "AgentLogs",
+                                       "ForgePreviews")
+    os.makedirs(out_dir, exist_ok=True)
+
+    exit_code = 0
+    for variant_index in range(max(1, args.variants)):
+        run_tag = "capstem_s{0}_q{1:.2f}_v{2}".format(args.seed, quality,
+                                                      variant_index)
+        blackbox = BlackBox("flora_capstem", run_tag)
+        _purge_scene()
+        try:
+            variant = generate_variant(
+                seed=args.seed, quality=quality, cap_radius=args.cap_radius,
+                height=args.height, variant_index=variant_index,
+                ao_samples=args.ao_samples, atlas_size=args.atlas,
+                blackbox=blackbox)
+        except GenerationAborted as error:
+            print("[flora_capstem] ABORTED: {0}".format(error))
+            return 2
+
+        proof = None
+        if args.preview:
+            proof = render_proof(variant, out_dir=out_dir,
+                                 resolution=args.preview_resolution)
+
+        # 3dmodel.md section 10: validation failure ABORTS the save. Previews are
+        # rendered first on purpose -- a rejected asset still has to be LOOKED at, and
+        # the sheets are the evidence for why it was rejected.
+        try:
+            validate.assert_or_abort(
+                [variant.reports, variant.chain_failures], blackbox=blackbox,
+                reason="flora_capstem " + variant.name)
+        except GenerationAborted as error:
+            print("[flora_capstem] VALIDATION REJECTED THE SAVE: {0}".format(error))
+            _print_report(variant, proof, None, "")
+            exit_code = 3
+            continue
+
+        export_result = None
+        manifest_path = ""
+        if args.export:
+            fbx_path = os.path.join(out_dir, "{0}_{1}.fbx".format(FAMILY.value,
+                                                                  variant.name))
+            export_result = export_unity.export_lod_group(
+                variant.lods, variant.collider, fbx_path, blackbox=blackbox)
+
+            identity = law.GeneratorIdentity(
+                generator=GENERATOR_NAME, generator_version=GENERATOR_VERSION,
+                seed=args.seed + variant_index * 7919, quality_weight=quality,
+                family=FAMILY,
+                scale_meters=round(mesh_ops.longest_extent(variant.lods[0].obj), 5),
+                camera_distance_class=CAMERA_DISTANCE_CLASS,
+                platform_lane=PLATFORM_LANE, source_references=REFERENCE_IDS)
+
+            proof_paths = []
+            if proof is not None:
+                proof_paths = list(proof["sheets"].values()) + [proof["channelSheet"]]
+
+            manifest_path = export_unity.write_manifest(
+                os.path.join(out_dir,
+                             export_unity.manifest_filename(FAMILY, variant.name)),
+                identity, variant.reports,
+                [law.NAME_MATERIAL.format(family=FAMILY.value, role=role)
+                 for role in MATERIAL_ROLES],
+                # No texture set is authored by this generator: the pigment lives in
+                # the MAT_* base colours and the masks live in the vertex-colour
+                # channels. Naming a TX_* file that does not exist would be a false
+                # reference, so the manifest records the gap honestly instead.
+                [],
+                [variant.collider] if variant.collider.obj is not None else [],
+                proof_paths, export_result=export_result,
+                uv_summary=variant.uv_summary, alpha_meaning=ALPHA_MEANING,
+                extra={
+                    "growthAlgorithm":
+                        "parametric cap-and-stem clump: quadratic downstream stem "
+                        "bend, lobed non-circular cross-section with lengthwise "
+                        "ridges, flared finger holdfast, rib-driven cap (top relief, "
+                        "lobed outline and underside gills from one term), torn edge "
+                        "sectors, thick rounded rim band. Stem last ring IS the cap "
+                        "hub ring, so the union is welded rather than intersected.",
+                    "biomeRoute": "photic shallows, 0-100 m; reference nice_biome.webp",
+                    "materialFamily": "flora_plate_amber",
+                    "materialSlotMap": {
+                        "0": MATERIAL_ROLES[0] + " (cap top + underside)",
+                        "1": MATERIAL_ROLES[1] + " (torn rim band)",
+                        "2": MATERIAL_ROLES[2] + " (stem + holdfast foot)",
+                    },
+                    "stems": variant.stems,
+                    "topology": variant.topology,
+                    "shading": {
+                        "smoothAngleDeg": law.smooth_angle_for(SURFACE),
+                        "smoothPolygons": variant.shading.smooth_polygons,
+                        "sharpEdges": variant.shading.sharp_edges,
+                        "weightedNormalsApplied": variant.shading.weighted_applied,
+                    },
+                    "vertexColorChannels": variant.vcol_report,
+                    "vertexColorDirectReadback": variant.vcol_direct,
+                    "aoBake": {
+                        "baked": variant.ao.baked,
+                        "samples": variant.ao.samples,
+                        "min": round(variant.ao.min_value, 5),
+                        "max": round(variant.ao.max_value, 5),
+                        "mean": round(variant.ao.mean_value, 5),
+                        "hasContrast": variant.ao.has_contrast,
+                    },
+                    "sway": {
+                        "min": round(variant.sway.min_value, 5),
+                        "max": round(variant.sway.max_value, 5),
+                        "stiffnessExponent": variant.sway.stiffness_exponent,
+                        "relativeSpread": round(variant.sway.relative_spread, 5),
+                        "uniform": variant.sway.is_uniform,
+                        "distanceMetric": "geodesic along stem arc then cap surface "
+                                          "arc from the hub",
+                    },
+                    "biolum": "channel G is 0 across the whole asset: no flora in "
+                              "nice_biome.webp, beauty.webp or shallows.webp is "
+                              "emissive, and 3DMODEL_FLORA_CORAL.md section 2 fixes "
+                              "non-emissive tissue at 0.",
+                    "interaction": variant.interaction,
+                    "channelMeasurements":
+                        proof["measurements"] if proof is not None else [],
+                    "generatorNotes": variant.notes,
+                })
+
+        _print_report(variant, proof, export_result, manifest_path)
+
+    return exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
