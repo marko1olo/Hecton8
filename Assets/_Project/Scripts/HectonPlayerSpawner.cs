@@ -87,6 +87,45 @@ public class HectonPlayerSpawner : MonoBehaviour
 #endif
     }
 
+    /// <summary>Stable telemetry hash for "the player spawn was refused". FNV-style literal, 'PSPN'.</summary>
+    private const uint SpawnRejectedWarningHash = 0x5053504Eu;
+
+    /// <summary>
+    /// Reports a refused player spawn on a route that SURVIVES A RELEASE PLAYER BUILD.
+    ///
+    /// Every other reporting helper on this class carries [Conditional("UNITY_EDITOR")] plus
+    /// [Conditional("DEVELOPMENT_BUILD")], so in a shipped game the player simply never appeared and
+    /// nothing anywhere said why. GlobalTelemetryBus.PublishPerformanceWarning has no [Conditional]
+    /// attribute, so it is the one surface that still speaks in a release build. The scalar carries the
+    /// case, because a telemetry consumer cannot read a string:
+    ///   0 = the reference was never set,
+    ///   1 = it was set and the object was destroyed before the spawn call,
+    ///   2 = the object is alive but fails an authority condition.
+    /// Cases 1 and 2 are different defects - a lifetime bug and a prefab bug - and they were previously
+    /// reported with the same sentence.
+    /// </summary>
+    private static void LogSpawnerAuthorityRejection(
+        bool referenceWasSet,
+        bool destroyedSinceAwake,
+        string authorityReason)
+    {
+        float caseScalar = !referenceWasSet ? 0f : (destroyedSinceAwake ? 1f : 2f);
+        Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
+            SpawnRejectedWarningHash,
+            0u,
+            caseScalar);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        string detail = !referenceWasSet
+            ? "the Rigidbody reference was never set"
+            : (destroyedSinceAwake
+                ? "the player object Awake accepted was DESTROYED before SpawnPlayerAsync ran - a lifetime defect, not a prefab defect"
+                : "the player object is alive but fails an authority condition");
+        Hecton8.Core.H8Debug.LogError(
+            "[HectonPlayerSpawner] Spawn rejected: " + detail + ". reason=" + authorityReason);
+#endif
+    }
+
     [System.Diagnostics.Conditional("UNITY_EDITOR")]
     [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
     private static void LogSpawnerError(string message)
@@ -350,11 +389,25 @@ public class HectonPlayerSpawner : MonoBehaviour
     {
         if (!TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            LogSpawnerError(
-                "[HectonPlayerSpawner] Spawn rejected: production player movement/interaction/physics authority is missing.",
-                this);
-#endif
+            // Awake already accepted a player through this exact predicate - either the Inspector
+            // reference, the bootstrap lookup, or a cold Instantiate of Player.prefab, and the
+            // "rejected after instantiate" path would have logged and destroyed a bad one. So a
+            // rejection HERE means the reference stopped being valid between Awake and the spawn call,
+            // and the old message - which only ever said "authority is missing" - could not tell the
+            // difference between "never had it" and "had it and lost it".
+            //
+            // ReferenceEquals sees the real managed reference, while Unity's == overload reports a
+            // destroyed object as null. The two disagreeing IS the destroyed case, and naming it is the
+            // whole point: a missing component is a prefab defect, a destroyed object is a lifetime
+            // defect, and they have nothing to do with each other.
+            bool referenceWasSet = !ReferenceEquals(playerRigidbody, null);
+            bool destroyedSinceAwake = referenceWasSet && playerRigidbody == null;
+            string authorityReason = destroyedSinceAwake || !referenceWasSet
+                ? "PLAYER_RIGIDBODY_NULL"
+                : ProductionPlayerAuthorityUtility.DescribeProductionPlayerAuthorityFailure(
+                    playerRigidbody.gameObject);
+
+            LogSpawnerAuthorityRejection(referenceWasSet, destroyedSinceAwake, authorityReason);
             return;
         }
 
